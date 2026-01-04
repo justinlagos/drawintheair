@@ -1,73 +1,89 @@
-# React + TypeScript + Vite
+# Draw in the Air
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive hand-tracking drawing and learning application for kids, built with React 19, TypeScript, and Vite.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 🎨 Free Paint Mode
+- Draw anything with your finger in the air
+- Multiple colors and brush sizes
+- Smooth stroke rendering with glow effects
+- **Pinch-to-draw**: Pinch thumb and index finger to draw, open hand to pause
 
-## React Compiler
+### ✏️ Tracing Mode
+- Trace shapes and letters (A-Z)
+- Visual feedback for staying on path
+- Progress tracking and celebrations
+- **Pinch-to-draw**: Only draws when pinching
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 🫧 Bubble Pop
+- 30-second timed game
+- Pop bubbles by touching them
+- 20-pop milestone reward
+- Unlock system for achievements
 
-## Expanding the ESLint configuration
+### 🗂️ Sort and Place
+- Grab objects by pinching
+- Sort by color, size, or category
+- Drag-and-drop gameplay
+- Three rounds with increasing difficulty
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Interaction Model
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Pinch-to-Draw
+The app uses a **pinch gesture** for drawing and interaction:
+- **Pinch** (thumb and index finger close together) = Pen down (drawing/grabbing)
+- **Open hand** = Pen up (paused/not drawing)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+This prevents accidental drawing when resting your hand and gives clear control over when marks are made.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Unmirrored Camera
+The app uses an **unmirrored coordinate system**:
+- Left is left, right is right (natural movement)
+- All text renders normally (not reversed)
+- Coordinates map directly from MediaPipe to screen
+
+## Tech Stack
+
+- **React 19** + **TypeScript** + **Vite**
+- **MediaPipe Tasks Vision** (`@mediapipe/tasks-vision`) with HandLandmarker
+- **One Euro Filter** for low-latency smoothing
+- **Quadratic Bezier curves** for smooth stroke rendering
+- **Canvas API** for drawing
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Run dev server
+npm run dev
+
+# Build for production
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Privacy & Safety
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- **No video storage**: Camera frames are processed locally and never stored
+- **No external links**: Child mode has no external links
+- **Adult gate**: Settings and exit require adult verification
+- **Client-side only**: All processing happens in the browser
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Performance
+
+- **60fps rendering**: Smooth animation loop
+- **30fps tracking**: Efficient hand detection
+- **No React per-frame updates**: Uses refs to avoid rerenders
+- **Optimized filtering**: One Euro Filter for responsive smoothing
+
+## Browser Requirements
+
+- Modern browser with WebRTC support
+- Camera access permissions
+- Recommended: Chrome, Edge, or Safari (latest versions)
+
+## License
+
+Private project - All rights reserved

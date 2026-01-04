@@ -1,66 +1,151 @@
-import { useState } from 'react';
-import { TrackingLayer } from './features/tracking/TrackingLayer';
+import { useState, useCallback } from 'react';
+import { TrackingLayer, type TrackingFrameData } from './features/tracking/TrackingLayer';
 import { FreePaintMode } from './features/modes/FreePaintMode';
 import { freePaintLogic } from './features/modes/freePaintLogic';
 import { PreWritingMode } from './features/modes/PreWritingMode';
 import { preWritingLogic } from './features/modes/preWriting/preWritingLogic';
+import { BubbleCalibration } from './features/modes/calibration/BubbleCalibration';
+import { bubbleCalibrationLogic } from './features/modes/calibration/bubbleCalibrationLogic';
+import { SortAndPlaceMode } from './features/modes/sortAndPlace/SortAndPlaceMode';
+import { sortAndPlaceLogic } from './features/modes/sortAndPlace/sortAndPlaceLogic';
 import { WaveToWake } from './features/onboarding/WaveToWake';
+import { ModeSelectionMenu, type GameMode } from './features/menu/ModeSelectionMenu';
+import { AdultGate } from './features/safety/AdultGate';
 import { MagicCursor } from './components/MagicCursor';
-import { drawingEngine } from './core/drawingEngine';
+import { drawingEngine, PenState } from './core/drawingEngine';
 import './App.css';
 
 type AppState = 'onboarding' | 'menu' | 'game';
-type GameMode = 'free' | 'pre-writing';
+
+// Debug: Allow URL params to skip to specific screens
+const getInitialState = (): { appState: AppState; gameMode: GameMode } => {
+  const params = new URLSearchParams(window.location.search);
+  const screen = params.get('screen');
+  const mode = params.get('mode') as GameMode;
+
+  if (screen === 'menu') return { appState: 'menu', gameMode: 'free' };
+  if (screen === 'game') {
+    return {
+      appState: 'game',
+      gameMode: (mode === 'free' || mode === 'pre-writing' || mode === 'calibration' || mode === 'sort-and-place') ? mode : 'free'
+    };
+  }
+  return { appState: 'onboarding', gameMode: 'free' };
+};
 
 function App() {
-  const [appState, setAppState] = useState<AppState>('onboarding');
-  const [gameMode, setGameMode] = useState<GameMode>('free');
+  // Version marker - v2.0 with all updates
+  if (typeof window !== 'undefined') {
+    (window as any).__DRAW_IN_AIR_VERSION__ = '2.0.0-updated';
+    console.log('🎨 Draw in the Air v2.0.0 - Updated version loaded');
+  }
 
-  const handleClear = () => {
+  const [appState, setAppState] = useState<AppState>(() => getInitialState().appState);
+  const [gameMode, setGameMode] = useState<GameMode>(() => getInitialState().gameMode);
+
+  const handleWake = useCallback(() => {
+    setAppState('menu');
+  }, []);
+
+  const handleModeSelect = useCallback((mode: GameMode) => {
+    setGameMode(mode);
+    setAppState('game');
+    // Clear any previous drawings when starting fresh
+    if (mode === 'free') {
+      drawingEngine.clear();
+    }
+  }, []);
+
+  const handleExitToMenu = useCallback(() => {
+    setAppState('menu');
     drawingEngine.clear();
+  }, []);
+
+  const handleCalibrationComplete = useCallback(() => {
+    // After calibration, go to menu to pick another mode
+    setAppState('menu');
+  }, []);
+
+  // Determine which logic to use based on current mode
+  const getActiveLogic = () => {
+    if (appState !== 'game') return undefined;
+
+    switch (gameMode) {
+      case 'free':
+        return freePaintLogic;
+      case 'pre-writing':
+        return preWritingLogic;
+      case 'calibration':
+        return bubbleCalibrationLogic;
+      case 'sort-and-place':
+        return sortAndPlaceLogic;
+      default:
+        return undefined;
+    }
   };
 
-  const activeLogic = appState === 'game'
-    ? (gameMode === 'free' ? freePaintLogic : preWritingLogic)
-    : undefined;
+  const activeLogic = getActiveLogic();
 
   return (
     <div className="App">
       <TrackingLayer onFrame={activeLogic}>
-        {(results: import('@mediapipe/tasks-vision').HandLandmarkerResult | null) => {
+        {(frameData: TrackingFrameData) => {
+          const { results, indexTip, confidence } = frameData;
           const hasHand = results && results.landmarks && results.landmarks.length > 0;
-          const tip = hasHand ? results.landmarks[0][8] : { x: 0.5, y: 0.5 };
+
+          // Get pen state for cursor feedback
+          const penState = gameMode === 'free' && appState === 'game'
+            ? drawingEngine.getPenState()
+            : PenState.UP;
 
           return (
             <>
-              {/* Visuals - cursor only shows if hand detected */}
-              <MagicCursor x={tip.x} y={tip.y} active={!!hasHand} />
+              {/* Magic Cursor - shows pen state */}
+              <MagicCursor
+                x={indexTip?.x ?? 0.5}
+                y={indexTip?.y ?? 0.5}
+                active={!!hasHand}
+                penDown={penState === PenState.DOWN}
+                confidence={confidence}
+              />
 
               {/* State: Onboarding */}
               {appState === 'onboarding' && (
                 <WaveToWake
                   trackingResults={results}
-                  onWake={() => setAppState('game')} // Skip menu for MVP v2 step 1
+                  onWake={handleWake}
+                />
+              )}
+
+              {/* State: Menu */}
+              {appState === 'menu' && (
+                <ModeSelectionMenu
+                  onSelect={handleModeSelect}
+                  trackingResults={results}
                 />
               )}
 
               {/* State: Game */}
               {appState === 'game' && (
                 <>
-                  {/* Mode UI */}
-                  {gameMode === 'free' ? <FreePaintMode /> : <PreWritingMode />}
+                  {/* Adult Gate - always visible in game mode */}
+                  <AdultGate onExit={handleExitToMenu} />
 
-                  {/* Top Controls */}
-                  <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 100, display: 'flex', gap: '10px' }}>
-                    <button onClick={() => setGameMode('free')} className={gameMode === 'free' ? '' : 'inactive'}>Free Paint</button>
-                    <button onClick={() => setGameMode('pre-writing')} className={gameMode === 'pre-writing' ? '' : 'inactive'}>Tracing</button>
-                  </div>
+                  {/* Mode-specific UI */}
+                  {gameMode === 'calibration' && (
+                    <BubbleCalibration onComplete={handleCalibrationComplete} />
+                  )}
 
-                  {/* Free Paint Extras */}
                   {gameMode === 'free' && (
-                    <div style={{ position: 'absolute', top: 120, left: 20, zIndex: 10 }}>
-                      <button onClick={handleClear}>Clear Canvas</button>
-                    </div>
+                    <FreePaintMode />
+                  )}
+
+                  {gameMode === 'pre-writing' && (
+                    <PreWritingMode />
+                  )}
+
+                  {gameMode === 'sort-and-place' && (
+                    <SortAndPlaceMode />
                   )}
                 </>
               )}

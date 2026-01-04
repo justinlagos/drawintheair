@@ -1,0 +1,141 @@
+/**
+ * Magic Cursor Styles
+ * 
+ * Visual states:
+ * - pen-up: Hollow ring, ready to draw
+ * - pen-down: Solid dot, actively drawing
+ */
+
+.magic-cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 60px;
+    height: 60px;
+    margin-left: -30px;
+    margin-top: -30px;
+    pointer-events: none;
+    z-index: 9999;
+    transition: opacity 0.15s ease-out;
+}
+
+/* Outer ring */
+.cursor-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 50px;
+    height: 50px;
+    margin-left: -25px;
+    margin-top: -25px;
+    border-radius: 50%;
+    border: 3px solid var(--secondary, #00FFFF);
+    box-shadow: 
+        0 0 15px var(--secondary, #00FFFF),
+        inset 0 0 10px rgba(0, 255, 255, 0.2);
+    transition: all 0.15s ease-out;
+}
+
+.pen-down .cursor-ring {
+    border-color: var(--primary, #FF00FF);
+    box-shadow: 
+        0 0 20px var(--primary, #FF00FF),
+        inset 0 0 15px rgba(255, 0, 255, 0.3);
+    transform: scale(0.9);
+}
+
+/* Inner dot */
+.cursor-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    margin-left: -5px;
+    margin-top: -5px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 0 10px white;
+    opacity: 0.5;
+    transition: all 0.15s ease-out;
+}
+
+.cursor-dot.active {
+    width: 20px;
+    height: 20px;
+    margin-left: -10px;
+    margin-top: -10px;
+    background: var(--primary, #FF00FF);
+    box-shadow: 0 0 20px var(--primary, #FF00FF);
+    opacity: 1;
+}
+
+/* Decorative rotating ring */
+.cursor-decoration {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 56px;
+    height: 56px;
+    margin-left: -28px;
+    margin-top: -28px;
+    border-radius: 50%;
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    animation: spin 8s linear infinite;
+}
+
+.pen-down .cursor-decoration {
+    border-color: rgba(255, 0, 255, 0.5);
+    animation: spin 2s linear infinite;
+}
+
+/* Trail effect when drawing */
+.cursor-trail {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 30px;
+    height: 30px;
+    margin-left: -15px;
+    margin-top: -15px;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        var(--primary, #FF00FF) 0%,
+        transparent 70%
+    );
+    opacity: 0.5;
+    animation: pulse 0.5s ease-out infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+/* High confidence state */
+.magic-cursor.high-confidence .cursor-ring {
+    border-width: 4px;
+}
+
+/* Low confidence state */
+.magic-cursor.low-confidence .cursor-ring {
+    border-style: dashed;
+    opacity: 0.6;
+}
+

@@ -1,55 +1,66 @@
-import { useRef, useEffect } from 'react';
+/**
+ * Magic Cursor Component
+ * 
+ * Visual feedback for finger position and pen state.
+ * - Shows pen up (ready to draw) vs pen down (drawing) states
+ * - Fades based on tracking confidence
+ * - Smooth animations
+ */
+
+import { useRef, useEffect, useState } from 'react';
+import './MagicCursor.css';
 
 interface MagicCursorProps {
     x: number;
     y: number;
     active: boolean;
+    penDown?: boolean;
+    confidence?: number;
 }
 
-export const MagicCursor = ({ x, y, active }: MagicCursorProps) => {
+export const MagicCursor = ({
+    x,
+    y,
+    active,
+    penDown = false,
+    confidence = 1
+}: MagicCursorProps) => {
     const cursorRef = useRef<HTMLDivElement>(null);
+    const [smoothX, setSmoothX] = useState(x);
+    const [smoothY, setSmoothY] = useState(y);
 
+    // Smooth cursor movement for visual feedback
     useEffect(() => {
-        if (cursorRef.current) {
-            // Smooth follow with CSS transition or JS lerp?
-            // Using JS direct update for responsiveness, CSS for "trail"
-            cursorRef.current.style.transform = `translate(${x * window.innerWidth}px, ${y * window.innerHeight}px)`;
-            cursorRef.current.style.opacity = active ? '1' : '0';
-        }
-    }, [x, y, active]);
+        const smoothing = 0.3;
+        setSmoothX(prev => prev + (x - prev) * smoothing);
+        setSmoothY(prev => prev + (y - prev) * smoothing);
+    }, [x, y]);
+
+    // Calculate opacity based on active state and confidence
+    const opacity = active ? Math.max(0.3, confidence) : 0;
 
     return (
         <div
             ref={cursorRef}
+            className={`magic-cursor ${penDown ? 'pen-down' : 'pen-up'}`}
             style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                border: '3px solid var(--secondary)',
-                boxShadow: '0 0 15px var(--secondary), inset 0 0 10px var(--secondary)',
-                pointerEvents: 'none',
-                zIndex: 9999,
-                transition: 'opacity 0.2s ease',
-                transform: 'translate(-50%, -50%)',
-                marginLeft: '-20px',
-                marginTop: '-20px',
+                transform: `translate(${smoothX * window.innerWidth}px, ${smoothY * window.innerHeight}px)`,
+                opacity
             }}
         >
-            {/* Inner spark */}
-            <div style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                width: '10px',
-                height: '10px',
-                background: 'white',
-                borderRadius: '50%',
-                transform: 'translate(-50%, -50%)',
-                boxShadow: '0 0 10px white'
-            }} />
+            {/* Outer ring - shows pen state */}
+            <div className="cursor-ring" />
+
+            {/* Inner dot - solid when drawing */}
+            <div className={`cursor-dot ${penDown ? 'active' : ''}`} />
+
+            {/* Decorative rotating ring */}
+            <div className="cursor-decoration" />
+
+            {/* Trail effect when drawing */}
+            {penDown && (
+                <div className="cursor-trail" />
+            )}
         </div>
     );
 };
