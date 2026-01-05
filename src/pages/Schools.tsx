@@ -124,27 +124,57 @@ export const Schools: React.FC = () => {
           <h2 className="landing-section-title">Modes overview</h2>
           <div className="landing-modes-overview">
             <div className="landing-mode-overview-item">
-              <img src="https://i.postimg.cc/90Yn6Z21/Free_Paint.png" alt="Free Paint" className="landing-mode-overview-img" />
+              <img 
+                src="https://i.postimg.cc/90Yn6Z21/Free_Paint.png" 
+                srcSet="https://i.postimg.cc/90Yn6Z21/Free_Paint.png 1x, https://i.postimg.cc/90Yn6Z21/Free_Paint.png 2x"
+                alt="Free Paint" 
+                className="landing-mode-overview-img"
+                decoding="async"
+              />
               <h3>Free Paint</h3>
               <p>Creative drawing, control, confidence</p>
             </div>
             <div className="landing-mode-overview-item">
-              <img src="https://i.postimg.cc/rsNPBxT9/Tracing.png" alt="Tracing" className="landing-mode-overview-img" />
+              <img 
+                src="https://i.postimg.cc/rsNPBxT9/Tracing.png" 
+                srcSet="https://i.postimg.cc/rsNPBxT9/Tracing.png 1x, https://i.postimg.cc/rsNPBxT9/Tracing.png 2x"
+                alt="Tracing" 
+                className="landing-mode-overview-img"
+                decoding="async"
+              />
               <h3>Tracing A to Z</h3>
               <p>Letter formation, fine motor, early writing</p>
             </div>
             <div className="landing-mode-overview-item">
-              <img src="https://i.postimg.cc/RhBYpGkh/Balloons.png" alt="Bubble Pop" className="landing-mode-overview-img" />
+              <img 
+                src="https://i.postimg.cc/RhBYpGkh/Balloons.png" 
+                srcSet="https://i.postimg.cc/RhBYpGkh/Balloons.png 1x, https://i.postimg.cc/RhBYpGkh/Balloons.png 2x"
+                alt="Bubble Pop" 
+                className="landing-mode-overview-img"
+                decoding="async"
+              />
               <h3>Bubble Pop</h3>
               <p>Attention, reaction, hand control</p>
             </div>
             <div className="landing-mode-overview-item">
-              <img src="https://i.postimg.cc/ZnSQsjGV/sort_and_place.png" alt="Sort and Place" className="landing-mode-overview-img" />
+              <img 
+                src="https://i.postimg.cc/ZnSQsjGV/sort_and_place.png" 
+                srcSet="https://i.postimg.cc/ZnSQsjGV/sort_and_place.png 1x, https://i.postimg.cc/ZnSQsjGV/sort_and_place.png 2x"
+                alt="Sort and Place" 
+                className="landing-mode-overview-img"
+                decoding="async"
+              />
               <h3>Sort and Place</h3>
               <p>Maths foundations, categorising, spatial awareness</p>
             </div>
             <div className="landing-mode-overview-item">
-              <img src="https://i.postimg.cc/WzwHBgVn/wordsearch.png" alt="Word Search" className="landing-mode-overview-img" />
+              <img 
+                src="https://i.postimg.cc/WzwHBgVn/wordsearch.png" 
+                srcSet="https://i.postimg.cc/WzwHBgVn/wordsearch.png 1x, https://i.postimg.cc/WzwHBgVn/wordsearch.png 2x"
+                alt="Word Search" 
+                className="landing-mode-overview-img"
+                decoding="async"
+              />
               <h3>Word Search</h3>
               <p>Early reading and pattern spotting (In development)</p>
             </div>

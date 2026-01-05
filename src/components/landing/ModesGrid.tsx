@@ -55,9 +55,12 @@ export const ModesGrid: React.FC = () => {
             <div className="landing-mode-screenshot">
               <img 
                 src={mode.screenshot}
+                srcSet={`${mode.screenshot} 1x, ${mode.screenshot} 2x`}
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 alt={mode.title}
                 className="landing-mode-img"
                 loading="lazy"
+                decoding="async"
               />
             </div>
             <h3 className="landing-mode-title">{mode.title}</h3>

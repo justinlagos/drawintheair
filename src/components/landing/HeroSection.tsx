@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { PhotoCard } from './PhotoCard';
 import './landing.css';
 
 interface HeroSectionProps {
@@ -95,6 +96,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGetSchoolPack }) => 
                 </div>
               </div>
               <div className="landing-monitor-base"></div>
+            </div>
+            {/* Subtle photo in background - low prominence */}
+            <div className="landing-hero-photo-background">
+              <PhotoCard 
+                url="https://i.postimg.cc/xcT770t6/a-kid.png"
+                alt="Child using Draw In The Air"
+                className="landing-hero-photo-subtle"
+              />
             </div>
           </div>
         </div>

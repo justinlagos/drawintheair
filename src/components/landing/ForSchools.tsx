@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './landing.css';
 
 interface ForSchoolsProps {
@@ -18,6 +18,8 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
   });
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const firstInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +97,69 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
     }
   };
 
+  const handleClose = () => {
+    if (!isSubmitting && !submitted) {
+      setShowForm(false);
+    }
+  };
+
+  // ESC key handler
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showForm && !isSubmitting && !submitted) {
+        handleClose();
+      }
+    };
+
+    if (showForm) {
+      document.addEventListener('keydown', handleEsc);
+      // Prevent body scroll
+      document.body.style.overflow = 'hidden';
+      // Focus first input
+      setTimeout(() => {
+        firstInputRef.current?.focus();
+      }, 100);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEsc);
+      document.body.style.overflow = '';
+    };
+  }, [showForm, isSubmitting, submitted]);
+
+  // Focus trap
+  useEffect(() => {
+    if (!showForm) return;
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+
+      const modal = modalRef.current;
+      if (!modal) return;
+
+      const focusableElements = modal.querySelectorAll<HTMLElement>(
+        'input, select, textarea, button, [tabindex]:not([tabindex="-1"])'
+      );
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement?.focus();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement?.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleTab);
+    return () => document.removeEventListener('keydown', handleTab);
+  }, [showForm]);
+
   return (
     <>
       <section id="schools" className="landing-section landing-schools">
@@ -134,9 +199,23 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
       </section>
 
       {showForm && (
-        <div className="landing-mapping-modal" onClick={() => setShowForm(false)}>
+        <div 
+          className="landing-mapping-modal" 
+          onClick={handleClose}
+          ref={modalRef}
+        >
           <div className="landing-mapping-content" onClick={(e) => e.stopPropagation()}>
-            <button className="landing-modal-close" onClick={() => setShowForm(false)}>×</button>
+            <button 
+              className="landing-modal-close" 
+              onClick={handleClose}
+              aria-label="Close modal"
+              disabled={isSubmitting || submitted}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
             <h3>Request School Pilot Pack</h3>
             {submitted ? (
               <div className="landing-pilot-success">
@@ -148,12 +227,14 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
             ) : (
               <form onSubmit={handleSubmit} className="landing-pilot-form">
                 <input
+                  ref={firstInputRef}
                   type="text"
                   className="landing-pilot-input"
                   placeholder="Contact name *"
                   value={formData.contactName}
                   onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
                   required
+                  aria-label="Contact name"
                 />
                 <input
                   type="email"
@@ -162,6 +243,7 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
+                  aria-label="Email"
                 />
                 <input
                   type="text"
@@ -170,6 +252,7 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
                   value={formData.schoolName}
                   onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
                   required
+                  aria-label="School name"
                 />
                 <input
                   type="text"
@@ -178,6 +261,7 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                   required
+                  aria-label="Your role"
                 />
                 <input
                   type="text"
@@ -185,11 +269,13 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
                   placeholder="Year group (optional)"
                   value={formData.yearGroup}
                   onChange={(e) => setFormData({ ...formData, yearGroup: e.target.value })}
+                  aria-label="Year group"
                 />
                 <select
                   className="landing-pilot-input"
                   value={formData.deviceType}
                   onChange={(e) => setFormData({ ...formData, deviceType: e.target.value })}
+                  aria-label="Device type"
                 >
                   <option value="">Device type (optional)</option>
                   <option value="laptop">Laptop</option>
@@ -202,18 +288,22 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
                   placeholder="SEND notes (optional)"
                   value={formData.sendNotes}
                   onChange={(e) => setFormData({ ...formData, sendNotes: e.target.value })}
-                  rows={3}
+                  rows={4}
+                  aria-label="SEND notes"
                 />
                 <button 
                   type="submit" 
                   className="landing-btn landing-btn-primary"
                   disabled={isSubmitting}
+                  style={{ marginTop: 'var(--spacing-sm)' }}
                 >
                   {isSubmitting ? 'Submitting...' : 'Submit Request'}
                 </button>
               </form>
             )}
-            <p className="landing-pilot-privacy">We only use this to contact you about school packs</p>
+            <p className="landing-pilot-privacy" style={{ marginTop: 'var(--spacing-md)', marginBottom: 0 }}>
+              We only use this to contact you about school packs. Your information is kept private.
+            </p>
           </div>
         </div>
       )}

@@ -32,7 +32,14 @@ export const Footer: React.FC = () => {
           </div>
         </div>
         <div className="landing-footer-section">
-          <h4 className="landing-footer-title">Trust</h4>
+          <h4 className="landing-footer-title">Schools</h4>
+          <div className="landing-footer-links">
+            <a href="/#schools" className="landing-footer-link" onClick={(e) => { e.preventDefault(); handleSchoolPackClick(); }}>Pilot Pack</a>
+            <a href="/schools" className="landing-footer-link">For Schools</a>
+          </div>
+        </div>
+        <div className="landing-footer-section">
+          <h4 className="landing-footer-title">Legal</h4>
           <div className="landing-footer-links">
             <a href="/privacy" className="landing-footer-link">Privacy</a>
             <a href="/terms" className="landing-footer-link">Terms</a>
