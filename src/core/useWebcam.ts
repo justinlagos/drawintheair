@@ -4,6 +4,7 @@ interface UseWebcamOptions {
     width?: number;
     height?: number;
     facingMode?: 'user' | 'environment';
+    autoStart?: boolean;
 }
 
 interface UseWebcamResult {
@@ -11,61 +12,60 @@ interface UseWebcamResult {
     stream: MediaStream | null;
     error: Error | null;
     isLoading: boolean;
+    requestAccess: () => Promise<void>;
 }
 
 export const useWebcam = ({
     width = 1280,
     height = 720,
     facingMode = 'user',
-}: UseWebcamOptions = {}): UseWebcamResult => {
+    autoStart = true,
+}: UseWebcamOptions & { autoStart?: boolean } = {}): UseWebcamResult => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [error, setError] = useState<Error | null>(null);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [isLoading, setIsLoading] = useState<boolean>(autoStart);
 
-    useEffect(() => {
-        let mounted = true;
+    const startWebcam = async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+            const constraints = {
+                video: {
+                    width: { ideal: width },
+                    height: { ideal: height },
+                    facingMode,
+                },
+            };
 
-        const startWebcam = async () => {
-            try {
-                setIsLoading(true);
-                const constraints = {
-                    video: {
-                        width: { ideal: width },
-                        height: { ideal: height },
-                        facingMode,
-                    },
-                };
+            const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
 
-                const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-
-                if (mounted) {
-                    setStream(mediaStream);
-                    if (videoRef.current) {
-                        videoRef.current.srcObject = mediaStream;
-                        videoRef.current.onloadedmetadata = () => {
-                            videoRef.current?.play();
-                        }
-                    }
-                    setIsLoading(false);
-                }
-            } catch (err) {
-                if (mounted) {
-                    setError(err instanceof Error ? err : new Error('Failed to access webcam'));
-                    setIsLoading(false);
+            setStream(mediaStream);
+            if (videoRef.current) {
+                videoRef.current.srcObject = mediaStream;
+                videoRef.current.onloadedmetadata = () => {
+                    videoRef.current?.play();
                 }
             }
-        };
+            setIsLoading(false);
+        } catch (err) {
+            setError(err instanceof Error ? err : new Error('Failed to access webcam'));
+            setIsLoading(false);
+        }
+    };
 
-        startWebcam();
+    useEffect(() => {
+        if (autoStart) {
+            startWebcam();
+        }
 
         return () => {
-            mounted = false;
             if (stream) {
                 stream.getTracks().forEach((track) => track.stop());
             }
         };
-    }, [width, height, facingMode]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [width, height, facingMode, autoStart]);
 
-    return { videoRef, stream, error, isLoading };
+    return { videoRef, stream, error, isLoading, requestAccess: startWebcam };
 };

@@ -1,35 +1,38 @@
 :root {
-  font-family: 'Outfit', 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* Typography - Rounded geometric sans-serif for headings, clean sans-serif for body */
+  font-family: 'Inter', 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  /* Vibrant Dark Mode Palette */
-  --bg-color: #0f0c29;
-  --bg-gradient: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+  /* Core Visual System - Dark Background Dominant */
+  --bg-color: #010C24;
+  --bg-gradient: #010C24;
 
-  /* Neon Accents */
-  --primary: #FF00FF;
-  /* Neon Magenta */
-  --secondary: #00FFFF;
-  /* Neon Cyan */
-  --tertiary: #FFFF00;
-  /* Neon Yellow */
-  --accent: #7B2CBF;
-  /* Deep Purple */
+  /* Primary Accent - Warm Yellow (Joy + Reward) */
+  --primary: #FFD93D;
+  --primary-accent: #FFD93D;
 
-  /* Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.1);
-  --glass-border: rgba(255, 255, 255, 0.2);
-  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-  --blur-amount: 12px;
+  /* Secondary Accent - Neon Magenta (Focus + Energy) */
+  --secondary: #DE3163;
+  --secondary-accent: #DE3163;
+
+  /* Support Tones - Cyan/Electric Blue for Interaction Hints */
+  --tertiary: #00E5FF;
+  --accent: #00E5FF;
+
+  /* Glassmorphism - Subtle depth panels */
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  --blur-amount: 20px;
 
   /* Typography */
   --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-secondary: rgba(255, 255, 255, 0.75);
 
   color-scheme: dark;
   color: var(--text-primary);
-  background: var(--bg-gradient);
+  background: var(--bg-color);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -39,17 +42,24 @@
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
   width: 100vw;
+  background: var(--bg-color);
+}
+
+body.app-mode {
+  display: flex;
+  place-items: center;
   overflow: hidden;
-  background: var(--bg-gradient);
 }
 
 #root {
   width: 100%;
+  min-height: 100vh;
+}
+
+#root.app-mode {
   height: 100%;
 }
 

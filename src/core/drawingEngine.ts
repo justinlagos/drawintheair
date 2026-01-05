@@ -1,10 +1,10 @@
 /**
- * Drawing Engine - Production Ready
+ * Drawing Engine - Production Ready with Ultra-Smooth Strokes
  * 
  * Features:
  * - One Euro Filter for low-latency smoothing
  * - Point resampling for consistent density
- * - Quadratic bezier curve rendering
+ * - Catmull-Rom spline rendering for ultra-smooth curves
  * - Proper stroke segmentation with jump protection
  * - Glow effects
  * - Variable width based on velocity
@@ -12,11 +12,11 @@
  */
 
 import { OneEuroFilter2D } from './filters/OneEuroFilter';
-import { PenStateManager, PenState, type PenState as PenStateType, type PenStateEvent } from './PenStateManager';
+import { PenStateManager, PenState, type PenStateEvent } from './PenStateManager';
 import { normalizedToCanvas, type NormalizedPoint } from './coordinateUtils';
 
 // Re-export PenState for use in other components
-export { PenState, type PenStateType };
+export { PenState } from './PenStateManager';
 
 export interface Point {
     x: number;
@@ -31,10 +31,10 @@ export interface Stroke {
     baseWidth: number;
 }
 
-// Filter config tuned for drawing (smooth but responsive)
+// Filter config tuned for ultra-smooth drawing
 const FILTER_CONFIG = {
-    minCutoff: 1.2,
-    beta: 0.02,
+    minCutoff: 0.8,    // Lower = more smoothing (was 1.2)
+    beta: 0.01,        // Lower = less responsive to speed (was 0.02)
     dCutoff: 1.0
 };
 
@@ -42,16 +42,16 @@ const FILTER_CONFIG = {
 const PEN_CONFIG = {
     minConfidence: 0.6,
     dropoutFrameThreshold: 3,
-    jumpThreshold: 0.08,
-    minMovement: 0.001,
+    jumpThreshold: 0.06,   // 6% of screen = teleport (tighter)
+    minMovement: 0.0008,   // Smaller threshold (was 0.001)
     debounceFrames: 2,
     pinchDownThreshold: 0.35,
     pinchUpThreshold: 0.45
 };
 
 // Resampling config
-const RESAMPLE_SPACING_PX = 3; // Pixels between resampled points
-const JUMP_THRESHOLD_PX = 60; // Maximum pixel jump before breaking stroke
+const RESAMPLE_SPACING_PX = 2; // Closer spacing for smoother lines (was 3)
+const JUMP_THRESHOLD_PX = 50; // Tighter jump detection (was 60)
 
 export class DrawingEngine {
     private strokes: Stroke[] = [];
@@ -189,16 +189,16 @@ export class DrawingEngine {
         );
         const velocity = distance / dt;
 
-        // Smooth velocity with rolling average
+        // Smooth velocity with rolling average (larger window)
         this.velocityHistory.push(velocity);
-        if (this.velocityHistory.length > 5) {
+        if (this.velocityHistory.length > 8) {
             this.velocityHistory.shift();
         }
         const avgVelocity = this.velocityHistory.reduce((a, b) => a + b, 0) / this.velocityHistory.length;
 
         // Convert velocity to pressure (slower = higher pressure = thicker)
-        const normalizedVelocity = Math.min(avgVelocity / 3, 1);
-        const pressure = Math.max(0.4, 1 - normalizedVelocity * 0.5);
+        const normalizedVelocity = Math.min(avgVelocity / 2.5, 1);
+        const pressure = Math.max(0.5, 1 - normalizedVelocity * 0.4);
 
         // Resample points for consistent density
         const resampledPoints = this.resamplePoints(
@@ -305,7 +305,7 @@ export class DrawingEngine {
     }
 
     /**
-     * Render all strokes to canvas
+     * Render all strokes to canvas using Catmull-Rom splines for ultra-smooth curves
      */
     render(ctx: CanvasRenderingContext2D, width: number, height: number): void {
         // Update canvas size for resampling
@@ -322,7 +322,7 @@ export class DrawingEngine {
             // Render glow layer
             this.renderGlow(ctx, stroke, width, height);
 
-            // Render main stroke with curves
+            // Render main stroke with smooth curves
             this.renderStroke(ctx, stroke, width, height);
         }
     }
@@ -337,9 +337,9 @@ export class DrawingEngine {
 
         // Multiple glow passes
         const glowLayers = [
-            { blur: 15, alpha: 0.1, widthMult: 2.5 },
-            { blur: 8, alpha: 0.15, widthMult: 1.8 },
-            { blur: 4, alpha: 0.2, widthMult: 1.3 },
+            { blur: 18, alpha: 0.12, widthMult: 2.8 },
+            { blur: 10, alpha: 0.18, widthMult: 2.0 },
+            { blur: 6, alpha: 0.25, widthMult: 1.5 },
         ];
 
         for (const layer of glowLayers) {
@@ -348,7 +348,7 @@ export class DrawingEngine {
             ctx.strokeStyle = stroke.color;
             ctx.lineWidth = stroke.baseWidth * layer.widthMult;
 
-            this.drawCurvePath(ctx, stroke.points, width, height);
+            this.drawSmoothPath(ctx, stroke.points, width, height);
             ctx.stroke();
         }
 
@@ -376,71 +376,66 @@ export class DrawingEngine {
             return;
         }
 
-        // Draw with variable width using segments
+        // Draw with Catmull-Rom splines for ultra-smooth curves
+        ctx.beginPath();
+        ctx.strokeStyle = stroke.color;
+        
+        // Move to first point
+        const p0 = points[0];
+        ctx.moveTo(p0.x * width, p0.y * height);
+
+        // Draw smooth curve through all points
         for (let i = 0; i < points.length - 1; i++) {
-            const p0 = i > 0 ? points[i - 1] : points[i];
             const p1 = points[i];
             const p2 = points[i + 1];
+            const p3 = i + 2 < points.length ? points[i + 2] : p2;
+            const p4 = i > 0 ? points[i - 1] : p1;
 
-            // Interpolated pressure
-            const pressure = (p1.pressure ?? 1) * 0.5 + (p2.pressure ?? 1) * 0.5;
-            const segmentWidth = stroke.baseWidth * pressure;
+            // Catmull-Rom spline control points
+            const t = 0.5; // Tension
+            const cp1x = p1.x * width + (p2.x * width - p4.x * width) * t;
+            const cp1y = p1.y * height + (p2.y * height - p4.y * height) * t;
+            const cp2x = p2.x * width - (p3.x * width - p1.x * width) * t;
+            const cp2y = p2.y * height - (p3.y * height - p1.y * height) * t;
 
-            ctx.beginPath();
-            ctx.strokeStyle = stroke.color;
-            ctx.lineWidth = segmentWidth;
-
-            // Calculate control points for smooth curve
-            if (i === 0) {
-                ctx.moveTo(p1.x * width, p1.y * height);
-            } else {
-                const midX = (p0.x + p1.x) / 2;
-                const midY = (p0.y + p1.y) / 2;
-                ctx.moveTo(midX * width, midY * height);
-            }
-
-            // Quadratic bezier to midpoint of next segment
-            const nextMidX = (p1.x + p2.x) / 2;
-            const nextMidY = (p1.y + p2.y) / 2;
-
-            ctx.quadraticCurveTo(
-                p1.x * width,
-                p1.y * height,
-                nextMidX * width,
-                nextMidY * height
+            // Use bezier curve with control points
+            ctx.bezierCurveTo(
+                cp1x, cp1y,
+                cp2x, cp2y,
+                p2.x * width, p2.y * height
             );
 
+            // Variable width based on pressure
+            const pressure = (p1.pressure ?? 1) * 0.4 + (p2.pressure ?? 1) * 0.6;
+            ctx.lineWidth = stroke.baseWidth * pressure;
             ctx.stroke();
+            
+            // Restart path for next segment with new width
+            ctx.beginPath();
+            ctx.moveTo(p2.x * width, p2.y * height);
         }
 
-        // Draw final segment to last point
+        // Final segment
         if (points.length >= 2) {
-            const lastIdx = points.length - 1;
-            const p1 = points[lastIdx - 1];
-            const p2 = points[lastIdx];
-
-            ctx.beginPath();
-            ctx.strokeStyle = stroke.color;
-            ctx.lineWidth = stroke.baseWidth * (p2.pressure ?? 1);
-
-            const midX = (p1.x + p2.x) / 2;
-            const midY = (p1.y + p2.y) / 2;
-            ctx.moveTo(midX * width, midY * height);
-            ctx.lineTo(p2.x * width, p2.y * height);
+            const last = points[points.length - 1];
+            ctx.lineWidth = stroke.baseWidth * (last.pressure ?? 1);
             ctx.stroke();
         }
 
         // Add subtle highlight
         ctx.save();
-        ctx.globalAlpha = 0.25;
+        ctx.globalAlpha = 0.3;
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = Math.max(1, stroke.baseWidth * 0.15);
-        this.drawCurvePath(ctx, points, width, height, -1, -1);
+        ctx.lineWidth = Math.max(1, stroke.baseWidth * 0.2);
+        this.drawSmoothPath(ctx, points, width, height, -1, -1);
         ctx.stroke();
         ctx.restore();
     }
 
-    private drawCurvePath(
+    /**
+     * Draw smooth path using quadratic curves
+     */
+    private drawSmoothPath(
         ctx: CanvasRenderingContext2D,
         points: Point[],
         width: number,

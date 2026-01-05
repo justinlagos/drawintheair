@@ -1,7 +1,18 @@
+/**
+ * Mode Selection Menu - Compact, No-Scroll Design
+ * 
+ * All modes visible on screen at once with:
+ * - Proper margins from edges
+ * - Compact card sizes
+ * - Clean, consistent UI/UX
+ * - No scrolling required
+ * - Balanced layout
+ */
+
 import { useState, useEffect, useRef } from 'react';
 import { type HandLandmarkerResult } from '@mediapipe/tasks-vision';
 
-export type GameMode = 'calibration' | 'free' | 'pre-writing' | 'sort-and-place';
+export type GameMode = 'calibration' | 'free' | 'pre-writing' | 'sort-and-place' | 'word-search';
 
 interface ModeOption {
     id: GameMode;
@@ -9,36 +20,55 @@ interface ModeOption {
     description: string;
     icon: string;
     gradient: string;
+    accentColor: string;
+    category: 'warm-up' | 'creative' | 'learning' | 'puzzle';
 }
 
 const MODES: ModeOption[] = [
     {
         id: 'calibration',
         title: 'Bubble Pop',
-        description: 'Warm up by popping bubbles',
+        description: 'Warm up',
         icon: '🫧',
-        gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+        gradient: 'linear-gradient(135deg, #00E5FF20 0%, #00E5FF30 50%, #00E5FF20 100%)',
+        accentColor: '#00E5FF',
+        category: 'warm-up'
     },
     {
         id: 'free',
         title: 'Free Paint',
-        description: 'Draw anything you imagine',
+        description: 'Create',
         icon: '🎨',
-        gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+        gradient: 'linear-gradient(135deg, #DE316320 0%, #DE316330 50%, #DE316320 100%)',
+        accentColor: '#DE3163',
+        category: 'creative'
     },
     {
         id: 'pre-writing',
         title: 'Tracing',
-        description: 'Follow the lines to learn',
+        description: 'Learn',
         icon: '✏️',
-        gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
+        gradient: 'linear-gradient(135deg, #FFD93D20 0%, #FFD93D30 50%, #FFD93D20 100%)',
+        accentColor: '#FFD93D',
+        category: 'learning'
     },
     {
         id: 'sort-and-place',
         title: 'Sort and Place',
-        description: 'Grab and sort objects',
+        description: 'Think',
         icon: '🗂️',
-        gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
+        gradient: 'linear-gradient(135deg, #00E5FF20 0%, #00E5FF30 50%, #00E5FF20 100%)',
+        accentColor: '#00E5FF',
+        category: 'puzzle'
+    },
+    {
+        id: 'word-search',
+        title: 'Word Search',
+        description: 'Explore',
+        icon: '🔍',
+        gradient: 'linear-gradient(135deg, #DE316320 0%, #DE316330 50%, #DE316320 100%)',
+        accentColor: '#DE3163',
+        category: 'puzzle'
     }
 ];
 
@@ -47,12 +77,188 @@ interface ModeSelectionMenuProps {
     trackingResults: HandLandmarkerResult | null;
 }
 
+interface ModeCardProps {
+    mode: ModeOption;
+    isHovered: boolean;
+    isSelected: boolean;
+    hoverProgress: number;
+    onSelect: (mode: GameMode) => void;
+    cardRefs: React.MutableRefObject<Map<GameMode, DOMRect>>;
+}
+
+const ModeCard = ({ mode, isHovered, isSelected, hoverProgress, onSelect, cardRefs }: ModeCardProps) => {
+    return (
+        <div
+            id={`mode-card-${mode.id}`}
+            onClick={() => onSelect(mode.id)}
+            style={{
+                position: 'relative',
+                width: '100%',
+                height: '100%',
+                padding: '2px',
+                borderRadius: '20px',
+                background: mode.gradient,
+                cursor: 'pointer',
+                transform: `scale(${isSelected ? 0.96 : isHovered ? 1.03 : 1}) translateY(${isHovered ? -8 : 0}px)`,
+                transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                boxShadow: isHovered
+                    ? `0 16px 48px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1), 0 0 40px ${mode.accentColor}30`
+                    : '0 8px 24px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05)',
+                overflow: 'hidden'
+            }}
+        >
+            {/* Progress ring */}
+            {isHovered && (
+                <svg
+                    style={{
+                        position: 'absolute',
+                        top: '-3px',
+                        left: '-3px',
+                        right: '-3px',
+                        bottom: '-3px',
+                        width: 'calc(100% + 6px)',
+                        height: 'calc(100% + 6px)',
+                        pointerEvents: 'none',
+                        zIndex: 2,
+                        transform: 'rotate(-90deg)'
+                    }}
+                >
+                    <circle
+                        cx="50%"
+                        cy="50%"
+                        r="calc(50% - 1.5px)"
+                        fill="none"
+                        stroke={mode.accentColor}
+                        strokeWidth="2.5"
+                        strokeDasharray={`${hoverProgress * 800} 800`}
+                        strokeLinecap="round"
+                        style={{ 
+                            transition: 'stroke-dasharray 0.1s linear',
+                            filter: `drop-shadow(0 0 6px ${mode.accentColor})`
+                        }}
+                    />
+                </svg>
+            )}
+
+            {/* Inner card content */}
+            <div style={{
+                width: '100%',
+                height: '100%',
+                padding: '24px 28px',
+                borderRadius: '18px',
+                background: 'rgba(1, 12, 36, 0.9)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                position: 'relative',
+                zIndex: 1
+            }}>
+                {/* Top section: Icon and Category */}
+                <div>
+                    {/* Icon */}
+                    <div style={{
+                        fontSize: '3.5rem',
+                        marginBottom: '12px',
+                        filter: isHovered 
+                            ? `drop-shadow(0 0 16px ${mode.accentColor}) drop-shadow(0 0 32px ${mode.accentColor}50)` 
+                            : 'drop-shadow(0 2px 8px rgba(0,0,0,0.4))',
+                        transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        transform: isHovered ? 'scale(1.15) rotate(5deg)' : 'scale(1)',
+                        lineHeight: '1',
+                        display: 'inline-block'
+                    }}>
+                        {mode.icon}
+                    </div>
+
+                    {/* Category badge */}
+                    <div style={{
+                        display: 'inline-block',
+                        padding: '4px 12px',
+                        borderRadius: '12px',
+                        background: `linear-gradient(135deg, ${mode.accentColor}20, ${mode.accentColor}10)`,
+                        border: `1px solid ${mode.accentColor}25`,
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        color: mode.accentColor,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                    }}>
+                        {mode.category.replace('-', ' ')}
+                    </div>
+                </div>
+
+                {/* Bottom section: Title and Description */}
+                <div>
+                    {/* Title */}
+                    <h3 style={{
+                        margin: '0 0 8px',
+                        fontSize: '1.5rem',
+                        fontWeight: 800,
+                        color: '#ffffff',
+                        textShadow: '0 2px 8px rgba(0,0,0,0.6)',
+                        lineHeight: '1.2',
+                        letterSpacing: '-0.3px'
+                    }}>
+                        {mode.title}
+                    </h3>
+
+                    {/* Description */}
+                    <p style={{
+                        margin: 0,
+                        fontSize: '0.95rem',
+                        color: 'rgba(255,255,255,0.75)',
+                        lineHeight: '1.5',
+                        fontWeight: 400
+                    }}>
+                        {mode.description}
+                    </p>
+
+                    {/* Hover instruction */}
+                    {isHovered && (
+                        <div style={{
+                            marginTop: '16px',
+                            padding: '8px 16px',
+                            background: `linear-gradient(135deg, ${mode.accentColor}20, ${mode.accentColor}10)`,
+                            borderRadius: '12px',
+                            fontSize: '0.85rem',
+                            color: mode.accentColor,
+                            textAlign: 'center',
+                            fontWeight: 600,
+                            border: `1px solid ${mode.accentColor}25`,
+                            animation: 'fadeInUp 0.2s ease-out',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px'
+                        }}>
+                            <span>👆</span>
+                            <span>Hold to select</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMenuProps) => {
     const [hoveredMode, setHoveredMode] = useState<GameMode | null>(null);
     const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
     const [hoverProgress, setHoverProgress] = useState(0);
     const hoverStartTime = useRef<number | null>(null);
     const cardRefs = useRef<Map<GameMode, DOMRect>>(new Map());
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+    // Detect mobile
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 1024);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Update card positions
     useEffect(() => {
@@ -104,7 +310,7 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
 
         if (foundHover && hoverStartTime.current) {
             const elapsed = Date.now() - hoverStartTime.current;
-            const progress = Math.min(elapsed / 1500, 1); // 1.5 seconds to select
+            const progress = Math.min(elapsed / 1500, 1);
             setHoverProgress(progress);
 
             if (progress >= 1 && !selectedMode) {
@@ -123,161 +329,168 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 50,
-            background: 'rgba(15, 12, 41, 0.7)',
-            backdropFilter: 'blur(8px)'
+            background: '#010C24',
+            overflow: 'hidden',
+            padding: '32px',
+            boxSizing: 'border-box',
+            height: '100vh'
         }}>
-            {/* Title */}
-            <h1 style={{
-                fontSize: '3.5rem',
-                marginBottom: '50px',
-                background: 'linear-gradient(135deg, #00FFFF, #FF00FF, #FFFF00)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                textShadow: '0 0 30px rgba(255,0,255,0.3)',
-                animation: 'float 3s ease-in-out infinite'
-            }}>
-                Choose Your Adventure
-            </h1>
-
-            {/* Mode Cards */}
+            {/* Animated background elements */}
             <div style={{
+                position: 'fixed',
+                inset: 0,
+                background: `
+                    radial-gradient(circle at 20% 30%, rgba(102, 126, 234, 0.12) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 70%, rgba(245, 87, 108, 0.12) 0%, transparent 50%),
+                    radial-gradient(circle at 50% 50%, rgba(0, 242, 254, 0.06) 0%, transparent 70%)
+                `,
+                pointerEvents: 'none',
+                zIndex: 0,
+                animation: 'backgroundFloat 20s ease-in-out infinite'
+            }} />
+
+            {/* Main Container - Centered with proper margins */}
+            <div style={{
+                width: '100%',
+                maxWidth: '1400px',
+                height: '100%',
                 display: 'flex',
-                gap: '30px',
-                flexWrap: 'wrap',
-                justifyContent: 'center',
-                maxWidth: '900px'
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                gap: '24px',
+                position: 'relative',
+                zIndex: 1
             }}>
-                {MODES.map((mode) => {
-                    const isHovered = hoveredMode === mode.id;
-                    const isSelected = selectedMode === mode.id;
+                {/* Header Section - Compact */}
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px',
+                    flexShrink: 0
+                }}>
+                    {/* Logo */}
+                    <div style={{
+                        fontSize: isMobile ? '1.8rem' : '2.2rem',
+                        fontWeight: 800,
+                        color: '#FFD93D',
+                        letterSpacing: '1.5px',
+                        textShadow: '0 0 20px rgba(255, 217, 61, 0.3)'
+                    }}>
+                        DRAW IN THE AIR
+                    </div>
 
-                    return (
-                        <div
-                            key={mode.id}
-                            id={`mode-card-${mode.id}`}
-                            onClick={() => onSelect(mode.id)}
-                            style={{
-                                position: 'relative',
-                                width: '240px',
-                                padding: '30px',
-                                borderRadius: '24px',
-                                background: 'rgba(255,255,255,0.08)',
-                                backdropFilter: 'blur(20px)',
-                                border: `2px solid ${isHovered ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)'}`,
-                                cursor: 'pointer',
-                                transform: `scale(${isSelected ? 0.95 : isHovered ? 1.05 : 1}) translateY(${isHovered ? -10 : 0}px)`,
-                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                boxShadow: isHovered
-                                    ? `0 20px 60px rgba(0,0,0,0.4), 0 0 40px ${mode.gradient.includes('667eea') ? '#667eea44' : mode.gradient.includes('f093fb') ? '#f093fb44' : '#4facfe44'}`
-                                    : '0 10px 40px rgba(0,0,0,0.2)',
-                                overflow: 'hidden'
-                            }}
-                        >
-                            {/* Hover progress ring */}
-                            {isHovered && (
-                                <svg
-                                    style={{
-                                        position: 'absolute',
-                                        top: -4,
-                                        left: -4,
-                                        right: -4,
-                                        bottom: -4,
-                                        width: 'calc(100% + 8px)',
-                                        height: 'calc(100% + 8px)',
-                                        pointerEvents: 'none'
-                                    }}
-                                >
-                                    <rect
-                                        x="2"
-                                        y="2"
-                                        width="calc(100% - 4px)"
-                                        height="calc(100% - 4px)"
-                                        rx="26"
-                                        ry="26"
-                                        fill="none"
-                                        stroke="url(#progress-gradient)"
-                                        strokeWidth="4"
-                                        strokeDasharray={`${hoverProgress * 600} 600`}
-                                        style={{ transition: 'stroke-dasharray 0.1s linear' }}
-                                    />
-                                    <defs>
-                                        <linearGradient id="progress-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" stopColor="#00FFFF" />
-                                            <stop offset="100%" stopColor="#FF00FF" />
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-                            )}
+                    {/* Subtitle */}
+                    <div style={{
+                        fontSize: isMobile ? '0.9rem' : '1rem',
+                        color: 'rgba(255, 255, 255, 0.65)',
+                        fontWeight: 400,
+                        textAlign: 'center'
+                    }}>
+                        Choose your adventure
+                    </div>
+                </div>
 
-                            {/* Gradient overlay */}
-                            <div style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                height: '4px',
-                                background: mode.gradient,
-                                opacity: isHovered ? 1 : 0.6,
-                                transition: 'opacity 0.3s'
-                            }} />
+                {/* Mode Cards Grid - 2-2-1 layout, all visible */}
+                <div style={{
+                    flex: '1 1 auto',
+                    display: 'grid',
+                    gridTemplateColumns: isMobile 
+                        ? '1fr' 
+                        : 'repeat(2, 1fr)',
+                    gridTemplateRows: isMobile 
+                        ? 'repeat(5, minmax(0, 1fr))'
+                        : 'repeat(3, minmax(0, 1fr))',
+                    gap: '20px',
+                    alignItems: 'stretch',
+                    minHeight: 0,
+                    maxHeight: '100%',
+                    overflow: 'hidden'
+                }}>
+                    {MODES.map((mode, index) => {
+                        const isHovered = hoveredMode === mode.id;
+                        const isSelected = selectedMode === mode.id;
+                        
+                        // Last card spans full width on desktop
+                        const gridColumn = !isMobile && index === MODES.length - 1 
+                            ? '1 / -1' 
+                            : 'auto';
+                        const gridRow = !isMobile && index === MODES.length - 1 ? '3' : 'auto';
 
-                            {/* Icon */}
-                            <div style={{
-                                fontSize: '4rem',
-                                marginBottom: '16px',
-                                filter: isHovered ? 'drop-shadow(0 0 20px white)' : 'none',
-                                transition: 'filter 0.3s',
-                                transform: isHovered ? 'scale(1.1)' : 'scale(1)'
-                            }}>
-                                {mode.icon}
+                        return (
+                            <div
+                                key={mode.id}
+                                style={{
+                                    gridColumn,
+                                    gridRow,
+                                    minHeight: 0,
+                                    display: 'flex',
+                                    maxWidth: !isMobile && index === MODES.length - 1 ? '600px' : 'none',
+                                    justifySelf: !isMobile && index === MODES.length - 1 ? 'center' : 'stretch'
+                                }}
+                            >
+                                <ModeCard
+                                    mode={mode}
+                                    isHovered={isHovered}
+                                    isSelected={isSelected}
+                                    hoverProgress={hoverProgress}
+                                    onSelect={onSelect}
+                                    cardRefs={cardRefs}
+                                />
                             </div>
+                        );
+                    })}
+                </div>
 
-                            {/* Title */}
-                            <h3 style={{
-                                margin: '0 0 8px',
-                                fontSize: '1.5rem',
-                                fontWeight: 700,
-                                color: 'white'
-                            }}>
-                                {mode.title}
-                            </h3>
-
-                            {/* Description */}
-                            <p style={{
-                                margin: 0,
-                                fontSize: '0.95rem',
-                                color: 'rgba(255,255,255,0.7)'
-                            }}>
-                                {mode.description}
-                            </p>
-
-                            {/* Hover instruction */}
-                            {isHovered && (
-                                <div style={{
-                                    marginTop: '16px',
-                                    padding: '8px 16px',
-                                    background: 'rgba(255,255,255,0.1)',
-                                    borderRadius: '20px',
-                                    fontSize: '0.85rem',
-                                    color: '#00FFFF'
-                                }}>
-                                    Hold to select...
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
+                {/* Footer Instruction - Compact */}
+                <div style={{
+                    padding: '14px 24px',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    backdropFilter: 'blur(20px)',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    flexShrink: 0
+                }}>
+                    <span style={{ fontSize: '1.3rem' }}>👆</span>
+                    <div style={{
+                        fontSize: '0.9rem',
+                        fontWeight: 500,
+                        color: 'rgba(255, 255, 255, 0.8)'
+                    }}>
+                        Point and hold to select
+                    </div>
+                </div>
             </div>
 
-            {/* Instruction */}
-            <p style={{
-                marginTop: '50px',
-                color: 'rgba(255,255,255,0.6)',
-                fontSize: '1.1rem'
-            }}>
-                👆 Point at a card and hold to select
-            </p>
+            {/* CSS Animations */}
+            <style>{`
+                @keyframes fadeInUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(8px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                
+                @keyframes backgroundFloat {
+                    0%, 100% {
+                        transform: translate(0, 0) scale(1);
+                    }
+                    33% {
+                        transform: translate(15px, -15px) scale(1.03);
+                    }
+                    66% {
+                        transform: translate(-15px, 15px) scale(0.97);
+                    }
+                }
+            `}</style>
         </div>
     );
 };
-

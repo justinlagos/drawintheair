@@ -8,6 +8,8 @@ import { BubbleCalibration } from './features/modes/calibration/BubbleCalibratio
 import { bubbleCalibrationLogic } from './features/modes/calibration/bubbleCalibrationLogic';
 import { SortAndPlaceMode } from './features/modes/sortAndPlace/SortAndPlaceMode';
 import { sortAndPlaceLogic } from './features/modes/sortAndPlace/sortAndPlaceLogic';
+import { WordSearchMode } from './features/modes/wordSearch/WordSearchMode';
+import { wordSearchLogic } from './features/modes/wordSearch/wordSearchLogic';
 import { WaveToWake } from './features/onboarding/WaveToWake';
 import { ModeSelectionMenu, type GameMode } from './features/menu/ModeSelectionMenu';
 import { AdultGate } from './features/safety/AdultGate';
@@ -19,15 +21,21 @@ type AppState = 'onboarding' | 'menu' | 'game';
 
 // Debug: Allow URL params to skip to specific screens
 const getInitialState = (): { appState: AppState; gameMode: GameMode } => {
+  const path = window.location.pathname;
   const params = new URLSearchParams(window.location.search);
   const screen = params.get('screen');
   const mode = params.get('mode') as GameMode;
+
+  // If coming from /play or /onboarding, start at onboarding
+  if (path === '/play' || path === '/onboarding') {
+    return { appState: 'onboarding', gameMode: 'free' };
+  }
 
   if (screen === 'menu') return { appState: 'menu', gameMode: 'free' };
   if (screen === 'game') {
     return {
       appState: 'game',
-      gameMode: (mode === 'free' || mode === 'pre-writing' || mode === 'calibration' || mode === 'sort-and-place') ? mode : 'free'
+      gameMode: (mode === 'free' || mode === 'pre-writing' || mode === 'calibration' || mode === 'sort-and-place' || mode === 'word-search') ? mode : 'free'
     };
   }
   return { appState: 'onboarding', gameMode: 'free' };
@@ -66,6 +74,11 @@ function App() {
     setAppState('menu');
   }, []);
 
+  const [wordSearchSettingsOpen, setWordSearchSettingsOpen] = useState(false);
+  const handleWordSearchSettings = useCallback(() => {
+    setWordSearchSettingsOpen(true);
+  }, []);
+
   // Determine which logic to use based on current mode
   const getActiveLogic = () => {
     if (appState !== 'game') return undefined;
@@ -79,6 +92,8 @@ function App() {
         return bubbleCalibrationLogic;
       case 'sort-and-place':
         return sortAndPlaceLogic;
+      case 'word-search':
+        return wordSearchLogic;
       default:
         return undefined;
     }
@@ -129,16 +144,19 @@ function App() {
               {appState === 'game' && (
                 <>
                   {/* Adult Gate - always visible in game mode */}
-                  <AdultGate onExit={handleExitToMenu} />
+                  <AdultGate 
+                    onExit={handleExitToMenu}
+                    onSettings={gameMode === 'word-search' ? handleWordSearchSettings : undefined}
+                  />
 
                   {/* Mode-specific UI */}
                   {gameMode === 'calibration' && (
                     <BubbleCalibration onComplete={handleCalibrationComplete} />
                   )}
 
-                  {gameMode === 'free' && (
-                    <FreePaintMode />
-                  )}
+                        {gameMode === 'free' && (
+                          <FreePaintMode frameData={frameData} />
+                        )}
 
                   {gameMode === 'pre-writing' && (
                     <PreWritingMode />
@@ -146,6 +164,14 @@ function App() {
 
                   {gameMode === 'sort-and-place' && (
                     <SortAndPlaceMode />
+                  )}
+
+                  {gameMode === 'word-search' && (
+                    <WordSearchMode 
+                      frameData={frameData}
+                      showSettings={wordSearchSettingsOpen}
+                      onCloseSettings={() => setWordSearchSettingsOpen(false)}
+                    />
                   )}
                 </>
               )}

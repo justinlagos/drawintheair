@@ -13,6 +13,8 @@ export const WaveToWake = ({ onWake, trackingResults }: WaveToWakeProps) => {
     const prevX = useRef<number | null>(null);
     const wakeThreshold = 5; // Valid "swipes" to wake
     const lastWaveTime = useRef<number>(0);
+    const waveStartTime = useRef<number>(Date.now());
+    const hasTrackedView = useRef<boolean>(false);
 
     useEffect(() => {
         if (trackingResults && trackingResults.landmarks && trackingResults.landmarks.length > 0) {
@@ -34,7 +36,25 @@ export const WaveToWake = ({ onWake, trackingResults }: WaveToWakeProps) => {
     }, [trackingResults]);
 
     useEffect(() => {
+        // Track wave screen view
+        if (!hasTrackedView.current && typeof window !== 'undefined' && (window as any).analytics) {
+            hasTrackedView.current = true;
+            (window as any).analytics.logEvent('demo_wave_screen_view', {
+                camera_permission: 'granted' // Assuming granted if we're here
+            });
+        }
+    }, []);
+
+    useEffect(() => {
         if (waveCount >= wakeThreshold) {
+            // Track wave success
+            if (typeof window !== 'undefined' && (window as any).analytics) {
+                const timeToWave = Date.now() - waveStartTime.current;
+                (window as any).analytics.logEvent('demo_wave_success', {
+                    time_to_wave_ms: timeToWave
+                });
+                (window as any).analytics.logEvent('demo_mode_select_view');
+            }
             onWake();
         }
     }, [waveCount, onWake]);
@@ -47,43 +67,71 @@ export const WaveToWake = ({ onWake, trackingResults }: WaveToWakeProps) => {
             width: '100%',
             height: '100%',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
             flexDirection: 'column',
             zIndex: 50,
             backgroundColor: 'rgba(15, 12, 41, 0.8)', // Dark overlay
             backdropFilter: 'blur(5px)'
         }}>
-            <div style={{ animation: 'float 3s ease-in-out infinite' }}>
-                <GlassPanel>
-                    <h1 style={{
-                        fontSize: '4rem',
-                        margin: 0,
-                        background: 'linear-gradient(to right, #00FFFF, #FF00FF)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        filter: 'drop-shadow(0 0 10px rgba(255,0,255,0.5))'
-                    }}>
-                        Draw in the Air
-                    </h1>
-                    <p style={{ fontSize: '1.5rem', color: '#fff', marginTop: '20px' }}>
-                        Wave your hand to start! 👋
-                    </p>
+            {/* Header with Logo */}
+            <div style={{
+                width: '100%',
+                padding: '1.5rem 2rem',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                position: 'relative',
+                zIndex: 1
+            }}>
+                <img 
+                    src="https://i.postimg.cc/d3nR91sy/logo.png" 
+                    alt="Draw in the Air"
+                    style={{
+                        height: '40px',
+                        width: 'auto',
+                        filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.3))'
+                    }}
+                />
+            </div>
 
-                    {/* Visual Progress */}
-                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '30px' }}>
-                        {[...Array(wakeThreshold)].map((_, i) => (
-                            <div key={i} style={{
-                                width: '20px',
-                                height: '20px',
-                                borderRadius: '50%',
-                                background: i < waveCount ? 'var(--success-color)' : 'rgba(255,255,255,0.2)',
-                                boxShadow: i < waveCount ? '0 0 10px var(--success-color)' : 'none',
-                                transition: 'all 0.3s ease'
-                            }} />
-                        ))}
-                    </div>
-                </GlassPanel>
+            {/* Centered Wave Card */}
+            <div style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '2rem'
+            }}>
+                <div style={{ animation: 'float 3s ease-in-out infinite' }}>
+                    <GlassPanel>
+                        <h1 style={{
+                            fontSize: '4rem',
+                            margin: 0,
+                            background: 'linear-gradient(to right, #00FFFF, #FF00FF)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            filter: 'drop-shadow(0 0 10px rgba(255,0,255,0.5))'
+                        }}>
+                            Draw in the Air
+                        </h1>
+                        <p style={{ fontSize: '1.5rem', color: '#fff', marginTop: '20px' }}>
+                            Wave your hand to start! 👋
+                        </p>
+
+                        {/* Visual Progress */}
+                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '30px' }}>
+                            {[...Array(wakeThreshold)].map((_, i) => (
+                                <div key={i} style={{
+                                    width: '20px',
+                                    height: '20px',
+                                    borderRadius: '50%',
+                                    background: i < waveCount ? 'var(--success-color)' : 'rgba(255,255,255,0.2)',
+                                    boxShadow: i < waveCount ? '0 0 10px var(--success-color)' : 'none',
+                                    transition: 'all 0.3s ease'
+                                }} />
+                            ))}
+                        </div>
+                    </GlassPanel>
+                </div>
             </div>
         </div>
     );

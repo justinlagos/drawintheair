@@ -25,9 +25,16 @@ let currentPathIndex = 0;
 let progress = 0;
 let onPathStreak = 0;
 let celebrationTime = 0;
+let completeCallback: (() => void) | null = null;
 
 const PATH_TOLERANCE_PX = 30; // Pixels - converted from normalized based on canvas size
 const PROGRESS_THRESHOLD = 0.02;
+
+export const setCompleteCallback = (callback: (() => void) | null) => {
+    completeCallback = callback;
+};
+
+export const getCelebrationTime = () => celebrationTime;
 
 export const getCurrentPathIndex = () => currentPathIndex;
 export const getCurrentPathName = () => ALL_PATHS[currentPathIndex]?.name || '';
@@ -182,7 +189,7 @@ export const preWritingLogic = (
 
             // Main progress line
             ctx.strokeStyle = '#00F5D4';
-            ctx.lineWidth = 20;
+        ctx.lineWidth = 20;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
 
@@ -248,18 +255,18 @@ export const preWritingLogic = (
 
                 // Update progress if moving forward
                 if (t > progress + PROGRESS_THRESHOLD * 0.5 && t < progress + 0.15) {
-                    progress = t;
+                progress = t;
                 } else if (t < progress - 0.05) {
                     // Moved backward significantly - ignore
-                }
+            }
 
                 // Draw on-path feedback (green brush)
-                ctx.beginPath();
+            ctx.beginPath();
                 ctx.arc(fingerCanvas.x, fingerCanvas.y, 18, 0, Math.PI * 2);
                 ctx.fillStyle = '#00F5D4';
                 ctx.shadowColor = '#00F5D4';
                 ctx.shadowBlur = 15;
-                ctx.fill();
+            ctx.fill();
                 ctx.shadowBlur = 0;
 
                 // Streak indicator
@@ -315,32 +322,13 @@ export const preWritingLogic = (
         }
     }
 
-    // Check completion
+    // Check completion - trigger callback instead of drawing on canvas
     if (progress >= 0.95 && celebrationTime === 0) {
         celebrationTime = Date.now();
-    }
-
-    // Celebration animation
-    if (celebrationTime > 0) {
-        const timeSinceCelebration = Date.now() - celebrationTime;
-        if (timeSinceCelebration < 2000) {
-            ctx.save();
-            ctx.fillStyle = '#FFD700';
-            ctx.font = 'bold 48px Arial';
-            ctx.textAlign = 'center';
-            ctx.shadowColor = '#FFD700';
-            ctx.shadowBlur = 20;
-            ctx.fillText('✨ Great Job! ✨', width / 2, height * 0.15);
-            ctx.shadowBlur = 0;
-            ctx.restore();
-        } else if (timeSinceCelebration > 2000 && timeSinceCelebration < 3000) {
-            // Auto-advance after celebration
-            if (nextPath()) {
-                celebrationTime = 0;
-            } else {
-                // All paths complete
-                celebrationTime = -1; // Keep showing completion
-            }
+        if (completeCallback) {
+            completeCallback();
         }
     }
+
+    // No canvas celebration - handled by React component
 };

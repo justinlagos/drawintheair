@@ -1,7 +1,20 @@
+/**
+ * Tracking Layer - PRIORITY A: Global Stability
+ * 
+ * Provides stable, filtered interaction state with:
+ * - Separated detection and rendering loops
+ * - Unified interaction state (single source of truth)
+ * - One Euro Filter smoothing
+ * - Confidence gating
+ * - Jump protection
+ * - Pinch detection with hysteresis
+ */
+
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useWebcam } from '../../core/useWebcam';
 import { handTracker } from '../../core/handTracker';
 import { DrawingUtils, type HandLandmarkerResult, type NormalizedLandmark } from '@mediapipe/tasks-vision';
+import { interactionStateManager, type InteractionState } from '../../core/InteractionState';
 
 /**
  * Mirror X coordinate for natural interaction
@@ -10,7 +23,7 @@ import { DrawingUtils, type HandLandmarkerResult, type NormalizedLandmark } from
 const mirrorX = (x: number): number => 1 - x;
 
 /**
- * Transform landmarks to mirrored coordinate space for natural interaction
+ * Transform landmarks to mirrored coordinate space
  */
 const mirrorLandmarks = (landmarks: NormalizedLandmark[]): NormalizedLandmark[] => {
     return landmarks.map(lm => ({
@@ -26,13 +39,12 @@ const mirrorResults = (results: HandLandmarkerResult): HandLandmarkerResult => {
     return {
         ...results,
         landmarks: results.landmarks.map(hand => mirrorLandmarks(hand)),
-        worldLandmarks: results.worldLandmarks // Keep world landmarks as-is
+        worldLandmarks: results.worldLandmarks
     };
 };
 
 /**
- * TrackingFrameData - Mirrored coordinate space for natural interaction
- * Move hand right → cursor moves right
+ * TrackingFrameData - Mirrored, filtered, stable interaction state
  */
 export interface TrackingFrameData {
     results: HandLandmarkerResult | null;
@@ -40,7 +52,14 @@ export interface TrackingFrameData {
     timestamp: number;
     indexTip: { x: number; y: number } | null;
     thumbTip: { x: number; y: number } | null;
-    handScale: number; // Estimated hand size for pinch detection
+    handScale: number;
+    
+    // Unified interaction state
+    hasHand: boolean;
+    penDown: boolean;
+    pinchActive: boolean;
+    filteredPoint: { x: number; y: number } | null;
+    filteredThumbTip: { x: number; y: number } | null;
 }
 
 interface TrackingLayerProps {
@@ -54,18 +73,6 @@ interface TrackingLayerProps {
     children?: React.ReactNode | ((frameData: TrackingFrameData) => React.ReactNode);
 }
 
-/**
- * Estimate hand scale from wrist to middle finger MCP distance
- */
-function estimateHandScale(landmarks: any[]): number {
-    if (landmarks.length < 10) return 0.1; // Default
-    
-    const wrist = landmarks[0];
-    const middleMCP = landmarks[9];
-    const dist = Math.hypot(middleMCP.x - wrist.x, middleMCP.y - wrist.y);
-    return Math.max(0.05, Math.min(0.2, dist)); // Clamp to reasonable range
-}
-
 export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
     const { videoRef, stream, isLoading: isWebcamLoading } = useWebcam();
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -75,52 +82,42 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
         timestamp: 0,
         indexTip: null,
         thumbTip: null,
-        handScale: 0.1
+        handScale: 0.1,
+        hasHand: false,
+        penDown: false,
+        pinchActive: false,
+        filteredPoint: null,
+        filteredThumbTip: null
     });
 
-    // Separate render rate from detection rate
+    // Separate detection and rendering
+    const detectionIntervalRef = useRef<number | undefined>(undefined);
+    const lastDetectionTime = useRef<number>(0);
+    const detectionRate = 30; // 30 FPS for detection (stable cadence)
+    const detectionInterval = 1000 / detectionRate;
+    
+    // Rendering at 60 FPS
     const lastRenderTime = useRef<number>(0);
-    const targetFPS = 60;
-    const frameInterval = 1000 / targetFPS;
-
-    const extractFrameData = useCallback((
-        results: HandLandmarkerResult | null,
-        timestamp: number
-    ): TrackingFrameData => {
-        if (!results || !results.landmarks || results.landmarks.length === 0) {
-            return {
-                results: null,
-                confidence: 0,
-                timestamp,
-                indexTip: null,
-                thumbTip: null,
-                handScale: 0.1
-            };
-        }
-
-        const hand = results.landmarks[0];
-        const indexTip = hand[8]; // Index finger tip
-        const thumbTip = hand[4]; // Thumb tip
-
-        // Get confidence from handedness if available
-        let confidence = 0.8; // Default confidence
-        if (results.handedness && results.handedness.length > 0) {
-            const handedness = results.handedness[0];
-            if (handedness.length > 0) {
-                confidence = handedness[0].score ?? 0.8;
-            }
-        }
-
-        // Estimate hand scale for pinch detection
-        const handScale = estimateHandScale(hand);
-
+    const renderFPS = 60;
+    const renderInterval = 1000 / renderFPS;
+    
+    // Store latest interaction state (updated by detection loop, read by render loop)
+    const latestInteractionStateRef = useRef<InteractionState | null>(null);
+    
+    // Convert InteractionState to TrackingFrameData (for compatibility)
+    const convertToFrameData = useCallback((state: InteractionState): TrackingFrameData => {
         return {
-            results,
-            confidence,
-            timestamp,
-            indexTip: { x: indexTip.x, y: indexTip.y },
-            thumbTip: { x: thumbTip.x, y: thumbTip.y },
-            handScale
+            results: state.results,
+            confidence: state.confidence,
+            timestamp: state.timestamp,
+            indexTip: state.rawPoint,
+            thumbTip: state.rawThumbTip,
+            handScale: state.handScale,
+            hasHand: state.hasHand,
+            penDown: state.penDown,
+            pinchActive: state.pinchActive,
+            filteredPoint: state.filteredPoint,
+            filteredThumbTip: state.filteredThumbTip
         };
     }, []);
 
@@ -136,44 +133,63 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                 drawingUtils = new DrawingUtils(canvasRef.current.getContext('2d')!);
             }
 
-            const loop = (currentTime: number) => {
+            // Detection loop (separate from rendering, stable cadence)
+            const detectionLoop = () => {
                 if (!isRunning) return;
 
-                // Throttle rendering to target FPS
+                const now = Date.now();
+                const elapsed = now - lastDetectionTime.current;
+
+                if (elapsed >= detectionInterval && videoRef.current && videoRef.current.readyState >= 2) {
+                    lastDetectionTime.current = now - (elapsed % detectionInterval);
+
+                    const timestamp = Date.now();
+                    const rawResults = handTracker.detect(videoRef.current, timestamp);
+                    
+                    // Mirror results for natural interaction
+                    const results = rawResults ? mirrorResults(rawResults) : null;
+                    
+                    // Process through unified interaction state manager
+                    const interactionState = interactionStateManager.process(results, timestamp);
+                    latestInteractionStateRef.current = interactionState;
+                }
+
+                detectionIntervalRef.current = window.setTimeout(detectionLoop, detectionInterval);
+            };
+
+            // Render loop (60 FPS, decoupled from detection)
+            const renderLoop = (currentTime: number) => {
+                if (!isRunning) return;
+
                 const elapsed = currentTime - lastRenderTime.current;
                 
-                if (elapsed >= frameInterval) {
-                    lastRenderTime.current = currentTime - (elapsed % frameInterval);
+                if (elapsed >= renderInterval) {
+                    lastRenderTime.current = currentTime - (elapsed % renderInterval);
 
-                    if (videoRef.current && videoRef.current.readyState >= 2 && canvasRef.current) {
-                        const video = videoRef.current;
+                    if (canvasRef.current && latestInteractionStateRef.current) {
                         const canvas = canvasRef.current;
                         const ctx = canvas.getContext('2d');
 
                         // Match canvas size to video
-                        if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-                            canvas.width = video.videoWidth;
-                            canvas.height = video.videoHeight;
+                        if (videoRef.current) {
+                            if (canvas.width !== videoRef.current.videoWidth || 
+                                canvas.height !== videoRef.current.videoHeight) {
+                                canvas.width = videoRef.current.videoWidth;
+                                canvas.height = videoRef.current.videoHeight;
+                            }
                         }
 
-                        // Detect hands
-                        const timestamp = Date.now();
-                        const rawResults = handTracker.detect(video, timestamp);
-
-                        // Mirror results for natural interaction (move right = cursor moves right)
-                        const results = rawResults ? mirrorResults(rawResults) : null;
-
-                        // Extract frame data (mirrored coordinates)
-                        const frameData = extractFrameData(results, timestamp);
-
-                        // Update state for UI (batched)
+                        // Convert to TrackingFrameData for compatibility
+                        const frameData = convertToFrameData(latestInteractionStateRef.current);
+                        
+                        // Update React state (batched, not per-frame)
                         setLastFrameData(frameData);
 
                         if (ctx) {
                             // Clear canvas
                             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                            // Call frame callback with mirrored data
+                            // Call frame callback with stable, filtered data
                             if (onFrame) {
                                 onFrame(ctx, frameData, canvas.width, canvas.height, drawingUtils);
                             }
@@ -181,10 +197,12 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                     }
                 }
 
-                animationFrameId = requestAnimationFrame(loop);
+                animationFrameId = requestAnimationFrame(renderLoop);
             };
 
-            animationFrameId = requestAnimationFrame(loop);
+            // Start both loops
+            detectionLoop();
+            animationFrameId = requestAnimationFrame(renderLoop);
         };
 
         if (stream && !isWebcamLoading) {
@@ -193,9 +211,13 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
 
         return () => {
             isRunning = false;
+            if (detectionIntervalRef.current) {
+                clearTimeout(detectionIntervalRef.current);
+            }
             cancelAnimationFrame(animationFrameId);
+            interactionStateManager.reset();
         };
-    }, [stream, isWebcamLoading, videoRef, onFrame, extractFrameData, frameInterval]);
+    }, [stream, isWebcamLoading, videoRef, onFrame, convertToFrameData, detectionInterval, renderInterval]);
 
     return (
         <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
@@ -217,7 +239,7 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                 muted
             />
 
-            {/* Canvas for drawing - coordinates already mirrored */}
+            {/* Canvas for drawing */}
             <canvas
                 ref={canvasRef}
                 style={{
@@ -231,7 +253,7 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                 }}
             />
 
-            {/* Children receive mirrored frame data */}
+            {/* Children receive stable, filtered frame data */}
             {typeof children === 'function' ? children(lastFrameData) : children}
         </div>
     );

@@ -14,7 +14,7 @@ import { Celebration } from '../../../components/Celebration';
 export const SortAndPlaceMode = () => {
     const [round, setRound] = useState<'color' | 'size' | 'category'>('color');
     const [score, setScore] = useState(0);
-    const [total, setTotal] = useState(5);
+    const [total, setTotal] = useState(6);
     const [showCelebration, setShowCelebration] = useState(false);
     const [roundNumber, setRoundNumber] = useState(1);
 
@@ -45,16 +45,32 @@ export const SortAndPlaceMode = () => {
     }, []);
 
     const roundLabels = {
-        color: { title: 'Sort by Color', icon: '🎨', instruction: 'Put red things here, blue things there!' },
-        size: { title: 'Sort by Size', icon: '📦', instruction: 'Big things here, small things there!' },
-        category: { title: 'Sort by Type', icon: '🗂️', instruction: 'Food here, toys there!' }
+        color: { 
+            title: 'Sort by Color', 
+            icon: '🎨', 
+            instruction: 'Pinch to grab! Put red things in the red box, blue things in the blue box!',
+            gradient: 'linear-gradient(135deg, #FF6B6B, #4ECDC4)'
+        },
+        size: { 
+            title: 'Sort by Size', 
+            icon: '📦', 
+            instruction: 'Pinch to grab! Put big things in the big box, small things in the small box!',
+            gradient: 'linear-gradient(135deg, #FFD700, #87CEEB)'
+        },
+        category: { 
+            title: 'Sort by Type', 
+            icon: '🗂️', 
+            instruction: 'Pinch to grab! Put food in the food box, toys in the toy box!',
+            gradient: 'linear-gradient(135deg, #FF6B6B, #4ECDC4)'
+        }
     };
 
     const label = roundLabels[round];
+    const progress = total > 0 ? score / total : 0;
 
     return (
         <>
-            {/* Top Left - Mode indicator */}
+            {/* Top Left - Enhanced Mode indicator */}
             <div style={{
                 position: 'absolute',
                 top: '24px',
@@ -62,63 +78,102 @@ export const SortAndPlaceMode = () => {
                 zIndex: 20
             }}>
                 <div style={{
-                    background: 'rgba(15, 12, 41, 0.7)',
+                    background: 'rgba(15, 12, 41, 0.85)',
                     backdropFilter: 'blur(20px)',
-                    borderRadius: '20px',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    padding: '16px 24px',
-                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+                    borderRadius: '24px',
+                    border: '2px solid rgba(255, 255, 255, 0.2)',
+                    padding: '20px 28px',
+                    boxShadow: '0 12px 40px rgba(0, 0, 0, 0.4)',
+                    minWidth: '280px'
                 }}>
                     <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '12px',
-                        marginBottom: '12px'
+                        gap: '14px',
+                        marginBottom: '16px'
                     }}>
-                        <span style={{ fontSize: '1.5rem' }}>{label.icon}</span>
+                        <span style={{ 
+                            fontSize: '2rem',
+                            filter: 'drop-shadow(0 0 10px rgba(255, 255, 255, 0.5))'
+                        }}>
+                            {label.icon}
+                        </span>
                         <span style={{
-                            fontSize: '1.1rem',
-                            fontWeight: 600,
-                            background: 'linear-gradient(135deg, #4facfe, #00f2fe)',
+                            fontSize: '1.3rem',
+                            fontWeight: 700,
+                            background: label.gradient,
                             WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent'
+                            WebkitTextFillColor: 'transparent',
+                            textShadow: '0 0 20px rgba(255, 255, 255, 0.3)'
                         }}>
                             Sort and Place
                         </span>
                     </div>
+                    
                     <div style={{
-                        fontSize: '0.9rem',
-                        color: 'rgba(255,255,255,0.7)',
-                        marginBottom: '8px'
+                        fontSize: '1rem',
+                        color: 'rgba(255,255,255,0.8)',
+                        marginBottom: '12px',
+                        fontWeight: 500
                     }}>
-                        Round {roundNumber} of 3: <strong style={{ color: 'white' }}>{label.title}</strong>
+                        Round {roundNumber} of 3
                     </div>
+                    
                     <div style={{
-                        fontSize: '0.85rem',
-                        color: 'rgba(255,255,255,0.6)'
+                        fontSize: '0.95rem',
+                        color: 'rgba(255,255,255,0.6)',
+                        marginBottom: '12px'
                     }}>
-                        {score} / {total} sorted
+                        <strong style={{ 
+                            color: '#00F5D4',
+                            fontSize: '1.1rem'
+                        }}>
+                            {score}
+                        </strong> / {total} sorted
+                    </div>
+
+                    {/* Progress bar */}
+                    <div style={{
+                        width: '100%',
+                        height: '8px',
+                        background: 'rgba(255,255,255,0.1)',
+                        borderRadius: '4px',
+                        overflow: 'hidden',
+                        marginTop: '12px'
+                    }}>
+                        <div style={{
+                            width: `${progress * 100}%`,
+                            height: '100%',
+                            background: label.gradient,
+                            borderRadius: '4px',
+                            transition: 'width 0.3s ease',
+                            boxShadow: `0 0 15px ${progress === 1 ? '#00F5D4' : '#4ECDC4'}88`
+                        }} />
                     </div>
                 </div>
             </div>
 
-            {/* Instruction */}
+            {/* Enhanced Instruction Banner */}
             <div style={{
                 position: 'absolute',
                 top: '24px',
                 left: '50%',
                 transform: 'translateX(-50%)',
                 zIndex: 20,
-                pointerEvents: 'none'
+                pointerEvents: 'none',
+                animation: 'float 3s ease-in-out infinite'
             }}>
                 <div style={{
-                    background: 'rgba(0, 245, 212, 0.15)',
-                    border: '1px solid rgba(0, 245, 212, 0.3)',
-                    borderRadius: '12px',
-                    padding: '12px 24px',
+                    background: 'linear-gradient(135deg, rgba(0, 245, 212, 0.2), rgba(79, 172, 254, 0.2))',
+                    border: '2px solid rgba(0, 245, 212, 0.5)',
+                    borderRadius: '16px',
+                    padding: '16px 32px',
                     color: '#00f5d4',
-                    fontSize: '1.1rem',
-                    textAlign: 'center'
+                    fontSize: '1.2rem',
+                    textAlign: 'center',
+                    fontWeight: 600,
+                    boxShadow: '0 8px 32px rgba(0, 245, 212, 0.3)',
+                    backdropFilter: 'blur(10px)'
                 }}>
                     👆 {label.instruction}
                 </div>
@@ -131,7 +186,14 @@ export const SortAndPlaceMode = () => {
                 subMessage={roundNumber === 3 ? "🎉 Amazing work! 🎉" : "Great job!"}
                 icon="🎉"
             />
+
+            {/* Add CSS animation */}
+            <style>{`
+                @keyframes float {
+                    0%, 100% { transform: translateX(-50%) translateY(0px); }
+                    50% { transform: translateX(-50%) translateY(-10px); }
+                }
+            `}</style>
         </>
     );
 };
-
