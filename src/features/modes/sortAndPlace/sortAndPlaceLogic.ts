@@ -40,6 +40,7 @@ interface Zone {
 
 let currentRound: SortCategory = 'color';
 let roundIndex = 0;
+let playedRounds: Set<SortCategory> = new Set();
 let objects: SortableObject[] = [];
 let zones: Zone[] = [];
 let grabbedObject: SortableObject | null = null;
@@ -52,6 +53,8 @@ let celebrationTime = 0;
 let grabFilter: OneEuroFilter2D | null = null;
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#A855F7', '#FF6B9D', '#95E1D3'];
+// Track which colors are used in the current color round
+let currentColorPair: [string, string] = [COLORS[0], COLORS[1]];
 const CATEGORIES = {
     food: ['🍎', '🍌', '🍕', '🍰', '🥕', '🍇', '🥑', '🍓'],
     toy: ['🧸', '🚗', '🎈', '🎮', '🎯', '🏀', '🎨', '🧩'],
@@ -60,7 +63,7 @@ const CATEGORIES = {
 
 function createObjects(count: number, category: SortCategory): SortableObject[] {
     const objs: SortableObject[] = [];
-    const values = category === 'color' ? COLORS.slice(0, 2) :
+    const values = category === 'color' ? [currentColorPair[0], currentColorPair[1]] :
                    category === 'size' ? ['small', 'large'] :
                    ['food', 'toy'];
     
@@ -101,30 +104,44 @@ function createZones(category: SortCategory): Zone[] {
     const zones: Zone[] = [];
     
     if (category === 'color') {
+        // Use the current color pair (randomized)
+        const [color1, color2] = currentColorPair;
+        // Create color names for labels (simplified - could be enhanced)
+        const colorNames = {
+            '#FF6B6B': { label: 'Red Things', icon: '🔴' },
+            '#4ECDC4': { label: 'Blue Things', icon: '🔵' },
+            '#FFE66D': { label: 'Yellow Things', icon: '🟡' },
+            '#A855F7': { label: 'Purple Things', icon: '🟣' },
+            '#FF6B9D': { label: 'Pink Things', icon: '🩷' },
+            '#95E1D3': { label: 'Teal Things', icon: '🩵' }
+        };
+        const name1 = colorNames[color1 as keyof typeof colorNames] || { label: 'Color 1', icon: '🔴' };
+        const name2 = colorNames[color2 as keyof typeof colorNames] || { label: 'Color 2', icon: '🔵' };
+        
         zones.push({
-            id: 'red',
+            id: 'color1',
             x: 0.25,
             y: 0.82,
             width: 0.38,
             height: 0.14,
-            label: 'Red Things',
-            icon: '🔴',
-            targetValue: COLORS[0],
+            label: name1.label,
+            icon: name1.icon,
+            targetValue: color1,
             glow: false,
-            color: COLORS[0],
+            color: color1,
             glowIntensity: 0
         });
         zones.push({
-            id: 'blue',
+            id: 'color2',
             x: 0.75,
             y: 0.82,
             width: 0.38,
             height: 0.14,
-            label: 'Blue Things',
-            icon: '🔵',
-            targetValue: COLORS[1],
+            label: name2.label,
+            icon: name2.icon,
+            targetValue: color2,
             glow: false,
-            color: COLORS[1],
+            color: color2,
             glowIntensity: 0
         });
     } else if (category === 'size') {
@@ -188,6 +205,15 @@ function createZones(category: SortCategory): Zone[] {
 
 export function startSortRound(category: SortCategory) {
     currentRound = category;
+    playedRounds.add(category);
+    
+    // If starting a color round, randomize the color pair
+    if (category === 'color') {
+        // Pick two random different colors
+        const shuffled = [...COLORS].sort(() => Math.random() - 0.5);
+        currentColorPair = [shuffled[0], shuffled[1]];
+    }
+    
     objects = createObjects(6, category);
     zones = createZones(category);
     grabbedObject = null;
@@ -206,19 +232,29 @@ export function getCelebrationTime() { return celebrationTime; }
 
 export function nextRound() {
     roundIndex++;
-    if (roundIndex === 1) {
-        startSortRound('size');
-    } else if (roundIndex === 2) {
-        startSortRound('category');
+    const allRounds: SortCategory[] = ['color', 'size', 'category'];
+    
+    // Find a round type we haven't played yet
+    const unplayedRounds = allRounds.filter(r => !playedRounds.has(r));
+    
+    if (unplayedRounds.length > 0) {
+        // Play a random unplayed round
+        const nextRoundType = unplayedRounds[Math.floor(Math.random() * unplayedRounds.length)];
+        startSortRound(nextRoundType);
+        return true;
     } else {
+        // All rounds complete
         return false;
     }
-    return true;
 }
 
 export function resetAllRounds() {
     roundIndex = 0;
-    startSortRound('color');
+    playedRounds.clear();
+    // Randomize starting round type so it's not always color
+    const roundTypes: SortCategory[] = ['color', 'size', 'category'];
+    const randomRound = roundTypes[Math.floor(Math.random() * roundTypes.length)];
+    startSortRound(randomRound);
 }
 
 export const sortAndPlaceLogic = (

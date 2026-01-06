@@ -19,7 +19,8 @@ export const SortAndPlaceMode = () => {
     const [roundNumber, setRoundNumber] = useState(1);
 
     useEffect(() => {
-        startSortRound('color');
+        // Reset everything when component mounts to ensure fresh start
+        resetAllRounds();
         
         const interval = setInterval(() => {
             setRound(getCurrentRound());
@@ -33,9 +34,11 @@ export const SortAndPlaceMode = () => {
                     if (nextRound()) {
                         setRoundNumber(prev => prev + 1);
                     } else {
-                        // All rounds complete
+                        // All rounds complete - reset to start fresh cycle
                         setRoundNumber(1);
                         resetAllRounds();
+                        // Force update round state after reset
+                        setRound(getCurrentRound());
                     }
                 }, 2500);
             }
