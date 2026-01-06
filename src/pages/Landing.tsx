@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { HeaderNav } from '../components/landing/HeaderNav';
 import { HeroSection } from '../components/landing/HeroSection';
 import { HowItWorks } from '../components/landing/HowItWorks';
 import { ModesGrid } from '../components/landing/ModesGrid';
+import { KidsImageSection } from '../components/landing/KidsImageSection';
 import { EYFSAlignment } from '../components/landing/EYFSAlignment';
 import { ForSchools } from '../components/landing/ForSchools';
 import { PrivacySafety } from '../components/landing/PrivacySafety';
@@ -21,12 +22,49 @@ export const Landing: React.FC = () => {
     }
   };
 
+  // Scroll animation observer
+  useEffect(() => {
+    const observerOptions = {
+      threshold: 0.15,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('landing-visible');
+        }
+      });
+    }, observerOptions);
+
+    const sections = document.querySelectorAll('.landing-section');
+    sections.forEach((section) => {
+      observer.observe(section);
+    });
+
+    // Show hero immediately
+    setTimeout(() => {
+      const hero = document.querySelector('.landing-hero');
+      if (hero) {
+        hero.classList.add('landing-visible');
+      }
+    }, 100);
+
+    return () => {
+      sections.forEach((section) => {
+        observer.unobserve(section);
+      });
+    };
+  }, []);
+
   return (
     <div className="landing-page">
+      <div className="landing-shader-layer" />
       <HeaderNav />
       <HeroSection onGetSchoolPack={handleGetSchoolPack} />
       <HowItWorks />
       <ModesGrid />
+      <KidsImageSection onGetSchoolPack={handleGetSchoolPack} />
       <EYFSAlignment />
       <ForSchools onRequestSchoolPack={handleGetSchoolPack} />
       <FAQSection />

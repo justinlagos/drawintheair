@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { PhotoCard } from './PhotoCard';
+import React from 'react';
 import './landing.css';
 
 interface HeroSectionProps {
@@ -7,16 +6,6 @@ interface HeroSectionProps {
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({ onGetSchoolPack }) => {
-  const handleTryDemo = () => {
-    // Track demo click
-    if (typeof window !== 'undefined' && (window as any).analytics) {
-      (window as any).analytics.logEvent('demo_try_click', {
-        source: 'hero'
-      });
-    }
-    window.location.pathname = '/demo';
-  };
-
   return (
     <section className="landing-hero">
       <div className="landing-hero-container">
@@ -25,85 +14,74 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGetSchoolPack }) => 
             Draw, trace, and learn in the air
           </h1>
           <p className="landing-hero-subhead">
-            Camera-based learning for early years. Built for EYFS motor skills, early literacy, and inclusive play.
+            Camera-based activities for early years. Built for EYFS motor skills, early literacy, and inclusive play.
           </p>
 
           <div className="landing-hero-buttons">
-            <button 
-              className="landing-btn landing-btn-primary landing-btn-large" 
-              onClick={handleTryDemo}
+            <button
+              className="landing-btn landing-btn-primary landing-btn-large"
+              onClick={() => {
+                if (typeof window !== 'undefined' && (window as any).analytics) {
+                  (window as any).analytics.logEvent('demo_try_click', {
+                    source: 'hero',
+                  });
+                }
+                window.location.pathname = '/demo';
+              }}
             >
               Try the demo
             </button>
-            <button 
-              className="landing-btn landing-btn-secondary landing-btn-large" 
+            <button
+              className="landing-btn landing-btn-secondary landing-btn-large"
               onClick={onGetSchoolPack}
             >
               Get the school pilot pack
             </button>
           </div>
+
+          <div className="landing-hero-trust-strip">
+            <span className="landing-hero-trust-pill">No child accounts</span>
+            <span className="landing-hero-trust-pill">Works on a laptop and webcam</span>
+            <span className="landing-hero-trust-pill">EYFS aligned activities</span>
+          </div>
         </div>
-        
-        <div className="landing-hero-right">
-          <div className="landing-hero-visual">
-            {/* Monitor/Tablet Mockup */}
-            <div className="landing-monitor-frame">
-              <div className="landing-monitor-screen">
-                {/* Animated UI states - drawing, tracing, popping */}
-                <div className="landing-ui-animation">
-                  <svg className="landing-ui-svg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-                    {/* Background */}
-                    <rect width="400" height="300" fill="#010C24" />
-                    
-                    {/* Drawing stroke animation */}
-                    <path 
-                      d="M 100 150 Q 150 100, 200 150 T 300 150" 
-                      stroke="#FFD93D" 
-                      strokeWidth="4" 
-                      fill="none"
-                      className="landing-draw-path"
-                    />
-                    
-                    {/* Tracing path (dotted guide) */}
-                    <path 
-                      d="M 100 200 Q 150 180, 200 200 T 300 200" 
-                      stroke="#00E5FF" 
-                      strokeWidth="2" 
-                      strokeDasharray="4 4"
-                      fill="none"
-                      opacity="0.5"
-                    />
-                    
-                    {/* Hand cursor */}
-                    <circle 
-                      cx="300" 
-                      cy="150" 
-                      r="8" 
-                      fill="#DE3163"
-                      className="landing-hand-cursor-anim"
-                    />
-                    
-                    {/* Bubble pop effect */}
-                    <circle 
-                      cx="150" 
-                      cy="100" 
-                      r="15" 
-                      fill="#FFD93D"
-                      className="landing-bubble-pop"
-                      opacity="0.7"
-                    />
-                  </svg>
-                </div>
-              </div>
-              <div className="landing-monitor-base"></div>
-            </div>
-            {/* Subtle photo in background - low prominence */}
-            <div className="landing-hero-photo-background">
-              <PhotoCard 
-                url="https://i.postimg.cc/xcT770t6/a-kid.png"
-                alt="Child using Draw In The Air"
-                className="landing-hero-photo-subtle"
+        <div className="landing-hero-right" aria-hidden="true">
+          <div className="landing-hero-gallery">
+            <div className="landing-hero-card landing-hero-card-top">
+              <img
+                src="https://i.postimg.cc/hj6Bd7pT/teacher_and_son.png"
+                srcSet="https://i.postimg.cc/hj6Bd7pT/teacher_and_son.png 1x, https://i.postimg.cc/hj6Bd7pT/teacher_and_son.png 2x"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 40vw, 420px"
+                alt=""
+                className="landing-hero-image landing-hero-image-main"
+                loading="eager"
+                decoding="async"
               />
+              <div className="landing-hero-overlay" />
+            </div>
+            <div className="landing-hero-card landing-hero-card-middle">
+              <img
+                src="https://i.postimg.cc/4NzgYytR/a_kid.png"
+                srcSet="https://i.postimg.cc/4NzgYytR/a_kid.png 1x, https://i.postimg.cc/4NzgYytR/a_kid.png 2x"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 30vw, 280px"
+                alt=""
+                className="landing-hero-image landing-hero-image-kid"
+                loading="lazy"
+                decoding="async"
+              />
+              <div className="landing-hero-overlay" />
+            </div>
+            <div className="landing-hero-card landing-hero-card-bottom">
+              <img
+                src="https://i.postimg.cc/T13pVFVY/image-gen-(3).png"
+                srcSet="https://i.postimg.cc/T13pVFVY/image-gen-(3).png 1x, https://i.postimg.cc/T13pVFVY/image-gen-(3).png 2x"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 30vw, 280px"
+                alt=""
+                className="landing-hero-image landing-hero-image-classroom"
+                loading="lazy"
+                decoding="async"
+              />
+              <div className="landing-hero-overlay" />
             </div>
           </div>
         </div>
