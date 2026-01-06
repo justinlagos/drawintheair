@@ -220,7 +220,15 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
     }, [stream, isWebcamLoading, videoRef, onFrame, convertToFrameData, detectionInterval, renderInterval]);
 
     return (
-        <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+        <div style={{ 
+            position: 'relative', 
+            width: '100vw', 
+            height: '100vh',
+            maxWidth: '100vw',
+            maxHeight: '100vh',
+            overflow: 'hidden',
+            boxSizing: 'border-box'
+        }}>
             {/* Hidden video element */}
             <video
                 ref={videoRef}
@@ -230,6 +238,8 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                     left: '-9999px',
                     width: '100%',
                     height: '100%',
+                    maxWidth: '100%',
+                    maxHeight: '100%',
                     objectFit: 'cover',
                     opacity: 0,
                     visibility: 'hidden'
@@ -248,8 +258,11 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                     left: 0,
                     width: '100%',
                     height: '100%',
+                    maxWidth: '100vw',
+                    maxHeight: '100vh',
                     objectFit: 'cover',
-                    pointerEvents: 'none'
+                    pointerEvents: 'none',
+                    boxSizing: 'border-box'
                 }}
             />
 

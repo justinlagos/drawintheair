@@ -41,6 +41,18 @@ interface EventMeta {
   viewport_h?: number;
   device_type?: 'desktop' | 'mobile' | 'tablet';
   connection_type?: string;
+  browser?: string;
+  browser_version?: string;
+  country?: string;
+  referrer?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  time_on_page?: number;
+  demo_session_duration?: number;
+  mode_chosen?: string;
+  error_type?: string;
+  camera_permission_outcome?: 'granted' | 'denied' | 'prompt';
 }
 
 interface AnalyticsEvent {
@@ -103,12 +115,67 @@ class AnalyticsClient {
     return 'desktop';
   }
 
+  private getBrowserInfo(): { browser: string; version: string } {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      return { browser: 'unknown', version: 'unknown' };
+    }
+
+    const ua = navigator.userAgent;
+    let browser = 'unknown';
+    let version = 'unknown';
+
+    if (ua.includes('Chrome') && !ua.includes('Edg')) {
+      browser = 'Chrome';
+      const match = ua.match(/Chrome\/(\d+)/);
+      version = match ? match[1] : 'unknown';
+    } else if (ua.includes('Firefox')) {
+      browser = 'Firefox';
+      const match = ua.match(/Firefox\/(\d+)/);
+      version = match ? match[1] : 'unknown';
+    } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
+      browser = 'Safari';
+      const match = ua.match(/Version\/(\d+)/);
+      version = match ? match[1] : 'unknown';
+    } else if (ua.includes('Edg')) {
+      browser = 'Edge';
+      const match = ua.match(/Edg\/(\d+)/);
+      version = match ? match[1] : 'unknown';
+    }
+
+    return { browser, version };
+  }
+
+  private getCountry(): string | undefined {
+    // Only use if available from request headers or existing service
+    // Do not make new API calls for privacy
+    // This would typically come from server-side headers
+    return undefined;
+  }
+
+  private getUTMParams(): { utm_source?: string; utm_medium?: string; utm_campaign?: string } {
+    if (typeof window === 'undefined') return {};
+    const params = new URLSearchParams(window.location.search);
+    return {
+      utm_source: params.get('utm_source') || undefined,
+      utm_medium: params.get('utm_medium') || undefined,
+      utm_campaign: params.get('utm_campaign') || undefined,
+    };
+  }
+
   private getMeta(additionalMeta: EventMeta = {}): EventMeta {
+    const browserInfo = this.getBrowserInfo();
+    const utmParams = this.getUTMParams();
+    
     return {
       viewport_w: typeof window !== 'undefined' ? window.innerWidth : undefined,
       viewport_h: typeof window !== 'undefined' ? window.innerHeight : undefined,
       device_type: this.getDeviceType(),
       connection_type: (navigator as any).connection?.effectiveType,
+      browser: browserInfo.browser,
+      browser_version: browserInfo.version,
+      country: this.getCountry(),
+      referrer: typeof document !== 'undefined' ? (document.referrer || undefined) : undefined,
+      ...utmParams,
       ...additionalMeta,
     };
   }

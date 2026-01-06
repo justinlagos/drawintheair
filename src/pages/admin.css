@@ -151,33 +151,72 @@
 
 .admin-kpi-strip {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 3rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
 }
 
 .admin-kpi-card {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  padding: 1.5rem;
-  text-align: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  text-align: left;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.admin-kpi-value {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #FFD93D;
+.admin-kpi-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 217, 61, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.admin-kpi-card-error {
+  border-color: rgba(255, 107, 107, 0.3);
+}
+
+.admin-kpi-card-error .admin-kpi-value {
+  color: #ff6b6b;
+}
+
+.admin-kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 0.5rem;
 }
 
+.admin-kpi-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #FFD93D;
+  line-height: 1;
+}
+
+.admin-kpi-trend {
+  font-size: 1rem;
+  color: rgba(0, 229, 255, 0.8);
+  font-weight: 600;
+}
+
 .admin-kpi-label {
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.admin-kpi-meta {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 0.25rem;
 }
 
 .admin-section {
@@ -245,6 +284,16 @@
   justify-content: space-between;
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.6);
+  gap: 1rem;
+}
+
+.admin-funnel-conversion {
+  font-weight: 600;
+  color: rgba(0, 229, 255, 0.9);
+}
+
+.admin-funnel-total {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .admin-table-container {
@@ -265,20 +314,25 @@
 }
 
 .admin-table th {
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   text-align: left;
   font-weight: 600;
   color: #ffffff;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .admin-table td {
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   color: rgba(255, 255, 255, 0.8);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 .admin-table-empty {

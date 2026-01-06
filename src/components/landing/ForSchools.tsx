@@ -18,38 +18,80 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
   });
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const modalRef = useRef<HTMLDivElement>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
 
+  // Input validation and sanitization
+  const validateInput = (value: string, maxLength: number = 500): string => {
+    if (!value) return '';
+    // Remove potentially dangerous characters and limit length
+    const sanitized = value
+      .trim()
+      .slice(0, maxLength)
+      .replace(/[<>]/g, ''); // Remove < and > to prevent XSS
+    return sanitized;
+  };
+
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email) && email.length <= 254;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.contactName && formData.email && formData.schoolName && formData.role) {
-      setIsSubmitting(true);
-      try {
-        // Track form submission event
-        if (typeof window !== 'undefined' && (window as any).analytics) {
-          (window as any).analytics.logEvent('school_pack_form_submit', {
-            success: true,
-            location: 'landing'
-          });
-        }
+    
+    // Validate and sanitize inputs
+    const sanitizedData = {
+      contactName: validateInput(formData.contactName, 100),
+      email: validateInput(formData.email, 254).toLowerCase(),
+      schoolName: validateInput(formData.schoolName, 200),
+      role: validateInput(formData.role, 100),
+      yearGroup: validateInput(formData.yearGroup, 50),
+      deviceType: formData.deviceType, // From select, already validated
+      sendNotes: validateInput(formData.sendNotes || '', 1000),
+    };
 
-        // Submit to API endpoint
-        const response = await fetch('/api/school-pack', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            school_name: formData.schoolName,
-            contact_name: formData.contactName,
-            role: formData.role,
-            email: formData.email,
-            year_group: formData.yearGroup,
-            device_type: formData.deviceType,
-            send_notes: formData.sendNotes || null,
-          }),
+    // Validate required fields
+    if (!sanitizedData.contactName || !sanitizedData.email || !sanitizedData.schoolName || !sanitizedData.role) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    // Validate email format
+    if (!validateEmail(sanitizedData.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError('');
+    
+    try {
+      // Track form submission event
+      if (typeof window !== 'undefined' && (window as any).analytics) {
+        (window as any).analytics.logEvent('school_pack_form_submit', {
+          success: true,
+          location: 'landing'
         });
+      }
+
+      // Submit to API endpoint with sanitized data
+      const response = await fetch('/api/school-pack', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          school_name: sanitizedData.schoolName,
+          contact_name: sanitizedData.contactName,
+          role: sanitizedData.role,
+          email: sanitizedData.email,
+          year_group: sanitizedData.yearGroup || null,
+          device_type: sanitizedData.deviceType || null,
+          send_notes: sanitizedData.sendNotes || null,
+        }),
+      });
 
         if (!response.ok) {
           throw new Error('Failed to submit');
@@ -71,19 +113,23 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
         }, 3000);
       } catch (error) {
         console.error('Error submitting form:', error);
-        // Fallback to localStorage if API fails
-        const forms = JSON.parse(localStorage.getItem('schoolPackForms') || '[]');
-        forms.push({ ...formData, timestamp: new Date().toISOString() });
-        localStorage.setItem('schoolPackForms', JSON.stringify(forms));
-        setSubmitted(true);
-        setTimeout(() => {
-          setShowForm(false);
-          setSubmitted(false);
-        }, 3000);
+        // Fallback to localStorage if API fails (with sanitized data)
+        try {
+          const forms = JSON.parse(localStorage.getItem('schoolPackForms') || '[]');
+          forms.push({ ...sanitizedData, timestamp: new Date().toISOString() });
+          localStorage.setItem('schoolPackForms', JSON.stringify(forms));
+          setSubmitted(true);
+          setTimeout(() => {
+            setShowForm(false);
+            setSubmitted(false);
+          }, 3000);
+        } catch (storageError) {
+          setError('Failed to save form. Please try again.');
+          setIsSubmitting(false);
+        }
       } finally {
         setIsSubmitting(false);
       }
-    }
   };
 
   const handleRequestClick = () => {
@@ -226,6 +272,11 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="landing-pilot-form">
+                {error && (
+                  <div className="landing-pilot-error" role="alert">
+                    {error}
+                  </div>
+                )}
                 <input
                   ref={firstInputRef}
                   type="text"
