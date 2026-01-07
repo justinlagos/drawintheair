@@ -94,17 +94,14 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
     });
     
     // Only update React state when values actually change (throttled for UI updates)
-    const [lastFrameData, setLastFrameData] = useState<TrackingFrameData>(lastFrameDataRef.current);
+    // Note: lastFrameData state is kept for potential future use but currently unused
+    const [, setLastFrameData] = useState<TrackingFrameData>(lastFrameDataRef.current);
     const lastUpdateTimeRef = useRef<number>(0);
     const UPDATE_THROTTLE_MS = 100; // Update React state at most every 100ms
 
     // Separate detection and rendering
     const detectionIntervalRef = useRef<number | undefined>(undefined);
     const lastDetectionTime = useRef<number>(0);
-    
-    // Get detection rate from perf config
-    const detectionRate = perf.getConfig().targetDetectFps;
-    const detectionInterval = 1000 / detectionRate;
     
     // Rendering at 60 FPS
     const lastRenderTime = useRef<number>(0);
