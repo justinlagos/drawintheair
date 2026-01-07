@@ -6,8 +6,7 @@ import {
     isRoundComplete,
     getCelebrationTime,
     nextRound,
-    resetAllRounds,
-    startSortRound
+    resetAllRounds
 } from './sortAndPlaceLogic';
 import { Celebration } from '../../../components/Celebration';
 

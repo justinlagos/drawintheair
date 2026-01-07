@@ -15,6 +15,23 @@ import { Training } from './pages/Training.tsx'
 import { Admin } from './pages/Admin.tsx'
 import { initAnalytics } from './lib/analytics.ts'
 
+// Helper function to determine route from pathname
+function getRouteFromPath(path: string, hash: string): string {
+  if (path === '/admin') return 'admin';
+  if (path === '/demo') return 'demo';
+  if (path === '/play' || path === '/onboarding') return 'play';
+  if (path === '/app' || hash === '#app') return 'app';
+  if (path === '/faq') return 'faq';
+  if (path === '/schools/training') return 'training';
+  if (path === '/schools') return 'schools';
+  if (path === '/privacy') return 'privacy';
+  if (path === '/terms') return 'terms';
+  if (path === '/cookies') return 'cookies';
+  if (path === '/safeguarding') return 'safeguarding';
+  if (path === '/accessibility') return 'accessibility';
+  return 'landing';
+}
+
 function Root() {
   // Initialize analytics
   useEffect(() => {
@@ -22,53 +39,19 @@ function Root() {
   }, []);
 
   const [route, setRoute] = useState(() => {
-    const path = window.location.pathname;
-    if (path === '/admin') return 'admin';
-    if (path === '/demo') return 'demo';
-    if (path === '/play' || path === '/onboarding') return 'play';
-    if (path === '/app' || window.location.hash === '#app') return 'app';
-    if (path === '/faq') return 'faq';
-    if (path === '/schools') return 'schools';
-    if (path === '/schools/training') return 'training';
-    if (path === '/privacy') return 'privacy';
-    if (path === '/terms') return 'terms';
-    if (path === '/cookies') return 'cookies';
-    if (path === '/safeguarding') return 'safeguarding';
-    if (path === '/accessibility') return 'accessibility';
-    return 'landing';
+    return getRouteFromPath(window.location.pathname, window.location.hash);
   });
 
   useEffect(() => {
     const handleNavigation = () => {
       const path = window.location.pathname;
-      if (path === '/admin') {
-        setRoute('admin');
-      } else if (path === '/demo') {
-        setRoute('demo');
-      } else if (path === '/play' || path === '/onboarding') {
-        setRoute('play');
-      } else if (path === '/app' || window.location.hash === '#app') {
-        setRoute('app');
-      } else if (path === '/faq') {
-        setRoute('faq');
-      } else if (path === '/schools') {
-        setRoute('schools');
-      } else if (path === '/schools/training') {
-        setRoute('training');
-      } else if (path === '/privacy') {
-        setRoute('privacy');
-      } else if (path === '/terms') {
-        setRoute('terms');
-      } else if (path === '/cookies') {
-        setRoute('cookies');
-      } else if (path === '/safeguarding') {
-        setRoute('safeguarding');
-      } else if (path === '/accessibility') {
-        setRoute('accessibility');
-      } else {
-        setRoute('landing');
-      }
+      const hash = window.location.hash;
+      const newRoute = getRouteFromPath(path, hash);
+      setRoute(newRoute);
     };
+
+    // Handle initial load - ensure route matches current path
+    handleNavigation();
 
     window.addEventListener('popstate', handleNavigation);
     window.addEventListener('hashchange', handleNavigation);

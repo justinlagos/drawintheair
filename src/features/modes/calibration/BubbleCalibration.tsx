@@ -34,7 +34,6 @@ const GAME_DURATION = 30000; // 30 seconds
 export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibrationProps) => {
     const [score, setScore] = useState(0);
     const [timeRemaining, setTimeRemaining] = useState(GAME_DURATION);
-    const [milestoneReached, setMilestoneReached] = useState(false);
     const [showMilestoneCelebration, setShowMilestoneCelebration] = useState(false);
     const [showEndModal, setShowEndModal] = useState(false);
     const [level, setLevel] = useState(1);
@@ -48,7 +47,6 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
         setShowEndModal(false);
         setScore(0);
         setTimeRemaining(GAME_DURATION);
-        setMilestoneReached(false);
         setAutoAdvanceScheduled(false);
         setEncouragementMessage(null);
     }, [level]);
@@ -68,7 +66,6 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
             
             setScore(currentScore);
             setTimeRemaining(currentTimeRemaining);
-            setMilestoneReached(currentMilestoneReached);
             setLevel(currentLevel);
             
             // Show milestone celebration when reached
@@ -139,13 +136,11 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
         setShowEndModal(false);
         setScore(0);
         setTimeRemaining(GAME_DURATION);
-        setMilestoneReached(false);
         setEncouragementMessage(null);
         setAutoAdvanceScheduled(false);
     };
 
     const currentGoal = getCurrentGoal();
-    const progress = Math.min(score / currentGoal, 1);
 
     // Format time as M:SS
     const formatTime = (ms: number) => {

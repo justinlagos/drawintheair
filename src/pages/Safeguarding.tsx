@@ -39,13 +39,13 @@ export const Safeguarding: React.FC = () => {
             <ul className="landing-content-list">
               <li>Follow your school's normal safeguarding procedures</li>
               <li>Contact your designated safeguarding lead</li>
-              <li>If the concern is about the platform itself, contact us at safeguarding@placeholder.com</li>
+              <li>If the concern is about the platform itself, contact us at <a href="mailto:safeguarding@drawintheair.com">safeguarding@drawintheair.com</a></li>
             </ul>
             
             <h2>Contact</h2>
             <p>For safeguarding enquiries, please contact:</p>
             <p>
-              <strong>Email:</strong> safeguarding@placeholder.com
+              <strong>Email:</strong> <a href="mailto:safeguarding@drawintheair.com">safeguarding@drawintheair.com</a>
             </p>
           </div>
         </section>

@@ -32,8 +32,8 @@ export const Privacy: React.FC = () => {
             <h2>Contact details</h2>
             <p>If you have questions about privacy, please contact us at:</p>
             <p>
-              <strong>Email:</strong> privacy@placeholder.com<br />
-              <strong>Partnerships:</strong> partnerships@placeholder.com
+              <strong>Email:</strong> <a href="mailto:privacy@drawintheair.com">privacy@drawintheair.com</a><br />
+              <strong>Partnerships:</strong> <a href="mailto:partnership@drawintheair.com">partnership@drawintheair.com</a>
             </p>
             
             <h2>Data retention</h2>

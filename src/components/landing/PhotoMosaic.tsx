@@ -12,7 +12,7 @@ export const PhotoMosaic: React.FC = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [imagesLoaded, setImagesLoaded] = useState<Set<number>>(new Set());
   const sliderRef = useRef<HTMLDivElement>(null);
-  const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
+  const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const photos: Photo[] = [
     {

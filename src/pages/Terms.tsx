@@ -44,8 +44,8 @@ export const Terms: React.FC = () => {
             <h2>Contact</h2>
             <p>If you have questions about these terms, please contact us at:</p>
             <p>
-              <strong>Email:</strong> terms@placeholder.com<br />
-              <strong>Partnerships:</strong> partnerships@placeholder.com
+              <strong>Email:</strong> <a href="mailto:terms@drawintheair.com">terms@drawintheair.com</a><br />
+              <strong>Partnerships:</strong> <a href="mailto:partnership@drawintheair.com">partnership@drawintheair.com</a>
             </p>
           </div>
         </section>

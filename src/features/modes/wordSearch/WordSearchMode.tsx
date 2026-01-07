@@ -15,8 +15,8 @@ import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import { generateGrid } from './wordSearchGenerator';
 import { renderGrid } from './wordSearchRender';
 import { processWordSearchFrame, createWordSearchState, type WordSearchState } from './wordSearchLogic';
-import { selectWords, getThemeIcon, THEME_COLORS, getWordIcon } from './wordSearchAssets';
-import { WORD_COUNTS, WORD_LENGTHS, GRID_SIZES } from './wordSearchConstants';
+import { selectWords, THEME_COLORS, getWordIcon } from './wordSearchAssets';
+import { WORD_COUNTS, WORD_LENGTHS } from './wordSearchConstants';
 import type { WordSearchSettings, Theme, Difficulty, Chapter, Word } from './wordSearchTypes';
 
 export interface WordSearchModeProps {
@@ -287,7 +287,6 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
         ? stateRef.current.grid.words.filter(w => w.found).length
         : 0;
     const totalWords = stateRef.current.grid ? stateRef.current.grid.words.length : 0;
-    const colors = THEME_COLORS[settings.theme];
     const environment = CHAPTER_ENVIRONMENTS[chapter];
     const words = stateRef.current.grid?.words || [];
     const instruction = getInstructionText(instructionState, foundCount, totalWords);
@@ -663,8 +662,6 @@ interface WordPanelProps {
 }
 
 const WordPanel = ({ words, theme, justFoundWord, hintWordIndex, hintPhase, isMobile, accentColor }: WordPanelProps) => {
-    const colors = THEME_COLORS[theme];
-    
     const containerStyle: React.CSSProperties = isMobile
         ? {
             position: 'fixed',

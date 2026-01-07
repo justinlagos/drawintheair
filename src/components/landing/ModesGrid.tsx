@@ -55,7 +55,7 @@ export const ModesGrid: React.FC = () => {
       <div className="landing-modes-grid">
         {/* Top row: 3 equal-width cards */}
         <div className="landing-modes-row landing-modes-row-top">
-          {modes.slice(0, 3).map((mode, index) => (
+          {modes.slice(0, 3).map((mode) => (
             <article key={mode.title} className="landing-mode-card">
               {mode.badge && (
                 <span className="landing-mode-badge">{mode.badge}</span>

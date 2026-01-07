@@ -83,11 +83,10 @@ interface ModeCardProps {
     isSelected: boolean;
     hoverProgress: number;
     onSelect: (mode: GameMode) => void;
-    cardRefs: React.MutableRefObject<Map<GameMode, DOMRect>>;
     isFullWidth?: boolean;
 }
 
-const ModeCard = ({ mode, isHovered, isSelected, hoverProgress, onSelect, cardRefs, isFullWidth = false }: ModeCardProps) => {
+const ModeCard = ({ mode, isHovered, isSelected, hoverProgress, onSelect, isFullWidth = false }: ModeCardProps) => {
     return (
         <div
             id={`mode-card-${mode.id}`}
@@ -490,7 +489,6 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
                                     isSelected={isSelected}
                                     hoverProgress={hoverProgress}
                                     onSelect={onSelect}
-                                    cardRefs={cardRefs}
                                     isFullWidth={false}
                                 />
                             </div>
@@ -520,7 +518,6 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
                                     isSelected={isSelected}
                                     hoverProgress={hoverProgress}
                                     onSelect={onSelect}
-                                    cardRefs={cardRefs}
                                     isFullWidth={true}
                                 />
                             </div>

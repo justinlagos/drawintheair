@@ -501,6 +501,7 @@ function checkWordMatch(
     // Convert selection path to string
     const selectedWord = selectionPath
         .map(id => {
+            if (!state.grid) return '';
             for (const row of state.grid.tiles) {
                 for (const tile of row) {
                     if (tile.id === id) return tile.letter;
