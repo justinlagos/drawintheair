@@ -14,6 +14,7 @@
 import { OneEuroFilter2D } from './filters/OneEuroFilter';
 import { PenStateManager, PenState, type PenStateEvent } from './PenStateManager';
 import { normalizedToCanvas, type NormalizedPoint } from './coordinateUtils';
+import { perf } from './perf';
 
 // Re-export PenState for use in other components
 export { PenState } from './PenStateManager';
@@ -49,8 +50,8 @@ const PEN_CONFIG = {
     pinchUpThreshold: 0.45
 };
 
-// Resampling config
-const RESAMPLE_SPACING_PX = 2; // Closer spacing for smoother lines (was 3)
+// Resampling config (will be overridden by perf tier)
+const DEFAULT_RESAMPLE_SPACING_PX = 2; // Closer spacing for smoother lines (was 3)
 const JUMP_THRESHOLD_PX = 50; // Tighter jump detection (was 60)
 
 export class DrawingEngine {
@@ -66,10 +67,21 @@ export class DrawingEngine {
     private velocityHistory: number[] = [];
     private canvasWidth: number = 1920;
     private canvasHeight: number = 1080;
+    private resampleSpacingPx: number = DEFAULT_RESAMPLE_SPACING_PX;
 
     constructor() {
         this.filter = new OneEuroFilter2D(FILTER_CONFIG);
         this.penManager = new PenStateManager(PEN_CONFIG);
+        // Update resample spacing based on perf tier
+        this.updatePerfSettings();
+    }
+    
+    /**
+     * Update performance settings from perf config
+     */
+    private updatePerfSettings(): void {
+        const config = perf.getConfig();
+        this.resampleSpacingPx = config.resampleSpacingPx;
     }
 
     setColor(color: string): void {
@@ -200,7 +212,7 @@ export class DrawingEngine {
         const normalizedVelocity = Math.min(avgVelocity / 2.5, 1);
         const pressure = Math.max(0.5, 1 - normalizedVelocity * 0.4);
 
-        // Resample points for consistent density
+        // Resample points for consistent density (spacing varies by perf tier)
         const resampledPoints = this.resamplePoints(
             this.lastFilteredPoint,
             { x: filtered.x, y: filtered.y, pressure, timestamp }
@@ -224,14 +236,17 @@ export class DrawingEngine {
         const canvas0 = normalizedToCanvas(p0, this.canvasWidth, this.canvasHeight);
         const canvas1 = normalizedToCanvas(p1, this.canvasWidth, this.canvasHeight);
         const distancePx = Math.hypot(canvas1.x - canvas0.x, canvas1.y - canvas0.y);
+        
+        // Use perf-based resample spacing
+        this.updatePerfSettings();
 
-        if (distancePx < RESAMPLE_SPACING_PX) {
+        if (distancePx < this.resampleSpacingPx) {
             // Points are close enough, just add the endpoint
             return [p1];
         }
 
         // Interpolate points along the line
-        const numPoints = Math.floor(distancePx / RESAMPLE_SPACING_PX);
+        const numPoints = Math.floor(distancePx / this.resampleSpacingPx);
         const points: Point[] = [];
 
         for (let i = 1; i <= numPoints; i++) {
@@ -312,18 +327,25 @@ export class DrawingEngine {
         if (this.canvasWidth !== width || this.canvasHeight !== height) {
             this.setCanvasSize(width, height);
         }
+        
+        // Update perf settings (may change if user overrides)
+        this.updatePerfSettings();
 
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
+        
+        const perfConfig = perf.getConfig();
 
         for (const stroke of this.strokes) {
             if (stroke.points.length < 2) continue;
 
-            // Render glow layer
-            this.renderGlow(ctx, stroke, width, height);
+            // Render glow layer (only if visual quality is high or medium)
+            if (perfConfig.visualQuality === 'high') {
+                this.renderGlow(ctx, stroke, width, height, perfConfig);
+            }
 
             // Render main stroke with smooth curves
-            this.renderStroke(ctx, stroke, width, height);
+            this.renderStroke(ctx, stroke, width, height, perfConfig);
         }
     }
 
@@ -331,22 +353,25 @@ export class DrawingEngine {
         ctx: CanvasRenderingContext2D,
         stroke: Stroke,
         width: number,
-        height: number
+        height: number,
+        perfConfig: { glowPasses: number; shadowBlurScale: number }
     ): void {
         ctx.save();
 
-        // Multiple glow passes
-        const glowLayers = [
+        // Multiple glow passes (reduced on low tier)
+        const baseGlowLayers = [
             { blur: 18, alpha: 0.12, widthMult: 2.8 },
             { blur: 10, alpha: 0.18, widthMult: 2.0 },
             { blur: 6, alpha: 0.25, widthMult: 1.5 },
         ];
-
+        
+        const glowLayers = baseGlowLayers.slice(0, perfConfig.glowPasses);
+        
         for (const layer of glowLayers) {
-            ctx.filter = `blur(${layer.blur}px)`;
+            ctx.filter = `blur(${layer.blur * perfConfig.shadowBlurScale}px)`;
             ctx.globalAlpha = layer.alpha;
             ctx.strokeStyle = stroke.color;
-            ctx.lineWidth = stroke.baseWidth * layer.widthMult;
+            ctx.lineWidth = stroke.baseWidth * layer.widthMult * perfConfig.shadowBlurScale;
 
             this.drawSmoothPath(ctx, stroke.points, width, height);
             ctx.stroke();
@@ -359,7 +384,8 @@ export class DrawingEngine {
         ctx: CanvasRenderingContext2D,
         stroke: Stroke,
         width: number,
-        height: number
+        height: number,
+        perfConfig: { shadowBlurScale: number }
     ): void {
         const points = stroke.points;
 
@@ -422,14 +448,16 @@ export class DrawingEngine {
             ctx.stroke();
         }
 
-        // Add subtle highlight
-        ctx.save();
-        ctx.globalAlpha = 0.3;
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = Math.max(1, stroke.baseWidth * 0.2);
-        this.drawSmoothPath(ctx, points, width, height, -1, -1);
-        ctx.stroke();
-        ctx.restore();
+        // Add subtle highlight (only on high quality)
+        if (perfConfig.shadowBlurScale >= 0.8) {
+            ctx.save();
+            ctx.globalAlpha = 0.3 * perfConfig.shadowBlurScale;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = Math.max(1, stroke.baseWidth * 0.2);
+            this.drawSmoothPath(ctx, points, width, height, -1, -1);
+            ctx.stroke();
+            ctx.restore();
+        }
     }
 
     /**

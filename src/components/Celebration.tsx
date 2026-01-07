@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState, useRef } from 'react';
+import { perf } from '../core/perf';
 
 interface CelebrationProps {
     show: boolean;
@@ -74,10 +75,12 @@ export const Celebration = ({
             setVisible(true);
             if (soundEffect) playSound();
             
-            // Generate confetti particles
+            // Generate confetti particles (reduced count on low tier)
             if (showConfetti) {
+                const perfConfig = perf.getConfig();
+                const particleCount = perfConfig.maxParticles;
                 const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#FFE66D', '#A855F7', '#FF6B9D', '#95E1D3'];
-                const newParticles: Particle[] = Array.from({ length: 50 }, () => ({
+                const newParticles: Particle[] = Array.from({ length: particleCount }, () => ({
                     x: 0.5,
                     y: 0.5,
                     vx: (Math.random() - 0.5) * 0.03,

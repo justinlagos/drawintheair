@@ -87,6 +87,24 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Performance optimization: Disable backdrop-filter on low tier devices */
+body.perf-no-blur *,
+body.perf-no-blur *::before,
+body.perf-no-blur *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* On low tier, replace backdrop-filter with solid translucent backgrounds where needed */
+body.perf-no-blur .glass-panel {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Reduce box-shadow blur on low tier */
+body.perf-tier-low * {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
 body {
   margin: 0;
   min-width: 320px;

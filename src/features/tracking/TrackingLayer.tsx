@@ -15,6 +15,7 @@ import { useWebcam } from '../../core/useWebcam';
 import { handTracker } from '../../core/handTracker';
 import { DrawingUtils, type HandLandmarkerResult, type NormalizedLandmark } from '@mediapipe/tasks-vision';
 import { interactionStateManager, type InteractionState } from '../../core/InteractionState';
+import { perf } from '../../core/perf';
 
 /**
  * Mirror X coordinate for natural interaction
@@ -76,7 +77,9 @@ interface TrackingLayerProps {
 export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
     const { videoRef, stream, isLoading: isWebcamLoading } = useWebcam();
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [lastFrameData, setLastFrameData] = useState<TrackingFrameData>({
+    
+    // Store frame data in ref to avoid per-frame React updates
+    const lastFrameDataRef = useRef<TrackingFrameData>({
         results: null,
         confidence: 0,
         timestamp: 0,
@@ -89,11 +92,18 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
         filteredPoint: null,
         filteredThumbTip: null
     });
+    
+    // Only update React state when values actually change (throttled for UI updates)
+    const [lastFrameData, setLastFrameData] = useState<TrackingFrameData>(lastFrameDataRef.current);
+    const lastUpdateTimeRef = useRef<number>(0);
+    const UPDATE_THROTTLE_MS = 100; // Update React state at most every 100ms
 
     // Separate detection and rendering
     const detectionIntervalRef = useRef<number | undefined>(undefined);
     const lastDetectionTime = useRef<number>(0);
-    const detectionRate = 30; // 30 FPS for detection (stable cadence)
+    
+    // Get detection rate from perf config
+    const detectionRate = perf.getConfig().targetDetectFps;
     const detectionInterval = 1000 / detectionRate;
     
     // Rendering at 60 FPS
@@ -133,15 +143,19 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                 drawingUtils = new DrawingUtils(canvasRef.current.getContext('2d')!);
             }
 
-            // Detection loop (separate from rendering, stable cadence)
+            // Detection loop (separate from rendering, stable cadence based on perf tier)
             const detectionLoop = () => {
                 if (!isRunning) return;
 
                 const now = Date.now();
                 const elapsed = now - lastDetectionTime.current;
+                
+                // Re-read detection interval in case perf config changed
+                const currentDetectionRate = perf.getConfig().targetDetectFps;
+                const currentDetectionInterval = 1000 / currentDetectionRate;
 
-                if (elapsed >= detectionInterval && videoRef.current && videoRef.current.readyState >= 2) {
-                    lastDetectionTime.current = now - (elapsed % detectionInterval);
+                if (elapsed >= currentDetectionInterval && videoRef.current && videoRef.current.readyState >= 2) {
+                    lastDetectionTime.current = now - (elapsed % currentDetectionInterval);
 
                     const timestamp = Date.now();
                     const rawResults = handTracker.detect(videoRef.current, timestamp);
@@ -152,9 +166,19 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                     // Process through unified interaction state manager
                     const interactionState = interactionStateManager.process(results, timestamp);
                     latestInteractionStateRef.current = interactionState;
+                    
+                    // Update frame data ref (no React state update here)
+                    const frameData = convertToFrameData(interactionState);
+                    lastFrameDataRef.current = frameData;
+                    
+                    // Throttled React state update for UI components that need it
+                    if (now - lastUpdateTimeRef.current >= UPDATE_THROTTLE_MS) {
+                        setLastFrameData(frameData);
+                        lastUpdateTimeRef.current = now;
+                    }
                 }
 
-                detectionIntervalRef.current = window.setTimeout(detectionLoop, detectionInterval);
+                detectionIntervalRef.current = window.setTimeout(detectionLoop, currentDetectionInterval);
             };
 
             // Render loop (60 FPS, decoupled from detection)
@@ -179,11 +203,8 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                             }
                         }
 
-                        // Convert to TrackingFrameData for compatibility
-                        const frameData = convertToFrameData(latestInteractionStateRef.current);
-                        
-                        // Update React state (batched, not per-frame)
-                        setLastFrameData(frameData);
+                        // Use latest frame data from ref (already updated by detection loop)
+                        const frameData = lastFrameDataRef.current;
 
                         if (ctx) {
                             // Clear canvas
@@ -217,7 +238,7 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
             cancelAnimationFrame(animationFrameId);
             interactionStateManager.reset();
         };
-    }, [stream, isWebcamLoading, videoRef, onFrame, convertToFrameData, detectionInterval, renderInterval]);
+    }, [stream, isWebcamLoading, videoRef, onFrame, convertToFrameData, renderInterval]);
 
     return (
         <div style={{ 
@@ -266,8 +287,8 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                 }}
             />
 
-            {/* Children receive stable, filtered frame data */}
-            {typeof children === 'function' ? children(lastFrameData) : children}
+            {/* Children receive stable, filtered frame data (from ref, updated throttled) */}
+            {typeof children === 'function' ? children(lastFrameDataRef.current) : children}
         </div>
     );
 };

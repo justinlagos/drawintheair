@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { perf, type PerformanceOverride } from '../../core/perf';
 
 // Responsive hook
 const useResponsiveLayout = () => {
@@ -42,6 +43,10 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
     const [showMenu, setShowMenu] = useState(false);
     const holdStartTime = useRef<number | null>(null);
     const animationRef = useRef<number | null>(null);
+    const [perfOverride, setPerfOverride] = useState<PerformanceOverride>(() => {
+        const saved = localStorage.getItem('perf-override') as PerformanceOverride | null;
+        return (saved && ['auto', 'high', 'low'].includes(saved)) ? saved : 'auto';
+    });
 
     const HOLD_DURATION = 2000; // 2 seconds to unlock
     
@@ -115,6 +120,14 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
         setShowMenu(false);
         setHoldProgress(0);
     };
+
+    const handlePerfChange = (value: PerformanceOverride) => {
+        setPerfOverride(value);
+        localStorage.setItem('perf-override', value);
+        perf.setOverride(value);
+    };
+
+    const currentTier = perf.getConfig().tier;
 
     // Responsive button size - minimum 44px for touch safety
     const buttonSize = isCompact ? 44 : 48;
@@ -331,6 +344,63 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                                     Settings
                                 </button>
                             )}
+
+                            {/* Performance Toggle */}
+                            <div style={{
+                                padding: isCompact ? '12px' : '16px',
+                                background: 'rgba(0, 0, 0, 0.2)',
+                                borderRadius: isCompact ? '12px' : '16px',
+                                border: '1px solid rgba(255, 255, 255, 0.1)'
+                            }}>
+                                <div style={{
+                                    marginBottom: isCompact ? '8px' : '12px',
+                                    fontSize: isCompact ? '0.85rem' : '0.9rem',
+                                    color: 'rgba(255,255,255,0.7)',
+                                    fontWeight: 600
+                                }}>
+                                    ⚡ Performance
+                                </div>
+                                <div style={{
+                                    display: 'flex',
+                                    gap: isCompact ? '6px' : '8px'
+                                }}>
+                                    {(['auto', 'high', 'low'] as PerformanceOverride[]).map((option) => (
+                                        <button
+                                            key={option}
+                                            onClick={() => handlePerfChange(option)}
+                                            style={{
+                                                flex: 1,
+                                                padding: isCompact ? '10px 8px' : '12px 10px',
+                                                minHeight: '44px',
+                                                background: perfOverride === option
+                                                    ? 'rgba(0, 229, 255, 0.2)'
+                                                    : 'rgba(255, 255, 255, 0.05)',
+                                                border: perfOverride === option
+                                                    ? '1px solid rgba(0, 229, 255, 0.5)'
+                                                    : '1px solid rgba(255, 255, 255, 0.1)',
+                                                borderRadius: isCompact ? '8px' : '10px',
+                                                color: 'white',
+                                                cursor: 'pointer',
+                                                fontSize: isCompact ? '0.8rem' : '0.85rem',
+                                                fontWeight: perfOverride === option ? 600 : 400,
+                                                transition: 'all 0.2s ease',
+                                                touchAction: 'manipulation',
+                                                textTransform: 'capitalize'
+                                            }}
+                                        >
+                                            {option === 'auto' ? 'Auto' : option === 'high' ? 'High' : 'Low'}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div style={{
+                                    marginTop: isCompact ? '8px' : '10px',
+                                    fontSize: isCompact ? '0.7rem' : '0.75rem',
+                                    color: 'rgba(255,255,255,0.5)',
+                                    textAlign: 'center'
+                                }}>
+                                    Current: {currentTier.toUpperCase()}
+                                </div>
+                            </div>
 
                             {/* Cancel */}
                             <button

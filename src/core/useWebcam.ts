@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { perf } from './perf';
 
 interface UseWebcamOptions {
     width?: number;
@@ -16,8 +17,8 @@ interface UseWebcamResult {
 }
 
 export const useWebcam = ({
-    width = 1280,
-    height = 720,
+    width,
+    height,
     facingMode = 'user',
     autoStart = true,
 }: UseWebcamOptions & { autoStart?: boolean } = {}): UseWebcamResult => {
@@ -30,10 +31,17 @@ export const useWebcam = ({
         try {
             setIsLoading(true);
             setError(null);
+            
+            // Use perf config for camera resolution, or fallback to provided/default values
+            const perfConfig = perf.getConfig();
+            const cameraWidth = width ?? perfConfig.cameraWidth;
+            const cameraHeight = height ?? perfConfig.cameraHeight;
+            
             const constraints = {
                 video: {
-                    width: { ideal: width },
-                    height: { ideal: height },
+                    width: { ideal: cameraWidth },
+                    height: { ideal: cameraHeight },
+                    frameRate: { ideal: 30 },
                     facingMode,
                 },
             };
@@ -64,8 +72,9 @@ export const useWebcam = ({
                 stream.getTracks().forEach((track) => track.stop());
             }
         };
+        // Note: perf config may change, but we don't want to restart camera on every change
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [width, height, facingMode, autoStart]);
+    }, [facingMode, autoStart]);
 
     return { videoRef, stream, error, isLoading, requestAccess: startWebcam };
 };

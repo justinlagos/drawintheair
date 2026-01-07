@@ -12,6 +12,7 @@
 import { DrawingUtils } from '@mediapipe/tasks-vision';
 import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import { normalizedToCanvas } from '../../../core/coordinateUtils';
+import { perf } from '../../../core/perf';
 
 interface Bubble {
     id: number;
@@ -217,7 +218,9 @@ export const bubbleCalibrationLogic = (
     ctx.restore();
 
     // Draw parallax background layers (levels 2-3) with level-specific colors
-    if (config.hasParallax) {
+    // Skip on low tier for performance
+    const perfConfig = perf.getConfig();
+    if (config.hasParallax && perfConfig.visualQuality === 'high') {
         ctx.save();
         ctx.globalAlpha = currentLevel === 2 ? 0.2 : 0.25;
         
@@ -225,8 +228,9 @@ export const bubbleCalibrationLogic = (
         const color1 = currentLevel === 2 ? 'rgba(100, 150, 255, 0.3)' : 'rgba(150, 100, 255, 0.3)';
         const color2 = currentLevel === 2 ? 'rgba(79, 172, 254, 0.2)' : 'rgba(200, 100, 255, 0.25)';
         
-        // Multiple layers for depth
-        for (let i = 0; i < (currentLevel === 3 ? 5 : 3); i++) {
+        // Reduce layers on low tier
+        const maxLayers = perfConfig.tier === 'low' ? 2 : (currentLevel === 3 ? 5 : 3);
+        for (let i = 0; i < maxLayers; i++) {
             const x = (width * 0.3 + Math.sin(time + i * 0.7) * width * 0.15) % width;
             const y = height * 0.2 + i * height * 0.25;
             const size = 80 + i * 20;
@@ -299,7 +303,11 @@ export const bubbleCalibrationLogic = (
             ctx.fill();
 
             // Enhanced sparkles with level-specific count and effects
-            const particleCount = config.particleCount;
+            // Reduce particles on low tier
+            const baseParticleCount = config.particleCount;
+            const particleCount = perfConfig.visualQuality === 'low' 
+                ? Math.floor(baseParticleCount * 0.6)
+                : baseParticleCount;
             for (let i = 0; i < particleCount; i++) {
                 const angle = (i / particleCount) * Math.PI * 2 + age / 40;
                 const dist = r * (1 + age / 80) * (currentLevel >= 2 ? 1.2 : 1);
@@ -307,8 +315,8 @@ export const bubbleCalibrationLogic = (
                 const sy = canvasPoint.y + floatOffset + Math.sin(angle) * dist;
                 const particleSize = (currentLevel >= 2 ? 8 : 7) * alpha;
 
-                // Level 3 gets extra glow on particles
-                if (currentLevel === 3) {
+                // Level 3 gets extra glow on particles (skip on low tier)
+                if (currentLevel === 3 && perfConfig.visualQuality === 'high') {
                     ctx.save();
                     ctx.globalAlpha = alpha * 0.5;
                     ctx.beginPath();
@@ -327,22 +335,24 @@ export const bubbleCalibrationLogic = (
             // 3D Bubble with depth
             const depthScale = bubble.z;
             
-            // Shadow (darker for depth)
-            ctx.save();
-            ctx.globalAlpha = 0.3 * depthScale;
-            ctx.beginPath();
-            ctx.ellipse(
-                canvasPoint.x + 3,
-                canvasPoint.y + floatOffset + 3,
-                r * 0.9,
-                r * 0.6,
-                0, 0, Math.PI * 2
-            );
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-            ctx.fill();
-            ctx.restore();
+            // Shadow (darker for depth) - skip on low tier
+            if (perfConfig.visualQuality === 'high') {
+                ctx.save();
+                ctx.globalAlpha = 0.3 * depthScale;
+                ctx.beginPath();
+                ctx.ellipse(
+                    canvasPoint.x + 3,
+                    canvasPoint.y + floatOffset + 3,
+                    r * 0.9,
+                    r * 0.6,
+                    0, 0, Math.PI * 2
+                );
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+                ctx.fill();
+                ctx.restore();
+            }
 
-            // Main bubble with gradient
+            // Main bubble with gradient (simplified on low tier)
             const gradient = ctx.createRadialGradient(
                 canvasPoint.x - r * 0.4 * depthScale,
                 canvasPoint.y - r * 0.4 * depthScale + floatOffset,
@@ -351,11 +361,19 @@ export const bubbleCalibrationLogic = (
                 canvasPoint.y + floatOffset,
                 r
             );
-            gradient.addColorStop(0, 'rgba(255,255,255,0.95)');
-            gradient.addColorStop(0.2, bubble.color + 'EE');
-            gradient.addColorStop(0.5, bubble.color + 'AA');
-            gradient.addColorStop(0.8, bubble.color + '66');
-            gradient.addColorStop(1, 'transparent');
+            
+            if (perfConfig.visualQuality === 'low') {
+                // Simplified gradient on low tier
+                gradient.addColorStop(0, 'rgba(255,255,255,0.9)');
+                gradient.addColorStop(0.5, bubble.color + 'CC');
+                gradient.addColorStop(1, bubble.color + '88');
+            } else {
+                gradient.addColorStop(0, 'rgba(255,255,255,0.95)');
+                gradient.addColorStop(0.2, bubble.color + 'EE');
+                gradient.addColorStop(0.5, bubble.color + 'AA');
+                gradient.addColorStop(0.8, bubble.color + '66');
+                gradient.addColorStop(1, 'transparent');
+            }
 
             ctx.beginPath();
             ctx.arc(canvasPoint.x, canvasPoint.y + floatOffset, r, 0, Math.PI * 2);
@@ -363,7 +381,8 @@ export const bubbleCalibrationLogic = (
             ctx.fill();
 
             // Enhanced outer glow (levels 2-3) with level-specific intensity
-            if (config.hasBloom) {
+            // Skip or reduce on low tier
+            if (config.hasBloom && perfConfig.visualQuality === 'high') {
                 const glowSize = currentLevel === 3 ? 2.0 : 1.6;
                 const glowIntensity = config.bubbleGlowIntensity;
                 
@@ -397,17 +416,19 @@ export const bubbleCalibrationLogic = (
             ctx.lineWidth = 2;
             ctx.stroke();
 
-            // Highlight for 3D effect
-            ctx.beginPath();
-            ctx.arc(
-                canvasPoint.x - r * 0.35 * depthScale,
-                canvasPoint.y - r * 0.35 * depthScale + floatOffset,
-                r * 0.3 * depthScale,
-                0,
-                Math.PI * 2
-            );
-            ctx.fillStyle = 'rgba(255,255,255,0.75)';
-            ctx.fill();
+            // Highlight for 3D effect (skip on low tier)
+            if (perfConfig.visualQuality === 'high') {
+                ctx.beginPath();
+                ctx.arc(
+                    canvasPoint.x - r * 0.35 * depthScale,
+                    canvasPoint.y - r * 0.35 * depthScale + floatOffset,
+                    r * 0.3 * depthScale,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fillStyle = 'rgba(255,255,255,0.75)';
+                ctx.fill();
+            }
         }
     });
 

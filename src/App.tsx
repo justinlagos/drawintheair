@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { TrackingLayer, type TrackingFrameData } from './features/tracking/TrackingLayer';
 import { FreePaintMode } from './features/modes/FreePaintMode';
 import { freePaintLogic } from './features/modes/freePaintLogic';
@@ -14,7 +14,9 @@ import { WaveToWake } from './features/onboarding/WaveToWake';
 import { ModeSelectionMenu, type GameMode } from './features/menu/ModeSelectionMenu';
 import { AdultGate } from './features/safety/AdultGate';
 import { MagicCursor } from './components/MagicCursor';
+import { PerfOverlay } from './components/PerfOverlay';
 import { drawingEngine, PenState } from './core/drawingEngine';
+import { perf } from './core/perf';
 import './App.css';
 
 type AppState = 'onboarding' | 'menu' | 'game';
@@ -101,8 +103,32 @@ function App() {
 
   const activeLogic = getActiveLogic();
 
+  // Apply performance tier class to body for CSS styling
+  useEffect(() => {
+    const updatePerfClass = () => {
+      const config = perf.getConfig();
+      document.body.className = document.body.className
+        .replace(/\bperf-tier-(low|medium|high)\b/g, '')
+        .trim();
+      document.body.classList.add(`perf-tier-${config.tier}`);
+      if (!config.enableBackdropBlur) {
+        document.body.classList.add('perf-no-blur');
+      } else {
+        document.body.classList.remove('perf-no-blur');
+      }
+    };
+    
+    // Initial update
+    updatePerfClass();
+    
+    // Watch for perf config changes (e.g., user override)
+    const interval = setInterval(updatePerfClass, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="App">
+      <PerfOverlay />
       <TrackingLayer onFrame={activeLogic}>
         {(frameData: TrackingFrameData) => {
           const { results, indexTip, confidence } = frameData;
