@@ -531,10 +531,7 @@ function checkWordMatch(
             return {
                 wordFound: word.text,
                 roundComplete: allFound,
-                needsRender: true,
-                hintPhase: 0,
-                hintWordIndex: null,
-                hintTileIds: []
+                needsRender: true
             };
         }
     }
@@ -562,16 +559,13 @@ function checkWordMatch(
                 return {
                     wordFound: word.text,
                     roundComplete: allFound,
-                    needsRender: true,
-                    hintPhase: 0,
-                    hintWordIndex: null,
-                    hintTileIds: []
+                    needsRender: true
                 };
             }
         }
     }
     
     // No match - gentle fail feedback
-    return { wordFound: null, roundComplete: false, needsRender: true, hintPhase: 0, hintWordIndex: null, hintTileIds: [] };
+    return { wordFound: null, roundComplete: false, needsRender: true };
 }
 

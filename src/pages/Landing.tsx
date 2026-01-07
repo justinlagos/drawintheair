@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { HeaderNav } from '../components/landing/HeaderNav';
 import { HeroSection } from '../components/landing/HeroSection';
 import { HowItWorks } from '../components/landing/HowItWorks';

@@ -49,7 +49,7 @@ export function renderGrid(
     
     // Render selection path highlight (rounded corridor for kids)
     if (selectionState.isActive && selectionState.selectionPath.length > 0) {
-        renderSelectionPath(ctx, grid, selectionState, colors, width, height);
+        renderSelectionPath(ctx, grid, selectionState, width, height);
     }
     
     // Render hints (gentle glow, no shaking)
@@ -223,7 +223,6 @@ function renderSelectionPath(
     ctx: CanvasRenderingContext2D,
     grid: Grid,
     selectionState: SelectionState,
-    colors: { primary: string; secondary: string; accent: string; background: string },
     width: number,
     height: number
 ): void {

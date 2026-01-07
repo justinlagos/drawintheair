@@ -15,7 +15,7 @@ import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import { generateGrid } from './wordSearchGenerator';
 import { renderGrid } from './wordSearchRender';
 import { processWordSearchFrame, createWordSearchState, type WordSearchState } from './wordSearchLogic';
-import { selectWords, THEME_COLORS, getWordIcon } from './wordSearchAssets';
+import { selectWords, getWordIcon } from './wordSearchAssets';
 import { WORD_COUNTS, WORD_LENGTHS } from './wordSearchConstants';
 import type { WordSearchSettings, Theme, Difficulty, Chapter, Word } from './wordSearchTypes';
 
@@ -446,7 +446,6 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
             ═══════════════════════════════════════════════════════════════ */}
             <WordPanel
                     words={words}
-                theme={settings.theme}
                 justFoundWord={justFoundWord}
                     hintWordIndex={hintWordIndex}
                     hintPhase={hintPhase}
@@ -653,7 +652,6 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
  */
 interface WordPanelProps {
     words: Word[];
-    theme: Theme;
     justFoundWord: string | null;
     hintWordIndex: number | null;
     hintPhase: 0 | 1 | 2 | 3;
@@ -661,7 +659,7 @@ interface WordPanelProps {
     accentColor: string;
 }
 
-const WordPanel = ({ words, theme, justFoundWord, hintWordIndex, hintPhase, isMobile, accentColor }: WordPanelProps) => {
+const WordPanel = ({ words, justFoundWord, hintWordIndex, hintPhase, isMobile, accentColor }: WordPanelProps) => {
     const containerStyle: React.CSSProperties = isMobile
         ? {
             position: 'fixed',

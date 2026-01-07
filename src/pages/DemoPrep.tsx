@@ -38,7 +38,7 @@ export const DemoPrep = () => {
             
             return () => clearInterval(interval);
         }
-    }, [stream, step, navigate]);
+    }, [stream, step]);
 
     const handleStartWarmup = async () => {
         await requestAccess();

@@ -75,7 +75,6 @@ class AnalyticsClient {
   private eventQueue: AnalyticsEvent[] = [];
   private flushInterval: number | null = null;
   private heartbeatInterval: number | null = null;
-  private lastFlushTime = Date.now();
   private readonly FLUSH_INTERVAL_MS = 10000; // 10 seconds
   private readonly FLUSH_BATCH_SIZE = 10;
   private readonly HEARTBEAT_INTERVAL_MS = 15000; // 15 seconds

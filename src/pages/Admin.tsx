@@ -14,29 +14,6 @@ interface SchoolPackRequest {
   status: 'new' | 'contacted' | 'closed';
 }
 
-interface AnalyticsSession {
-  session_id: string;
-  created_at: string;
-  last_seen_at: string;
-  device_type: string;
-  browser: string;
-  browser_version?: string;
-  country?: string;
-  referrer?: string;
-  utm_source?: string;
-  utm_medium?: string;
-  utm_campaign?: string;
-  landing_views: number;
-  try_demo_clicked: boolean;
-  first_mode_started: string | null;
-  total_play_time: number;
-  modes_played: string[];
-  time_on_page?: number;
-  demo_session_duration?: number;
-  errors_encountered: string[];
-  camera_permission_outcome?: 'granted' | 'denied' | 'prompt';
-}
-
 interface KPIData {
   total_visits: number;
   unique_sessions: number;
