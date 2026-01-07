@@ -455,9 +455,8 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
                             fontSize: isCompact ? '1.5rem' : '2.5rem',
                             fontWeight: 'bold',
                             color: goalReached ? '#FFD93D' : 'white',
-                            marginBottom: isCompact ? '10px' : '16px',
                             textShadow: goalReached ? '0 0 30px #FFD93D' : 'none',
-                            margin: 0
+                            margin: `0 0 ${isCompact ? '10px' : '16px'} 0`
                         }}>
                             {goalReached 
                                 ? (isLastLevel ? 'All Levels Complete!' : 'Level Complete!')
