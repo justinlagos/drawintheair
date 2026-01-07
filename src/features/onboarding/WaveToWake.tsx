@@ -2,6 +2,37 @@ import { useRef, useEffect, useState } from 'react';
 import { GlassPanel } from '../../components/GlassPanel';
 import { type HandLandmarkerResult } from '@mediapipe/tasks-vision';
 
+// Responsive hook
+const useResponsiveLayout = () => {
+    const [layout, setLayout] = useState(() => {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        return {
+            isMobile: w <= 480,
+            isTabletSmall: w > 480 && w <= 768,
+            isLandscapePhone: w > h && h <= 500,
+            screenWidth: w
+        };
+    });
+
+    useEffect(() => {
+        const handleResize = () => {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            setLayout({
+                isMobile: w <= 480,
+                isTabletSmall: w > 480 && w <= 768,
+                isLandscapePhone: w > h && h <= 500,
+                screenWidth: w
+            });
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    return layout;
+};
+
 interface WaveToWakeProps {
     onWake: () => void;
     // We receive tracking data from the parent layer
@@ -15,6 +46,10 @@ export const WaveToWake = ({ onWake, trackingResults }: WaveToWakeProps) => {
     const lastWaveTime = useRef<number>(0);
     const waveStartTime = useRef<number>(Date.now());
     const hasTrackedView = useRef<boolean>(false);
+    
+    const layout = useResponsiveLayout();
+    const { isMobile, isTabletSmall, isLandscapePhone } = layout;
+    const isCompact = isMobile || isTabletSmall || isLandscapePhone;
 
     useEffect(() => {
         if (trackingResults && trackingResults.landmarks && trackingResults.landmarks.length > 0) {
@@ -72,10 +107,10 @@ export const WaveToWake = ({ onWake, trackingResults }: WaveToWakeProps) => {
             backgroundColor: 'rgba(15, 12, 41, 0.8)', // Dark overlay
             backdropFilter: 'blur(5px)'
         }}>
-            {/* Header with Logo */}
+            {/* Header with Logo - Responsive */}
             <div style={{
                 width: '100%',
-                padding: '1.5rem 2rem',
+                padding: isCompact ? '1rem' : '1.5rem 2rem',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
@@ -86,43 +121,58 @@ export const WaveToWake = ({ onWake, trackingResults }: WaveToWakeProps) => {
                     src="https://i.postimg.cc/d3nR91sy/logo.png" 
                     alt="Draw in the Air"
                     style={{
-                        height: '40px',
+                        height: isCompact ? '30px' : '40px',
                         width: 'auto',
                         filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.3))'
                     }}
                 />
             </div>
 
-            {/* Centered Wave Card */}
+            {/* Centered Wave Card - Responsive */}
             <div style={{
                 flex: 1,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '2rem'
+                padding: isCompact ? '1rem' : '2rem'
             }}>
-                <div style={{ animation: 'float 3s ease-in-out infinite' }}>
+                <div style={{ 
+                    animation: 'float 3s ease-in-out infinite',
+                    width: '100%',
+                    maxWidth: isCompact ? '90%' : '600px'
+                }}>
                     <GlassPanel>
                         <h1 style={{
-                            fontSize: '4rem',
+                            fontSize: isCompact ? 'clamp(1.5rem, 6vw, 2.5rem)' : '4rem',
                             margin: 0,
                             background: 'linear-gradient(to right, #00FFFF, #FF00FF)',
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
-                            filter: 'drop-shadow(0 0 10px rgba(255,0,255,0.5))'
+                            filter: 'drop-shadow(0 0 10px rgba(255,0,255,0.5))',
+                            textAlign: 'center'
                         }}>
                             Draw in the Air
                         </h1>
-                        <p style={{ fontSize: '1.5rem', color: '#fff', marginTop: '20px' }}>
+                        <p style={{ 
+                            fontSize: isCompact ? '1rem' : '1.5rem', 
+                            color: '#fff', 
+                            marginTop: isCompact ? '12px' : '20px',
+                            textAlign: 'center'
+                        }}>
                             Wave your hand to start! 👋
                         </p>
 
-                        {/* Visual Progress */}
-                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '30px' }}>
+                        {/* Visual Progress - Responsive */}
+                        <div style={{ 
+                            display: 'flex', 
+                            gap: isCompact ? '8px' : '10px', 
+                            justifyContent: 'center', 
+                            marginTop: isCompact ? '20px' : '30px' 
+                        }}>
                             {[...Array(wakeThreshold)].map((_, i) => (
                                 <div key={i} style={{
-                                    width: '20px',
-                                    height: '20px',
+                                    width: isCompact ? '14px' : '20px',
+                                    height: isCompact ? '14px' : '20px',
                                     borderRadius: '50%',
                                     background: i < waveCount ? 'var(--success-color)' : 'rgba(255,255,255,0.2)',
                                     boxShadow: i < waveCount ? '0 0 10px var(--success-color)' : 'none',

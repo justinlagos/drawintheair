@@ -161,32 +161,37 @@ export const Celebration = ({
             <div style={{
                 textAlign: 'center',
                 animation: 'celebrationPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                transform: 'translateY(-10vh)'
+                transform: 'translateY(-10vh)',
+                padding: 'clamp(16px, 4vw, 32px)',
+                maxWidth: '90vw'
             }}>
                 <div style={{
-                    fontSize: '6rem',
-                    marginBottom: '24px',
+                    fontSize: 'clamp(3rem, 12vw, 6rem)',
+                    marginBottom: 'clamp(12px, 3vw, 24px)',
                     filter: 'drop-shadow(0 0 30px rgba(255, 215, 0, 0.9))',
                     animation: 'bounce 0.8s ease infinite'
                 }}>
                     {icon}
                 </div>
                 <div style={{
-                    fontSize: '4rem',
+                    fontSize: 'clamp(1.75rem, 8vw, 4rem)',
                     fontWeight: 'bold',
                     color: '#FFD700',
                     textShadow: '0 0 40px #FFD700, 0 0 60px #FFA500',
-                    marginBottom: '16px',
-                    animation: 'glowPulse 1s ease infinite'
+                    marginBottom: 'clamp(8px, 2vw, 16px)',
+                    animation: 'glowPulse 1s ease infinite',
+                    lineHeight: 1.2,
+                    wordBreak: 'break-word'
                 }}>
                     {message}
                 </div>
                 {subMessage && (
                     <div style={{
-                        fontSize: '2rem',
+                        fontSize: 'clamp(1rem, 4vw, 2rem)',
                         color: 'white',
                         textShadow: '0 0 20px rgba(255, 255, 255, 0.8)',
-                        fontWeight: 600
+                        fontWeight: 600,
+                        lineHeight: 1.3
                     }}>
                         {subMessage}
                     </div>

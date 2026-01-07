@@ -56,6 +56,27 @@
   --container-xl: 1280px;
   --container-2xl: 1536px;
 
+  /* Safe area insets for mobile */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+
+  /* Touch-safe minimum sizes */
+  --touch-target-min: 44px;
+  --touch-target-comfortable: 48px;
+
+  /* HUD safe zones - prevent overlap with system UI */
+  --hud-top-safe: max(var(--safe-area-top), 16px);
+  --hud-bottom-safe: max(var(--safe-area-bottom), 16px);
+  --hud-side-safe: max(var(--safe-area-left), 12px);
+
+  /* Responsive HUD spacing */
+  --hud-spacing: clamp(8px, 2vw, 24px);
+  --hud-padding: clamp(8px, 1.5vw, 16px);
+  --hud-gap: clamp(8px, 1.5vw, 16px);
+  --hud-radius: clamp(12px, 2vw, 24px);
+
   color-scheme: dark;
   color: var(--text-primary);
   background: var(--bg-color);
@@ -182,4 +203,95 @@ button:active {
 /* Scrollbar hidden */
 ::-webkit-scrollbar {
   display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINT SYSTEM
+   - Mobile-first approach
+   - ≤480px: phones
+   - 481-768px: small tablets
+   - 769-1024px: tablets / small laptops
+   - 1025-1440px: desktop
+   - ≥1440px: large displays / projectors
+═══════════════════════════════════════════════════════════════ */
+
+/* Mobile-first base styles (≤480px) */
+@media (max-width: 480px) {
+  :root {
+    --hud-spacing: 8px;
+    --hud-padding: 8px;
+    --hud-gap: 6px;
+    --hud-radius: 12px;
+  }
+  
+  body {
+    font-size: 14px;
+  }
+}
+
+/* Small tablets (481-768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+  :root {
+    --hud-spacing: 12px;
+    --hud-padding: 10px;
+    --hud-gap: 10px;
+    --hud-radius: 16px;
+  }
+}
+
+/* Tablets / small laptops (769-1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  :root {
+    --hud-spacing: 16px;
+    --hud-padding: 12px;
+    --hud-gap: 12px;
+    --hud-radius: 18px;
+  }
+}
+
+/* Desktop (1025-1440px) */
+@media (min-width: 1025px) and (max-width: 1440px) {
+  :root {
+    --hud-spacing: 20px;
+    --hud-padding: 14px;
+    --hud-gap: 16px;
+    --hud-radius: 20px;
+  }
+}
+
+/* Large displays / projectors (≥1440px) */
+@media (min-width: 1441px) {
+  :root {
+    --hud-spacing: 24px;
+    --hud-padding: 16px;
+    --hud-gap: 20px;
+    --hud-radius: 24px;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  button,
+  [role="button"],
+  .touchable {
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+  }
+}
+
+/* Landscape phone optimization */
+@media (max-height: 500px) and (orientation: landscape) {
+  :root {
+    --hud-spacing: 6px;
+    --hud-padding: 6px;
+    --hud-gap: 6px;
+  }
+}
+
+/* High DPI / Retina displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Ensure crisp rendering on high DPI */
+  canvas {
+    image-rendering: -webkit-optimize-contrast;
+  }
 }

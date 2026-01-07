@@ -100,7 +100,6 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
     const [hintPhase, setHintPhase] = useState<0 | 1 | 2 | 3>(0);
     const [hintWordIndex, setHintWordIndex] = useState<number | null>(null);
     const [hintTileIds, setHintTileIds] = useState<string[]>([]);
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 900);
     const [showOnboarding, setShowOnboarding] = useState(true);
     const [instructionState, setInstructionState] = useState<'idle' | 'hint' | 'selecting' | 'success' | 'levelComplete'>('idle');
     const [showLevelComplete, setShowLevelComplete] = useState(false);
@@ -110,10 +109,38 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
     // Force re-render for word list updates
     const [, forceUpdate] = useState({});
     
-    // Detect mobile
+    // Responsive layout detection
+    const [layout, setLayout] = useState(() => {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        return {
+            isMobile: w < 600,
+            isTabletSmall: w >= 600 && w < 900,
+            isTablet: w >= 900 && w < 1200,
+            isDesktop: w >= 1200,
+            isLandscapePhone: w > h && h <= 500,
+            screenWidth: w,
+            screenHeight: h
+        };
+    });
+    
+    const { isMobile, isTabletSmall, isLandscapePhone } = layout;
+    const isCompact = isMobile || isLandscapePhone;
+    
+    // Detect responsive layout
     useEffect(() => {
         const handleResize = () => {
-            setIsMobile(window.innerWidth < 900);
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            setLayout({
+                isMobile: w < 600,
+                isTabletSmall: w >= 600 && w < 900,
+                isTablet: w >= 900 && w < 1200,
+                isDesktop: w >= 1200,
+                isLandscapePhone: w > h && h <= 500,
+                screenWidth: w,
+                screenHeight: h
+            });
         };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
@@ -314,17 +341,18 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
             
             {/* ═══════════════════════════════════════════════════════════════
                 TOP BAR - Logo, Mode Name, Lock Icon (handled by AdultGate)
+                Responsive: Compact on mobile, full on desktop
             ═══════════════════════════════════════════════════════════════ */}
                     <div style={{
                         position: 'fixed',
                 top: 0,
                 left: 0,
                 right: 0,
-                height: '70px',
+                height: isCompact ? '50px' : '70px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '0 24px',
+                padding: isCompact ? '0 12px' : '0 24px',
                 zIndex: 50,
                 pointerEvents: 'none'
             }}>
@@ -332,82 +360,93 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '12px',
+                    gap: isCompact ? '8px' : '12px',
                     pointerEvents: 'auto'
                 }}>
-                    <span style={{ fontSize: '1.8rem' }}>🔍</span>
+                    <span style={{ fontSize: isCompact ? '1.3rem' : '1.8rem' }}>🔍</span>
                     <div>
                         <div style={{
-                            fontSize: '1.3rem',
+                            fontSize: isCompact ? '1rem' : '1.3rem',
                             fontWeight: 700,
                             color: 'white',
                             lineHeight: 1.2
                         }}>
-                            Word Search
+                            {isCompact ? 'Words' : 'Word Search'}
                         </div>
-                        <div style={{
-                            fontSize: '0.85rem',
-                            color: 'rgba(255, 255, 255, 0.7)',
-                            fontWeight: 500
-                        }}>
-                            Find the words
-                        </div>
+                        {!isCompact && (
+                            <div style={{
+                                fontSize: '0.85rem',
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                fontWeight: 500
+                            }}>
+                                Find the words
+                            </div>
+                        )}
                     </div>
                 </div>
                 
-                {/* Center: Logo (small, calm) */}
-                <div style={{
-                    position: 'absolute',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    fontSize: '1.2rem',
-                    fontWeight: 700,
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    letterSpacing: '0.5px'
-                }}>
-                    DRAW IN THE AIR
-                </div>
+                {/* Center: Logo (small, calm) - hidden on mobile */}
+                {!isCompact && (
+                    <div style={{
+                        position: 'absolute',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        fontSize: '1.2rem',
+                        fontWeight: 700,
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        letterSpacing: '0.5px'
+                    }}>
+                        DRAW IN THE AIR
+                    </div>
+                )}
                 
                 {/* Right: Lock icon handled by AdultGate component in App.tsx */}
-                <div style={{ width: '100px' }} />
+                <div style={{ width: isCompact ? '50px' : '100px' }} />
             </div>
             
             {/* ═══════════════════════════════════════════════════════════════
-                PROGRESS STRIP - Visual dots showing progress
+                PROGRESS STRIP - Visual dots showing progress - Responsive
             ═══════════════════════════════════════════════════════════════ */}
             <div style={{
                 position: 'fixed',
-                top: '75px',
+                top: isCompact ? '55px' : '75px',
                 left: '50%',
                 transform: 'translateX(-50%)',
                 zIndex: 40,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '16px',
+                gap: isCompact ? '8px' : '16px',
                 background: 'rgba(15, 12, 41, 0.8)',
                 backdropFilter: 'blur(20px)',
-                borderRadius: '30px',
-                padding: '12px 24px',
-                border: '2px solid rgba(255, 255, 255, 0.1)'
+                borderRadius: isCompact ? '20px' : '30px',
+                padding: isCompact ? '8px 14px' : '12px 24px',
+                border: '2px solid rgba(255, 255, 255, 0.1)',
+                maxWidth: isCompact ? 'calc(100% - 120px)' : 'none'
             }}>
-                <span style={{ 
-                    fontSize: '0.9rem', 
-                    color: 'rgba(255, 255, 255, 0.8)',
-                    fontWeight: 600
-                }}>
-                    {environment.icon} {environment.name}
-                </span>
-                <div style={{ 
-                    width: '1px', 
-                    height: '20px', 
-                    background: 'rgba(255, 255, 255, 0.2)' 
-                }} />
+                {!isCompact && (
+                    <>
+                        <span style={{ 
+                            fontSize: '0.9rem', 
+                            color: 'rgba(255, 255, 255, 0.8)',
+                            fontWeight: 600
+                        }}>
+                            {environment.icon} {environment.name}
+                        </span>
+                        <div style={{ 
+                            width: '1px', 
+                            height: '20px', 
+                            background: 'rgba(255, 255, 255, 0.2)' 
+                        }} />
+                    </>
+                )}
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: isCompact ? '5px' : '8px',
+                    flexWrap: 'wrap',
+                    justifyContent: 'center'
                 }}>
                     {Array.from({ length: totalWords }).map((_, i) => {
                         const isFilled = i < foundCount;
@@ -416,8 +455,8 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
                             <div
                                 key={i}
                                 style={{
-                                    width: '14px',
-                                    height: '14px',
+                                    width: isCompact ? '10px' : '14px',
+                                    height: isCompact ? '10px' : '14px',
                                     borderRadius: '50%',
                                     background: isFilled 
                                         ? environment.accentColor 
@@ -433,11 +472,11 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
                     })}
                 </div>
                 <span style={{ 
-                    fontSize: '0.85rem', 
+                    fontSize: isCompact ? '0.75rem' : '0.85rem', 
                     color: 'rgba(255, 255, 255, 0.6)',
                     fontWeight: 500
                 }}>
-                    {foundCount} of {totalWords}
+                    {foundCount}/{totalWords}
                 </span>
             </div>
             
@@ -449,8 +488,9 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
                 justFoundWord={justFoundWord}
                     hintWordIndex={hintWordIndex}
                     hintPhase={hintPhase}
-                    isMobile={isMobile}
+                    isMobile={isMobile || isTabletSmall}
                 accentColor={environment.accentColor}
+                isCompact={isCompact}
             />
             
             {/* Canvas for grid rendering */}
@@ -468,38 +508,39 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
             />
             
             {/* ═══════════════════════════════════════════════════════════════
-                ONBOARDING INSTRUCTION CARD - Appears briefly on load
+                ONBOARDING INSTRUCTION CARD - Appears briefly on load - Responsive
             ═══════════════════════════════════════════════════════════════ */}
             {showOnboarding && (
                 <div style={{
                     position: 'fixed',
-                    top: '140px',
+                    top: isCompact ? '100px' : '140px',
                     left: '50%',
                     transform: 'translateX(-50%)',
                     zIndex: 100,
                     background: 'rgba(15, 12, 41, 0.95)',
                     backdropFilter: 'blur(20px)',
-                    borderRadius: '20px',
-                    padding: '20px 32px',
+                    borderRadius: isCompact ? '14px' : '20px',
+                    padding: isCompact ? '12px 18px' : '20px 32px',
                     border: `2px solid ${environment.accentColor}`,
                     boxShadow: `0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px ${environment.accentColor}30`,
                     animation: 'fadeInOut 3s ease-in-out',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '16px'
+                    gap: isCompact ? '10px' : '16px',
+                    maxWidth: isCompact ? 'calc(100% - 32px)' : 'none'
                 }}>
-                    <div style={{ fontSize: '2.5rem' }}>🤏</div>
+                    <div style={{ fontSize: isCompact ? '1.8rem' : '2.5rem' }}>🤏</div>
                     <div>
                         <div style={{
-                            fontSize: '1.1rem',
+                            fontSize: isCompact ? '0.9rem' : '1.1rem',
                             fontWeight: 700,
                             color: 'white',
                             marginBottom: '4px'
                         }}>
-                            Pinch and drag to find a word
+                            {isCompact ? 'Pinch and drag' : 'Pinch and drag to find a word'}
                         </div>
                         <div style={{
-                            fontSize: '0.9rem',
+                            fontSize: isCompact ? '0.75rem' : '0.9rem',
                             color: 'rgba(255, 255, 255, 0.7)'
                         }}>
                             Trace from start to end
@@ -509,35 +550,36 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
             )}
             
             {/* ═══════════════════════════════════════════════════════════════
-                BOTTOM INSTRUCTION BAR - Always visible, dynamic copy
+                BOTTOM INSTRUCTION BAR - Always visible, dynamic copy - Responsive
             ═══════════════════════════════════════════════════════════════ */}
             <div style={{
                 position: 'fixed',
-                bottom: isMobile ? '180px' : '32px',
+                bottom: (isMobile || isTabletSmall) ? '150px' : '32px',
                 left: '50%',
                 transform: 'translateX(-50%)',
                 zIndex: 40,
-                pointerEvents: 'none'
+                pointerEvents: 'none',
+                maxWidth: isCompact ? 'calc(100% - 24px)' : 'none'
             }}>
                 <div style={{
                     background: instructionState === 'success' 
                         ? `linear-gradient(135deg, ${environment.accentColor}20, ${environment.accentColor}30)`
                         : 'rgba(15, 12, 41, 0.85)',
                     backdropFilter: 'blur(20px)',
-                    borderRadius: '24px',
+                    borderRadius: isCompact ? '16px' : '24px',
                     border: `2px solid ${instructionState === 'success' ? environment.accentColor : 'rgba(255, 255, 255, 0.15)'}`,
-                    padding: '14px 28px',
+                    padding: isCompact ? '10px 16px' : '14px 28px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '12px',
+                    gap: isCompact ? '8px' : '12px',
                     boxShadow: instructionState === 'success' 
                         ? `0 0 30px ${environment.accentColor}40` 
                         : '0 8px 32px rgba(0, 0, 0, 0.4)',
                     transition: 'all 0.3s ease'
                 }}>
-                    <span style={{ fontSize: '1.3rem' }}>{instruction.icon}</span>
+                    <span style={{ fontSize: isCompact ? '1rem' : '1.3rem' }}>{instruction.icon}</span>
                     <span style={{
-                        fontSize: '1rem',
+                        fontSize: isCompact ? '0.85rem' : '1rem',
                         fontWeight: 600,
                         color: instructionState === 'success' ? environment.accentColor : 'white'
                     }}>
@@ -547,7 +589,7 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
             </div>
             
             {/* ═══════════════════════════════════════════════════════════════
-                LEVEL COMPLETE OVERLAY - Calm, centered reward
+                LEVEL COMPLETE OVERLAY - Calm, centered reward - Responsive
             ═══════════════════════════════════════════════════════════════ */}
             {showLevelComplete && (
                 <div style={{
@@ -559,30 +601,31 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    animation: 'fadeIn 0.4s ease'
+                    animation: 'fadeIn 0.4s ease',
+                    padding: isCompact ? '16px' : '24px'
                 }}>
                     <div style={{
                         textAlign: 'center',
                         animation: 'levelCompletePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
                     }}>
                         <div style={{
-                            fontSize: '5rem',
-                            marginBottom: '16px',
+                            fontSize: isCompact ? '3.5rem' : '5rem',
+                            marginBottom: isCompact ? '10px' : '16px',
                             animation: 'starGlow 1.5s ease infinite'
                         }}>
                             ⭐
                         </div>
                         <div style={{
-                            fontSize: '2.8rem',
+                            fontSize: isCompact ? '1.8rem' : '2.8rem',
                             fontWeight: 'bold',
                             color: '#FFD700',
                             textShadow: '0 0 30px #FFD700',
-                            marginBottom: '12px'
+                            marginBottom: isCompact ? '8px' : '12px'
                         }}>
                             Great Job!
                         </div>
                         <div style={{
-                            fontSize: '1.3rem',
+                            fontSize: isCompact ? '1rem' : '1.3rem',
                             color: 'white',
                             opacity: 0.9
                         }}>
@@ -657,9 +700,10 @@ interface WordPanelProps {
     hintPhase: 0 | 1 | 2 | 3;
     isMobile: boolean;
     accentColor: string;
+    isCompact?: boolean;
 }
 
-const WordPanel = ({ words, justFoundWord, hintWordIndex, hintPhase, isMobile, accentColor }: WordPanelProps) => {
+const WordPanel = ({ words, justFoundWord, hintWordIndex, hintPhase, isMobile, accentColor, isCompact = false }: WordPanelProps) => {
     const containerStyle: React.CSSProperties = isMobile
         ? {
             position: 'fixed',
@@ -670,9 +714,10 @@ const WordPanel = ({ words, justFoundWord, hintWordIndex, hintPhase, isMobile, a
             background: 'rgba(15, 12, 41, 0.95)',
             backdropFilter: 'blur(20px)',
             borderTop: '2px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '24px 24px 0 0',
-            padding: '20px',
-            maxHeight: '170px'
+            borderRadius: isCompact ? '16px 16px 0 0' : '24px 24px 0 0',
+            padding: isCompact ? '12px' : '20px',
+            maxHeight: isCompact ? '130px' : '170px',
+            paddingBottom: 'max(env(safe-area-inset-bottom, 12px), 12px)'
         }
         : {
             position: 'fixed',
@@ -692,26 +737,26 @@ const WordPanel = ({ words, justFoundWord, hintWordIndex, hintPhase, isMobile, a
     
     return (
         <div style={containerStyle}>
-            {/* Title */}
+            {/* Title - smaller on compact */}
             <div style={{
-                fontSize: '1rem',
+                fontSize: isCompact ? '0.85rem' : '1rem',
                 fontWeight: 700,
                 color: 'white',
-                marginBottom: '16px',
+                marginBottom: isCompact ? '10px' : '16px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: isCompact ? '6px' : '8px'
             }}>
                 <span>📝</span>
-                <span>Find these words</span>
+                <span>{isCompact ? 'Find' : 'Find these words'}</span>
             </div>
             
-            {/* Word Pills */}
+            {/* Word Pills - Responsive */}
             <div style={{
                 display: 'flex',
                 flexDirection: isMobile ? 'row' : 'column',
                 flexWrap: isMobile ? 'wrap' : 'nowrap',
-                gap: '10px'
+                gap: isCompact ? '6px' : '10px'
             }}>
                 {words.map((word, index) => {
                     const isFound = word.found;
@@ -723,8 +768,12 @@ const WordPanel = ({ words, justFoundWord, hintWordIndex, hintPhase, isMobile, a
                         <div
                             key={word.text}
                             style={{
-                                padding: isMobile ? '10px 16px' : '14px 18px',
-                                borderRadius: '16px',
+                                padding: isCompact 
+                                    ? '6px 10px' 
+                                    : isMobile 
+                                        ? '10px 16px' 
+                                        : '14px 18px',
+                                borderRadius: isCompact ? '10px' : '16px',
                                 background: isFound
                                     ? `linear-gradient(135deg, ${accentColor}20, ${accentColor}30)`
                                     : isHinted
@@ -737,7 +786,7 @@ const WordPanel = ({ words, justFoundWord, hintWordIndex, hintPhase, isMobile, a
                                     : '2px solid rgba(255, 255, 255, 0.1)',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '10px',
+                                gap: isCompact ? '6px' : '10px',
                                 transition: 'all 0.3s ease',
                                 animation: isJustFound 
                                     ? 'wordPillPop 0.5s ease' 
@@ -751,7 +800,7 @@ const WordPanel = ({ words, justFoundWord, hintWordIndex, hintPhase, isMobile, a
                         >
                             {/* Icon or checkmark */}
                             <span style={{ 
-                                fontSize: '1.2rem',
+                                fontSize: isCompact ? '0.9rem' : '1.2rem',
                                 opacity: isFound ? 1 : 0.5
                             }}>
                                 {isFound ? '✓' : wordIcon}
@@ -759,7 +808,7 @@ const WordPanel = ({ words, justFoundWord, hintWordIndex, hintPhase, isMobile, a
                             
                             {/* Word text */}
                             <span style={{
-                                fontSize: isMobile ? '0.95rem' : '1.05rem',
+                                fontSize: isCompact ? '0.75rem' : isMobile ? '0.95rem' : '1.05rem',
                                 fontWeight: isFound ? 700 : 600,
                                 color: isFound ? accentColor : 'rgba(255, 255, 255, 0.8)',
                                 textTransform: 'uppercase',

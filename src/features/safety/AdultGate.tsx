@@ -1,5 +1,36 @@
 import { useState, useRef, useEffect } from 'react';
 
+// Responsive hook
+const useResponsiveLayout = () => {
+    const [layout, setLayout] = useState(() => {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        return {
+            isMobile: w <= 480,
+            isTabletSmall: w > 480 && w <= 768,
+            isLandscapePhone: w > h && h <= 500,
+            screenWidth: w
+        };
+    });
+
+    useEffect(() => {
+        const handleResize = () => {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            setLayout({
+                isMobile: w <= 480,
+                isTabletSmall: w > 480 && w <= 768,
+                isLandscapePhone: w > h && h <= 500,
+                screenWidth: w
+            });
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    return layout;
+};
+
 interface AdultGateProps {
     onExit: () => void;
     onSettings?: () => void;
@@ -13,6 +44,10 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
     const animationRef = useRef<number | null>(null);
 
     const HOLD_DURATION = 2000; // 2 seconds to unlock
+    
+    const layout = useResponsiveLayout();
+    const { isMobile, isTabletSmall, isLandscapePhone } = layout;
+    const isCompact = isMobile || isTabletSmall || isLandscapePhone;
 
     useEffect(() => {
         return () => {
@@ -81,13 +116,20 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
         setHoldProgress(0);
     };
 
+    // Responsive button size - minimum 44px for touch safety
+    const buttonSize = isCompact ? 44 : 48;
+    const svgSize = buttonSize + 4;
+    const circleCenter = svgSize / 2;
+    const circleRadius = (buttonSize / 2) - 1;
+    const circumference = 2 * Math.PI * circleRadius;
+
     return (
         <>
             {/* Hold button - Top Right corner */}
             <div style={{
                 position: 'absolute',
-                top: '24px',
-                right: '24px',
+                top: isCompact ? 'clamp(12px, 3vw, 24px)' : '24px',
+                right: isCompact ? 'clamp(12px, 3vw, 24px)' : '24px',
                 zIndex: 200,
                 pointerEvents: 'auto'
             }}>
@@ -99,8 +141,10 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                     onTouchEnd={endHold}
                     style={{
                         position: 'relative',
-                        width: '48px',
-                        height: '48px',
+                        width: `${buttonSize}px`,
+                        height: `${buttonSize}px`,
+                        minWidth: '44px',
+                        minHeight: '44px',
                         borderRadius: '50%',
                         background: 'rgba(15, 12, 41, 0.6)',
                         backdropFilter: 'blur(10px)',
@@ -113,7 +157,8 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                         transition: 'transform 0.2s ease, border-color 0.2s ease',
                         transform: isHolding ? 'scale(0.95)' : 'scale(1)',
                         borderColor: isHolding ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)',
-                        overflow: 'hidden'
+                        overflow: 'hidden',
+                        touchAction: 'manipulation'
                     }}
                 >
                     {/* Progress ring */}
@@ -122,29 +167,29 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                             position: 'absolute',
                             top: -2,
                             left: -2,
-                            width: '52px',
-                            height: '52px',
+                            width: `${svgSize}px`,
+                            height: `${svgSize}px`,
                             transform: 'rotate(-90deg)',
                             pointerEvents: 'none'
                         }}
                     >
                         <circle
-                            cx="26"
-                            cy="26"
-                            r="23"
+                            cx={circleCenter}
+                            cy={circleCenter}
+                            r={circleRadius}
                             fill="none"
                             stroke="rgba(255,255,255,0.1)"
                             strokeWidth="3"
                         />
                         <circle
-                            cx="26"
-                            cy="26"
-                            r="23"
+                            cx={circleCenter}
+                            cy={circleCenter}
+                            r={circleRadius}
                             fill="none"
                             stroke="#00FFFF"
                             strokeWidth="3"
                             strokeLinecap="round"
-                            strokeDasharray={`${holdProgress * 144.5} 144.5`}
+                            strokeDasharray={`${holdProgress * circumference} ${circumference}`}
                             style={{
                                 filter: holdProgress > 0 ? 'drop-shadow(0 0 8px #00FFFF)' : 'none',
                                 transition: isHolding ? 'none' : 'stroke-dasharray 0.2s ease'
@@ -154,7 +199,7 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
 
                     {/* Icon */}
                     <span style={{
-                        fontSize: '1.2rem',
+                        fontSize: isCompact ? '1rem' : '1.2rem',
                         opacity: 0.8,
                         transition: 'transform 0.2s ease',
                         transform: isHolding ? 'scale(0.9)' : 'scale(1)'
@@ -167,12 +212,12 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                 {isHolding && holdProgress > 0 && holdProgress < 1 && (
                     <div style={{
                         position: 'absolute',
-                        top: '60px',
+                        top: `${buttonSize + 12}px`,
                         right: 0,
                         background: 'rgba(0, 0, 0, 0.8)',
-                        padding: '8px 12px',
+                        padding: isCompact ? '6px 10px' : '8px 12px',
                         borderRadius: '8px',
-                        fontSize: '0.8rem',
+                        fontSize: isCompact ? '0.75rem' : '0.8rem',
                         color: 'white',
                         whiteSpace: 'nowrap',
                         animation: 'fadeIn 0.2s ease'
@@ -194,6 +239,7 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
+                        padding: isCompact ? '16px' : '24px',
                         animation: 'fadeIn 0.3s ease'
                     }}
                     onClick={handleCloseMenu}
@@ -201,11 +247,11 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                     <div
                         style={{
                             background: 'rgba(30, 25, 60, 0.95)',
-                            borderRadius: '24px',
+                            borderRadius: isCompact ? '16px' : '24px',
                             border: '1px solid rgba(255, 255, 255, 0.15)',
-                            padding: '32px',
+                            padding: isCompact ? '20px' : '32px',
                             maxWidth: '400px',
-                            width: '90%',
+                            width: '100%',
                             boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
                             animation: 'float 0.3s ease'
                         }}
@@ -213,7 +259,7 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                     >
                         <h2 style={{
                             margin: '0 0 8px',
-                            fontSize: '1.5rem',
+                            fontSize: isCompact ? 'clamp(1.1rem, 4vw, 1.5rem)' : '1.5rem',
                             color: 'white',
                             textAlign: 'center'
                         }}>
@@ -221,10 +267,10 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                         </h2>
 
                         <p style={{
-                            margin: '0 0 24px',
+                            margin: isCompact ? '0 0 16px' : '0 0 24px',
                             color: 'rgba(255,255,255,0.6)',
                             textAlign: 'center',
-                            fontSize: '0.9rem'
+                            fontSize: isCompact ? '0.8rem' : '0.9rem'
                         }}>
                             This area is for grown-ups
                         </p>
@@ -232,7 +278,7 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                         <div style={{
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '12px'
+                            gap: isCompact ? '10px' : '12px'
                         }}>
                             {/* Exit to Menu */}
                             <button
@@ -241,19 +287,21 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    gap: '12px',
-                                    padding: '16px',
+                                    gap: isCompact ? '8px' : '12px',
+                                    padding: isCompact ? '14px' : '16px',
+                                    minHeight: '44px',
                                     background: 'rgba(255, 255, 255, 0.1)',
                                     border: '1px solid rgba(255, 255, 255, 0.2)',
-                                    borderRadius: '16px',
+                                    borderRadius: isCompact ? '12px' : '16px',
                                     color: 'white',
                                     cursor: 'pointer',
-                                    fontSize: '1rem',
+                                    fontSize: isCompact ? '0.9rem' : '1rem',
                                     fontWeight: 600,
-                                    transition: 'all 0.2s ease'
+                                    transition: 'all 0.2s ease',
+                                    touchAction: 'manipulation'
                                 }}
                             >
-                                <span style={{ fontSize: '1.5rem' }}>🏠</span>
+                                <span style={{ fontSize: isCompact ? '1.25rem' : '1.5rem' }}>🏠</span>
                                 Exit to Menu
                             </button>
 
@@ -265,19 +313,21 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        gap: '12px',
-                                        padding: '16px',
+                                        gap: isCompact ? '8px' : '12px',
+                                        padding: isCompact ? '14px' : '16px',
+                                        minHeight: '44px',
                                         background: 'rgba(255, 255, 255, 0.1)',
                                         border: '1px solid rgba(255, 255, 255, 0.2)',
-                                        borderRadius: '16px',
+                                        borderRadius: isCompact ? '12px' : '16px',
                                         color: 'white',
                                         cursor: 'pointer',
-                                        fontSize: '1rem',
+                                        fontSize: isCompact ? '0.9rem' : '1rem',
                                         fontWeight: 600,
-                                        transition: 'all 0.2s ease'
+                                        transition: 'all 0.2s ease',
+                                        touchAction: 'manipulation'
                                     }}
                                 >
-                                    <span style={{ fontSize: '1.5rem' }}>⚙️</span>
+                                    <span style={{ fontSize: isCompact ? '1.25rem' : '1.5rem' }}>⚙️</span>
                                     Settings
                                 </button>
                             )}
@@ -289,15 +339,17 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    gap: '12px',
-                                    padding: '16px',
+                                    gap: isCompact ? '8px' : '12px',
+                                    padding: isCompact ? '14px' : '16px',
+                                    minHeight: '44px',
                                     background: 'transparent',
                                     border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    borderRadius: '16px',
+                                    borderRadius: isCompact ? '12px' : '16px',
                                     color: 'rgba(255,255,255,0.6)',
                                     cursor: 'pointer',
-                                    fontSize: '1rem',
-                                    transition: 'all 0.2s ease'
+                                    fontSize: isCompact ? '0.9rem' : '1rem',
+                                    transition: 'all 0.2s ease',
+                                    touchAction: 'manipulation'
                                 }}
                             >
                                 ✕ Cancel

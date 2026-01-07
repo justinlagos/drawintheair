@@ -10,12 +10,49 @@ import {
 } from './sortAndPlaceLogic';
 import { Celebration } from '../../../components/Celebration';
 
+// Responsive hook
+const useResponsiveLayout = () => {
+    const [layout, setLayout] = useState(() => {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        return {
+            isMobile: w <= 480,
+            isTabletSmall: w > 480 && w <= 768,
+            isTablet: w > 768 && w <= 1024,
+            isLandscapePhone: w > h && h <= 500,
+            screenWidth: w
+        };
+    });
+
+    useEffect(() => {
+        const handleResize = () => {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            setLayout({
+                isMobile: w <= 480,
+                isTabletSmall: w > 480 && w <= 768,
+                isTablet: w > 768 && w <= 1024,
+                isLandscapePhone: w > h && h <= 500,
+                screenWidth: w
+            });
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    return layout;
+};
+
 export const SortAndPlaceMode = () => {
     const [round, setRound] = useState<'color' | 'size' | 'category'>('color');
     const [score, setScore] = useState(0);
     const [total, setTotal] = useState(6);
     const [showCelebration, setShowCelebration] = useState(false);
     const [roundNumber, setRoundNumber] = useState(1);
+    
+    const layout = useResponsiveLayout();
+    const { isMobile, isTabletSmall, isLandscapePhone } = layout;
+    const isCompact = isMobile || isTabletSmall || isLandscapePhone;
 
     useEffect(() => {
         // Reset everything when component mounts to ensure fresh start
@@ -69,79 +106,85 @@ export const SortAndPlaceMode = () => {
 
     const label = roundLabels[round];
     const progress = total > 0 ? score / total : 0;
+    
+    // Responsive sizing
+    const hudSpacing = isCompact ? '12px' : '24px';
+    const hudPadding = isCompact ? '12px 16px' : '20px 28px';
+    const hudRadius = isCompact ? '16px' : '24px';
 
     return (
         <>
-            {/* Top Left - Enhanced Mode indicator */}
+            {/* Top Left - Enhanced Mode indicator - Responsive */}
             <div style={{
                 position: 'absolute',
-                top: '24px',
-                left: '24px',
-                zIndex: 20
+                top: hudSpacing,
+                left: hudSpacing,
+                zIndex: 20,
+                maxWidth: isCompact ? 'calc(50% - 16px)' : 'none'
             }}>
                 <div style={{
                     background: 'rgba(15, 12, 41, 0.85)',
                     backdropFilter: 'blur(20px)',
-                    borderRadius: '24px',
+                    borderRadius: hudRadius,
                     border: '2px solid rgba(255, 255, 255, 0.2)',
-                    padding: '20px 28px',
+                    padding: hudPadding,
                     boxShadow: '0 12px 40px rgba(0, 0, 0, 0.4)',
-                    minWidth: '280px'
+                    minWidth: isCompact ? 'auto' : '280px'
                 }}>
                     <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '14px',
-                        marginBottom: '16px'
+                        gap: isCompact ? '8px' : '14px',
+                        marginBottom: isCompact ? '8px' : '16px'
                     }}>
                         <span style={{ 
-                            fontSize: '2rem',
+                            fontSize: isCompact ? '1.3rem' : '2rem',
                             filter: 'drop-shadow(0 0 10px rgba(255, 255, 255, 0.5))'
                         }}>
                             {label.icon}
                         </span>
                         <span style={{
-                            fontSize: '1.3rem',
+                            fontSize: isCompact ? '0.95rem' : '1.3rem',
                             fontWeight: 700,
                             background: label.gradient,
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
                             textShadow: '0 0 20px rgba(255, 255, 255, 0.3)'
                         }}>
-                            Sort and Place
+                            {isCompact ? 'Sort' : 'Sort and Place'}
                         </span>
                     </div>
                     
                     <div style={{
-                        fontSize: '1rem',
+                        fontSize: isCompact ? '0.8rem' : '1rem',
                         color: 'rgba(255,255,255,0.8)',
-                        marginBottom: '12px',
+                        marginBottom: isCompact ? '6px' : '12px',
                         fontWeight: 500
                     }}>
-                        Round {roundNumber} of 3
+                        Round {roundNumber}/3
                     </div>
                     
                     <div style={{
-                        fontSize: '0.95rem',
+                        fontSize: isCompact ? '0.85rem' : '0.95rem',
                         color: 'rgba(255,255,255,0.6)',
-                        marginBottom: '12px'
+                        marginBottom: isCompact ? '6px' : '12px'
                     }}>
                         <strong style={{ 
                             color: '#00F5D4',
-                            fontSize: '1.1rem'
+                            fontSize: isCompact ? '1rem' : '1.1rem'
                         }}>
                             {score}
-                        </strong> / {total} sorted
+                        </strong> / {total}
                     </div>
 
                     {/* Progress bar */}
                     <div style={{
                         width: '100%',
-                        height: '8px',
+                        height: isCompact ? '6px' : '8px',
                         background: 'rgba(255,255,255,0.1)',
                         borderRadius: '4px',
                         overflow: 'hidden',
-                        marginTop: '12px'
+                        marginTop: isCompact ? '6px' : '12px'
                     }}>
                         <div style={{
                             width: `${progress * 100}%`,
@@ -155,29 +198,30 @@ export const SortAndPlaceMode = () => {
                 </div>
             </div>
 
-            {/* Enhanced Instruction Banner */}
+            {/* Enhanced Instruction Banner - Responsive */}
             <div style={{
                 position: 'absolute',
-                top: '24px',
+                top: hudSpacing,
                 left: '50%',
                 transform: 'translateX(-50%)',
                 zIndex: 20,
                 pointerEvents: 'none',
-                animation: 'float 3s ease-in-out infinite'
+                animation: 'float 3s ease-in-out infinite',
+                maxWidth: isCompact ? 'calc(100% - 180px)' : 'none'
             }}>
                 <div style={{
                     background: 'linear-gradient(135deg, rgba(0, 245, 212, 0.2), rgba(79, 172, 254, 0.2))',
                     border: '2px solid rgba(0, 245, 212, 0.5)',
-                    borderRadius: '16px',
-                    padding: '16px 32px',
+                    borderRadius: isCompact ? '12px' : '16px',
+                    padding: isCompact ? '10px 16px' : '16px 32px',
                     color: '#00f5d4',
-                    fontSize: '1.2rem',
+                    fontSize: isCompact ? '0.85rem' : '1.2rem',
                     textAlign: 'center',
                     fontWeight: 600,
                     boxShadow: '0 8px 32px rgba(0, 245, 212, 0.3)',
                     backdropFilter: 'blur(10px)'
                 }}>
-                    👆 {label.instruction}
+                    👆 {isCompact ? label.title : label.instruction}
                 </div>
             </div>
 

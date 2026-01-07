@@ -84,9 +84,21 @@ interface ModeCardProps {
     hoverProgress: number;
     onSelect: (mode: GameMode) => void;
     isFullWidth?: boolean;
+    screenSize?: 'phone' | 'tablet-small' | 'tablet' | 'desktop' | 'large';
 }
 
-const ModeCard = ({ mode, isHovered, isSelected, hoverProgress, onSelect, isFullWidth = false }: ModeCardProps) => {
+const ModeCard = ({ mode, isHovered, isSelected, hoverProgress, onSelect, isFullWidth = false, screenSize = 'desktop' }: ModeCardProps) => {
+    const isMobile = screenSize === 'phone' || screenSize === 'tablet-small';
+    const isTablet = screenSize === 'tablet';
+    
+    // Responsive card height
+    const cardHeight = isFullWidth 
+        ? (isMobile ? '100px' : isTablet ? '120px' : '140px')
+        : '100%';
+    
+    // Responsive border radius
+    const borderRadius = isMobile ? '16px' : '20px';
+    
     return (
         <div
             id={`mode-card-${mode.id}`}
@@ -94,8 +106,9 @@ const ModeCard = ({ mode, isHovered, isSelected, hoverProgress, onSelect, isFull
             style={{
                 position: 'relative',
                 width: '100%',
-                height: isFullWidth ? '140px' : '100%',
-                borderRadius: '20px',
+                height: cardHeight,
+                minHeight: isMobile ? '100px' : isFullWidth ? 'auto' : '140px',
+                borderRadius: borderRadius,
                 background: isHovered 
                     ? `linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.08) 100%), ${mode.gradient}`
                     : `linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%), ${mode.gradient}`,
@@ -150,12 +163,14 @@ const ModeCard = ({ mode, isHovered, isSelected, hoverProgress, onSelect, isFull
             <div style={{
                 width: '100%',
                 height: '100%',
-                padding: isFullWidth ? '20px 28px' : '20px',
+                padding: isFullWidth 
+                    ? (isMobile ? '12px 16px' : '20px 28px') 
+                    : (isMobile ? '12px' : '20px'),
                 display: 'flex',
                 flexDirection: isFullWidth ? 'row' : 'column',
                 justifyContent: isFullWidth ? 'flex-start' : 'space-between',
                 alignItems: isFullWidth ? 'center' : 'stretch',
-                gap: isFullWidth ? '24px' : '0',
+                gap: isFullWidth ? (isMobile ? '12px' : '24px') : '0',
                 position: 'relative',
                 zIndex: 1,
                 boxSizing: 'border-box'
@@ -163,21 +178,21 @@ const ModeCard = ({ mode, isHovered, isSelected, hoverProgress, onSelect, isFull
                 {/* Category badge - Top left, always visible */}
                 <div style={{
                     position: 'absolute',
-                    top: '16px',
-                    left: '16px',
+                    top: isMobile ? '10px' : '16px',
+                    left: isMobile ? '10px' : '16px',
                     zIndex: 3,
                     flexShrink: 0
                 }}>
                     <div style={{
-                        padding: '6px 14px',
-                        borderRadius: '12px',
+                        padding: isMobile ? '4px 10px' : '6px 14px',
+                        borderRadius: isMobile ? '8px' : '12px',
                         background: `linear-gradient(135deg, ${mode.accentColor}18, ${mode.accentColor}10)`,
                         backdropFilter: 'blur(10px)',
-                        fontSize: '0.7rem',
+                        fontSize: isMobile ? '0.6rem' : '0.7rem',
                         fontWeight: 700,
                         color: mode.accentColor,
                         textTransform: 'uppercase',
-                        letterSpacing: '0.9px',
+                        letterSpacing: isMobile ? '0.5px' : '0.9px',
                         border: `1px solid ${mode.accentColor}35`,
                         boxShadow: `0 2px 8px ${mode.accentColor}12`,
                         whiteSpace: 'nowrap'
@@ -200,7 +215,7 @@ const ModeCard = ({ mode, isHovered, isSelected, hoverProgress, onSelect, isFull
                             marginTop: 0
                         }}>
                             <div style={{
-                                fontSize: '3.5rem',
+                                fontSize: isMobile ? '2.5rem' : '3.5rem',
                                 filter: isHovered 
                                     ? `drop-shadow(0 0 16px ${mode.accentColor}50) drop-shadow(0 0 32px ${mode.accentColor}25)` 
                                     : 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))',
@@ -222,11 +237,11 @@ const ModeCard = ({ mode, isHovered, isSelected, hoverProgress, onSelect, isFull
                             alignItems: 'center',
                             justifyContent: 'flex-start',
                             height: '100%',
-                            paddingLeft: '8px'
+                            paddingLeft: isMobile ? '4px' : '8px'
                         }}>
                             <h3 style={{
                                 margin: 0,
-                                fontSize: '1.5rem',
+                                fontSize: isMobile ? '1.1rem' : isTablet ? '1.25rem' : '1.5rem',
                                 fontWeight: 700,
                                 color: '#ffffff',
                                 textShadow: '0 2px 8px rgba(0,0,0,0.5)',
@@ -248,14 +263,14 @@ const ModeCard = ({ mode, isHovered, isSelected, hoverProgress, onSelect, isFull
                             justifyContent: 'center',
                             alignItems: 'center',
                             flex: '1 1 auto',
-                            minHeight: '80px',
-                            maxHeight: '120px',
-                            paddingTop: '40px', // Space for category badge
-                            paddingBottom: '8px',
+                            minHeight: isMobile ? '50px' : '80px',
+                            maxHeight: isMobile ? '80px' : '120px',
+                            paddingTop: isMobile ? '28px' : '40px', // Space for category badge
+                            paddingBottom: isMobile ? '4px' : '8px',
                             boxSizing: 'border-box'
                         }}>
                             <div style={{
-                                fontSize: '3.2rem',
+                                fontSize: isMobile ? '2.2rem' : isTablet ? '2.8rem' : '3.2rem',
                                 filter: isHovered 
                                     ? `drop-shadow(0 0 16px ${mode.accentColor}50) drop-shadow(0 0 32px ${mode.accentColor}25)` 
                                     : 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))',
@@ -276,14 +291,14 @@ const ModeCard = ({ mode, isHovered, isSelected, hoverProgress, onSelect, isFull
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            minHeight: '32px',
-                            paddingTop: '8px',
-                            paddingBottom: '4px',
+                            minHeight: isMobile ? '24px' : '32px',
+                            paddingTop: isMobile ? '4px' : '8px',
+                            paddingBottom: isMobile ? '2px' : '4px',
                             boxSizing: 'border-box'
                         }}>
                             <h3 style={{
                                 margin: 0,
-                                fontSize: '1.35rem',
+                                fontSize: isMobile ? '1rem' : isTablet ? '1.15rem' : '1.35rem',
                                 fontWeight: 700,
                                 color: '#ffffff',
                                 textShadow: '0 2px 8px rgba(0,0,0,0.5)',
@@ -303,21 +318,49 @@ const ModeCard = ({ mode, isHovered, isSelected, hoverProgress, onSelect, isFull
     );
 };
 
+// Breakpoint detection hook
+type ScreenSize = 'phone' | 'tablet-small' | 'tablet' | 'desktop' | 'large';
+
+const useScreenSize = (): ScreenSize => {
+    const [screenSize, setScreenSize] = useState<ScreenSize>(() => {
+        const w = window.innerWidth;
+        if (w <= 480) return 'phone';
+        if (w <= 768) return 'tablet-small';
+        if (w <= 1024) return 'tablet';
+        if (w <= 1440) return 'desktop';
+        return 'large';
+    });
+
+    useEffect(() => {
+        const handleResize = () => {
+            const w = window.innerWidth;
+            if (w <= 480) setScreenSize('phone');
+            else if (w <= 768) setScreenSize('tablet-small');
+            else if (w <= 1024) setScreenSize('tablet');
+            else if (w <= 1440) setScreenSize('desktop');
+            else setScreenSize('large');
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    return screenSize;
+};
+
 export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMenuProps) => {
     const [hoveredMode, setHoveredMode] = useState<GameMode | null>(null);
     const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
     const [hoverProgress, setHoverProgress] = useState(0);
     const hoverStartTime = useRef<number | null>(null);
     const cardRefs = useRef<Map<GameMode, DOMRect>>(new Map());
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+    const screenSize = useScreenSize();
+    const isMobile = screenSize === 'phone' || screenSize === 'tablet-small';
+    const isTablet = screenSize === 'tablet';
+    const isLarge = screenSize === 'large';
 
-    // Detect mobile
+    // Detect mobile (legacy compatibility)
     useEffect(() => {
-        const handleResize = () => {
-            setIsMobile(window.innerWidth < 1024);
-        };
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
+        // Card refs update handled in separate effect
     }, []);
 
     // Update card positions
@@ -380,6 +423,13 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
         }
     }, [trackingResults, hoveredMode, selectedMode, onSelect]);
 
+    // Responsive values
+    const containerPadding = isMobile ? 'clamp(12px, 3vw, 24px)' : isTablet ? '20px' : '24px';
+    const headerFontSize = isMobile ? 'clamp(1.5rem, 5vw, 2rem)' : isTablet ? '2rem' : isLarge ? '3rem' : '2.5rem';
+    const subtitleFontSize = isMobile ? 'clamp(0.85rem, 2.5vw, 1rem)' : isTablet ? '1rem' : '1.15rem';
+    const cardGap = isMobile ? '12px' : isTablet ? '14px' : '16px';
+    const gridMinHeight = isMobile ? 'auto' : '180px';
+
     return (
         <div style={{
             position: 'absolute',
@@ -387,13 +437,16 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: isMobile ? 'flex-start' : 'center',
             zIndex: 50,
             background: '#010C24',
-            overflow: 'hidden',
-            padding: '24px',
+            overflow: isMobile ? 'auto' : 'hidden',
+            padding: containerPadding,
+            paddingTop: isMobile ? 'max(env(safe-area-inset-top, 12px), 12px)' : '24px',
+            paddingBottom: isMobile ? 'max(env(safe-area-inset-bottom, 12px), 12px)' : '24px',
             boxSizing: 'border-box',
-            height: '100vh'
+            height: '100%',
+            minHeight: isMobile ? '100dvh' : '100vh'
         }}>
             {/* Vignette overlay for depth */}
             <div style={{
@@ -412,32 +465,35 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
             {/* Main Container - Centered with strict spacing */}
             <div style={{
                 width: '100%',
-                maxWidth: '920px',
-                height: '100%',
+                maxWidth: isLarge ? '1100px' : '920px',
+                height: isMobile ? 'auto' : '100%',
+                minHeight: isMobile ? 'auto' : 0,
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'space-between',
-                gap: '32px',
+                justifyContent: isMobile ? 'flex-start' : 'space-between',
+                gap: isMobile ? '16px' : isTablet ? '24px' : '32px',
                 position: 'relative',
                 zIndex: 1,
-                paddingTop: '16px',
-                paddingBottom: '16px',
-                boxSizing: 'border-box'
+                paddingTop: isMobile ? '8px' : '16px',
+                paddingBottom: isMobile ? '8px' : '16px',
+                boxSizing: 'border-box',
+                flex: isMobile ? '0 0 auto' : '1 1 auto'
             }}>
                 {/* Header Section - Scene Header */}
                 <div style={{
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '12px',
-                    flexShrink: 0
+                    gap: isMobile ? '8px' : '12px',
+                    flexShrink: 0,
+                    paddingBottom: isMobile ? '8px' : 0
                 }}>
                     {/* Main Title */}
                     <div style={{
-                        fontSize: isMobile ? '2rem' : '2.5rem',
+                        fontSize: headerFontSize,
                         fontWeight: 800,
                         color: '#ffffff',
-                        letterSpacing: '2px',
+                        letterSpacing: isMobile ? '1px' : '2px',
                         textShadow: '0 4px 16px rgba(0,0,0,0.4)',
                         textAlign: 'center',
                         lineHeight: '1.1'
@@ -447,7 +503,7 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
 
                     {/* Subtitle */}
                     <div style={{
-                        fontSize: isMobile ? '1rem' : '1.15rem',
+                        fontSize: subtitleFontSize,
                         color: 'rgba(255, 255, 255, 0.75)',
                         fontWeight: 400,
                         textAlign: 'center',
@@ -457,15 +513,21 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
                     </div>
                 </div>
 
-                {/* Mode Cards Grid - Strict 2×2 + Full-Width Row */}
+                {/* Mode Cards Grid - Responsive layout */}
                 <div style={{
-                    flex: '1 1 auto',
+                    flex: isMobile ? '0 0 auto' : '1 1 auto',
                     display: 'grid',
-                    gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                    gridTemplateColumns: isMobile 
+                        ? '1fr' 
+                        : isTablet 
+                            ? 'repeat(2, 1fr)' 
+                            : 'repeat(2, 1fr)',
                     gridTemplateRows: isMobile 
-                        ? 'repeat(5, minmax(180px, 1fr))'
-                        : 'repeat(2, minmax(180px, 1fr)) auto',
-                    gap: '16px',
+                        ? 'repeat(5, minmax(120px, auto))'
+                        : isTablet
+                            ? 'repeat(2, minmax(140px, 1fr)) auto'
+                            : `repeat(2, minmax(${gridMinHeight}, 1fr)) auto`,
+                    gap: cardGap,
                     alignItems: 'stretch',
                     minHeight: 0,
                     width: '100%'
@@ -479,7 +541,7 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
                             <div
                                 key={mode.id}
                                 style={{
-                                    minHeight: 0,
+                                    minHeight: isMobile ? '100px' : 0,
                                     display: 'flex'
                                 }}
                             >
@@ -490,6 +552,7 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
                                     hoverProgress={hoverProgress}
                                     onSelect={onSelect}
                                     isFullWidth={false}
+                                    screenSize={screenSize}
                                 />
                             </div>
                         );
@@ -506,10 +569,11 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
                                 style={{
                                     gridColumn: isMobile ? '1' : '1 / -1',
                                     gridRow: isMobile ? 'auto' : '3',
-                                    minHeight: 0,
+                                    minHeight: isMobile ? '100px' : 0,
                                     display: 'flex',
-                                    maxWidth: isMobile ? '100%' : '600px',
-                                    justifySelf: 'center'
+                                    maxWidth: isMobile ? '100%' : isTablet ? '500px' : '600px',
+                                    justifySelf: 'center',
+                                    width: '100%'
                                 }}
                             >
                                 <ModeCard
@@ -518,7 +582,8 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
                                     isSelected={isSelected}
                                     hoverProgress={hoverProgress}
                                     onSelect={onSelect}
-                                    isFullWidth={true}
+                                    isFullWidth={!isMobile}
+                                    screenSize={screenSize}
                                 />
                             </div>
                         );
@@ -527,26 +592,27 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
 
                 {/* Footer Instruction - Fixed Bottom */}
                 <div style={{
-                    padding: '16px 28px',
+                    padding: isMobile ? '12px 16px' : '16px 28px',
                     background: 'rgba(255, 255, 255, 0.06)',
                     backdropFilter: 'blur(20px)',
                     WebkitBackdropFilter: 'blur(20px)',
-                    borderRadius: '16px',
+                    borderRadius: isMobile ? '12px' : '16px',
                     border: '1px solid rgba(255, 255, 255, 0.12)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '12px',
+                    gap: isMobile ? '8px' : '12px',
                     flexShrink: 0,
-                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.25)'
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.25)',
+                    marginTop: isMobile ? '8px' : 0
                 }}>
                     <span style={{ 
-                        fontSize: '1.4rem',
+                        fontSize: isMobile ? '1.2rem' : '1.4rem',
                         filter: 'drop-shadow(0 0 8px rgba(255, 217, 61, 0.5))',
                         lineHeight: '1'
                     }}>👆</span>
                     <div style={{
-                        fontSize: '0.95rem',
+                        fontSize: isMobile ? '0.85rem' : '0.95rem',
                         fontWeight: 500,
                         color: 'rgba(255, 255, 255, 0.95)',
                         letterSpacing: '0.3px'

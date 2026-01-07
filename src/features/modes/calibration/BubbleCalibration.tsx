@@ -7,6 +7,7 @@
  * - Smooth transitions and celebrations
  * - No frozen states - always recoverable
  * - Child-friendly messaging and encouragement
+ * - Fully responsive across all screen sizes
  */
 
 import { useEffect, useState } from 'react';
@@ -31,6 +32,39 @@ interface BubbleCalibrationProps {
 
 const GAME_DURATION = 30000; // 30 seconds
 
+// Responsive hook
+const useResponsiveHUD = () => {
+    const [layout, setLayout] = useState(() => {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        return {
+            isMobile: w <= 480,
+            isTabletSmall: w > 480 && w <= 768,
+            isTablet: w > 768 && w <= 1024,
+            isLandscapePhone: w > h && h <= 500,
+            screenWidth: w
+        };
+    });
+
+    useEffect(() => {
+        const handleResize = () => {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            setLayout({
+                isMobile: w <= 480,
+                isTabletSmall: w > 480 && w <= 768,
+                isTablet: w > 768 && w <= 1024,
+                isLandscapePhone: w > h && h <= 500,
+                screenWidth: w
+            });
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    return layout;
+};
+
 export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibrationProps) => {
     const [score, setScore] = useState(0);
     const [timeRemaining, setTimeRemaining] = useState(GAME_DURATION);
@@ -39,6 +73,10 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
     const [level, setLevel] = useState(1);
     const [autoAdvanceScheduled, setAutoAdvanceScheduled] = useState(false);
     const [encouragementMessage, setEncouragementMessage] = useState<string | null>(null);
+    
+    const layout = useResponsiveHUD();
+    const { isMobile, isTabletSmall, isLandscapePhone } = layout;
+    const isCompact = isMobile || isTabletSmall || isLandscapePhone;
 
     // Initialize game when level changes
     useEffect(() => {
@@ -153,129 +191,197 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
     const goalReached = hasReachedGoal();
     const isLastLevel = level === 3;
 
+    // Responsive sizing
+    const hudSpacing = isCompact ? '12px' : '20px';
+    const hudPadding = isCompact ? '8px 14px' : '12px 24px';
+    const hudRadius = isCompact ? '12px' : '16px';
+    const hudGap = isCompact ? '10px' : '24px';
+
     return (
         <>
-            {/* Top Bar - Single aligned row, centered horizontally */}
+            {/* Top Bar - Responsive layout */}
             <div style={{
                 position: 'absolute',
-                top: '20px',
+                top: hudSpacing,
                 left: '50%',
                 transform: 'translateX(-50%)',
                 zIndex: 30,
                 pointerEvents: 'none',
                 display: 'flex',
-                gap: '24px',
+                flexDirection: isCompact ? 'column' : 'row',
+                gap: isCompact ? '8px' : hudGap,
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: '100%',
-                maxWidth: '1200px',
-                padding: '0 24px'
+                width: isCompact ? 'auto' : '100%',
+                maxWidth: isCompact ? 'calc(100% - 100px)' : '1200px',
+                padding: isCompact ? '0' : '0 24px'
             }}>
-                {/* Left: Mode Name */}
-                <div style={{
-                    background: 'rgba(1, 12, 36, 0.85)',
-                    backdropFilter: 'blur(20px)',
-                    borderRadius: '16px',
-                    border: '2px solid rgba(0, 229, 255, 0.2)',
-                    padding: '12px 24px',
-                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
-                }}>
+                {/* Compact mode: Single row with timer and score */}
+                {isCompact ? (
                     <div style={{
-                        fontSize: '1.25rem',
-                        fontWeight: 700,
-                        color: '#00E5FF',
-                        textShadow: '0 0 10px rgba(0, 229, 255, 0.5)'
+                        display: 'flex',
+                        gap: '8px',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        justifyContent: 'center'
                     }}>
-                        Bubble Pop
-                    </div>
-                </div>
+                        {/* Timer */}
+                        <div style={{
+                            background: 'rgba(1, 12, 36, 0.85)',
+                            backdropFilter: 'blur(20px)',
+                            borderRadius: hudRadius,
+                            border: timeRemaining < 5000 
+                                ? '2px solid rgba(222, 49, 99, 0.6)' 
+                                : '2px solid rgba(255, 255, 255, 0.1)',
+                            padding: hudPadding,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: timeRemaining < 5000 
+                                ? '0 0 15px rgba(222, 49, 99, 0.4)' 
+                                : '0 4px 16px rgba(0, 0, 0, 0.3)'
+                        }}>
+                            <span style={{ fontSize: '1rem' }}>⏱</span>
+                            <span style={{
+                                fontSize: '1.1rem',
+                                fontWeight: 'bold',
+                                color: timeRemaining < 5000 ? '#DE3163' : '#00E5FF',
+                                fontFamily: 'monospace'
+                            }}>
+                                {formatTime(timeRemaining)}
+                            </span>
+                        </div>
 
-                {/* Center: Timer */}
-                <div style={{
-                    background: 'rgba(1, 12, 36, 0.85)',
-                    backdropFilter: 'blur(20px)',
-                    borderRadius: '16px',
-                    border: timeRemaining < 5000 
-                        ? '2px solid rgba(222, 49, 99, 0.6)' 
-                        : '2px solid rgba(255, 255, 255, 0.1)',
-                    padding: '12px 24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    boxShadow: timeRemaining < 5000 
-                        ? '0 0 20px rgba(222, 49, 99, 0.4)' 
-                        : '0 8px 32px rgba(0, 0, 0, 0.3)'
-                }}>
-                    <span style={{ fontSize: '1.5rem' }}>⏱</span>
-                    <span style={{
-                        fontSize: '1.75rem',
-                        fontWeight: 'bold',
-                        color: timeRemaining < 5000 ? '#DE3163' : '#00E5FF',
-                        fontFamily: 'monospace',
-                        textShadow: timeRemaining < 5000 
-                            ? '0 0 15px rgba(222, 49, 99, 0.6)' 
-                            : '0 0 10px rgba(0, 229, 255, 0.5)'
-                    }}>
-                        {formatTime(timeRemaining)}
-                    </span>
-                </div>
+                        {/* Score */}
+                        <div style={{
+                            background: 'rgba(1, 12, 36, 0.85)',
+                            backdropFilter: 'blur(20px)',
+                            borderRadius: hudRadius,
+                            border: '2px solid rgba(255, 255, 255, 0.1)',
+                            padding: hudPadding,
+                            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
+                        }}>
+                            <span style={{
+                                fontSize: '1.1rem',
+                                fontWeight: 'bold',
+                                color: goalReached ? '#FFD93D' : '#00E5FF'
+                            }}>
+                                {score}/{currentGoal}
+                            </span>
+                        </div>
+                    </div>
+                ) : (
+                    /* Desktop: Full layout */
+                    <>
+                        {/* Left: Mode Name */}
+                        <div style={{
+                            background: 'rgba(1, 12, 36, 0.85)',
+                            backdropFilter: 'blur(20px)',
+                            borderRadius: hudRadius,
+                            border: '2px solid rgba(0, 229, 255, 0.2)',
+                            padding: hudPadding,
+                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+                        }}>
+                            <div style={{
+                                fontSize: '1.25rem',
+                                fontWeight: 700,
+                                color: '#00E5FF',
+                                textShadow: '0 0 10px rgba(0, 229, 255, 0.5)'
+                            }}>
+                                Bubble Pop
+                            </div>
+                        </div>
 
-                {/* Right: Score and Goal */}
-                <div style={{
-                    background: 'rgba(1, 12, 36, 0.85)',
-                    backdropFilter: 'blur(20px)',
-                    borderRadius: '16px',
-                    border: '2px solid rgba(255, 255, 255, 0.1)',
-                    padding: '12px 24px',
-                    textAlign: 'center',
-                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
-                }}>
-                    <div style={{
-                        fontSize: '1.75rem',
-                        fontWeight: 'bold',
-                        color: goalReached ? '#FFD93D' : '#00E5FF',
-                        textShadow: goalReached 
-                            ? '0 0 20px rgba(255, 217, 61, 0.6)' 
-                            : '0 0 10px rgba(0, 229, 255, 0.5)',
-                        marginBottom: '4px'
-                    }}>
-                        Score {score} / {currentGoal}
-                    </div>
-                    <div style={{
-                        fontSize: '0.85rem',
-                        color: 'rgba(255,255,255,0.7)',
-                        marginTop: '2px'
-                    }}>
-                        Pop {currentGoal} bubbles
-                    </div>
-                </div>
+                        {/* Center: Timer */}
+                        <div style={{
+                            background: 'rgba(1, 12, 36, 0.85)',
+                            backdropFilter: 'blur(20px)',
+                            borderRadius: hudRadius,
+                            border: timeRemaining < 5000 
+                                ? '2px solid rgba(222, 49, 99, 0.6)' 
+                                : '2px solid rgba(255, 255, 255, 0.1)',
+                            padding: hudPadding,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            boxShadow: timeRemaining < 5000 
+                                ? '0 0 20px rgba(222, 49, 99, 0.4)' 
+                                : '0 8px 32px rgba(0, 0, 0, 0.3)'
+                        }}>
+                            <span style={{ fontSize: '1.5rem' }}>⏱</span>
+                            <span style={{
+                                fontSize: '1.75rem',
+                                fontWeight: 'bold',
+                                color: timeRemaining < 5000 ? '#DE3163' : '#00E5FF',
+                                fontFamily: 'monospace',
+                                textShadow: timeRemaining < 5000 
+                                    ? '0 0 15px rgba(222, 49, 99, 0.6)' 
+                                    : '0 0 10px rgba(0, 229, 255, 0.5)'
+                            }}>
+                                {formatTime(timeRemaining)}
+                            </span>
+                        </div>
+
+                        {/* Right: Score and Goal */}
+                        <div style={{
+                            background: 'rgba(1, 12, 36, 0.85)',
+                            backdropFilter: 'blur(20px)',
+                            borderRadius: hudRadius,
+                            border: '2px solid rgba(255, 255, 255, 0.1)',
+                            padding: hudPadding,
+                            textAlign: 'center',
+                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+                        }}>
+                            <div style={{
+                                fontSize: '1.75rem',
+                                fontWeight: 'bold',
+                                color: goalReached ? '#FFD93D' : '#00E5FF',
+                                textShadow: goalReached 
+                                    ? '0 0 20px rgba(255, 217, 61, 0.6)' 
+                                    : '0 0 10px rgba(0, 229, 255, 0.5)',
+                                marginBottom: '4px'
+                            }}>
+                                Score {score} / {currentGoal}
+                            </div>
+                            <div style={{
+                                fontSize: '0.85rem',
+                                color: 'rgba(255,255,255,0.7)',
+                                marginTop: '2px'
+                            }}>
+                                Pop {currentGoal} bubbles
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
 
-            {/* Mode name - Top Left */}
-            <div style={{
-                position: 'absolute',
-                top: '20px',
-                left: '24px',
-                zIndex: 30,
-                pointerEvents: 'none'
-            }}>
+            {/* Mode name - Top Left (hidden on compact) */}
+            {!isCompact && (
                 <div style={{
-                    background: 'rgba(1, 12, 36, 0.7)',
-                    backdropFilter: 'blur(15px)',
-                    borderRadius: '12px',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    padding: '8px 16px',
-                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)'
+                    position: 'absolute',
+                    top: hudSpacing,
+                    left: hudSpacing,
+                    zIndex: 30,
+                    pointerEvents: 'none'
                 }}>
                     <div style={{
-                        fontSize: '0.9rem',
-                        color: 'rgba(255,255,255,0.7)',
-                        fontWeight: 500
+                        background: 'rgba(1, 12, 36, 0.7)',
+                        backdropFilter: 'blur(15px)',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        padding: '8px 16px',
+                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)'
                     }}>
-                        Bubble Pop
+                        <div style={{
+                            fontSize: '0.9rem',
+                            color: 'rgba(255,255,255,0.7)',
+                            fontWeight: 500
+                        }}>
+                            Bubble Pop
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Encouragement Message - Center, fades in/out */}
             {encouragementMessage && (
@@ -308,7 +414,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
                 </div>
             )}
 
-            {/* End-of-Round Modal - Center Screen */}
+            {/* End-of-Round Modal - Center Screen - Responsive */}
             {showEndModal && (
                 <div style={{
                     position: 'fixed',
@@ -316,38 +422,43 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
                     left: 0,
                     width: '100vw',
                     height: '100vh',
+                    height: '100dvh',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     zIndex: 10000,
                     background: 'rgba(0, 0, 0, 0.6)',
-                    backdropFilter: 'blur(10px)'
+                    backdropFilter: 'blur(10px)',
+                    padding: isCompact ? '16px' : '24px',
+                    boxSizing: 'border-box'
                 }}>
                     <div style={{
                         background: 'rgba(1, 12, 36, 0.95)',
                         backdropFilter: 'blur(30px)',
-                        borderRadius: '32px',
+                        borderRadius: isCompact ? '24px' : '32px',
                         border: '3px solid rgba(255, 255, 255, 0.1)',
-                        padding: '48px 56px',
+                        padding: isCompact ? '24px 28px' : '48px 56px',
                         textAlign: 'center',
                         boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.08)',
-                        maxWidth: '500px',
+                        maxWidth: isCompact ? '90%' : '500px',
+                        width: '100%',
                         animation: 'modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
                     }}>
                         <div style={{
-                            fontSize: '4rem',
-                            marginBottom: '20px',
+                            fontSize: isCompact ? '3rem' : '4rem',
+                            marginBottom: isCompact ? '12px' : '20px',
                             animation: goalReached ? 'starGlow 1.2s ease infinite' : 'none'
                         }}>
                             {goalReached ? '⭐' : '✨'}
                         </div>
                         
                         <h2 style={{
-                            fontSize: '2.5rem',
+                            fontSize: isCompact ? '1.5rem' : '2.5rem',
                             fontWeight: 'bold',
                             color: goalReached ? '#FFD93D' : 'white',
-                            marginBottom: '16px',
-                            textShadow: goalReached ? '0 0 30px #FFD93D' : 'none'
+                            marginBottom: isCompact ? '10px' : '16px',
+                            textShadow: goalReached ? '0 0 30px #FFD93D' : 'none',
+                            margin: 0
                         }}>
                             {goalReached 
                                 ? (isLastLevel ? 'All Levels Complete!' : 'Level Complete!')
@@ -356,9 +467,9 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
                         </h2>
                         
                         <p style={{
-                            fontSize: '1.3rem',
+                            fontSize: isCompact ? '1rem' : '1.3rem',
                             color: 'rgba(255,255,255,0.8)',
-                            marginBottom: '32px'
+                            marginBottom: isCompact ? '20px' : '32px'
                         }}>
                             You popped <strong style={{ color: '#00E5FF' }}>{score}</strong> bubbles!
                             {goalReached && !isLastLevel && (
@@ -375,25 +486,28 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
 
                         <div style={{
                             display: 'flex',
-                            gap: '16px',
-                            justifyContent: 'center'
+                            gap: isCompact ? '10px' : '16px',
+                            justifyContent: 'center',
+                            flexWrap: 'wrap'
                         }}>
                             {/* Try Again button - always shown */}
                             <button
                                 onClick={handleTryAgain}
                                 style={{
-                                    padding: '16px 32px',
+                                    padding: isCompact ? '12px 24px' : '16px 32px',
                                     background: goalReached
                                         ? 'linear-gradient(180deg, rgba(79, 172, 254, 0.3) 0%, rgba(79, 172, 254, 0.2) 100%)'
                                         : 'linear-gradient(180deg, rgba(79, 172, 254, 0.4) 0%, rgba(79, 172, 254, 0.3) 100%)',
                                     border: '2px solid rgba(79, 172, 254, 0.5)',
-                                    borderRadius: '24px',
+                                    borderRadius: isCompact ? '16px' : '24px',
                                     color: '#4facfe',
                                     cursor: 'pointer',
-                                    fontSize: '1.1rem',
+                                    fontSize: isCompact ? '0.95rem' : '1.1rem',
                                     fontWeight: 700,
                                     transition: 'all 0.2s ease',
-                                    boxShadow: '0 4px 16px rgba(79, 172, 254, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
+                                    boxShadow: '0 4px 16px rgba(79, 172, 254, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
+                                    minWidth: '44px',
+                                    minHeight: '44px'
                                 }}
                                 onMouseDown={(e) => {
                                     e.currentTarget.style.transform = 'scale(0.95)';
