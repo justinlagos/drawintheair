@@ -31,7 +31,6 @@ export class OcclusionRecovery {
     // Last stable positions
     private lastStableThumb: { x: number; y: number } | null = null;
     private lastStableWrist: { x: number; y: number } | null = null;
-    private lastStableIndex: { x: number; y: number } | null = null;
     private lastStableThumbToWrist: { dx: number; dy: number } | null = null;
     
     // Occlusion tracking
@@ -82,9 +81,6 @@ export class OcclusionRecovery {
         if (wristValid && wrist) {
             this.lastStableWrist = { ...wrist.position };
         }
-        if (indexValid && indexTip) {
-            this.lastStableIndex = { ...indexTip.position };
-        }
         if (thumbValid && thumbTip) {
             this.lastStableThumb = { ...thumbTip.position };
             
@@ -122,7 +118,7 @@ export class OcclusionRecovery {
                 };
                 
                 // Validate inference distance
-                if (this.lastStableThumb) {
+                if (this.lastStableThumb && this.lastStableThumbToWrist) {
                     const inferenceDistance = Math.hypot(
                         inferredThumb.x - this.lastStableThumb.x,
                         inferredThumb.y - this.lastStableThumb.y
@@ -154,7 +150,6 @@ export class OcclusionRecovery {
     reset(): void {
         this.lastStableThumb = null;
         this.lastStableWrist = null;
-        this.lastStableIndex = null;
         this.lastStableThumbToWrist = null;
         this.thumbOcclusionStartTime = null;
         this.handLossStartTime = null;

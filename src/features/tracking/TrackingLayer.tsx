@@ -133,6 +133,17 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
     const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const offscreenCtxRef = useRef<CanvasRenderingContext2D | null>(null);
     
+    // Performance logging refs
+    const performanceLogRef = useRef<Array<{
+        timestamp: number;
+        renderFps: number;
+        detectFps: number;
+        detectionLatencyMs: number;
+        resolutionScale: number;
+        resolutionIndex: number;
+    }>>([]);
+    const sessionStartTimeRef = useRef<number>(0);
+    
     // Convert InteractionState to TrackingFrameData (for compatibility)
     const convertToFrameData = useCallback((state: InteractionState): TrackingFrameData => {
         return {
@@ -190,15 +201,8 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
             let detectionLatency = 0;
             
             // Performance logging for 2-minute run analysis
-            const performanceLog: Array<{
-                timestamp: number;
-                renderFps: number;
-                detectFps: number;
-                detectionLatencyMs: number;
-                resolutionScale: number;
-                resolutionIndex: number;
-            }> = [];
-            const sessionStartTime = Date.now();
+            performanceLogRef.current = [];
+            sessionStartTimeRef.current = Date.now();
             const LOG_INTERVAL_MS = 1000; // Log every second
             let lastLogTime = Date.now();
             
@@ -308,11 +312,11 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                             resolutionIndex: dynamicResolutionRef.current?.getResolutionIndex() || 0,
                         };
                         
-                        performanceLog.push(logEntry);
+                        performanceLogRef.current.push(logEntry);
                         
                         // Keep only last 2 minutes of logs (120 entries at 1 per second)
-                        if (performanceLog.length > 120) {
-                            performanceLog.shift();
+                        if (performanceLogRef.current.length > 120) {
+                            performanceLogRef.current.shift();
                         }
                         
                         // #region agent log
@@ -324,7 +328,7 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                                 message: 'Performance metrics',
                                 data: {
                                     ...logEntry,
-                                    elapsedSeconds: (now - sessionStartTime) / 1000
+                                    elapsedSeconds: (now - sessionStartTimeRef.current) / 1000
                                 },
                                 timestamp: Date.now(),
                                 sessionId: 'performance-session',
@@ -459,13 +463,14 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
             }
             
             // Log final performance summary
+            const performanceLog = performanceLogRef.current;
             if (performanceLog.length > 0) {
-                const totalTime = (Date.now() - sessionStartTime) / 1000;
-                const avgRenderFps = performanceLog.reduce((sum, e) => sum + e.renderFps, 0) / performanceLog.length;
-                const avgDetectFps = performanceLog.reduce((sum, e) => sum + e.detectFps, 0) / performanceLog.length;
-                const latencies = performanceLog.map(e => e.detectionLatencyMs).sort((a, b) => a - b);
+                const totalTime = (Date.now() - sessionStartTimeRef.current) / 1000;
+                const avgRenderFps = performanceLog.reduce((sum: number, e) => sum + e.renderFps, 0) / performanceLog.length;
+                const avgDetectFps = performanceLog.reduce((sum: number, e) => sum + e.detectFps, 0) / performanceLog.length;
+                const latencies = performanceLog.map(e => e.detectionLatencyMs).sort((a: number, b: number) => a - b);
                 const p95Latency = latencies[Math.floor(latencies.length * 0.95)] || 0;
-                const resolutionChanges = performanceLog.filter((e, i) => 
+                const resolutionChanges = performanceLog.filter((e, i: number) => 
                     i > 0 && e.resolutionIndex !== performanceLog[i - 1].resolutionIndex
                 ).length;
                 

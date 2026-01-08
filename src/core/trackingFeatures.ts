@@ -171,11 +171,11 @@ class TrackingFeaturesManager {
     /**
      * Enable features for a specific mode
      */
-    enableForMode(mode: string): void {
+    enableForMode(_mode: string): void {
         // Safe defaults: all OFF
         // Can be enabled per mode once verified
         // Example:
-        // if (mode === 'free') {
+        // if (_mode === 'free') {
         //     this.flags.enablePredictiveSmoothing = true;
         // }
     }

@@ -19,7 +19,6 @@ export class DynamicResolutionManager {
     private currentResolutionIndex: number = 0;
     private performanceHistory: Array<{ timestamp: number; metrics: PerformanceMetrics }> = [];
     private lastScaleTime: number = 0;
-    private scaleDirection: 'down' | 'up' | 'stable' = 'stable';
 
     constructor(config: DynamicResolutionConfig) {
         this.config = config;
@@ -103,7 +102,6 @@ export class DynamicResolutionManager {
         
         // Calculate averages
         const avgRenderFps = recentHistory.reduce((sum, e) => sum + e.metrics.renderFps, 0) / recentHistory.length;
-        const avgDetectFps = recentHistory.reduce((sum, e) => sum + e.metrics.detectFps, 0) / recentHistory.length;
         const avgLatency = recentHistory.reduce((sum, e) => sum + e.metrics.detectionLatencyMs, 0) / recentHistory.length;
         
         const shouldScaleDown = avgRenderFps < this.config.fpsThreshold || 
@@ -120,18 +118,14 @@ export class DynamicResolutionManager {
             if (timeSinceLastScale >= minScaleInterval) {
                 this.currentResolutionIndex++;
                 this.lastScaleTime = now;
-                this.scaleDirection = 'down';
                 console.log(`[DynamicResolution] Scaled DOWN to level ${this.currentResolutionIndex}`);
             }
         } else if (shouldScaleUp) {
             if (timeSinceLastScale >= minScaleInterval) {
                 this.currentResolutionIndex--;
                 this.lastScaleTime = now;
-                this.scaleDirection = 'up';
                 console.log(`[DynamicResolution] Scaled UP to level ${this.currentResolutionIndex}`);
             }
-        } else {
-            this.scaleDirection = 'stable';
         }
     }
 

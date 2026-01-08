@@ -14,7 +14,7 @@
  */
 
 import { OneEuroFilter2D } from './filters/OneEuroFilter';
-import type { HandLandmarkerResult, NormalizedLandmark } from '@mediapipe/tasks-vision';
+import type { HandLandmarkerResult } from '@mediapipe/tasks-vision';
 import { trackingFeatures } from './trackingFeatures';
 import { PredictiveSmoothing } from './tracking/PredictiveSmoothing';
 import { DepthSensitivity } from './tracking/DepthSensitivity';
