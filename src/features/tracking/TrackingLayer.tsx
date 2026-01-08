@@ -16,6 +16,9 @@ import { handTracker } from '../../core/handTracker';
 import { DrawingUtils, type HandLandmarkerResult, type NormalizedLandmark } from '@mediapipe/tasks-vision';
 import { interactionStateManager, type InteractionState } from '../../core/InteractionState';
 import { perf } from '../../core/perf';
+import { trackingFeatures } from '../../core/trackingFeatures';
+import { DynamicResolutionManager } from '../../core/tracking/DynamicResolution';
+import { TrackingDebugOverlay, type DebugMetrics } from '../../components/TrackingDebugOverlay';
 
 /**
  * Mirror X coordinate for natural interaction
@@ -61,6 +64,10 @@ export interface TrackingFrameData {
     pinchActive: boolean;
     filteredPoint: { x: number; y: number } | null;
     filteredThumbTip: { x: number; y: number } | null;
+    
+    // Enhanced features
+    predictedPoint: { x: number; y: number } | null;
+    pressValue: number;
 }
 
 interface TrackingLayerProps {
@@ -90,7 +97,9 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
         penDown: false,
         pinchActive: false,
         filteredPoint: null,
-        filteredThumbTip: null
+        filteredThumbTip: null,
+        predictedPoint: null,
+        pressValue: 0.5
     });
     
     // Only update React state when values actually change (throttled for UI updates)
@@ -111,6 +120,19 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
     // Store latest interaction state (updated by detection loop, read by render loop)
     const latestInteractionStateRef = useRef<InteractionState | null>(null);
     
+    // Dynamic resolution manager
+    const dynamicResolutionRef = useRef<DynamicResolutionManager | null>(null);
+    
+    // Performance metrics for debug overlay
+    const debugMetricsRef = useRef<DebugMetrics | null>(null);
+    const renderFpsHistory = useRef<number[]>([]);
+    const detectFpsHistory = useRef<number[]>([]);
+    const detectionLatencyHistory = useRef<number[]>([]);
+    
+    // Offscreen canvas for dynamic resolution scaling
+    const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    const offscreenCtxRef = useRef<CanvasRenderingContext2D | null>(null);
+    
     // Convert InteractionState to TrackingFrameData (for compatibility)
     const convertToFrameData = useCallback((state: InteractionState): TrackingFrameData => {
         return {
@@ -124,7 +146,9 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
             penDown: state.penDown,
             pinchActive: state.pinchActive,
             filteredPoint: state.filteredPoint,
-            filteredThumbTip: state.filteredThumbTip
+            filteredThumbTip: state.filteredThumbTip,
+            predictedPoint: state.predictedPoint,
+            pressValue: state.pressValue
         };
     }, []);
 
@@ -139,7 +163,45 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
             if (canvasRef.current) {
                 drawingUtils = new DrawingUtils(canvasRef.current.getContext('2d')!);
             }
+            
+            // Initialize dynamic resolution manager if enabled
+            const flags = trackingFeatures.getFlags();
+            if (flags.enableDynamicResolution) {
+                const config = trackingFeatures.getDynamicResolutionConfig();
+                dynamicResolutionRef.current = new DynamicResolutionManager(config);
+                
+                // Create offscreen canvas for downscaled detection
+                offscreenCanvasRef.current = document.createElement('canvas');
+                offscreenCtxRef.current = offscreenCanvasRef.current.getContext('2d');
+            }
+            
+            // Set canvas size for interaction state manager
+            if (canvasRef.current) {
+                interactionStateManager.setCanvasSize(
+                    canvasRef.current.width || 1920,
+                    canvasRef.current.height || 1080
+                );
+            }
 
+            // Performance tracking
+            let lastDetectTime = Date.now();
+            let detectFrameCount = 0;
+            let detectFps = 0;
+            let detectionLatency = 0;
+            
+            // Performance logging for 2-minute run analysis
+            const performanceLog: Array<{
+                timestamp: number;
+                renderFps: number;
+                detectFps: number;
+                detectionLatencyMs: number;
+                resolutionScale: number;
+                resolutionIndex: number;
+            }> = [];
+            const sessionStartTime = Date.now();
+            const LOG_INTERVAL_MS = 1000; // Log every second
+            let lastLogTime = Date.now();
+            
             // Detection loop (separate from rendering, stable cadence based on perf tier)
             const detectionLoop = () => {
                 if (!isRunning) return;
@@ -153,9 +215,50 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
 
                 if (elapsed >= currentDetectionInterval && videoRef.current && videoRef.current.readyState >= 2) {
                     lastDetectionTime.current = now - (elapsed % currentDetectionInterval);
-
+                    
+                    const detectStartTime = performance.now();
                     const timestamp = Date.now();
-                    const rawResults = handTracker.detect(videoRef.current, timestamp);
+                    
+                    // Dynamic resolution: get scaled video frame if enabled
+                    // NOTE: MediaPipe's detectForVideo() currently requires a video element, not a canvas.
+                    // The dynamic resolution scaling infrastructure is in place, but cannot be fully utilized
+                    // until MediaPipe supports canvas/ImageData input or we find a workaround.
+                    // For now, we track metrics and can adjust camera resolution via useWebcam constraints.
+                    let videoElement: HTMLVideoElement = videoRef.current;
+                    if (flags.enableDynamicResolution && dynamicResolutionRef.current && 
+                        offscreenCanvasRef.current && offscreenCtxRef.current && videoRef.current) {
+                        // Track resolution state for debug overlay
+                        // Actual scaling would require MediaPipe API changes or workaround
+                        const videoWidth = videoRef.current.videoWidth;
+                        const videoHeight = videoRef.current.videoHeight;
+                        dynamicResolutionRef.current.getDetectionResolution(videoWidth, videoHeight);
+                        
+                        // TODO: When MediaPipe supports canvas/ImageData input:
+                        // 1. Draw video to offscreen canvas at detection resolution
+                        // 2. Convert canvas to ImageData or createImageBitmap
+                        // 3. Pass to MediaPipe detection
+                        videoElement = videoRef.current; // Use original for now
+                    }
+                    
+                    const rawResults = handTracker.detect(videoElement, timestamp);
+                    const detectEndTime = performance.now();
+                    detectionLatency = detectEndTime - detectStartTime;
+                    
+                    // Update detection FPS
+                    detectFrameCount++;
+                    if (now - lastDetectTime >= 1000) {
+                        detectFps = detectFrameCount;
+                        detectFrameCount = 0;
+                        lastDetectTime = now;
+                    }
+                    detectFpsHistory.current.push(detectFps);
+                    if (detectFpsHistory.current.length > 60) {
+                        detectFpsHistory.current.shift();
+                    }
+                    detectionLatencyHistory.current.push(detectionLatency);
+                    if (detectionLatencyHistory.current.length > 60) {
+                        detectionLatencyHistory.current.shift();
+                    }
                     
                     // Mirror results for natural interaction
                     const results = rawResults ? mirrorResults(rawResults) : null;
@@ -164,9 +267,106 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                     const interactionState = interactionStateManager.process(results, timestamp);
                     latestInteractionStateRef.current = interactionState;
                     
+                    // Update dynamic resolution metrics if enabled
+                    if (flags.enableDynamicResolution && dynamicResolutionRef.current) {
+                        // Calculate render FPS (will be updated in render loop)
+                        const avgRenderFps = renderFpsHistory.current.length > 0
+                            ? renderFpsHistory.current.reduce((a, b) => a + b, 0) / renderFpsHistory.current.length
+                            : 60;
+                        const avgDetectFps = detectFpsHistory.current.length > 0
+                            ? detectFpsHistory.current.reduce((a, b) => a + b, 0) / detectFpsHistory.current.length
+                            : detectFps;
+                        const avgLatency = detectionLatencyHistory.current.length > 0
+                            ? detectionLatencyHistory.current.reduce((a, b) => a + b, 0) / detectionLatencyHistory.current.length
+                            : detectionLatency;
+                        
+                        dynamicResolutionRef.current.updateMetrics({
+                            renderFps: avgRenderFps,
+                            detectFps: avgDetectFps,
+                            detectionLatencyMs: avgLatency,
+                        });
+                    }
+                    
+                    // Performance logging (every second)
+                    if (now - lastLogTime >= LOG_INTERVAL_MS) {
+                        const avgRenderFps = renderFpsHistory.current.length > 0
+                            ? renderFpsHistory.current.reduce((a, b) => a + b, 0) / renderFpsHistory.current.length
+                            : 60;
+                        const avgDetectFps = detectFpsHistory.current.length > 0
+                            ? detectFpsHistory.current.reduce((a, b) => a + b, 0) / detectFpsHistory.current.length
+                            : detectFps;
+                        const avgLatency = detectionLatencyHistory.current.length > 0
+                            ? detectionLatencyHistory.current.reduce((a, b) => a + b, 0) / detectionLatencyHistory.current.length
+                            : detectionLatency;
+                        
+                        const logEntry = {
+                            timestamp: now,
+                            renderFps: avgRenderFps,
+                            detectFps: avgDetectFps,
+                            detectionLatencyMs: avgLatency,
+                            resolutionScale: dynamicResolutionRef.current?.getScaleFactor() || 1.0,
+                            resolutionIndex: dynamicResolutionRef.current?.getResolutionIndex() || 0,
+                        };
+                        
+                        performanceLog.push(logEntry);
+                        
+                        // Keep only last 2 minutes of logs (120 entries at 1 per second)
+                        if (performanceLog.length > 120) {
+                            performanceLog.shift();
+                        }
+                        
+                        // #region agent log
+                        fetch('http://127.0.0.1:7243/ingest/3375da32-5a54-4a77-83b7-98afc54e3961', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                location: 'TrackingLayer.tsx:performance',
+                                message: 'Performance metrics',
+                                data: {
+                                    ...logEntry,
+                                    elapsedSeconds: (now - sessionStartTime) / 1000
+                                },
+                                timestamp: Date.now(),
+                                sessionId: 'performance-session',
+                                runId: 'run1',
+                                hypothesisId: 'D'
+                            })
+                        }).catch(() => {});
+                        // #endregion
+                        
+                        lastLogTime = now;
+                    }
+                    
                     // Update frame data ref (no React state update here)
                     const frameData = convertToFrameData(interactionState);
                     lastFrameDataRef.current = frameData;
+                    
+                    // Update debug metrics
+                    if (flags.showDebugOverlay) {
+                        const pinchDistance = frameData.filteredPoint && frameData.filteredThumbTip
+                            ? Math.hypot(
+                                frameData.filteredPoint.x - frameData.filteredThumbTip.x,
+                                frameData.filteredPoint.y - frameData.filteredThumbTip.y
+                            )
+                            : 0;
+                        
+                        debugMetricsRef.current = {
+                            renderFps: renderFpsHistory.current.length > 0
+                                ? renderFpsHistory.current[renderFpsHistory.current.length - 1]
+                                : 60,
+                            detectFps: detectFps,
+                            detectionLatencyMs: detectionLatency,
+                            confidence: frameData.confidence,
+                            penState: frameData.penDown ? 'down' : 'up',
+                            pinchDistance: pinchDistance,
+                            pressValue: frameData.pressValue,
+                            resolutionScale: dynamicResolutionRef.current?.getScaleFactor() || 1.0,
+                            resolutionIndex: dynamicResolutionRef.current?.getResolutionIndex() || 0,
+                            rawPoint: frameData.indexTip,
+                            filteredPoint: frameData.filteredPoint,
+                            predictedPoint: frameData.predictedPoint,
+                        };
+                    }
                     
                     // Throttled React state update for UI components that need it
                     if (now - lastUpdateTimeRef.current >= UPDATE_THROTTLE_MS) {
@@ -179,6 +379,10 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
             };
 
             // Render loop (60 FPS, decoupled from detection)
+            let lastRenderFpsTime = Date.now();
+            let renderFrameCount = 0;
+            let renderFps = 60;
+            
             const renderLoop = (currentTime: number) => {
                 if (!isRunning) return;
 
@@ -186,6 +390,19 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                 
                 if (elapsed >= renderInterval) {
                     lastRenderTime.current = currentTime - (elapsed % renderInterval);
+                    
+                    // Update render FPS
+                    renderFrameCount++;
+                    const now = Date.now();
+                    if (now - lastRenderFpsTime >= 1000) {
+                        renderFps = renderFrameCount;
+                        renderFrameCount = 0;
+                        lastRenderFpsTime = now;
+                    }
+                    renderFpsHistory.current.push(renderFps);
+                    if (renderFpsHistory.current.length > 60) {
+                        renderFpsHistory.current.shift();
+                    }
 
                     if (canvasRef.current && latestInteractionStateRef.current) {
                         const canvas = canvasRef.current;
@@ -197,6 +414,9 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                                 canvas.height !== videoRef.current.videoHeight) {
                                 canvas.width = videoRef.current.videoWidth;
                                 canvas.height = videoRef.current.videoHeight;
+                                
+                                // Update interaction state manager with new canvas size
+                                interactionStateManager.setCanvasSize(canvas.width, canvas.height);
                             }
                         }
 
@@ -234,6 +454,44 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
             }
             cancelAnimationFrame(animationFrameId);
             interactionStateManager.reset();
+            if (dynamicResolutionRef.current) {
+                dynamicResolutionRef.current.reset();
+            }
+            
+            // Log final performance summary
+            if (performanceLog.length > 0) {
+                const totalTime = (Date.now() - sessionStartTime) / 1000;
+                const avgRenderFps = performanceLog.reduce((sum, e) => sum + e.renderFps, 0) / performanceLog.length;
+                const avgDetectFps = performanceLog.reduce((sum, e) => sum + e.detectFps, 0) / performanceLog.length;
+                const latencies = performanceLog.map(e => e.detectionLatencyMs).sort((a, b) => a - b);
+                const p95Latency = latencies[Math.floor(latencies.length * 0.95)] || 0;
+                const resolutionChanges = performanceLog.filter((e, i) => 
+                    i > 0 && e.resolutionIndex !== performanceLog[i - 1].resolutionIndex
+                ).length;
+                
+                // #region agent log
+                fetch('http://127.0.0.1:7243/ingest/3375da32-5a54-4a77-83b7-98afc54e3961', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        location: 'TrackingLayer.tsx:summary',
+                        message: 'Performance summary',
+                        data: {
+                            totalTimeSeconds: totalTime,
+                            averageRenderFps: avgRenderFps,
+                            averageDetectFps: avgDetectFps,
+                            p95DetectionLatencyMs: p95Latency,
+                            resolutionScalingTriggers: resolutionChanges,
+                            sampleCount: performanceLog.length
+                        },
+                        timestamp: Date.now(),
+                        sessionId: 'performance-session',
+                        runId: 'run1',
+                        hypothesisId: 'D'
+                    })
+                }).catch(() => {});
+                // #endregion
+            }
         };
     }, [stream, isWebcamLoading, videoRef, onFrame, convertToFrameData, renderInterval]);
 
@@ -286,6 +544,15 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
 
             {/* Children receive stable, filtered frame data (from ref, updated throttled) */}
             {typeof children === 'function' ? children(lastFrameDataRef.current) : children}
+            
+            {/* Debug overlay */}
+            {trackingFeatures.getFlags().showDebugOverlay && (
+                <TrackingDebugOverlay
+                    metrics={debugMetricsRef.current}
+                    canvasWidth={canvasRef.current?.width || 1920}
+                    canvasHeight={canvasRef.current?.height || 1080}
+                />
+            )}
         </div>
     );
 };

@@ -92,6 +92,10 @@ export class DrawingEngine {
         this.currentWidth = width;
     }
 
+    getCurrentWidth(): number {
+        return this.currentWidth;
+    }
+
     /**
      * Update canvas dimensions for resampling and jump detection
      */

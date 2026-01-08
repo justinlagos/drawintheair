@@ -19,13 +19,23 @@ export const freePaintLogic = (
     _drawingUtils: any
 ) => {
     // Use unified interaction state (pre-filtered, stable)
-    const { filteredPoint, filteredThumbTip, penDown, confidence, timestamp, handScale } = frameData;
+    const { filteredPoint, filteredThumbTip, penDown, confidence, timestamp, handScale, pressValue } = frameData;
 
     // Update canvas size for resampling
     drawingEngine.setCanvasSize(width, height);
 
+    // Apply depth sensitivity: increase brush width with press (if enabled)
+    // Press value: 0 = no press, 1 = full press
+    // Only apply if pressValue is different from default (0.5)
+    if (pressValue !== 0.5) {
+        const baseWidth = drawingEngine.getCurrentWidth();
+        const pressWidthMultiplier = 1.0 + ((pressValue - 0.5) * 0.5); // 0.75 to 1.25 range
+        drawingEngine.setWidth(baseWidth * pressWidthMultiplier);
+    }
+
     // Process point using filtered data from unified state
     // Only draw when pen is down (pinch active)
+    // Note: Use filteredPoint for actual stroke data (not predictedPoint)
     if (penDown && filteredPoint && filteredThumbTip) {
         drawingEngine.processPoint(
             filteredPoint,
