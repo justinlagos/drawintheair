@@ -20,7 +20,6 @@ import { initializeTracing, getTracingState, resetLevel, nextLevel, setCompletio
 import { getCurrentPath, getCurrentPackProgress } from './tracingProgress';
 import { calculateHUDMetrics, getPackInfo } from './tracingUI';
 import { TracingDebugOverlay } from '../../../components/TracingDebugOverlay';
-import { trackingFeatures } from '../../../core/trackingFeatures';
 
 export const TracingMode = () => {
     const [progress, setProgress] = useState(0);
@@ -504,12 +503,10 @@ export const TracingMode = () => {
             )}
 
             {/* Debug overlay */}
-            {trackingFeatures.getFlags().enableTracingV2 && (
-                <TracingDebugOverlay
-                    canvasWidth={layoutRef.current.width}
-                    canvasHeight={layoutRef.current.height}
-                />
-            )}
+            <TracingDebugOverlay
+                canvasWidth={layoutRef.current.width}
+                canvasHeight={layoutRef.current.height}
+            />
 
             {/* CSS animations */}
             <style>{`

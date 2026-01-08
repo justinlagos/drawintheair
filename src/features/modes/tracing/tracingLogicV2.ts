@@ -15,9 +15,8 @@
  */
 
 import type { TrackingFrameData } from '../../../features/tracking/TrackingLayer';
-import { trackingFeatures } from '../../../core/trackingFeatures';
 import { perf } from '../../../core/perf';
-import type { TracingPath, PathPoint } from './tracingContent';
+import type { TracingPath } from './tracingContent';
 import { completeLevel, advanceToNextLevel, getCurrentPath } from './tracingProgress';
 import type { DrawingUtils } from '@mediapipe/tasks-vision';
 
@@ -217,7 +216,7 @@ export const tracingLogicV2 = (
     frameData: TrackingFrameData,
     width: number,
     height: number,
-    drawingUtils: DrawingUtils | null
+    _drawingUtils: DrawingUtils | null
 ): void => {
     // Update canvas size if changed
     if (tracingState.canvasWidth !== width || tracingState.canvasHeight !== height) {
@@ -233,10 +232,7 @@ export const tracingLogicV2 = (
     const { path } = tracingState;
     if (!path) return;
     
-    const flags = trackingFeatures.getFlags();
-    const useAssist = flags.enableTracingAssist;
     const perfConfig = perf.getConfig();
-    const assistRadiusPx = 25; // Pixels - reduced for more accuracy
     
     // Movement requirements - Stricter to prevent false progress and skipping
     const baseMinPhysicalMovementPx = 8; // Base minimum pixels (stricter)
@@ -246,11 +242,7 @@ export const tracingLogicV2 = (
     const minTimeBetweenProgressMs = 80; // Minimum ms between updates (stricter to prevent rapid skipping)
     
     // Look-ahead constants - Very conservative to prevent skipping
-    const lookAheadDistancePx = 10; // Distance to next segment for look-ahead (reduced)
     const lookAheadMovementWindowMs = 300; // Time window to check for movement
-    const lookAheadMovementThresholdPx = 5; // Minimum movement in window (increased)
-    const maxLookAheadPerSecond = 0.015; // Max 1.5% progress per second from look-ahead (very conservative)
-    const maxLookAheadPerUpdate = 0.005; // Max 0.5% progress per update from look-ahead (very conservative)
     
     // Extra forgiveness constants
     const pinchGraceWindowMs = 200; // Grace window for pinch drops (150-250ms)
@@ -405,12 +397,7 @@ export const tracingLogicV2 = (
         tracingState.lookAheadStartTime = now;
     }
     
-    // NUDGE 2: Check for look-ahead eligibility - DISABLED to prevent skipping
     // Look-ahead is disabled entirely to ensure progress only advances with actual finger movement
-    const canUseLookAhead = false; // DISABLED: Prevents any skipping ahead
-    
-    let lookAheadBoost = 0;
-    // Look-ahead disabled to ensure progress only advances with actual finger movement
     // This prevents alphabets/letters from skipping ahead without user movement
     
     // Check if we can update progress (with grace window for pinch)
