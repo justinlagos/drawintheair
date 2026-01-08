@@ -171,7 +171,7 @@ export class DifficultyController {
     /**
      * Update bubble-specific difficulty
      */
-    updateBubbleDifficulty(score: number, timeRemaining: number, hits: number, misses: number): void {
+    updateBubbleDifficulty(_score: number, _timeRemaining: number, hits: number, misses: number): void {
         const totalAttempts = hits + misses;
         const hitRate = totalAttempts > 0 ? hits / totalAttempts : 0.5;
         

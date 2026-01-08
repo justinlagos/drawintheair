@@ -22,7 +22,6 @@ export class TwoHandDetector {
     
     // Detection state
     private twoHandFrames: number = 0;
-    private lastDetectionTime: number = 0;
     private leftHandHistory: Array<{ x: number; y: number; timestamp: number }> = [];
     private rightHandHistory: Array<{ x: number; y: number; timestamp: number }> = [];
     
@@ -55,8 +54,15 @@ export class TwoHandDetector {
             
             // Extract hand positions (left is typically x < 0.5, right is x > 0.5)
             const hands = results!.landmarks;
-            const leftHand = hands[0].x < 0.5 ? hands[0] : hands[1];
-            const rightHand = hands[0].x >= 0.5 ? hands[0] : hands[1];
+            const hand0 = hands[0];
+            const hand1 = hands[1];
+            
+            // Get wrist position to determine left vs right
+            const hand0Wrist = hand0[0]; // Wrist is landmark 0
+            
+            // Determine left (x < 0.5) vs right (x >= 0.5) hand
+            const leftHand = hand0Wrist.x < 0.5 ? hand0 : hand1;
+            const rightHand = hand0Wrist.x >= 0.5 ? hand0 : hand1;
             
             const leftIndexTip = leftHand[8]; // Index tip landmark
             const rightIndexTip = rightHand[8];

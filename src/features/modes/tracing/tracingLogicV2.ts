@@ -326,11 +326,10 @@ export const tracingLogicV2 = (
     
     // Apply magnetic attraction if enabled
     const flags = trackingFeatures.getFlags();
-    let appliedMagneticAssist = false;
     
     if (flags.enableMagneticTargets && fingerPos) {
         const magneticConfig = trackingFeatures.getMagneticTargetsConfig();
-        const { nearestPoint, overallT: nearestT, distance: rawDistance } = findNearestPointOnPath(
+        const { nearestPoint, distance: rawDistance } = findNearestPointOnPath(
             fingerPos,
             path,
             width,
@@ -385,8 +384,6 @@ export const tracingLogicV2 = (
                 x: fingerPos.x + dx * attractionAmount,
                 y: fingerPos.y + dy * attractionAmount
             };
-            
-            appliedMagneticAssist = true;
         }
     }
     
@@ -661,7 +658,7 @@ export const tracingLogicV2 = (
     const isVeryCloseToEnd = overallT >= path.completionPercent - 0.05; // Within 5% of completion
     
     // Allow completion even if slightly off-path when very close to end
-    const allowNearEndCompletion = isVeryCloseToEnd && distance <= tolerancePx * 1.5; // 50% extra tolerance near end
+    const allowNearEndCompletion = isVeryCloseToEnd && distance <= forgivenessTolerancePx * 1.5; // 50% extra tolerance near end
     
     if (!tracingState.isCompleted && (isNearCompletion || (allowNearEndCompletion && isAtPathEnd))) {
         // If near completion but not quite there, boost progress to completion

@@ -351,7 +351,7 @@ export const sortAndPlaceLogic = (
                 let nearestZone: Zone | null = null;
                 let minSnapDist = Infinity;
                 
-                zones.forEach(zone => {
+                for (const zone of zones) {
                     const objCanvas = normalizedToCanvas(
                         { x: filteredPoint.x, y: filteredPoint.y },
                         width,
@@ -362,8 +362,6 @@ export const sortAndPlaceLogic = (
                         width,
                         height
                     );
-                    const zoneW = zone.width * width;
-                    const zoneH = zone.height * height;
                     
                     // Calculate distance to zone center
                     const dx = objCanvas.x - zoneCanvas.x;
@@ -383,19 +381,19 @@ export const sortAndPlaceLogic = (
                             nearestZone = zone;
                         }
                     }
-                });
+                }
                 
                 // Apply snap with easing if near valid zone
-                if (nearestZone && minSnapDist < magneticConfig.snapDistancePx) {
-                    const zoneCanvas = normalizedToCanvas(
+                if (nearestZone !== null && minSnapDist < magneticConfig.snapDistancePx) {
+                    const snapZoneCanvas = normalizedToCanvas(
                         { x: nearestZone.x, y: nearestZone.y },
                         width,
                         height
                     );
                     
                     // Calculate clean anchor point inside zone (center)
-                    const snapTargetX = zoneCanvas.x / width;
-                    const snapTargetY = zoneCanvas.y / height;
+                    const snapTargetX = snapZoneCanvas.x / width;
+                    const snapTargetY = snapZoneCanvas.y / height;
                     
                     // Apply easing towards snap target
                     const easing = magneticConfig.snapEasingStrength;
@@ -459,7 +457,6 @@ export const sortAndPlaceLogic = (
             
             // Check if press signal integration is enabled and we should require press to confirm
             if (flags.enablePressIntegration) {
-                const pressConfig = trackingFeatures.getPressIntegrationConfig();
                 // Only require press confirm if hovering over valid target
                 zones.forEach(zone => {
                     const objCanvas = normalizedToCanvas(
@@ -493,9 +490,11 @@ export const sortAndPlaceLogic = (
             }
             
             // Check if press is required and if it's been pressed
-            const hasPressed = flags.enablePressIntegration && frameData.pressValue
-                ? frameData.pressValue >= trackingFeatures.getPressIntegrationConfig().sortingConfirmThreshold
-                : true; // Default to true if not using press integration
+            let hasPressed = true; // Default to true if not using press integration
+            if (flags.enablePressIntegration && frameData.pressValue) {
+                const pressConfig = trackingFeatures.getPressIntegrationConfig();
+                hasPressed = frameData.pressValue >= pressConfig.sortingConfirmThreshold;
+            }
             
             zones.forEach(zone => {
                 const objCanvas = normalizedToCanvas(
