@@ -13,6 +13,9 @@ import { DrawingUtils } from '@mediapipe/tasks-vision';
 import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import { normalizedToCanvas } from '../../../core/coordinateUtils';
 import { perf } from '../../../core/perf';
+import { trackingFeatures } from '../../../core/trackingFeatures';
+import { DifficultyController } from '../../../core/DifficultyController';
+import { tactileAudioManager } from '../../../core/TactileAudioManager';
 
 interface Bubble {
     id: number;
@@ -95,6 +98,23 @@ let milestoneReached = false;
 let milestoneCelebrated = false;
 let currentLevel: Level = 1;
 
+// Difficulty controller instance (lazy initialized)
+let difficultyController: DifficultyController | null = null;
+let lastDifficultyUpdateTime: number = 0;
+let bubbleHits: number = 0;
+let bubbleMisses: number = 0;
+
+const getDifficultyController = (): DifficultyController | null => {
+    const flags = trackingFeatures.getFlags();
+    if (flags.enableDynamicDifficulty) {
+        if (!difficultyController) {
+            difficultyController = new DifficultyController();
+        }
+        return difficultyController;
+    }
+    return null;
+};
+
 const spawnBubble = (level: Level): Bubble => {
     const config = LEVEL_CONFIGS[level];
     const margin = 0.1;
@@ -152,6 +172,14 @@ export const startBubbleGame = (level: Level | undefined = 1) => {
     gameEndTime = null;
     milestoneReached = false;
     milestoneCelebrated = false;
+    bubbleHits = 0;
+    bubbleMisses = 0;
+    
+    // Reset difficulty controller if enabled
+    const dds = getDifficultyController();
+    if (dds) {
+        dds.reset();
+    }
     
     const config = LEVEL_CONFIGS[actualLevel];
     // Spawn initial bubbles - start with many on screen for immediate action
@@ -201,11 +229,49 @@ export const bubbleCalibrationLogic = (
 ) => {
     const now = Date.now();
     const { filteredPoint } = frameData;
-    const config = LEVEL_CONFIGS[currentLevel];
+    let config = LEVEL_CONFIGS[currentLevel];
     
     // Initialize game if not started
     if (gameStartTime === null) {
         startBubbleGame(1 as Level);
+    }
+    
+    // Apply dynamic difficulty scaling if enabled
+    const flags = trackingFeatures.getFlags();
+    let difficultyMultipliers = { speed: 1.0, size: 1.0, spawnRate: 1.0 };
+    
+    if (flags.enableDynamicDifficulty) {
+        const dds = getDifficultyController();
+        if (dds) {
+            // Update difficulty based on performance
+            if (now - lastDifficultyUpdateTime > 1000) {
+                const timeRemaining = getTimeRemaining();
+                dds.updateBubbleDifficulty(score, timeRemaining, bubbleHits, bubbleMisses);
+                lastDifficultyUpdateTime = now;
+            }
+            
+            const params = dds.getParams();
+            difficultyMultipliers = {
+                speed: params.bubbleSpeed,
+                size: params.bubbleSize,
+                spawnRate: params.spawnRate
+            };
+            
+            // Apply multipliers to config (create modified config)
+            config = {
+                ...config,
+                bubbleSpeed: config.bubbleSpeed * difficultyMultipliers.speed,
+                spawnRate: config.spawnRate / difficultyMultipliers.spawnRate, // Lower spawnRate = faster spawn
+            };
+        }
+    }
+    
+    // Update tactile audio if enabled
+    if (flags.enableTactileAudio) {
+        tactileAudioManager.updatePinchState(frameData.pinchActive);
+        if (filteredPoint) {
+            tactileAudioManager.updateMovement(filteredPoint, frameData.timestamp);
+        }
     }
 
     const timeRemaining = getTimeRemaining();
@@ -244,11 +310,13 @@ export const bubbleCalibrationLogic = (
         ctx.restore();
     }
 
-    // Update bubble positions and animations
+    // Update bubble positions and animations (with DDS speed adjustment)
     bubbles.forEach(bubble => {
         if (!bubble.popping && isActive) {
-            bubble.x += bubble.vx;
-            bubble.y += bubble.vy;
+            // Apply DDS speed multiplier if enabled
+            const speedMultiplier = flags.enableDynamicDifficulty ? difficultyMultipliers.speed : 1.0;
+            bubble.x += bubble.vx * speedMultiplier;
+            bubble.y += bubble.vy * speedMultiplier;
             
             // Floating animation (gentle bobbing)
             bubble.float += 0.008;
@@ -283,10 +351,16 @@ export const bubbleCalibrationLogic = (
         gameEndTime = now;
     }
 
-    // Draw bubbles with 3D effect
+    // Draw bubbles with 3D effect (with DDS size adjustment)
     bubbles.forEach(bubble => {
         const canvasPoint = normalizedToCanvas({ x: bubble.x, y: bubble.y }, width, height);
-        const baseRadius = bubble.radius * Math.min(width, height);
+        let baseRadius = bubble.radius * Math.min(width, height);
+        
+        // Apply DDS size multiplier if enabled
+        if (flags.enableDynamicDifficulty) {
+            baseRadius *= difficultyMultipliers.size;
+        }
+        
         const r = baseRadius * bubble.z; // Scale by depth
         const floatOffset = Math.sin(bubble.float) * 4; // Gentle floating
 
@@ -459,10 +533,25 @@ export const bubbleCalibrationLogic = (
             const dist = Math.hypot(dx, dy);
 
             // More forgiving pop radius (1.4x instead of 1.3x)
-            if (dist < r * 1.4) {
+            // Apply DDS size multiplier to pop radius for consistency
+            const popRadiusMultiplier = flags.enableDynamicDifficulty ? difficultyMultipliers.size : 1.0;
+            const effectivePopRadius = r * 1.4 * popRadiusMultiplier;
+            
+            if (dist < effectivePopRadius) {
                 bubble.popping = true;
                 bubble.createdAt = now;
                 score++;
+                bubbleHits++;
+                
+                // Play success audio if enabled
+                if (flags.enableTactileAudio) {
+                    tactileAudioManager.playSuccess('bubble');
+                }
+            } else {
+                // Track near misses for difficulty adjustment
+                if (dist < effectivePopRadius * 1.5) {
+                    bubbleMisses++;
+                }
             }
         });
     }

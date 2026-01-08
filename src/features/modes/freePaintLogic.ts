@@ -10,6 +10,8 @@
 
 import { drawingEngine } from '../../core/drawingEngine';
 import type { TrackingFrameData } from '../tracking/TrackingLayer';
+import { trackingFeatures } from '../../core/trackingFeatures';
+import { tactileAudioManager } from '../../core/TactileAudioManager';
 
 export const freePaintLogic = (
     ctx: CanvasRenderingContext2D,
@@ -27,10 +29,28 @@ export const freePaintLogic = (
     // Apply depth sensitivity: increase brush width with press (if enabled)
     // Press value: 0 = no press, 1 = full press
     // Only apply if pressValue is different from default (0.5)
-    if (pressValue !== 0.5) {
+    const flags = trackingFeatures.getFlags();
+    
+    if (flags.enablePressIntegration && pressValue !== 0.5) {
+        const baseWidth = drawingEngine.getCurrentWidth();
+        const pressConfig = trackingFeatures.getPressIntegrationConfig();
+        // Enhanced press signal: boost brush width and glow when pressing hard
+        const pressAmount = Math.max(0, (pressValue - 0.5) * 2); // 0 to 1 range
+        const pressWidthMultiplier = 1.0 + (pressAmount * (pressConfig.freePaintBoost - 1.0)); // Up to freePaintBoost multiplier
+        drawingEngine.setWidth(baseWidth * pressWidthMultiplier);
+    } else if (pressValue !== 0.5) {
+        // Original behavior when press integration flag is off
         const baseWidth = drawingEngine.getCurrentWidth();
         const pressWidthMultiplier = 1.0 + ((pressValue - 0.5) * 0.5); // 0.75 to 1.25 range
         drawingEngine.setWidth(baseWidth * pressWidthMultiplier);
+    }
+    
+    // Update tactile audio if enabled
+    if (flags.enableTactileAudio) {
+        tactileAudioManager.updatePinchState(penDown);
+        if (filteredPoint) {
+            tactileAudioManager.updateMovement(filteredPoint, timestamp);
+        }
     }
 
     // Process point using filtered data from unified state

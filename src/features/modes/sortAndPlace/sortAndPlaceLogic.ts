@@ -2,6 +2,8 @@ import { DrawingUtils } from '@mediapipe/tasks-vision';
 import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import { normalizedToCanvas } from '../../../core/coordinateUtils';
 import { OneEuroFilter2D } from '../../../core/filters/OneEuroFilter';
+import { trackingFeatures } from '../../../core/trackingFeatures';
+import { tactileAudioManager } from '../../../core/TactileAudioManager';
 
 export type SortCategory = 'color' | 'size' | 'category';
 
@@ -266,6 +268,15 @@ export const sortAndPlaceLogic = (
 ) => {
     // Use unified interaction state (pre-filtered, stable)
     const { filteredPoint, pinchActive, timestamp } = frameData;
+    
+    // Update tactile audio if enabled
+    const flags = trackingFeatures.getFlags();
+    if (flags.enableTactileAudio) {
+        tactileAudioManager.updatePinchState(pinchActive);
+        if (filteredPoint) {
+            tactileAudioManager.updateMovement(filteredPoint, timestamp);
+        }
+    }
 
     const now = Date.now();
 
@@ -325,13 +336,85 @@ export const sortAndPlaceLogic = (
             }
         } else if (grabbedObject) {
             // Smooth movement using One Euro Filter (secondary smoothing on already-filtered point)
+            let targetX = filteredPoint.x;
+            let targetY = filteredPoint.y;
+            
+            // Apply snap assist if enabled
+            const flags = trackingFeatures.getFlags();
+            let snappedToZone = false;
+            let snappedZone: Zone | null = null;
+            
+            if (flags.enableMagneticTargets) {
+                const magneticConfig = trackingFeatures.getMagneticTargetsConfig();
+                
+                // Find nearest valid zone
+                let nearestZone: Zone | null = null;
+                let minSnapDist = Infinity;
+                
+                zones.forEach(zone => {
+                    const objCanvas = normalizedToCanvas(
+                        { x: filteredPoint.x, y: filteredPoint.y },
+                        width,
+                        height
+                    );
+                    const zoneCanvas = normalizedToCanvas(
+                        { x: zone.x, y: zone.y },
+                        width,
+                        height
+                    );
+                    const zoneW = zone.width * width;
+                    const zoneH = zone.height * height;
+                    
+                    // Calculate distance to zone center
+                    const dx = objCanvas.x - zoneCanvas.x;
+                    const dy = objCanvas.y - zoneCanvas.y;
+                    const dist = Math.hypot(dx, dy);
+                    
+                    // Check if within snap distance
+                    if (dist < magneticConfig.snapDistancePx) {
+                        const isCorrect = 
+                            (currentRound === 'color' && grabbedObject!.color === zone.targetValue) ||
+                            (currentRound === 'size' && grabbedObject!.size === zone.targetValue) ||
+                            (currentRound === 'category' && grabbedObject!.category === zone.targetValue);
+                        
+                        // Only snap to correct zones
+                        if (isCorrect && dist < minSnapDist) {
+                            minSnapDist = dist;
+                            nearestZone = zone;
+                        }
+                    }
+                });
+                
+                // Apply snap with easing if near valid zone
+                if (nearestZone && minSnapDist < magneticConfig.snapDistancePx) {
+                    const zoneCanvas = normalizedToCanvas(
+                        { x: nearestZone.x, y: nearestZone.y },
+                        width,
+                        height
+                    );
+                    
+                    // Calculate clean anchor point inside zone (center)
+                    const snapTargetX = zoneCanvas.x / width;
+                    const snapTargetY = zoneCanvas.y / height;
+                    
+                    // Apply easing towards snap target
+                    const easing = magneticConfig.snapEasingStrength;
+                    targetX = targetX + (snapTargetX - targetX) * easing;
+                    targetY = targetY + (snapTargetY - targetY) * easing;
+                    
+                    snappedToZone = true;
+                    snappedZone = nearestZone;
+                }
+            }
+            
+            // Apply smoothing
             if (grabFilter) {
-                const smoothed = grabFilter.filter(filteredPoint.x, filteredPoint.y, timestamp);
+                const smoothed = grabFilter.filter(targetX, targetY, timestamp);
                 grabbedObject.x = smoothed.x;
                 grabbedObject.y = smoothed.y;
             } else {
-                grabbedObject.x = filteredPoint.x;
-                grabbedObject.y = filteredPoint.y;
+                grabbedObject.x = targetX;
+                grabbedObject.y = targetY;
             }
 
             // Check if hovering over a zone for glow effect
@@ -360,17 +443,59 @@ export const sortAndPlaceLogic = (
                     (currentRound === 'size' && grabbedObject!.size === zone.targetValue) ||
                     (currentRound === 'category' && grabbedObject!.category === zone.targetValue);
 
-                zone.glow = isHovering;
-                zone.glowIntensity = isHovering && isCorrect ? 1 : zone.glowIntensity;
+                zone.glow = isHovering || (snappedToZone && zone === snappedZone);
+                zone.glowIntensity = (isHovering || (snappedToZone && zone === snappedZone)) && isCorrect ? 1 : zone.glowIntensity;
             });
         }
     } else {
         // Release
         if (grabbedObject) {
             const grabbed = grabbedObject;
+            const flags = trackingFeatures.getFlags();
             
-            // Check if dropped in a zone
+            // Check if dropped in a zone (with press signal confirm if enabled)
             let droppedInZone = false;
+            let requiresPressConfirm = false;
+            
+            // Check if press signal integration is enabled and we should require press to confirm
+            if (flags.enablePressIntegration) {
+                const pressConfig = trackingFeatures.getPressIntegrationConfig();
+                // Only require press confirm if hovering over valid target
+                zones.forEach(zone => {
+                    const objCanvas = normalizedToCanvas(
+                        { x: grabbed.x, y: grabbed.y },
+                        width,
+                        height
+                    );
+                    const zoneCanvas = normalizedToCanvas(
+                        { x: zone.x, y: zone.y },
+                        width,
+                        height
+                    );
+                    const zoneW = zone.width * width;
+                    const zoneH = zone.height * height;
+                    
+                    const isHovering = 
+                        objCanvas.x >= zoneCanvas.x - zoneW / 2 &&
+                        objCanvas.x <= zoneCanvas.x + zoneW / 2 &&
+                        objCanvas.y >= zoneCanvas.y - zoneH / 2 &&
+                        objCanvas.y <= zoneCanvas.y + zoneH / 2;
+                    
+                    const isCorrect = 
+                        (currentRound === 'color' && grabbed.color === zone.targetValue) ||
+                        (currentRound === 'size' && grabbed.size === zone.targetValue) ||
+                        (currentRound === 'category' && grabbed.category === zone.targetValue);
+                    
+                    if (isHovering && isCorrect) {
+                        requiresPressConfirm = true;
+                    }
+                });
+            }
+            
+            // Check if press is required and if it's been pressed
+            const hasPressed = flags.enablePressIntegration && frameData.pressValue
+                ? frameData.pressValue >= trackingFeatures.getPressIntegrationConfig().sortingConfirmThreshold
+                : true; // Default to true if not using press integration
             
             zones.forEach(zone => {
                 const objCanvas = normalizedToCanvas(
@@ -398,7 +523,7 @@ export const sortAndPlaceLogic = (
                         (currentRound === 'size' && grabbed.size === zone.targetValue) ||
                         (currentRound === 'category' && grabbed.category === zone.targetValue);
                     
-                    if (isCorrect) {
+                    if (isCorrect && (!requiresPressConfirm || hasPressed)) {
                         // Correct placement - stack objects line by line in zone
                         const placedInZone = objects.filter(o => o.placed && o.placedZone === zone.id);
                         const stackIndex = placedInZone.length;
@@ -442,6 +567,11 @@ export const sortAndPlaceLogic = (
                         score++;
                         droppedInZone = true;
                         zone.glow = false;
+                        
+                        // Play success audio if enabled
+                        if (flags.enableTactileAudio) {
+                            tactileAudioManager.playSuccess('sorting');
+                        }
                     } else {
                         // Wrong zone - bounce back with animation
                         grabbed.vx = (grabbed.x - zone.x) * 0.015;

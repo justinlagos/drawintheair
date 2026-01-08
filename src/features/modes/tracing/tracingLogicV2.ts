@@ -19,6 +19,9 @@ import { perf } from '../../../core/perf';
 import type { TracingPath } from './tracingContent';
 import { completeLevel, advanceToNextLevel, getCurrentPath } from './tracingProgress';
 import type { DrawingUtils } from '@mediapipe/tasks-vision';
+import { trackingFeatures } from '../../../core/trackingFeatures';
+import { DifficultyController } from '../../../core/DifficultyController';
+import { tactileAudioManager } from '../../../core/TactileAudioManager';
 
 export interface TracingState {
     path: TracingPath | null;
@@ -84,6 +87,21 @@ export const setCompletionCallback = (callback: (() => void) | null): void => {
     completionCallback = callback;
 };
 
+// Difficulty controller instance (lazy initialized)
+let difficultyController: DifficultyController | null = null;
+let lastDifficultyUpdateTime: number = 0;
+
+const getDifficultyController = (): DifficultyController | null => {
+    const flags = trackingFeatures.getFlags();
+    if (flags.enableDynamicDifficulty) {
+        if (!difficultyController) {
+            difficultyController = new DifficultyController();
+        }
+        return difficultyController;
+    }
+    return null;
+};
+
 // Initialize tracing session
 export const initializeTracing = (width: number, height: number): void => {
     tracingState.canvasWidth = width;
@@ -116,6 +134,12 @@ const loadCurrentPath = (): void => {
     tracingState.lastIdleCheckTime = 0;
     tracingState.lastOffPathHintTime = 0;
     tracingState.sparkleParticles = [];
+    
+    // Reset difficulty controller if enabled
+    const dds = getDifficultyController();
+    if (dds) {
+        dds.reset();
+    }
 };
 
 // Export loadCurrentPath so it can be called when advancing levels
@@ -298,9 +322,75 @@ export const tracingLogicV2 = (
         }
     }
     
-    const fingerPos = frameData.filteredPoint;
+    let fingerPos = frameData.filteredPoint;
     
-    // Find nearest point on path
+    // Apply magnetic attraction if enabled
+    const flags = trackingFeatures.getFlags();
+    let appliedMagneticAssist = false;
+    
+    if (flags.enableMagneticTargets && fingerPos) {
+        const magneticConfig = trackingFeatures.getMagneticTargetsConfig();
+        const { nearestPoint, overallT: nearestT, distance: rawDistance } = findNearestPointOnPath(
+            fingerPos,
+            path,
+            width,
+            height
+        );
+        
+        // Calculate distance in pixels
+        const distancePx = rawDistance;
+        
+        // If within assist radius, apply gentle attraction
+        if (distancePx <= magneticConfig.assistRadiusPx && distancePx > 0) {
+            // Calculate assist strength based on distance and speed
+            const normalizedDistance = distancePx / magneticConfig.assistRadiusPx; // 0-1
+            const distanceFactor = 1 - normalizedDistance; // 1 when close, 0 at edge
+            
+            // Calculate speed for scaling assist
+            let speedPx = 0;
+            if (tracingState.lastFingerPos) {
+                speedPx = Math.hypot(
+                    (fingerPos.x - tracingState.lastFingerPos.x) * width,
+                    (fingerPos.y - tracingState.lastFingerPos.y) * height
+                );
+            }
+            const normalizedSpeed = Math.min(speedPx / 50, 1); // Normalize speed (50px is "fast")
+            const speedFactor = 1 - (normalizedSpeed * magneticConfig.speedScalingFactor); // Less assist when fast
+            
+            // Get assist strength from DDS if enabled, otherwise use config default
+            let assistStrength = magneticConfig.maxAssistStrength;
+            if (flags.enableDynamicDifficulty) {
+                const dds = getDifficultyController();
+                if (dds) {
+                    const params = dds.getParams();
+                    assistStrength = params.assistStrength;
+                }
+            }
+            
+            // Apply press signal boost if enabled
+            if (flags.enablePressIntegration && frameData.pressValue) {
+                const pressConfig = trackingFeatures.getPressIntegrationConfig();
+                const pressBoost = 1 + (frameData.pressValue - 0.5) * (pressConfig.tracingAssistBoost - 1);
+                assistStrength = Math.min(assistStrength * pressBoost, magneticConfig.maxAssistStrength * 1.5);
+            }
+            
+            // Calculate attraction amount (smooth, no teleporting)
+            const attractionAmount = assistStrength * distanceFactor * speedFactor;
+            
+            // Smoothly move finger towards nearest point on path
+            const dx = nearestPoint.x - fingerPos.x;
+            const dy = nearestPoint.y - fingerPos.y;
+            
+            fingerPos = {
+                x: fingerPos.x + dx * attractionAmount,
+                y: fingerPos.y + dy * attractionAmount
+            };
+            
+            appliedMagneticAssist = true;
+        }
+    }
+    
+    // Find nearest point on path (using potentially adjusted position)
     const { overallT, distance } = findNearestPointOnPath(
         fingerPos,
         path,
@@ -310,10 +400,41 @@ export const tracingLogicV2 = (
     
     tracingState.nearestDistance = distance;
     
-    // Check if on path (with increased tolerance for younger levels)
-    const tolerancePx = path.tolerancePx * toleranceMultiplier;
-    const onPath = distance <= tolerancePx;
+    // Get tolerance multiplier from DDS if enabled
+    let effectiveToleranceMultiplier = toleranceMultiplier;
+    if (flags.enableDynamicDifficulty) {
+        const dds = getDifficultyController();
+        if (dds) {
+            const params = dds.getParams();
+            effectiveToleranceMultiplier *= params.pathTolerance;
+        }
+    }
+    
+    // Apply forgiveness corridor (always apply, not just when magnetic is on)
+    let forgivenessTolerancePx = path.tolerancePx * effectiveToleranceMultiplier;
+    if (flags.enableMagneticTargets) {
+        const magneticConfig = trackingFeatures.getMagneticTargetsConfig();
+        forgivenessTolerancePx *= magneticConfig.forgivenessMultiplier;
+    }
+    
+    // Check if on path (with dynamic tolerance and forgiveness corridor)
+    const onPath = distance <= forgivenessTolerancePx;
     tracingState.onPath = onPath;
+    
+    // Update DDS with on/off path state
+    if (flags.enableDynamicDifficulty) {
+        const dds = getDifficultyController();
+        if (dds) {
+            if (onPath) {
+                // Will record success when accuracy is good
+            } else {
+                // Record off-path spikes for difficulty adjustment
+                if (distance > forgivenessTolerancePx * 1.2) {
+                    dds.recordOffPathSpike();
+                }
+            }
+        }
+    }
     
     // Track off-path time for decay
     if (!onPath) {
@@ -349,9 +470,32 @@ export const tracingLogicV2 = (
         (sum, entry) => sum + entry.distance, 0
     );
     
+    // Update DDS with performance metrics
+    const confidence = frameData.confidence || 0.7;
+    if (flags.enableDynamicDifficulty) {
+        const dds = getDifficultyController();
+        if (dds) {
+            // Update difficulty controller periodically
+            const now = Date.now();
+            if (now - lastDifficultyUpdateTime > 1000) {
+                dds.update(confidence);
+                lastDifficultyUpdateTime = now;
+            }
+            
+            // Record low confidence
+            if (confidence < 0.6) {
+                dds.recordLowConfidence();
+            }
+            
+            // Record off-path spikes
+            if (!onPath && distance > forgivenessTolerancePx * 1.5) {
+                dds.recordOffPathSpike();
+            }
+        }
+    }
+    
     // NUDGE 1: Adaptive minimum movement based on confidence and speed
     // Stricter to prevent false progress
-    const confidence = frameData.confidence || 0.7;
     const isMovingSlowly = fingerMovedPx < 6 && recentMovementTotal < 5;
     const isLowConfidence = confidence < 0.75; // Stricter threshold
     
@@ -532,6 +676,19 @@ export const tracingLogicV2 = (
         const accuracy = tracingState.accuracy;
         completeLevel(path.id, accuracy);
         
+        // Record success in DDS if enabled
+        if (flags.enableDynamicDifficulty) {
+            const dds = getDifficultyController();
+            if (dds && accuracy >= 0.85) {
+                dds.recordSuccess(accuracy);
+            }
+        }
+        
+        // Play success audio if enabled
+        if (flags.enableTactileAudio) {
+            tactileAudioManager.playSuccess('tracing');
+        }
+        
         // Trigger completion callback ONCE (will handle celebration and auto-advance)
         if (completionCallback) {
             // Use requestAnimationFrame to ensure it runs in the next frame (prevents lag)
@@ -544,6 +701,12 @@ export const tracingLogicV2 = (
                 }
             });
         }
+    }
+    
+    // Update tactile audio for pinch and movement if enabled
+    if (flags.enableTactileAudio) {
+        tactileAudioManager.updatePinchState(frameData.pinchActive);
+        tactileAudioManager.updateMovement(fingerPos, frameData.timestamp);
     }
     
     tracingState.lastFingerPos = fingerPos;

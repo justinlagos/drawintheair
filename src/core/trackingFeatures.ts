@@ -20,6 +20,21 @@ export interface TrackingFeatureFlags {
     
     /** Show debug overlay (hidden by default, accessible via ?debug=tracking) */
     showDebugOverlay: boolean;
+    
+    /** Enable magnetic targets and snap assist (tracing and sorting) */
+    enableMagneticTargets: boolean;
+    
+    /** Enable dynamic difficulty scaling (tracing and bubble) */
+    enableDynamicDifficulty: boolean;
+    
+    /** Enable two-hand ergonomics (palette panel) */
+    enableTwoHandMode: boolean;
+    
+    /** Enable tactile audio cues */
+    enableTactileAudio: boolean;
+    
+    /** Enable press signal integration enhancements */
+    enablePressIntegration: boolean;
 }
 
 export interface PredictiveSmoothingConfig {
@@ -70,12 +85,82 @@ export interface OcclusionRecoveryConfig {
     maxInferenceDistance: number;
 }
 
+export interface MagneticTargetsConfig {
+    /** Assist radius in pixels for tracing. Default: 50 */
+    assistRadiusPx: number;
+    /** Maximum assist strength (0-1). Default: 0.3 */
+    maxAssistStrength: number;
+    /** Speed scaling factor for assist (higher = less assist when fast). Default: 0.8 */
+    speedScalingFactor: number;
+    /** Forgiveness corridor multiplier (extra tolerance). Default: 1.5 */
+    forgivenessMultiplier: number;
+    /** Snap distance in pixels for sorting. Default: 80 */
+    snapDistancePx: number;
+    /** Easing strength for snap (0-1). Default: 0.15 */
+    snapEasingStrength: number;
+}
+
+export interface DynamicDifficultyConfig {
+    /** Tighten threshold (success accuracy/hit rate). Default: 0.85 */
+    tightenThreshold: number;
+    /** Failures before easing. Default: 2 */
+    failureThreshold: number;
+    /** Adjustment rate per frame (0-1). Default: 0.01 */
+    adjustmentRate: number;
+    /** Minimum tolerance multiplier. Default: 0.7 */
+    minToleranceMultiplier: number;
+    /** Maximum tolerance multiplier. Default: 1.5 */
+    maxToleranceMultiplier: number;
+    /** Minimum assist strength. Default: 0.1 */
+    minAssistStrength: number;
+    /** Maximum assist strength. Default: 0.5 */
+    maxAssistStrength: number;
+}
+
+export interface TwoHandConfig {
+    /** Detection duration in ms before activating. Default: 500 */
+    detectionDurationMs: number;
+    /** Stability threshold for second hand. Default: 0.7 */
+    stabilityThreshold: number;
+    /** Palette panel width in normalized units. Default: 0.15 */
+    paletteWidth: number;
+}
+
+export interface TactileAudioConfig {
+    /** Master volume (0-1). Default: 0.15 */
+    masterVolume: number;
+    /** Pinch down sound frequency (Hz). Default: 220 */
+    pinchDownFreq: number;
+    /** Pinch up sound frequency (Hz). Default: 180 */
+    pinchUpFreq: number;
+    /** Movement hum base frequency (Hz). Default: 60 */
+    movementHumFreq: number;
+    /** Speed-to-pitch scaling. Default: 0.5 */
+    speedToPitchFactor: number;
+    /** Respect system mute. Default: true */
+    respectMute: boolean;
+}
+
+export interface PressIntegrationConfig {
+    /** Free paint brush boost multiplier. Default: 1.5 */
+    freePaintBoost: number;
+    /** Tracing assist boost when pressing. Default: 1.3 */
+    tracingAssistBoost: number;
+    /** Sorting confirm threshold (press value). Default: 0.7 */
+    sortingConfirmThreshold: number;
+}
+
 const DEFAULT_FLAGS: TrackingFeatureFlags = {
     enablePredictiveSmoothing: false,
     enableDynamicResolution: false,
     enableDepthSensitivity: false,
     enableOcclusionRecovery: false,
     showDebugOverlay: false,
+    enableMagneticTargets: false,
+    enableDynamicDifficulty: false,
+    enableTwoHandMode: false,
+    enableTactileAudio: false,
+    enablePressIntegration: false,
 };
 
 const DEFAULT_PREDICTIVE_CONFIG: PredictiveSmoothingConfig = {
@@ -108,6 +193,46 @@ const DEFAULT_OCCLUSION_CONFIG: OcclusionRecoveryConfig = {
     maxInferenceDistance: 0.1,
 };
 
+const DEFAULT_MAGNETIC_TARGETS_CONFIG: MagneticTargetsConfig = {
+    assistRadiusPx: 50,
+    maxAssistStrength: 0.3,
+    speedScalingFactor: 0.8,
+    forgivenessMultiplier: 1.5,
+    snapDistancePx: 80,
+    snapEasingStrength: 0.15,
+};
+
+const DEFAULT_DYNAMIC_DIFFICULTY_CONFIG: DynamicDifficultyConfig = {
+    tightenThreshold: 0.85,
+    failureThreshold: 2,
+    adjustmentRate: 0.01,
+    minToleranceMultiplier: 0.7,
+    maxToleranceMultiplier: 1.5,
+    minAssistStrength: 0.1,
+    maxAssistStrength: 0.5,
+};
+
+const DEFAULT_TWO_HAND_CONFIG: TwoHandConfig = {
+    detectionDurationMs: 500,
+    stabilityThreshold: 0.7,
+    paletteWidth: 0.15,
+};
+
+const DEFAULT_TACTILE_AUDIO_CONFIG: TactileAudioConfig = {
+    masterVolume: 0.15,
+    pinchDownFreq: 220,
+    pinchUpFreq: 180,
+    movementHumFreq: 60,
+    speedToPitchFactor: 0.5,
+    respectMute: true,
+};
+
+const DEFAULT_PRESS_INTEGRATION_CONFIG: PressIntegrationConfig = {
+    freePaintBoost: 1.5,
+    tracingAssistBoost: 1.3,
+    sortingConfirmThreshold: 0.7,
+};
+
 /**
  * Tracking Features Manager
  */
@@ -117,6 +242,11 @@ class TrackingFeaturesManager {
     private dynamicResolutionConfig: DynamicResolutionConfig = { ...DEFAULT_DYNAMIC_RESOLUTION_CONFIG };
     private depthConfig: DepthSensitivityConfig = { ...DEFAULT_DEPTH_CONFIG };
     private occlusionConfig: OcclusionRecoveryConfig = { ...DEFAULT_OCCLUSION_CONFIG };
+    private magneticTargetsConfig: MagneticTargetsConfig = { ...DEFAULT_MAGNETIC_TARGETS_CONFIG };
+    private dynamicDifficultyConfig: DynamicDifficultyConfig = { ...DEFAULT_DYNAMIC_DIFFICULTY_CONFIG };
+    private twoHandConfig: TwoHandConfig = { ...DEFAULT_TWO_HAND_CONFIG };
+    private tactileAudioConfig: TactileAudioConfig = { ...DEFAULT_TACTILE_AUDIO_CONFIG };
+    private pressIntegrationConfig: PressIntegrationConfig = { ...DEFAULT_PRESS_INTEGRATION_CONFIG };
 
     constructor() {
         // Check for debug parameter
@@ -166,6 +296,46 @@ class TrackingFeaturesManager {
 
     setOcclusionConfig(config: Partial<OcclusionRecoveryConfig>): void {
         this.occlusionConfig = { ...this.occlusionConfig, ...config };
+    }
+
+    getMagneticTargetsConfig(): MagneticTargetsConfig {
+        return { ...this.magneticTargetsConfig };
+    }
+
+    setMagneticTargetsConfig(config: Partial<MagneticTargetsConfig>): void {
+        this.magneticTargetsConfig = { ...this.magneticTargetsConfig, ...config };
+    }
+
+    getDynamicDifficultyConfig(): DynamicDifficultyConfig {
+        return { ...this.dynamicDifficultyConfig };
+    }
+
+    setDynamicDifficultyConfig(config: Partial<DynamicDifficultyConfig>): void {
+        this.dynamicDifficultyConfig = { ...this.dynamicDifficultyConfig, ...config };
+    }
+
+    getTwoHandConfig(): TwoHandConfig {
+        return { ...this.twoHandConfig };
+    }
+
+    setTwoHandConfig(config: Partial<TwoHandConfig>): void {
+        this.twoHandConfig = { ...this.twoHandConfig, ...config };
+    }
+
+    getTactileAudioConfig(): TactileAudioConfig {
+        return { ...this.tactileAudioConfig };
+    }
+
+    setTactileAudioConfig(config: Partial<TactileAudioConfig>): void {
+        this.tactileAudioConfig = { ...this.tactileAudioConfig, ...config };
+    }
+
+    getPressIntegrationConfig(): PressIntegrationConfig {
+        return { ...this.pressIntegrationConfig };
+    }
+
+    setPressIntegrationConfig(config: Partial<PressIntegrationConfig>): void {
+        this.pressIntegrationConfig = { ...this.pressIntegrationConfig, ...config };
     }
 
     /**

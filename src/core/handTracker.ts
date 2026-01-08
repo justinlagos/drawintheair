@@ -1,11 +1,18 @@
 import { FilesetResolver, HandLandmarker, type HandLandmarkerResult } from '@mediapipe/tasks-vision';
+import { trackingFeatures } from './trackingFeatures';
 
 export class HandTracker {
     private handLandmarker: HandLandmarker | null = null;
     private runningMode: 'IMAGE' | 'VIDEO' = 'VIDEO';
+    private currentNumHands: number = 1;
 
     async initialize() {
         try {
+            // Check if two-hand mode is enabled
+            const flags = trackingFeatures.getFlags();
+            const numHands = flags.enableTwoHandMode ? 2 : 1;
+            this.currentNumHands = numHands;
+            
             const vision = await FilesetResolver.forVisionTasks(
                 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
             );
@@ -16,17 +23,30 @@ export class HandTracker {
                     delegate: 'GPU',
                 },
                 runningMode: this.runningMode,
-                numHands: 1, // MVP constraint: single child
+                numHands: numHands, // 1 for single hand, 2 for two-hand mode
                 minHandDetectionConfidence: 0.5,
                 minHandPresenceConfidence: 0.5,
                 minTrackingConfidence: 0.5,
             });
 
-            console.log('HandLandmarker initialized');
+            console.log(`HandLandmarker initialized with ${numHands} hand(s)`);
         } catch (error) {
             console.error('Failed to initialize HandLandmarker:', error);
             throw error;
         }
+    }
+    
+    /**
+     * Reinitialize with different numHands (requires closing first)
+     */
+    async reinitialize(numHands: number): Promise<void> {
+        if (this.currentNumHands === numHands && this.handLandmarker) {
+            return; // Already initialized with correct numHands
+        }
+        
+        this.close();
+        this.currentNumHands = numHands;
+        await this.initialize();
     }
 
     detect(video: HTMLVideoElement, startTimeMs: number): HandLandmarkerResult | null {
