@@ -136,6 +136,5 @@ export class DynamicResolutionManager {
         this.currentResolutionIndex = 0;
         this.performanceHistory = [];
         this.lastScaleTime = 0;
-        this.scaleDirection = 'stable';
     }
 }

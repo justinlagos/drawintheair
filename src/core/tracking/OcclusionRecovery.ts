@@ -64,7 +64,6 @@ export class OcclusionRecovery {
             // Reset all state on full hand loss
             this.lastStableThumb = null;
             this.lastStableWrist = null;
-            this.lastStableIndex = null;
             this.lastStableThumbToWrist = null;
             this.thumbOcclusionStartTime = null;
             
@@ -110,7 +109,7 @@ export class OcclusionRecovery {
             
             // Check grace window
             const occlusionDuration = timestamp - this.thumbOcclusionStartTime;
-            if (occlusionDuration <= this.config.graceWindowMs && this.lastStableWrist) {
+            if (occlusionDuration <= this.config.graceWindowMs && this.lastStableWrist && this.lastStableThumbToWrist) {
                 // Infer thumb position
                 const inferredThumb = {
                     x: this.lastStableWrist.x + this.lastStableThumbToWrist.dx,
