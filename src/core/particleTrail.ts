@@ -78,7 +78,6 @@ export class ParticleTrail {
         }
 
         // Update existing particles
-        const now = timestamp;
         this.particles = this.particles.filter(particle => {
             // Update life based on movement state
             if (this.isMoving) {

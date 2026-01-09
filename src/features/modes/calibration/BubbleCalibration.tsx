@@ -22,7 +22,8 @@ import {
     startBubbleGame,
     getCurrentLevel,
     getCurrentGoal,
-    hasReachedGoal
+    hasReachedGoal,
+    type Level
 } from './bubbleCalibrationLogic';
 import { Celebration } from '../../../components/Celebration';
 import { earnSticker } from '../../../core/stickerBook';
@@ -72,7 +73,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
     const [timeRemaining, setTimeRemaining] = useState(GAME_DURATION);
     const [showMilestoneCelebration, setShowMilestoneCelebration] = useState(false);
     const [showEndModal, setShowEndModal] = useState(false);
-    const [level, setLevel] = useState(1);
+    const [level, setLevel] = useState<Level>(1);
     const [autoAdvanceScheduled, setAutoAdvanceScheduled] = useState(false);
     const [encouragementMessage, setEncouragementMessage] = useState<string | null>(null);
     
@@ -82,7 +83,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
 
     // Initialize game when level changes
     useEffect(() => {
-        startBubbleGame(level as 1 | 2 | 3 | 4 | 5 | 6);
+        startBubbleGame(level as Level);
         // Reset UI state when level changes
         setShowEndModal(false);
         setScore(0);
@@ -152,7 +153,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
                     setAutoAdvanceScheduled(true);
                     // Show reward, then auto-advance after 1200ms (brief celebration)
                     autoAdvanceTimeout = window.setTimeout(() => {
-                        const nextLevel = (currentLevel + 1) as 1 | 2 | 3 | 4 | 5 | 6;
+                        const nextLevel = (currentLevel + 1) as Level;
                         // Close modal and reset state before advancing
                         setShowEndModal(false);
                         setAutoAdvanceScheduled(false);
@@ -176,7 +177,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
 
     const handleTryAgain = () => {
         // Reset all state and restart game
-        startBubbleGame(level as 1 | 2 | 3 | 4 | 5 | 6);
+        startBubbleGame(level as Level);
         setShowEndModal(false);
         setScore(0);
         setTimeRemaining(GAME_DURATION);

@@ -447,19 +447,9 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                 dynamicResolutionRef.current.reset();
             }
             
-            // Log final performance summary
-            const performanceLog = performanceLogRef.current;
-            if (performanceLog.length > 0) {
-                const totalTime = (Date.now() - sessionStartTimeRef.current) / 1000;
-                const avgRenderFps = performanceLog.reduce((sum: number, e) => sum + e.renderFps, 0) / performanceLog.length;
-                const avgDetectFps = performanceLog.reduce((sum: number, e) => sum + e.detectFps, 0) / performanceLog.length;
-                const latencies = performanceLog.map(e => e.detectionLatencyMs).sort((a: number, b: number) => a - b);
-                const p95Latency = latencies[Math.floor(latencies.length * 0.95)] || 0;
-                const resolutionChanges = performanceLog.filter((e, i: number) => 
-                    i > 0 && e.resolutionIndex !== performanceLog[i - 1].resolutionIndex
-                ).length;
-                
-            }
+            // Performance logging data is collected but not currently used
+            // Can be enabled for debugging/analytics in the future
+            // const performanceLog = performanceLogRef.current;
         };
     }, [stream, isWebcamLoading, videoRef, onFrame, convertToFrameData, renderInterval]);
 

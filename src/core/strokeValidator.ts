@@ -33,7 +33,7 @@ export class StrokeValidator {
     /**
      * Validate current position against path
      */
-    validate(currentX: number, currentY: number, currentProgress: number = 0): StrokeValidationResult {
+    validate(currentX: number, currentY: number, _currentProgress: number = 0): StrokeValidationResult {
         if (this.path.length === 0) {
             return {
                 isValid: false,
@@ -96,7 +96,7 @@ export class StrokeValidator {
     autoComplete(
         currentX: number,
         currentY: number,
-        currentProgress: number,
+        _currentProgress: number,
         lerpSpeed: number = 0.1
     ): PathPoint {
         if (this.path.length === 0) {
