@@ -87,6 +87,42 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   TOYMODE THEME TOKENS
+   Higher saturation, softer shadows, chunkier corners, puffer surfaces
+   Only active when .toy-mode class is present on body
+═══════════════════════════════════════════════════════════════ */
+body.toy-mode {
+  /* Higher saturation accents */
+  --toy-primary: #FFE66D;      /* Brighter, more saturated yellow */
+  --toy-secondary: #FF6B9D;    /* Brighter, more saturated pink */
+  --toy-tertiary: #4DFFFF;     /* Brighter, more saturated cyan */
+  
+  /* Softer shadows - more diffused */
+  --toy-shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1);
+  --toy-shadow-medium: 0 12px 32px rgba(0, 0, 0, 0.2), 0 6px 12px rgba(0, 0, 0, 0.15);
+  --toy-shadow-large: 0 16px 48px rgba(0, 0, 0, 0.25), 0 8px 16px rgba(0, 0, 0, 0.2);
+  
+  /* Chunkier rounded corners */
+  --toy-radius-sm: 16px;
+  --toy-radius-md: 24px;
+  --toy-radius-lg: 32px;
+  --toy-radius-xl: 40px;
+  
+  /* Puffier button surfaces - more elevation */
+  --toy-button-elevation: 0 6px 16px rgba(0, 0, 0, 0.2);
+  --toy-button-elevation-hover: 0 8px 24px rgba(0, 0, 0, 0.25);
+  
+  /* Gentle glows */
+  --toy-glow-primary: 0 0 20px rgba(255, 230, 109, 0.4), 0 0 40px rgba(255, 230, 109, 0.2);
+  --toy-glow-secondary: 0 0 20px rgba(255, 107, 157, 0.4), 0 0 40px rgba(255, 107, 157, 0.2);
+  --toy-glow-tertiary: 0 0 20px rgba(77, 255, 255, 0.4), 0 0 40px rgba(77, 255, 255, 0.2);
+  
+  /* Glass panels - slightly more visible in ToyMode */
+  --toy-glass-bg: rgba(255, 255, 255, 0.08);
+  --toy-glass-border: rgba(255, 255, 255, 0.15);
+}
+
 /* Performance optimization: Disable backdrop-filter on low tier devices */
 body.perf-no-blur *,
 body.perf-no-blur *::before,
@@ -312,4 +348,56 @@ button:active {
   canvas {
     image-rendering: -webkit-optimize-contrast;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TOYMODE STYLES - Applied incrementally
+   Only when .toy-mode class is present on body
+═══════════════════════════════════════════════════════════════ */
+
+/* Menu Cards - ToyMode styling */
+body.toy-mode .mode-card,
+body.toy-mode [id^="mode-card-"] {
+  border-radius: var(--toy-radius-md, 20px) !important;
+  box-shadow: var(--toy-shadow-medium, 0 8px 24px rgba(0, 0, 0, 0.25)) !important;
+  border-width: 2px !important;
+}
+
+body.toy-mode .mode-card:hover,
+body.toy-mode [id^="mode-card-"]:hover {
+  box-shadow: var(--toy-shadow-large, 0 16px 48px rgba(0, 0, 0, 0.25)), var(--toy-glow-primary, 0 0 20px rgba(255, 230, 109, 0.4)) !important;
+  transform: translateY(-4px) scale(1.02) !important;
+  border-width: 2px !important;
+}
+
+/* Primary Buttons - ToyMode styling */
+body.toy-mode button {
+  border-radius: var(--toy-radius-md) !important;
+  box-shadow: var(--toy-button-elevation) !important;
+  border-width: 2px !important;
+  font-weight: 700 !important;
+  padding: 0.9em 1.8em !important;
+}
+
+body.toy-mode button:hover {
+  box-shadow: var(--toy-button-elevation-hover) !important;
+  transform: translateY(-3px) scale(1.02) !important;
+}
+
+body.toy-mode button:active {
+  transform: translateY(-1px) scale(0.98) !important;
+}
+
+/* Celebration Modal - ToyMode styling */
+body.toy-mode .celebration-container,
+body.toy-mode [class*="celebration"] {
+  border-radius: var(--toy-radius-xl) !important;
+}
+
+/* Reward modals - apply toy styling */
+body.toy-mode .glass-panel {
+  border-radius: var(--toy-radius-lg) !important;
+  background: var(--toy-glass-bg) !important;
+  border-color: var(--toy-glass-border) !important;
+  box-shadow: var(--toy-shadow-large) !important;
 }

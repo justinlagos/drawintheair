@@ -3,7 +3,11 @@
  * 
  * All tracking improvements are behind feature flags with safe defaults OFF.
  * Enable per mode once verified.
+ * 
+ * Now uses central featureFlags system as source of truth.
  */
+
+import { featureFlags, type FeatureFlags as CentralFeatureFlags } from './featureFlags';
 
 export interface TrackingFeatureFlags {
     /** Enable predictive smoothing (Stage A: One Euro + Stage B: Kalman/constant-velocity) */
@@ -259,11 +263,58 @@ class TrackingFeaturesManager {
     }
 
     getFlags(): TrackingFeatureFlags {
-        return { ...this.flags };
+        // Map from central featureFlags to TrackingFeatureFlags
+        const centralFlags = featureFlags.getFlags();
+        return {
+            enablePredictiveSmoothing: centralFlags.trackingPredictor,
+            enableDynamicResolution: centralFlags.dynamicResolution,
+            enableDepthSensitivity: centralFlags.pressSignal,
+            enableOcclusionRecovery: centralFlags.occlusionRecovery,
+            showDebugOverlay: this.flags.showDebugOverlay, // Keep local (UI only)
+            enableMagneticTargets: centralFlags.assistMode,
+            enableDynamicDifficulty: centralFlags.dynamicDifficulty,
+            enableTwoHandMode: centralFlags.twoHandPalette,
+            enableTactileAudio: this.flags.enableTactileAudio, // Keep separate
+            enablePressIntegration: centralFlags.pressSignal,
+        };
     }
 
     setFlags(flags: Partial<TrackingFeatureFlags>): void {
-        this.flags = { ...this.flags, ...flags };
+        // Map to central featureFlags
+        const centralUpdates: Partial<CentralFeatureFlags> = {};
+        if ('enablePredictiveSmoothing' in flags) {
+            centralUpdates.trackingPredictor = flags.enablePredictiveSmoothing;
+        }
+        if ('enableDynamicResolution' in flags) {
+            centralUpdates.dynamicResolution = flags.enableDynamicResolution;
+        }
+        if ('enableDepthSensitivity' in flags || 'enablePressIntegration' in flags) {
+            centralUpdates.pressSignal = flags.enableDepthSensitivity ?? flags.enablePressIntegration ?? false;
+        }
+        if ('enableOcclusionRecovery' in flags) {
+            centralUpdates.occlusionRecovery = flags.enableOcclusionRecovery;
+        }
+        if ('enableMagneticTargets' in flags) {
+            centralUpdates.assistMode = flags.enableMagneticTargets;
+        }
+        if ('enableDynamicDifficulty' in flags) {
+            centralUpdates.dynamicDifficulty = flags.enableDynamicDifficulty;
+        }
+        if ('enableTwoHandMode' in flags) {
+            centralUpdates.twoHandPalette = flags.enableTwoHandMode;
+        }
+        
+        if (Object.keys(centralUpdates).length > 0) {
+            featureFlags.setFlags(centralUpdates);
+        }
+        
+        // Keep local flags (UI only)
+        if ('showDebugOverlay' in flags) {
+            this.flags.showDebugOverlay = flags.showDebugOverlay!;
+        }
+        if ('enableTactileAudio' in flags) {
+            this.flags.enableTactileAudio = flags.enableTactileAudio!;
+        }
     }
 
     getPredictiveConfig(): PredictiveSmoothingConfig {

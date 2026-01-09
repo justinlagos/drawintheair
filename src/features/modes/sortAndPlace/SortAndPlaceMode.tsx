@@ -9,6 +9,8 @@ import {
     resetAllRounds
 } from './sortAndPlaceLogic';
 import { Celebration } from '../../../components/Celebration';
+import { earnSticker } from '../../../core/stickerBook';
+import { featureFlags } from '../../../core/featureFlags';
 
 // Responsive hook
 const useResponsiveLayout = () => {
@@ -65,6 +67,10 @@ export const SortAndPlaceMode = () => {
             
             if (isRoundComplete() && getCelebrationTime() > 0) {
                 setShowCelebration(true);
+                // Earn sticker on completion (if enabled) - only once when all rounds complete
+                if (featureFlags.getFlag('stickerRewards') && !nextRound()) {
+                    earnSticker('sorting-complete');
+                }
                 setTimeout(() => {
                     setShowCelebration(false);
                     if (nextRound()) {

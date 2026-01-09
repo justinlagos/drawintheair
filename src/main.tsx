@@ -13,10 +13,19 @@ import { Safeguarding } from './pages/Safeguarding.tsx'
 import { Accessibility } from './pages/Accessibility.tsx'
 import { Training } from './pages/Training.tsx'
 import { Admin } from './pages/Admin.tsx'
+import { QAPage } from './pages/QAPage.tsx'
 import { initAnalytics } from './lib/analytics.ts'
 
 // Helper function to determine route from pathname
 function getRouteFromPath(path: string, hash: string): string {
+  // Check for debug=qa in query params
+  if (typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('debug') === 'qa') {
+      return 'qa';
+    }
+  }
+
   if (path === '/admin') return 'admin';
   if (path === '/demo') return 'demo';
   if (path === '/play' || path === '/onboarding') return 'play';
@@ -115,6 +124,10 @@ function Root() {
 
   if (route === 'admin') {
     return <Admin />;
+  }
+
+  if (route === 'qa') {
+    return <QAPage />;
   }
 
   return <Landing />;

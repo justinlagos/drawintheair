@@ -2,11 +2,11 @@
  * Bubble Pop Logic - PRIORITY C
  * 
  * Timed 30-second rounds with:
- * - Level progression (3 environments)
- * - Slow, gentle bubble movement
+ * - Level progression (6 levels)
+ * - Progressive difficulty with increasing speed
  * - 3D realistic balloons with depth
  * - End-of-round modal
- * - Milestone rewards at 20 pops
+ * - Milestone rewards at level goals
  */
 
 import { DrawingUtils } from '@mediapipe/tasks-vision';
@@ -32,7 +32,7 @@ interface Bubble {
     z: number; // Depth for 3D effect
 }
 
-type Level = 1 | 2 | 3;
+type Level = 1 | 2 | 3 | 4 | 5 | 6;
 
 interface LevelConfig {
     bubbleSpeed: number;
@@ -47,9 +47,9 @@ interface LevelConfig {
 
 const LEVEL_CONFIGS: Record<Level, LevelConfig> = {
     1: {
-        bubbleSpeed: 0.00035, // Gentle speed for beginners
+        bubbleSpeed: 0.00050, // Moderate speed - faster than before
         maxBubbles: 14, // Comfortable number of bubbles
-        spawnRate: 400, // Moderate spawn rate
+        spawnRate: 350, // Faster spawn rate
         hasParallax: false,
         hasBloom: false,
         backgroundColor: 'rgba(1, 12, 36, 1)', // Deep blue-black
@@ -57,9 +57,9 @@ const LEVEL_CONFIGS: Record<Level, LevelConfig> = {
         particleCount: 12
     },
     2: {
-        bubbleSpeed: 0.00050, // Elevated speed - faster than level 1
+        bubbleSpeed: 0.00070, // Elevated speed - faster than level 1
         maxBubbles: 12, // FEWER bubbles than level 1 (as requested)
-        spawnRate: 350, // Slightly faster spawn
+        spawnRate: 300, // Faster spawn
         hasParallax: true,
         hasBloom: true,
         backgroundColor: 'rgba(15, 25, 50, 1)', // Slightly lighter blue-purple
@@ -67,14 +67,44 @@ const LEVEL_CONFIGS: Record<Level, LevelConfig> = {
         particleCount: 16
     },
     3: {
-        bubbleSpeed: 0.00070, // Significantly faster - one notch harder
+        bubbleSpeed: 0.00095, // Significantly faster - one notch harder
         maxBubbles: 16, // More bubbles than level 2, but still challenging
-        spawnRate: 280, // Fast spawn rate
+        spawnRate: 240, // Fast spawn rate
         hasParallax: true,
         hasBloom: true,
         backgroundColor: 'rgba(25, 20, 45, 1)', // Purple-tinted dark
         bubbleGlowIntensity: 0.9,
         particleCount: 20
+    },
+    4: {
+        bubbleSpeed: 0.00120, // Even faster - challenging speed
+        maxBubbles: 18, // More bubbles for increased challenge
+        spawnRate: 200, // Very fast spawn
+        hasParallax: true,
+        hasBloom: true,
+        backgroundColor: 'rgba(35, 15, 55, 1)', // Deeper purple
+        bubbleGlowIntensity: 1.0,
+        particleCount: 24
+    },
+    5: {
+        bubbleSpeed: 0.00145, // Very fast - expert level
+        maxBubbles: 20, // Maximum bubbles
+        spawnRate: 180, // Extremely fast spawn
+        hasParallax: true,
+        hasBloom: true,
+        backgroundColor: 'rgba(45, 10, 65, 1)', // Dark purple-red
+        bubbleGlowIntensity: 1.2,
+        particleCount: 28
+    },
+    6: {
+        bubbleSpeed: 0.00170, // Maximum speed - master level
+        maxBubbles: 22, // Maximum challenge
+        spawnRate: 150, // Fastest spawn rate
+        hasParallax: true,
+        hasBloom: true,
+        backgroundColor: 'rgba(55, 5, 75, 1)', // Deepest purple-black
+        bubbleGlowIntensity: 1.5,
+        particleCount: 32
     }
 };
 
@@ -82,7 +112,10 @@ const LEVEL_CONFIGS: Record<Level, LevelConfig> = {
 const LEVEL_GOALS: Record<Level, number> = {
     1: 20, // Level 1 goal: 20 pops
     2: 24, // Level 2 goal: 24 pops
-    3: 28  // Level 3 goal: 28 pops
+    3: 28, // Level 3 goal: 28 pops
+    4: 32, // Level 4 goal: 32 pops
+    5: 36, // Level 5 goal: 36 pops
+    6: 40  // Level 6 goal: 40 pops
 };
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#A855F7', '#FF6B9D', '#95E1D3', '#FFA07A', '#98D8C8'];
@@ -162,7 +195,7 @@ const spawnBubble = (level: Level): Bubble => {
 };
 
 export const startBubbleGame = (level: Level | undefined = 1) => {
-    const actualLevel = (level ?? 1) as Level;
+    const actualLevel = Math.min(Math.max(1, level ?? 1), 6) as Level;
     currentLevel = actualLevel;
     bubbles = [];
     score = 0;
@@ -213,7 +246,7 @@ export const getGameEndTime = () => gameEndTime;
 export const getCurrentGoal = () => LEVEL_GOALS[currentLevel];
 export const canAdvanceLevel = () => {
     const currentGoal = LEVEL_GOALS[currentLevel];
-    return score >= currentGoal && currentLevel < 3;
+    return score >= currentGoal && currentLevel < 6;
 };
 export const hasReachedGoal = () => {
     const currentGoal = LEVEL_GOALS[currentLevel];
@@ -291,11 +324,14 @@ export const bubbleCalibrationLogic = (
         ctx.globalAlpha = currentLevel === 2 ? 0.2 : 0.25;
         
         const time = now / 2000;
-        const color1 = currentLevel === 2 ? 'rgba(100, 150, 255, 0.3)' : 'rgba(150, 100, 255, 0.3)';
-        const color2 = currentLevel === 2 ? 'rgba(79, 172, 254, 0.2)' : 'rgba(200, 100, 255, 0.25)';
+        const color1 = currentLevel === 2 ? 'rgba(100, 150, 255, 0.3)' : 
+                      currentLevel >= 4 ? 'rgba(200, 50, 255, 0.4)' : 'rgba(150, 100, 255, 0.3)';
+        const color2 = currentLevel === 2 ? 'rgba(79, 172, 254, 0.2)' : 
+                      currentLevel >= 4 ? 'rgba(255, 100, 200, 0.3)' : 'rgba(200, 100, 255, 0.25)';
         
-        // Reduce layers on low tier
-        const maxLayers = perfConfig.tier === 'low' ? 2 : (currentLevel === 3 ? 5 : 3);
+        // Reduce layers on low tier, more layers for higher levels
+        const maxLayers = perfConfig.tier === 'low' ? 2 : 
+                         (currentLevel >= 5 ? 7 : currentLevel >= 3 ? 5 : 3);
         for (let i = 0; i < maxLayers; i++) {
             const x = (width * 0.3 + Math.sin(time + i * 0.7) * width * 0.15) % width;
             const y = height * 0.2 + i * height * 0.25;
@@ -389,8 +425,8 @@ export const bubbleCalibrationLogic = (
                 const sy = canvasPoint.y + floatOffset + Math.sin(angle) * dist;
                 const particleSize = (currentLevel >= 2 ? 8 : 7) * alpha;
 
-                // Level 3 gets extra glow on particles (skip on low tier)
-                if (currentLevel === 3 && perfConfig.visualQuality === 'high') {
+                // Level 3+ gets extra glow on particles (skip on low tier)
+                if (currentLevel >= 3 && perfConfig.visualQuality === 'high') {
                     ctx.save();
                     ctx.globalAlpha = alpha * 0.5;
                     ctx.beginPath();
@@ -454,10 +490,10 @@ export const bubbleCalibrationLogic = (
             ctx.fillStyle = gradient;
             ctx.fill();
 
-            // Enhanced outer glow (levels 2-3) with level-specific intensity
+            // Enhanced outer glow (levels 2+) with level-specific intensity
             // Skip or reduce on low tier
             if (config.hasBloom && perfConfig.visualQuality === 'high') {
-                const glowSize = currentLevel === 3 ? 2.0 : 1.6;
+                const glowSize = currentLevel >= 5 ? 2.5 : currentLevel >= 3 ? 2.0 : 1.6;
                 const glowIntensity = config.bubbleGlowIntensity;
                 
                 const glowGradient = ctx.createRadialGradient(
@@ -469,8 +505,8 @@ export const bubbleCalibrationLogic = (
                     r * glowSize
                 );
                 
-                // Level 3 gets more intense, multi-color glow
-                if (currentLevel === 3) {
+                // Level 3+ gets more intense, multi-color glow
+                if (currentLevel >= 3) {
                     glowGradient.addColorStop(0, bubble.color + Math.floor(glowIntensity * 255).toString(16).padStart(2, '0'));
                     glowGradient.addColorStop(0.5, bubble.color + Math.floor(glowIntensity * 150).toString(16).padStart(2, '0'));
                     glowGradient.addColorStop(1, 'transparent');

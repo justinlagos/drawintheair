@@ -20,6 +20,9 @@ import { initializeTracing, getTracingState, resetLevel, nextLevel, setCompletio
 import { getCurrentPath, getCurrentPackProgress } from './tracingProgress';
 import { calculateHUDMetrics, getPackInfo } from './tracingUI';
 import { TracingDebugOverlay } from '../../../components/TracingDebugOverlay';
+import { earnSticker } from '../../../core/stickerBook';
+import { narrate } from '../../../core/narrator';
+import { featureFlags } from '../../../core/featureFlags';
 
 export const TracingMode = () => {
     const [progress, setProgress] = useState(0);
@@ -28,6 +31,11 @@ export const TracingMode = () => {
     const [showCelebration, setShowCelebration] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [streakMeter, setStreakMeter] = useState(0);
+    const [streakSparkle, setStreakSparkle] = useState(false);
+    const [streakRainbow, setStreakRainbow] = useState(false);
+    const streakEnabled = featureFlags.getFlag('tracingStreak');
+    const stickerEnabled = featureFlags.getFlag('stickerRewards');
     
     const celebrationTimeoutRef = useRef<number | undefined>(undefined);
     const advanceTimeoutRef = useRef<number | undefined>(undefined);
@@ -61,6 +69,15 @@ export const TracingMode = () => {
                 
                 showCelebrationRef.current = true;
                 setShowCelebration(true);
+                
+                // Earn sticker on completion (if enabled)
+                if (stickerEnabled) {
+                    earnSticker('tracing-complete');
+                }
+                // Narrate on completion (if enabled)
+                if (featureFlags.getFlag('narrator')) {
+                    narrate('mode_complete');
+                }
                 
                 // Clear any existing timeouts
                 if (celebrationTimeoutRef.current) {
@@ -156,6 +173,26 @@ export const TracingMode = () => {
                 const state = getTracingState();
                 setProgress(state.progress);
                 setIsPaused(state.isPaused);
+                
+                // Update streak meter (if enabled)
+                if (streakEnabled && state.streakMeter !== undefined) {
+                    setStreakMeter(state.streakMeter);
+                    // Sparkle at 5s (0.5), rainbow at 10s (1.0)
+                    if (state.streakMeter >= 0.5 && !streakSparkle) {
+                        setStreakSparkle(true);
+                        setTimeout(() => setStreakSparkle(false), 1000);
+                    }
+                    if (state.streakMeter >= 1.0 && !streakRainbow) {
+                        setStreakRainbow(true);
+                        setTimeout(() => setStreakRainbow(false), 1500);
+                    }
+                    if (state.streakMeter < 0.5) {
+                        setStreakSparkle(false);
+                    }
+                    if (state.streakMeter < 1.0) {
+                        setStreakRainbow(false);
+                    }
+                }
                 
                 // Check for completion state changes (in case callback missed it)
                 // But only if celebration isn't already showing (prevent duplicates)
@@ -331,7 +368,11 @@ export const TracingMode = () => {
                 transform: 'translateX(-50%)',
                 zIndex: 20,
                 pointerEvents: 'none',
-                maxWidth: isCompact ? 'calc(100% - 180px)' : 'none'
+                maxWidth: isCompact ? 'calc(100% - 180px)' : 'none',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: isCompact ? '8px' : '12px',
+                alignItems: 'center'
             }}>
                 <div style={{
                     background: 'rgba(1, 12, 36, 0.85)',
@@ -382,6 +423,73 @@ export const TracingMode = () => {
                         {progressPercent}%
                     </span>
                 </div>
+                
+                {/* Streak Meter - if enabled */}
+                {streakEnabled && streakMeter > 0 && (
+                    <div style={{
+                        background: 'rgba(1, 12, 36, 0.85)',
+                        backdropFilter: 'blur(20px)',
+                        borderRadius: isCompact ? '16px' : '20px',
+                        border: streakRainbow ? '2px solid rgba(255, 230, 109, 0.8)' : streakSparkle ? '2px solid rgba(255, 230, 109, 0.5)' : '2px solid rgba(255, 255, 255, 0.2)',
+                        padding: isCompact ? '8px 12px' : '10px 20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: isCompact ? '8px' : '12px',
+                        boxShadow: streakRainbow 
+                            ? '0 0 30px rgba(255, 230, 109, 0.6), 0 0 60px rgba(255, 107, 157, 0.4), 0 0 90px rgba(77, 255, 255, 0.3)'
+                            : streakSparkle 
+                                ? '0 0 20px rgba(255, 230, 109, 0.4)'
+                                : '0 8px 24px rgba(0, 0, 0, 0.3)',
+                        animation: streakRainbow ? 'streakRainbow 1.5s ease infinite' : streakSparkle ? 'streakSparkle 1s ease infinite' : 'none'
+                    }}>
+                        <span style={{
+                            fontSize: isCompact ? '1rem' : '1.2rem',
+                            filter: streakRainbow 
+                                ? 'drop-shadow(0 0 10px rgba(255, 230, 109, 1)) drop-shadow(0 0 20px rgba(255, 107, 157, 0.8)) drop-shadow(0 0 30px rgba(77, 255, 255, 0.6))'
+                                : streakSparkle 
+                                    ? 'drop-shadow(0 0 8px rgba(255, 230, 109, 0.8))'
+                                    : 'none'
+                        }}>
+                            {streakRainbow ? '🌈' : streakSparkle ? '✨' : '⚡'}
+                        </span>
+                        <div style={{
+                            width: isCompact ? '80px' : '120px',
+                            height: isCompact ? '6px' : '8px',
+                            background: 'rgba(255,255,255,0.1)',
+                            borderRadius: '4px',
+                            overflow: 'hidden',
+                            border: '1px solid rgba(255,255,255,0.2)'
+                        }}>
+                            <div style={{
+                                width: `${streakMeter * 100}%`,
+                                height: '100%',
+                                background: streakRainbow
+                                    ? 'linear-gradient(90deg, #FF6B9D, #FFE66D, #4DFFFF, #FF6B9D)'
+                                    : streakSparkle
+                                        ? 'linear-gradient(90deg, #FFE66D, #FF6B9D)'
+                                        : 'linear-gradient(90deg, #FFE66D, #FF6B9D)',
+                                backgroundSize: streakRainbow ? '200% 100%' : '100% 100%',
+                                animation: streakRainbow ? 'streakRainbowGradient 2s linear infinite' : 'none',
+                                borderRadius: '4px',
+                                transition: 'width 0.2s ease',
+                                boxShadow: streakRainbow
+                                    ? '0 0 15px rgba(255, 230, 109, 0.8), 0 0 30px rgba(255, 107, 157, 0.6)'
+                                    : streakSparkle
+                                        ? '0 0 10px rgba(255, 230, 109, 0.6)'
+                                        : '0 0 5px rgba(255, 230, 109, 0.4)'
+                            }} />
+                        </div>
+                        <span style={{
+                            fontSize: isCompact ? '0.7rem' : '0.85rem',
+                            fontWeight: 600,
+                            color: streakRainbow ? '#FFE66D' : streakSparkle ? '#FFE66D' : 'rgba(255, 230, 109, 0.9)',
+                            minWidth: isCompact ? '30px' : '40px',
+                            textAlign: 'right'
+                        }}>
+                            {Math.round(streakMeter * 10)}s
+                        </span>
+                    </div>
+                )}
             </div>
 
             {/* Bottom Controls */}
@@ -517,6 +625,38 @@ export const TracingMode = () => {
                 @keyframes pulse {
                     0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
                     50% { transform: translateX(-50%) scale(1.05); opacity: 0.9; }
+                }
+                @keyframes streakSparkle {
+                    0%, 100% { 
+                        box-shadow: 0 0 20px rgba(255, 230, 109, 0.4);
+                        transform: scale(1);
+                    }
+                    50% { 
+                        box-shadow: 0 0 30px rgba(255, 230, 109, 0.7), 0 0 50px rgba(255, 107, 157, 0.4);
+                        transform: scale(1.02);
+                    }
+                }
+                @keyframes streakRainbow {
+                    0%, 100% { 
+                        box-shadow: 0 0 30px rgba(255, 230, 109, 0.6), 0 0 60px rgba(255, 107, 157, 0.4), 0 0 90px rgba(77, 255, 255, 0.3);
+                        transform: scale(1);
+                    }
+                    25% { 
+                        box-shadow: 0 0 40px rgba(255, 107, 157, 0.8), 0 0 80px rgba(77, 255, 255, 0.6), 0 0 120px rgba(255, 230, 109, 0.4);
+                        transform: scale(1.03);
+                    }
+                    50% { 
+                        box-shadow: 0 0 40px rgba(77, 255, 255, 0.8), 0 0 80px rgba(255, 230, 109, 0.6), 0 0 120px rgba(255, 107, 157, 0.4);
+                        transform: scale(1.05);
+                    }
+                    75% { 
+                        box-shadow: 0 0 40px rgba(255, 230, 109, 0.8), 0 0 80px rgba(255, 107, 157, 0.6), 0 0 120px rgba(77, 255, 255, 0.4);
+                        transform: scale(1.03);
+                    }
+                }
+                @keyframes streakRainbowGradient {
+                    0% { background-position: 0% 50%; }
+                    100% { background-position: 200% 50%; }
                 }
             `}</style>
         </>

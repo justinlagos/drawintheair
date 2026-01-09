@@ -139,3 +139,94 @@
     opacity: 0.6;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   CHARACTER CURSOR STYLES (ToyMode)
+═══════════════════════════════════════════════════════════════ */
+
+.magic-cursor.character-cursor {
+    width: 40px;
+    height: 40px;
+    margin-left: -20px;
+    margin-top: -20px;
+}
+
+/* Character cursor states */
+.character-cursor.cursor-idle .cursor-character-main {
+    animation: cursorIdle 2s ease-in-out infinite;
+}
+
+.character-cursor.cursor-hover .cursor-character-main {
+    animation: cursorHover 1s ease-in-out infinite;
+}
+
+.character-cursor.cursor-active .cursor-character-main {
+    animation: cursorActive 0.5s ease-in-out infinite;
+}
+
+.character-cursor.cursor-success .cursor-character-main {
+    animation: cursorSuccess 0.6s ease-out;
+}
+
+.character-cursor.cursor-lost .cursor-character-main {
+    opacity: 0.3;
+    animation: cursorLost 1s ease-in-out infinite;
+}
+
+@keyframes cursorIdle {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+}
+
+@keyframes cursorHover {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 20px rgba(255, 230, 109, 0.8), 0 0 40px rgba(255, 107, 157, 0.4);
+    }
+    50% {
+        transform: scale(1.15);
+        box-shadow: 0 0 30px rgba(255, 230, 109, 1), 0 0 60px rgba(255, 107, 157, 0.6);
+    }
+}
+
+@keyframes cursorActive {
+    0%, 100% {
+        transform: scale(1.1);
+        box-shadow: 0 0 30px rgba(255, 230, 109, 1), 0 0 60px rgba(255, 107, 157, 0.8);
+    }
+    50% {
+        transform: scale(1.2);
+        box-shadow: 0 0 40px rgba(255, 230, 109, 1.2), 0 0 80px rgba(255, 107, 157, 1);
+    }
+}
+
+@keyframes cursorSuccess {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.5);
+        box-shadow: 0 0 50px rgba(255, 230, 109, 1.5), 0 0 100px rgba(255, 107, 157, 1), 0 0 150px rgba(77, 255, 255, 0.8);
+    }
+    100% {
+        transform: scale(1.2);
+        box-shadow: 0 0 40px rgba(255, 230, 109, 1), 0 0 80px rgba(255, 107, 157, 0.8);
+    }
+}
+
+@keyframes cursorLost {
+    0%, 100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(1);
+    }
+}
+

@@ -319,25 +319,6 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                             performanceLogRef.current.shift();
                         }
                         
-                        // #region agent log
-                        fetch('http://127.0.0.1:7243/ingest/3375da32-5a54-4a77-83b7-98afc54e3961', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                location: 'TrackingLayer.tsx:performance',
-                                message: 'Performance metrics',
-                                data: {
-                                    ...logEntry,
-                                    elapsedSeconds: (now - sessionStartTimeRef.current) / 1000
-                                },
-                                timestamp: Date.now(),
-                                sessionId: 'performance-session',
-                                runId: 'run1',
-                                hypothesisId: 'D'
-                            })
-                        }).catch(() => {});
-                        // #endregion
-                        
                         lastLogTime = now;
                     }
                     
@@ -433,7 +414,11 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
 
                             // Call frame callback with stable, filtered data
                             if (onFrame) {
-                                onFrame(ctx, frameData, canvas.width, canvas.height, drawingUtils);
+                                try {
+                                    onFrame(ctx, frameData, canvas.width, canvas.height, drawingUtils);
+                                } catch (error) {
+                                    console.error('Error in onFrame callback:', error);
+                                }
                             }
                         }
                     }
@@ -474,28 +459,6 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                     i > 0 && e.resolutionIndex !== performanceLog[i - 1].resolutionIndex
                 ).length;
                 
-                // #region agent log
-                fetch('http://127.0.0.1:7243/ingest/3375da32-5a54-4a77-83b7-98afc54e3961', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        location: 'TrackingLayer.tsx:summary',
-                        message: 'Performance summary',
-                        data: {
-                            totalTimeSeconds: totalTime,
-                            averageRenderFps: avgRenderFps,
-                            averageDetectFps: avgDetectFps,
-                            p95DetectionLatencyMs: p95Latency,
-                            resolutionScalingTriggers: resolutionChanges,
-                            sampleCount: performanceLog.length
-                        },
-                        timestamp: Date.now(),
-                        sessionId: 'performance-session',
-                        runId: 'run1',
-                        hypothesisId: 'D'
-                    })
-                }).catch(() => {});
-                // #endregion
             }
         };
     }, [stream, isWebcamLoading, videoRef, onFrame, convertToFrameData, renderInterval]);
@@ -543,7 +506,8 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                     maxHeight: '100vh',
                     objectFit: 'cover',
                     pointerEvents: 'none',
-                    boxSizing: 'border-box'
+                    boxSizing: 'border-box',
+                    zIndex: 100 // High enough to be above game mode overlays (which are z-index 1-2) but below UI elements (200-9999)
                 }}
             />
 

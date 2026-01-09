@@ -30,8 +30,8 @@ const MODES: ModeOption[] = [
         title: 'Bubble Pop',
         description: 'Warm up',
         icon: '🫧',
-        gradient: 'linear-gradient(135deg, rgba(0, 229, 255, 0.08) 0%, rgba(0, 229, 255, 0.04) 100%)',
-        accentColor: '#00E5FF',
+        gradient: 'linear-gradient(135deg, #FF8C42 0%, #FF6B35 100%)', // Orange
+        accentColor: '#FF8C42',
         category: 'warm-up'
     },
     {
@@ -39,8 +39,8 @@ const MODES: ModeOption[] = [
         title: 'Free Paint',
         description: 'Create',
         icon: '🎨',
-        gradient: 'linear-gradient(135deg, rgba(222, 49, 99, 0.08) 0%, rgba(222, 49, 99, 0.04) 100%)',
-        accentColor: '#DE3163',
+        gradient: 'linear-gradient(135deg, #9B59B6 0%, #8E44AD 100%)', // Purple
+        accentColor: '#9B59B6',
         category: 'creative'
     },
     {
@@ -48,8 +48,8 @@ const MODES: ModeOption[] = [
         title: 'Tracing',
         description: 'Learn',
         icon: '✏️',
-        gradient: 'linear-gradient(135deg, rgba(255, 217, 61, 0.08) 0%, rgba(255, 217, 61, 0.04) 100%)',
-        accentColor: '#FFD93D',
+        gradient: 'linear-gradient(135deg, #2ECC71 0%, #27AE60 100%)', // Green
+        accentColor: '#2ECC71',
         category: 'learning'
     },
     {
@@ -57,17 +57,17 @@ const MODES: ModeOption[] = [
         title: 'Sort and Place',
         description: 'Think',
         icon: '🗂️',
-        gradient: 'linear-gradient(135deg, rgba(0, 229, 255, 0.08) 0%, rgba(0, 229, 255, 0.04) 100%)',
-        accentColor: '#00E5FF',
+        gradient: 'linear-gradient(135deg, #3498DB 0%, #2980B9 100%)', // Blue
+        accentColor: '#3498DB',
         category: 'puzzle'
     },
     {
         id: 'word-search',
         title: 'Word Search',
-        description: 'Explore',
+        description: 'Focus',
         icon: '🔍',
-        gradient: 'linear-gradient(135deg, rgba(222, 49, 99, 0.08) 0%, rgba(222, 49, 99, 0.04) 100%)',
-        accentColor: '#DE3163',
+        gradient: 'linear-gradient(135deg, #F1C40F 0%, #F39C12 100%)', // Yellow
+        accentColor: '#F1C40F',
         category: 'puzzle'
     }
 ];
@@ -96,12 +96,14 @@ const ModeCard = ({ mode, isHovered, isSelected, hoverProgress, onSelect, isFull
         ? (isMobile ? '100px' : isTablet ? '120px' : '140px')
         : '100%';
     
-    // Responsive border radius
+    // Responsive border radius - use ToyMode token when available
     const borderRadius = isMobile ? '16px' : '20px';
+    // ToyMode will override via CSS variables
     
     return (
         <div
             id={`mode-card-${mode.id}`}
+            className="mode-card"
             onClick={() => onSelect(mode.id)}
             style={{
                 position: 'relative',
@@ -109,54 +111,37 @@ const ModeCard = ({ mode, isHovered, isSelected, hoverProgress, onSelect, isFull
                 height: cardHeight,
                 minHeight: isMobile ? '100px' : isFullWidth ? 'auto' : '140px',
                 borderRadius: borderRadius,
-                background: isHovered 
-                    ? `linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.08) 100%), ${mode.gradient}`
-                    : `linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%), ${mode.gradient}`,
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                border: isHovered 
-                    ? `1px solid rgba(255, 255, 255, 0.25)` 
-                    : `1px solid rgba(255, 255, 255, 0.1)`,
+                background: 'transparent',
+                backdropFilter: 'none',
+                WebkitBackdropFilter: 'none',
+                border: 'none',
                 cursor: 'pointer',
-                transform: `scale(${isSelected ? 0.98 : isHovered ? 1.01 : 1}) translateY(${isHovered ? -3 : 0}px)`,
-                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                boxShadow: isHovered
-                    ? `0 12px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px ${mode.accentColor}35, 0 0 24px ${mode.accentColor}15`
-                    : '0 8px 24px rgba(0, 0, 0, 0.25)',
-                overflow: 'hidden'
+                transform: `scale(${isSelected ? 0.98 : isHovered ? 1.05 : 1}) translateY(${isHovered ? -6 : 0}px)`,
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: 'none',
+                overflow: 'visible',
+                padding: '32px',
+                margin: '-32px',
+                boxSizing: 'content-box'
             }}
         >
-            {/* Progress ring */}
+            {/* Subtle glow effect on hover */}
             {isHovered && (
-                <svg
-                    style={{
-                        position: 'absolute',
-                        top: '-3px',
-                        left: '-3px',
-                        right: '-3px',
-                        bottom: '-3px',
-                        width: 'calc(100% + 6px)',
-                        height: 'calc(100% + 6px)',
-                        pointerEvents: 'none',
-                        zIndex: 2,
-                        transform: 'rotate(-90deg)'
-                    }}
-                >
-                    <circle
-                        cx="50%"
-                        cy="50%"
-                        r="calc(50% - 1.5px)"
-                        fill="none"
-                        stroke={mode.accentColor}
-                        strokeWidth="2.5"
-                        strokeDasharray={`${hoverProgress * 800} 800`}
-                        strokeLinecap="round"
-                        style={{ 
-                            transition: 'stroke-dasharray 0.1s linear',
-                            filter: `drop-shadow(0 0 6px ${mode.accentColor})`
-                        }}
-                    />
-                </svg>
+                <div style={{
+                    position: 'absolute',
+                    top: '-32px',
+                    left: '-32px',
+                    right: '-32px',
+                    bottom: '-32px',
+                    borderRadius: '50%',
+                    background: `radial-gradient(circle at center, ${mode.accentColor}25 0%, ${mode.accentColor}10 30%, transparent 70%)`,
+                    pointerEvents: 'none',
+                    zIndex: 0,
+                    opacity: hoverProgress * 0.8,
+                    transition: 'opacity 0.2s ease-out',
+                    filter: `blur(24px)`,
+                    transform: 'scale(1.1)'
+                }} />
             )}
 
             {/* Inner card content */}
@@ -164,42 +149,17 @@ const ModeCard = ({ mode, isHovered, isSelected, hoverProgress, onSelect, isFull
                 width: '100%',
                 height: '100%',
                 padding: isFullWidth 
-                    ? (isMobile ? '12px 16px' : '20px 28px') 
-                    : (isMobile ? '12px' : '20px'),
+                    ? (isMobile ? '20px 24px' : '28px 36px') 
+                    : (isMobile ? 'clamp(18px, 2.5vw, 24px)' : 'clamp(24px, 3vw, 32px)'),
                 display: 'flex',
                 flexDirection: isFullWidth ? 'row' : 'column',
                 justifyContent: isFullWidth ? 'flex-start' : 'space-between',
                 alignItems: isFullWidth ? 'center' : 'stretch',
-                gap: isFullWidth ? (isMobile ? '12px' : '24px') : '0',
+                gap: isFullWidth ? (isMobile ? '16px' : '28px') : '0',
                 position: 'relative',
                 zIndex: 1,
                 boxSizing: 'border-box'
             }}>
-                {/* Category badge - Top left, always visible */}
-                <div style={{
-                    position: 'absolute',
-                    top: isMobile ? '10px' : '16px',
-                    left: isMobile ? '10px' : '16px',
-                    zIndex: 3,
-                    flexShrink: 0
-                }}>
-                    <div style={{
-                        padding: isMobile ? '4px 10px' : '6px 14px',
-                        borderRadius: isMobile ? '8px' : '12px',
-                        background: `linear-gradient(135deg, ${mode.accentColor}18, ${mode.accentColor}10)`,
-                        backdropFilter: 'blur(10px)',
-                        fontSize: isMobile ? '0.6rem' : '0.7rem',
-                        fontWeight: 700,
-                        color: mode.accentColor,
-                        textTransform: 'uppercase',
-                        letterSpacing: isMobile ? '0.5px' : '0.9px',
-                        border: `1px solid ${mode.accentColor}35`,
-                        boxShadow: `0 2px 8px ${mode.accentColor}12`,
-                        whiteSpace: 'nowrap'
-                    }}>
-                        {mode.category.replace('-', ' ')}
-                    </div>
-                </div>
 
                 {isFullWidth ? (
                     /* Full-width card layout: Icon left, Text right, same level */
@@ -215,16 +175,18 @@ const ModeCard = ({ mode, isHovered, isSelected, hoverProgress, onSelect, isFull
                             marginTop: 0
                         }}>
                             <div style={{
-                                fontSize: isMobile ? '2.5rem' : '3.5rem',
+                                fontSize: isMobile ? 'clamp(2.5rem, 7vw, 3rem)' : 'clamp(3.5rem, 5vw, 4rem)',
                                 filter: isHovered 
-                                    ? `drop-shadow(0 0 16px ${mode.accentColor}50) drop-shadow(0 0 32px ${mode.accentColor}25)` 
-                                    : 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))',
-                                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                                transform: isHovered ? 'scale(1.08)' : 'scale(1)',
+                                    ? `drop-shadow(0 0 24px ${mode.accentColor}70) drop-shadow(0 0 48px ${mode.accentColor}40) drop-shadow(0 4px 16px rgba(0,0,0,0.5))` 
+                                    : 'drop-shadow(0 3px 12px rgba(0,0,0,0.4)) drop-shadow(0 2px 8px rgba(0,0,0,0.3))',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                transform: isHovered ? 'scale(1.12) translateY(-4px)' : 'scale(1)',
                                 lineHeight: '1',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center'
+                                justifyContent: 'center',
+                                textShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                                transformStyle: 'preserve-3d'
                             }}>
                                 {mode.icon}
                             </div>
@@ -237,18 +199,22 @@ const ModeCard = ({ mode, isHovered, isSelected, hoverProgress, onSelect, isFull
                             alignItems: 'center',
                             justifyContent: 'flex-start',
                             height: '100%',
-                            paddingLeft: isMobile ? '4px' : '8px'
+                            paddingLeft: isMobile ? 'clamp(8px, 1.5vw, 12px)' : 'clamp(12px, 1.8vw, 16px)'
                         }}>
                             <h3 style={{
                                 margin: 0,
-                                fontSize: isMobile ? '1.1rem' : isTablet ? '1.25rem' : '1.5rem',
+                                fontSize: isMobile ? 'clamp(1.2rem, 3.5vw, 1.4rem)' : isTablet ? 'clamp(1.4rem, 2.8vw, 1.6rem)' : 'clamp(1.5rem, 2.2vw, 1.8rem)',
                                 fontWeight: 700,
                                 color: '#ffffff',
-                                textShadow: '0 2px 8px rgba(0,0,0,0.5)',
-                                lineHeight: '1.2',
-                                letterSpacing: '-0.3px',
+                                textShadow: isHovered
+                                    ? `0 4px 16px rgba(0,0,0,0.8), 0 0 24px ${mode.accentColor}50, 0 2px 4px rgba(0,0,0,0.9)`
+                                    : '0 3px 12px rgba(0,0,0,0.7), 0 0 20px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.8)',
+                                lineHeight: '1.25',
+                                letterSpacing: '-0.2px',
                                 textAlign: 'left',
-                                whiteSpace: 'nowrap'
+                                whiteSpace: 'nowrap',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                transform: isHovered ? 'translateX(4px)' : 'translateX(0)'
                             }}>
                                 {mode.title}
                             </h3>
@@ -263,53 +229,93 @@ const ModeCard = ({ mode, isHovered, isSelected, hoverProgress, onSelect, isFull
                             justifyContent: 'center',
                             alignItems: 'center',
                             flex: '1 1 auto',
-                            minHeight: isMobile ? '50px' : '80px',
-                            maxHeight: isMobile ? '80px' : '120px',
-                            paddingTop: isMobile ? '28px' : '40px', // Space for category badge
-                            paddingBottom: isMobile ? '4px' : '8px',
+                            minHeight: isMobile ? 'clamp(70px, 10vh, 90px)' : 'clamp(100px, 12vh, 140px)',
+                            maxHeight: isMobile ? 'clamp(100px, 14vh, 120px)' : 'clamp(140px, 16vh, 180px)',
+                            paddingTop: isMobile ? 'clamp(36px, 5vh, 44px)' : 'clamp(52px, 6vh, 72px)', // Space for category badge
+                            paddingBottom: isMobile ? 'clamp(16px, 2vh, 20px)' : 'clamp(20px, 2.5vh, 28px)',
                             boxSizing: 'border-box'
                         }}>
                             <div style={{
-                                fontSize: isMobile ? '2.2rem' : isTablet ? '2.8rem' : '3.2rem',
+                                fontSize: isMobile ? 'clamp(3.5rem, 10vw, 4.5rem)' : isTablet ? 'clamp(4.5rem, 8vw, 5.5rem)' : 'clamp(5rem, 6vw, 6.5rem)',
                                 filter: isHovered 
-                                    ? `drop-shadow(0 0 16px ${mode.accentColor}50) drop-shadow(0 0 32px ${mode.accentColor}25)` 
-                                    : 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))',
-                                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                                transform: isHovered ? 'scale(1.08)' : 'scale(1)',
+                                    ? `drop-shadow(0 8px 32px rgba(0,0,0,0.6)) drop-shadow(0 0 48px ${mode.accentColor}60) drop-shadow(0 0 24px ${mode.accentColor}40)` 
+                                    : 'drop-shadow(0 6px 20px rgba(0,0,0,0.5)) drop-shadow(0 2px 8px rgba(0,0,0,0.3))',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                transform: isHovered ? 'scale(1.15) translateY(-6px) rotateY(5deg)' : 'scale(1)',
                                 lineHeight: '1',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center'
+                                justifyContent: 'center',
+                                textShadow: '0 2px 12px rgba(0,0,0,0.4)',
+                                transformStyle: 'preserve-3d',
+                                perspective: '1000px'
                             }}>
                                 {mode.icon}
                             </div>
                         </div>
 
-                        {/* Title - Bottom, always visible */}
+                        {/* Title and Description - Bottom, always visible */}
                         <div style={{
                             flex: '0 0 auto',
                             display: 'flex',
+                            flexDirection: 'column',
                             alignItems: 'center',
-                            justifyContent: 'center',
-                            minHeight: isMobile ? '24px' : '32px',
-                            paddingTop: isMobile ? '4px' : '8px',
-                            paddingBottom: isMobile ? '2px' : '4px',
-                            boxSizing: 'border-box'
+                            justifyContent: 'flex-end',
+                            gap: isMobile ? 'clamp(8px, 1.2vh, 10px)' : 'clamp(10px, 1.5vh, 12px)',
+                            minHeight: isMobile ? 'clamp(50px, 7vh, 60px)' : 'clamp(60px, 8vh, 75px)',
+                            paddingTop: isMobile ? 'clamp(20px, 2.5vh, 24px)' : 'clamp(24px, 3vh, 32px)',
+                            paddingBottom: isMobile ? 'clamp(20px, 2.5vh, 24px)' : 'clamp(28px, 3.5vh, 36px)',
+                            paddingLeft: isMobile ? 'clamp(16px, 2vw, 20px)' : 'clamp(20px, 2.5vw, 28px)',
+                            paddingRight: isMobile ? 'clamp(16px, 2vw, 20px)' : 'clamp(20px, 2.5vw, 28px)',
+                            boxSizing: 'border-box',
+                            width: '100%',
+                            overflow: 'visible'
                         }}>
                             <h3 style={{
                                 margin: 0,
-                                fontSize: isMobile ? '1rem' : isTablet ? '1.15rem' : '1.35rem',
+                                fontSize: isMobile ? 'clamp(1.2rem, 3.5vw, 1.4rem)' : isTablet ? 'clamp(1.4rem, 2.8vw, 1.6rem)' : 'clamp(1.5rem, 2.2vw, 1.8rem)',
                                 fontWeight: 700,
                                 color: '#ffffff',
-                                textShadow: '0 2px 8px rgba(0,0,0,0.5)',
-                                lineHeight: '1.2',
-                                letterSpacing: '-0.3px',
+                                textShadow: isHovered 
+                                    ? `0 4px 16px rgba(0,0,0,0.8), 0 0 24px ${mode.accentColor}50, 0 2px 4px rgba(0,0,0,0.9)`
+                                    : '0 3px 12px rgba(0,0,0,0.7), 0 0 20px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.8)',
+                                lineHeight: '1.25',
+                                letterSpacing: '-0.2px',
                                 textAlign: 'center',
                                 whiteSpace: 'nowrap',
-                                overflow: 'visible'
+                                overflow: 'visible',
+                                marginBottom: 'clamp(4px, 0.5vh, 6px)',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                transform: isHovered ? 'translateY(-2px)' : 'translateY(0)'
                             }}>
                                 {mode.title}
                             </h3>
+                            <p style={{
+                                margin: 0,
+                                fontSize: mode.id === 'word-search' 
+                                    ? (isMobile ? 'clamp(0.85rem, 2.4vw, 0.95rem)' : 'clamp(0.95rem, 1.8vw, 1.1rem)')
+                                    : (isMobile ? 'clamp(0.8rem, 2.2vw, 0.9rem)' : 'clamp(0.9rem, 1.6vw, 1rem)'),
+                                fontWeight: mode.id === 'word-search' ? 700 : 600,
+                                color: isHovered ? 'rgba(255, 255, 255, 1)' : (mode.id === 'word-search' ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.95)'),
+                                textShadow: isHovered
+                                    ? `0 2px 10px rgba(0,0,0,0.7), 0 0 16px ${mode.accentColor}40, 0 1px 3px rgba(0,0,0,0.8)`
+                                    : mode.id === 'word-search'
+                                    ? `0 3px 12px rgba(0,0,0,0.7), 0 0 20px ${mode.accentColor}30, 0 1px 3px rgba(0,0,0,0.8)`
+                                    : '0 2px 8px rgba(0,0,0,0.6), 0 0 12px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.7)',
+                                lineHeight: '1.5',
+                                textAlign: 'center',
+                                whiteSpace: mode.id === 'word-search' ? 'normal' : 'nowrap',
+                                overflow: 'visible',
+                                letterSpacing: mode.id === 'word-search' ? '0.3px' : '0.2px',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                transform: isHovered ? 'translateY(-1px)' : 'translateY(0)',
+                                textOverflow: 'clip',
+                                wordBreak: mode.id === 'word-search' ? 'normal' : 'normal',
+                                width: '100%',
+                                maxWidth: '100%'
+                            }}>
+                                {mode.description}
+                            </p>
                         </div>
                     </>
                 )}
@@ -357,6 +363,7 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
     const isMobile = screenSize === 'phone' || screenSize === 'tablet-small';
     const isTablet = screenSize === 'tablet';
     const isLarge = screenSize === 'large';
+    const availableModes = MODES;
 
     // Detect mobile (legacy compatibility)
     useEffect(() => {
@@ -366,7 +373,7 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
     // Update card positions
     useEffect(() => {
         const updateRefs = () => {
-            MODES.forEach(mode => {
+            availableModes.forEach(mode => {
                 const el = document.getElementById(`mode-card-${mode.id}`);
                 if (el) {
                     cardRefs.current.set(mode.id, el.getBoundingClientRect());
@@ -376,7 +383,7 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
         updateRefs();
         window.addEventListener('resize', updateRefs);
         return () => window.removeEventListener('resize', updateRefs);
-    }, []);
+    }, [availableModes]);
 
     // Track finger position and detect hover/selection
     useEffect(() => {
@@ -427,8 +434,6 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
     const containerPadding = isMobile ? 'clamp(12px, 3vw, 24px)' : isTablet ? '20px' : '24px';
     const headerFontSize = isMobile ? 'clamp(1.5rem, 5vw, 2rem)' : isTablet ? '2rem' : isLarge ? '3rem' : '2.5rem';
     const subtitleFontSize = isMobile ? 'clamp(0.85rem, 2.5vw, 1rem)' : isTablet ? '1rem' : '1.15rem';
-    const cardGap = isMobile ? '12px' : isTablet ? '14px' : '16px';
-    const gridMinHeight = isMobile ? 'auto' : '180px';
 
     return (
         <div style={{
@@ -440,7 +445,7 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
             justifyContent: isMobile ? 'flex-start' : 'center',
             zIndex: 50,
             background: '#010C24',
-            overflow: isMobile ? 'auto' : 'hidden',
+            overflow: 'visible', // Allow glow effects to show
             padding: containerPadding,
             paddingTop: isMobile ? 'max(env(safe-area-inset-top, 12px), 12px)' : '24px',
             paddingBottom: isMobile ? 'max(env(safe-area-inset-bottom, 12px), 12px)' : '24px',
@@ -477,7 +482,8 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
                 paddingTop: isMobile ? '8px' : '16px',
                 paddingBottom: isMobile ? '8px' : '16px',
                 boxSizing: 'border-box',
-                flex: isMobile ? '0 0 auto' : '1 1 auto'
+                flex: isMobile ? '0 0 auto' : '1 1 auto',
+                overflow: 'visible'
             }}>
                 {/* Header Section - Scene Header */}
                 <div style={{
@@ -493,10 +499,11 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
                         fontSize: headerFontSize,
                         fontWeight: 800,
                         color: '#ffffff',
-                        letterSpacing: isMobile ? '1px' : '2px',
-                        textShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                        letterSpacing: isMobile ? 'clamp(1px, 0.3vw, 1.5px)' : 'clamp(1.5px, 0.4vw, 2.5px)',
+                        textShadow: '0 4px 20px rgba(0,0,0,0.5), 0 0 30px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.6)',
                         textAlign: 'center',
-                        lineHeight: '1.1'
+                        lineHeight: '1.15',
+                        marginBottom: isMobile ? 'clamp(4px, 0.8vh, 6px)' : 'clamp(6px, 1vh, 8px)'
                     }}>
                         DRAW IN THE AIR
                     </div>
@@ -504,118 +511,136 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
                     {/* Subtitle */}
                     <div style={{
                         fontSize: subtitleFontSize,
-                        color: 'rgba(255, 255, 255, 0.75)',
-                        fontWeight: 400,
+                        color: 'rgba(255, 255, 255, 0.85)',
+                        fontWeight: 500,
                         textAlign: 'center',
-                        letterSpacing: '0.5px'
+                        letterSpacing: 'clamp(0.3px, 0.1vw, 0.6px)',
+                        textShadow: '0 2px 8px rgba(0,0,0,0.4), 0 0 12px rgba(0,0,0,0.2)'
                     }}>
                         Choose your adventure
                     </div>
                 </div>
 
-                {/* Mode Cards Grid - Responsive layout */}
+                {/* Mode Cards Grid - 3 at top, 2 below */}
                 <div style={{
                     flex: isMobile ? '0 0 auto' : '1 1 auto',
-                    display: 'grid',
-                    gridTemplateColumns: isMobile 
-                        ? '1fr' 
-                        : isTablet 
-                            ? 'repeat(2, 1fr)' 
-                            : 'repeat(2, 1fr)',
-                    gridTemplateRows: isMobile 
-                        ? 'repeat(5, minmax(120px, auto))'
-                        : isTablet
-                            ? 'repeat(2, minmax(140px, 1fr)) auto'
-                            : `repeat(2, minmax(${gridMinHeight}, 1fr)) auto`,
-                    gap: cardGap,
-                    alignItems: 'stretch',
-                    minHeight: 0,
-                    width: '100%'
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: isMobile ? 'clamp(12px, 1.5vw, 16px)' : isTablet ? 'clamp(16px, 2vw, 20px)' : 'clamp(20px, 2.5vw, 28px)',
+                    width: '100%',
+                    maxWidth: isMobile ? '100%' : isTablet ? '900px' : 'clamp(900px, 88vw, 1200px)',
+                    margin: '0 auto',
+                    maxHeight: isMobile ? 'none' : '100%',
+                    overflow: 'visible'
                 }}>
-                    {/* First 4 cards in 2×2 grid */}
-                    {MODES.slice(0, 4).map((mode) => {
-                        const isHovered = hoveredMode === mode.id;
-                        const isSelected = selectedMode === mode.id;
+                    {/* First row: 3 cards */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: isMobile 
+                            ? '1fr' 
+                            : 'repeat(3, 1fr)',
+                        gap: isMobile ? 'clamp(12px, 1.5vw, 16px)' : isTablet ? 'clamp(16px, 2vw, 20px)' : 'clamp(20px, 2.5vw, 28px)',
+                        width: '100%'
+                    }}>
+                        {availableModes.slice(0, 3).map((mode) => {
+                            const isHovered = hoveredMode === mode.id;
+                            const isSelected = selectedMode === mode.id;
+                            return (
+                                <div
+                                    key={mode.id}
+                                    style={{
+                                        minHeight: isMobile ? 'clamp(180px, 22vh, 220px)' : 0,
+                                        display: 'flex',
+                                        overflow: 'visible',
+                                        aspectRatio: (isMobile || isTablet) ? 'auto' : '1 / 1',
+                                        padding: '32px',
+                                        margin: '-32px',
+                                        boxSizing: 'content-box',
+                                        width: '100%'
+                                    }}
+                                >
+                                    <ModeCard
+                                        mode={mode}
+                                        isHovered={isHovered}
+                                        isSelected={isSelected}
+                                        hoverProgress={hoverProgress}
+                                        onSelect={onSelect}
+                                        isFullWidth={false}
+                                        screenSize={screenSize}
+                                    />
+                                </div>
+                            );
+                        })}
+                    </div>
 
-                        return (
-                            <div
-                                key={mode.id}
-                                style={{
-                                    minHeight: isMobile ? '100px' : 0,
-                                    display: 'flex'
-                                }}
-                            >
-                                <ModeCard
-                                    mode={mode}
-                                    isHovered={isHovered}
-                                    isSelected={isSelected}
-                                    hoverProgress={hoverProgress}
-                                    onSelect={onSelect}
-                                    isFullWidth={false}
-                                    screenSize={screenSize}
-                                />
-                            </div>
-                        );
-                    })}
-
-                    {/* Last card - Full width row */}
-                    {MODES.slice(4).map((mode) => {
-                        const isHovered = hoveredMode === mode.id;
-                        const isSelected = selectedMode === mode.id;
-
-                        return (
-                            <div
-                                key={mode.id}
-                                style={{
-                                    gridColumn: isMobile ? '1' : '1 / -1',
-                                    gridRow: isMobile ? 'auto' : '3',
-                                    minHeight: isMobile ? '100px' : 0,
-                                    display: 'flex',
-                                    maxWidth: isMobile ? '100%' : isTablet ? '500px' : '600px',
-                                    justifySelf: 'center',
-                                    width: '100%'
-                                }}
-                            >
-                                <ModeCard
-                                    mode={mode}
-                                    isHovered={isHovered}
-                                    isSelected={isSelected}
-                                    hoverProgress={hoverProgress}
-                                    onSelect={onSelect}
-                                    isFullWidth={!isMobile}
-                                    screenSize={screenSize}
-                                />
-                            </div>
-                        );
-                    })}
+                    {/* Second row: 2 cards centered */}
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'stretch',
+                        gap: isMobile ? 'clamp(12px, 1.5vw, 16px)' : isTablet ? 'clamp(16px, 2vw, 20px)' : 'clamp(20px, 2.5vw, 28px)',
+                        width: '100%'
+                    }}>
+                        {availableModes.slice(3).map((mode) => {
+                            const isHovered = hoveredMode === mode.id;
+                            const isSelected = selectedMode === mode.id;
+                            return (
+                                <div
+                                    key={mode.id}
+                                    style={{
+                                        minHeight: isMobile ? 'clamp(180px, 22vh, 220px)' : 0,
+                                        display: 'flex',
+                                        overflow: 'visible',
+                                        aspectRatio: (isMobile || isTablet) ? 'auto' : '1 / 1',
+                                        padding: '32px',
+                                        margin: '-32px',
+                                        boxSizing: 'content-box',
+                                        width: isMobile ? '100%' : 'calc((100% - clamp(20px, 2.5vw, 28px)) / 3)',
+                                        maxWidth: isMobile ? '100%' : 'calc((100% - clamp(20px, 2.5vw, 28px)) / 3)'
+                                    }}
+                                >
+                                    <ModeCard
+                                        mode={mode}
+                                        isHovered={isHovered}
+                                        isSelected={isSelected}
+                                        hoverProgress={hoverProgress}
+                                        onSelect={onSelect}
+                                        isFullWidth={false}
+                                        screenSize={screenSize}
+                                    />
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
 
                 {/* Footer Instruction - Fixed Bottom */}
                 <div style={{
-                    padding: isMobile ? '12px 16px' : '16px 28px',
-                    background: 'rgba(255, 255, 255, 0.06)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
-                    borderRadius: isMobile ? '12px' : '16px',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    padding: isMobile ? 'clamp(14px, 2vh, 18px) clamp(18px, 4vw, 22px)' : 'clamp(18px, 2.5vh, 22px) clamp(28px, 3vw, 36px)',
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    backdropFilter: 'blur(24px)',
+                    WebkitBackdropFilter: 'blur(24px)',
+                    borderRadius: isMobile ? 'clamp(14px, 2vw, 16px)' : 'clamp(16px, 2vw, 20px)',
+                    border: '1.5px solid rgba(255, 255, 255, 0.15)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: isMobile ? '8px' : '12px',
+                    gap: isMobile ? 'clamp(10px, 2vw, 14px)' : 'clamp(14px, 2vw, 18px)',
                     flexShrink: 0,
-                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.25)',
-                    marginTop: isMobile ? '8px' : 0
+                    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                    marginTop: isMobile ? 'clamp(12px, 2vh, 16px)' : 0
                 }}>
                     <span style={{ 
-                        fontSize: isMobile ? '1.2rem' : '1.4rem',
-                        filter: 'drop-shadow(0 0 8px rgba(255, 217, 61, 0.5))',
+                        fontSize: isMobile ? 'clamp(1.3rem, 4vw, 1.5rem)' : 'clamp(1.5rem, 2.5vw, 1.7rem)',
+                        filter: 'drop-shadow(0 0 12px rgba(255, 217, 61, 0.6)) drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
                         lineHeight: '1'
                     }}>👆</span>
                     <div style={{
-                        fontSize: isMobile ? '0.85rem' : '0.95rem',
-                        fontWeight: 500,
-                        color: 'rgba(255, 255, 255, 0.95)',
-                        letterSpacing: '0.3px'
+                        fontSize: isMobile ? 'clamp(0.9rem, 2.5vw, 1rem)' : 'clamp(1rem, 1.8vw, 1.1rem)',
+                        fontWeight: 600,
+                        color: 'rgba(255, 255, 255, 0.98)',
+                        letterSpacing: 'clamp(0.2px, 0.1vw, 0.4px)',
+                        textShadow: '0 2px 8px rgba(0,0,0,0.5), 0 0 12px rgba(0,0,0,0.2)'
                     }}>
                         Point and hold to select
                     </div>

@@ -3,7 +3,7 @@
  * 
  * Features:
  * - Clean, aligned top bar with mode name, timer, and score
- * - Level progression (3 levels)
+ * - Level progression (6 levels)
  * - Smooth transitions and celebrations
  * - No frozen states - always recoverable
  * - Child-friendly messaging and encouragement
@@ -25,6 +25,8 @@ import {
     hasReachedGoal
 } from './bubbleCalibrationLogic';
 import { Celebration } from '../../../components/Celebration';
+import { earnSticker } from '../../../core/stickerBook';
+import { featureFlags } from '../../../core/featureFlags';
 
 interface BubbleCalibrationProps {
     onComplete: () => void;
@@ -80,7 +82,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
 
     // Initialize game when level changes
     useEffect(() => {
-        startBubbleGame(level as 1 | 2 | 3);
+        startBubbleGame(level as 1 | 2 | 3 | 4 | 5 | 6);
         // Reset UI state when level changes
         setShowEndModal(false);
         setScore(0);
@@ -142,11 +144,15 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
                 
                 // Auto-advance on success - brief celebration then automatic transition
                 const goalReached = hasReachedGoal();
-                if (goalReached && currentLevel < 3) {
+                // Earn sticker on milestone (if enabled) - when reaching goal on any level
+                if (goalReached && featureFlags.getFlag('stickerRewards')) {
+                    earnSticker('bubble-milestone');
+                }
+                if (goalReached && currentLevel < 6) {
                     setAutoAdvanceScheduled(true);
                     // Show reward, then auto-advance after 1200ms (brief celebration)
                     autoAdvanceTimeout = window.setTimeout(() => {
-                        const nextLevel = (currentLevel + 1) as 1 | 2 | 3;
+                        const nextLevel = (currentLevel + 1) as 1 | 2 | 3 | 4 | 5 | 6;
                         // Close modal and reset state before advancing
                         setShowEndModal(false);
                         setAutoAdvanceScheduled(false);
@@ -170,7 +176,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
 
     const handleTryAgain = () => {
         // Reset all state and restart game
-        startBubbleGame(level as 1 | 2 | 3);
+        startBubbleGame(level as 1 | 2 | 3 | 4 | 5 | 6);
         setShowEndModal(false);
         setScore(0);
         setTimeRemaining(GAME_DURATION);
@@ -189,7 +195,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
     };
 
     const goalReached = hasReachedGoal();
-    const isLastLevel = level === 3;
+    const isLastLevel = level === 6;
 
     // Responsive sizing
     const hudSpacing = isCompact ? '12px' : '20px';
@@ -205,7 +211,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
                 top: hudSpacing,
                 left: '50%',
                 transform: 'translateX(-50%)',
-                zIndex: 30,
+                zIndex: 400,
                 pointerEvents: 'none',
                 display: 'flex',
                 flexDirection: isCompact ? 'column' : 'row',
@@ -216,7 +222,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
                 maxWidth: isCompact ? 'calc(100% - 100px)' : '1200px',
                 padding: isCompact ? '0' : '0 24px'
             }}>
-                {/* Compact mode: Single row with timer and score */}
+                {/* Compact mode: Single row with mode name, timer and score */}
                 {isCompact ? (
                     <div style={{
                         display: 'flex',
@@ -225,6 +231,24 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
                         flexWrap: 'wrap',
                         justifyContent: 'center'
                     }}>
+                        {/* Mode Name */}
+                        <div style={{
+                            background: 'rgba(1, 12, 36, 0.85)',
+                            backdropFilter: 'blur(20px)',
+                            borderRadius: hudRadius,
+                            border: '2px solid rgba(0, 229, 255, 0.2)',
+                            padding: hudPadding,
+                            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
+                        }}>
+                            <span style={{
+                                fontSize: '1rem',
+                                fontWeight: 700,
+                                color: '#00E5FF'
+                            }}>
+                                Bubble Pop
+                            </span>
+                        </div>
+
                         {/* Timer */}
                         <div style={{
                             background: 'rgba(1, 12, 36, 0.85)',
@@ -361,7 +385,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
                     position: 'absolute',
                     top: hudSpacing,
                     left: hudSpacing,
-                    zIndex: 30,
+                    zIndex: 400,
                     pointerEvents: 'none'
                 }}>
                     <div style={{
@@ -390,7 +414,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
                     top: '50%',
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
-                    zIndex: 25,
+                    zIndex: 400,
                     pointerEvents: 'none',
                     animation: 'fadeInOut 2s ease-in-out'
                 }}>

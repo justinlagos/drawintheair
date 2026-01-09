@@ -22,6 +22,7 @@ import type { DrawingUtils } from '@mediapipe/tasks-vision';
 import { trackingFeatures } from '../../../core/trackingFeatures';
 import { DifficultyController } from '../../../core/DifficultyController';
 import { tactileAudioManager } from '../../../core/TactileAudioManager';
+import { featureFlags } from '../../../core/featureFlags';
 
 export interface TracingState {
     path: TracingPath | null;
@@ -49,6 +50,11 @@ export interface TracingState {
     sparkleParticles: Array<{ x: number; y: number; life: number; maxLife: number }>; // Sparkle trail particles
     canvasWidth: number;
     canvasHeight: number;
+    // Streak system
+    streakMeter: number; // 0-1, builds on-path, decays off-path
+    streakStartTime: number | null; // When current streak started
+    lastStreakUpdateTime: number; // Last time streak was updated
+    streakActive: boolean; // Whether currently building streak
 }
 
 // Module-level state (refs pattern, no React state)
@@ -77,7 +83,12 @@ let tracingState: TracingState = {
     lastOffPathHintTime: 0,
     sparkleParticles: [],
     canvasWidth: 1920,
-    canvasHeight: 1080
+    canvasHeight: 1080,
+    // Streak system
+    streakMeter: 0,
+    streakStartTime: null,
+    lastStreakUpdateTime: 0,
+    streakActive: false
 };
 
 // Completion callback
@@ -127,6 +138,11 @@ const loadCurrentPath = (): void => {
     tracingState.lastPathPosition = 0;
     tracingState.lastProgressUpdateTime = 0;
     tracingState.pinchLostTime = null;
+    // Reset streak
+    tracingState.streakMeter = 0;
+    tracingState.streakStartTime = null;
+    tracingState.lastStreakUpdateTime = 0;
+    tracingState.streakActive = false;
     tracingState.offPathStartTime = null;
     tracingState.recentMovementHistory = [];
     tracingState.lookAheadProgressThisSecond = 0;
@@ -417,6 +433,30 @@ export const tracingLogicV2 = (
     // Check if on path (with dynamic tolerance and forgiveness corridor)
     const onPath = distance <= forgivenessTolerancePx;
     tracingState.onPath = onPath;
+    
+    // Streak system - build on-path, decay off-path (non-punitive) - only if enabled
+    if (featureFlags.getFlag('tracingStreak')) {
+        const streakUpdateInterval = 100; // Update every 100ms
+        if (now - tracingState.lastStreakUpdateTime > streakUpdateInterval) {
+            if (onPath && !tracingState.isPaused) {
+                // Building streak
+                if (!tracingState.streakActive) {
+                    tracingState.streakStartTime = now;
+                    tracingState.streakActive = true;
+                }
+                // Build meter: 0 to 1 in 10 seconds (0.01 per 100ms)
+                tracingState.streakMeter = Math.min(1, tracingState.streakMeter + 0.01);
+            } else {
+                // Decaying streak (not hard reset)
+                if (tracingState.streakActive) {
+                    tracingState.streakActive = false;
+                }
+                // Decay meter: lose 0.005 per 100ms (slower than build)
+                tracingState.streakMeter = Math.max(0, tracingState.streakMeter - 0.005);
+            }
+            tracingState.lastStreakUpdateTime = now;
+        }
+    }
     
     // Update DDS with on/off path state
     if (flags.enableDynamicDifficulty) {

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { TrackingLayer, type TrackingFrameData } from './features/tracking/TrackingLayer';
 import { FreePaintMode } from './features/modes/FreePaintMode';
 import { freePaintLogic } from './features/modes/freePaintLogic';
@@ -14,9 +14,14 @@ import { WaveToWake } from './features/onboarding/WaveToWake';
 import { ModeSelectionMenu, type GameMode } from './features/menu/ModeSelectionMenu';
 import { AdultGate } from './features/safety/AdultGate';
 import { MagicCursor } from './components/MagicCursor';
+import { ModeBackground } from './components/ModeBackground';
 import { PerfOverlay } from './components/PerfOverlay';
 import { drawingEngine, PenState } from './core/drawingEngine';
 import { perf } from './core/perf';
+import { initToyMode } from './core/toyMode';
+import { initNarrator } from './core/narrator';
+import { featureFlags } from './core/featureFlags';
+import { type GameMode as FeatureGameMode } from './core/featureFlags';
 import './App.css';
 
 type AppState = 'onboarding' | 'menu' | 'game';
@@ -35,9 +40,10 @@ const getInitialState = (): { appState: AppState; gameMode: GameMode } => {
 
   if (screen === 'menu') return { appState: 'menu', gameMode: 'free' };
   if (screen === 'game') {
+    const validMode = (mode === 'free' || mode === 'pre-writing' || mode === 'calibration' || mode === 'sort-and-place' || mode === 'word-search') ? mode : 'free';
     return {
       appState: 'game',
-      gameMode: (mode === 'free' || mode === 'pre-writing' || mode === 'calibration' || mode === 'sort-and-place' || mode === 'word-search') ? mode : 'free'
+      gameMode: validMode
     };
   }
   return { appState: 'onboarding', gameMode: 'free' };
@@ -52,6 +58,15 @@ function App() {
 
   const [appState, setAppState] = useState<AppState>(() => getInitialState().appState);
   const [gameMode, setGameMode] = useState<GameMode>(() => getInitialState().gameMode);
+  const [flags, setFlags] = useState(featureFlags.getFlags());
+
+  // Subscribe to feature flag changes to ensure reactive updates
+  useEffect(() => {
+    const unsubscribe = featureFlags.subscribe((newFlags) => {
+      setFlags(newFlags);
+    });
+    return unsubscribe;
+  }, []);
 
   const handleWake = useCallback(() => {
     setAppState('menu');
@@ -60,11 +75,13 @@ function App() {
   const handleModeSelect = useCallback((mode: GameMode) => {
     setGameMode(mode);
     setAppState('game');
+    // Enable flags for this mode
+    featureFlags.enableForMode(mode as FeatureGameMode);
     // Clear any previous drawings when starting fresh
     if (mode === 'free') {
       drawingEngine.clear();
     }
-  }, []);
+  }, [flags]);
 
   const handleExitToMenu = useCallback(() => {
     setAppState('menu');
@@ -83,25 +100,43 @@ function App() {
 
   // Determine which logic to use based on current mode
   const getActiveLogic = () => {
-    if (appState !== 'game') return undefined;
+    if (appState !== 'game') {
+      return undefined;
+    }
 
+    let logic;
     switch (gameMode) {
       case 'free':
-        return freePaintLogic;
+        logic = freePaintLogic;
+        break;
       case 'pre-writing':
-        return preWritingLogic;
+        logic = preWritingLogic;
+        break;
       case 'calibration':
-        return bubbleCalibrationLogic;
+        logic = bubbleCalibrationLogic;
+        break;
       case 'sort-and-place':
-        return sortAndPlaceLogic;
+        logic = sortAndPlaceLogic;
+        break;
       case 'word-search':
-        return wordSearchLogic;
+        logic = wordSearchLogic;
+        break;
       default:
-        return undefined;
+        logic = undefined;
     }
+    return logic;
   };
 
-  const activeLogic = getActiveLogic();
+  // Make activeLogic reactive to gameMode, appState, and flags changes
+  const activeLogic = useMemo(() => {
+    return getActiveLogic();
+  }, [gameMode, appState, flags]);
+
+  // Initialize ToyMode and Narrator
+  useEffect(() => {
+    initToyMode();
+    initNarrator();
+  }, []);
 
   // Apply performance tier class to body for CSS styling
   useEffect(() => {
@@ -141,6 +176,18 @@ function App() {
 
           return (
             <>
+              {/* Mode Background - only in ToyMode */}
+              {appState === 'game' && (
+                <ModeBackground 
+                  modeId={
+                    gameMode === 'free' ? 'free' :
+                    gameMode === 'calibration' ? 'calibration' :
+                    gameMode === 'sort-and-place' ? 'sort-and-place' :
+                    'free'
+                  } 
+                />
+              )}
+              
               {/* Magic Cursor - shows pen state */}
               <MagicCursor
                 x={indexTip?.x ?? 0.5}
@@ -199,6 +246,7 @@ function App() {
                       onCloseSettings={() => setWordSearchSettingsOpen(false)}
                     />
                   )}
+
                 </>
               )}
             </>
