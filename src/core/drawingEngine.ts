@@ -15,6 +15,7 @@ import { OneEuroFilter2D } from './filters/OneEuroFilter';
 import { PenStateManager, PenState, type PenStateEvent } from './PenStateManager';
 import { normalizedToCanvas, type NormalizedPoint } from './coordinateUtils';
 import { perf } from './perf';
+import { resetCanvasState } from './canvasUtils';
 
 // Re-export PenState for use in other components
 export { PenState } from './PenStateManager';
@@ -325,8 +326,12 @@ export class DrawingEngine {
 
     /**
      * Render all strokes to canvas using Catmull-Rom splines for ultra-smooth curves
+     * Phase 5: Legacy method - renders all strokes including current
      */
     render(ctx: CanvasRenderingContext2D, width: number, height: number): void {
+        // Phase 4: Reset canvas state at start of render pass
+        resetCanvasState(ctx);
+        
         // Update canvas size for resampling
         if (this.canvasWidth !== width || this.canvasHeight !== height) {
             this.setCanvasSize(width, height);
@@ -334,31 +339,82 @@ export class DrawingEngine {
         
         // Update perf settings (may change if user overrides)
         this.updatePerfSettings();
-
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
         
         const perfConfig = perf.getConfig();
 
+        // Render committed strokes
         for (const stroke of this.strokes) {
             if (stroke.points.length < 2) continue;
-
-            // Render glow layer (only if visual quality is high or medium)
-            if (perfConfig.visualQuality === 'high') {
-                this.renderGlow(ctx, stroke, width, height, perfConfig);
-            }
-
-            // Check if stroke is eraser (could be stored as metadata, for now check color)
-            const isEraser = stroke.color === '#eraser' || (stroke as any).isEraser === true;
-
-            // Render glow layer (only if visual quality is high or medium and not eraser)
-            if (perfConfig.visualQuality === 'high' && !isEraser) {
-                this.renderGlow(ctx, stroke, width, height, perfConfig);
-            }
-
-            // Render main stroke with smooth curves
-            this.renderStroke(ctx, stroke, width, height, perfConfig, isEraser);
+            this.renderStrokeWithGlow(ctx, stroke, width, height, perfConfig);
         }
+
+        // Render current stroke if active
+        if (this.currentStroke && this.currentStroke.points.length >= 2) {
+            this.renderStrokeWithGlow(ctx, this.currentStroke, width, height, perfConfig);
+        }
+    }
+
+    /**
+     * Phase 5: Render only committed strokes (for base layer)
+     * Called only when strokes change (commit, undo, redo, clear, fill)
+     */
+    renderCommittedStrokes(ctx: CanvasRenderingContext2D, width: number, height: number): void {
+        resetCanvasState(ctx);
+        
+        if (this.canvasWidth !== width || this.canvasHeight !== height) {
+            this.setCanvasSize(width, height);
+        }
+        
+        this.updatePerfSettings();
+        const perfConfig = perf.getConfig();
+
+        // Render only committed strokes (not current stroke)
+        for (const stroke of this.strokes) {
+            if (stroke.points.length < 2) continue;
+            this.renderStrokeWithGlow(ctx, stroke, width, height, perfConfig);
+        }
+    }
+
+    /**
+     * Phase 5: Render only current stroke (for preview layer)
+     * Called every frame while drawing
+     */
+    renderCurrentStroke(ctx: CanvasRenderingContext2D, width: number, height: number): void {
+        resetCanvasState(ctx);
+        
+        if (this.canvasWidth !== width || this.canvasHeight !== height) {
+            this.setCanvasSize(width, height);
+        }
+        
+        this.updatePerfSettings();
+        const perfConfig = perf.getConfig();
+
+        // Render only current stroke if active
+        if (this.currentStroke && this.currentStroke.points.length >= 2) {
+            this.renderStrokeWithGlow(ctx, this.currentStroke, width, height, perfConfig);
+        }
+    }
+
+    /**
+     * Phase 5: Helper to render a single stroke with glow
+     */
+    private renderStrokeWithGlow(
+        ctx: CanvasRenderingContext2D,
+        stroke: Stroke,
+        width: number,
+        height: number,
+        perfConfig: { visualQuality: string; glowPasses: number; shadowBlurScale: number }
+    ): void {
+        // Check if stroke is eraser
+        const isEraser = stroke.color === '#eraser' || (stroke as any).isEraser === true;
+
+        // Render glow layer (only if visual quality is high and not eraser)
+        if (perfConfig.visualQuality === 'high' && !isEraser) {
+            this.renderGlow(ctx, stroke, width, height, perfConfig);
+        }
+
+        // Render main stroke with smooth curves
+        this.renderStroke(ctx, stroke, width, height, perfConfig, isEraser);
     }
 
     private renderGlow(
@@ -402,7 +458,10 @@ export class DrawingEngine {
     ): void {
         const points = stroke.points;
         
-        // Set composite mode for eraser
+        // Phase 4: Use save/restore for eraser composite mode to prevent state leakage
+        ctx.save();
+        
+        // Set composite mode for eraser (scoped to this stroke)
         if (isEraser) {
             ctx.globalCompositeOperation = 'destination-out';
         } else {
@@ -419,6 +478,7 @@ export class DrawingEngine {
                 ctx.lineTo(points[i].x * width, points[i].y * height);
             }
             ctx.stroke();
+            ctx.restore(); // Phase 4: Restore state before early return
             return;
         }
 
@@ -470,14 +530,15 @@ export class DrawingEngine {
 
         // Add subtle highlight (only on high quality)
         if (perfConfig.shadowBlurScale >= 0.8) {
-            ctx.save();
             ctx.globalAlpha = 0.3 * perfConfig.shadowBlurScale;
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = Math.max(1, stroke.baseWidth * 0.2);
             this.drawSmoothPath(ctx, points, width, height, -1, -1);
             ctx.stroke();
-            ctx.restore();
         }
+        
+        // Phase 4: Restore canvas state (composite operation, alpha, etc.)
+        ctx.restore();
     }
 
     /**

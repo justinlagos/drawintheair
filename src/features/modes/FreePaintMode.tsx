@@ -116,7 +116,7 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
     const showDebug = (() => {
         if (typeof window !== 'undefined') {
             const params = new URLSearchParams(window.location.search);
-            return params.get('debug') === 'freepaint';
+            return params.get('debug') === 'airpaint';
         }
         return false;
     })();

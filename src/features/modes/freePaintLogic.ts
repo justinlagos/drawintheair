@@ -20,6 +20,46 @@ import { undoRedoManager } from './freePaintUndo';
 import { fillBucket } from './freePaintFill';
 import { performanceProtection } from './freePaintPerformance';
 
+/**
+ * Draw crosshair at point for debug visualization
+ */
+const drawCrosshair = (
+    ctx: CanvasRenderingContext2D,
+    point: { x: number; y: number },
+    width: number,
+    height: number,
+    color: string = '#00ff00',
+    size: number = 10
+): void => {
+    const x = point.x * width;
+    const y = point.y * height;
+    
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.8;
+    
+    // Horizontal line
+    ctx.beginPath();
+    ctx.moveTo(x - size, y);
+    ctx.lineTo(x + size, y);
+    ctx.stroke();
+    
+    // Vertical line
+    ctx.beginPath();
+    ctx.moveTo(x, y - size);
+    ctx.lineTo(x, y + size);
+    ctx.stroke();
+    
+    // Center dot
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, y, 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.restore();
+};
+
 export const freePaintLogic = (
     ctx: CanvasRenderingContext2D,
     frameData: TrackingFrameData,
@@ -148,29 +188,45 @@ export const freePaintLogic = (
         }
     }
 
-    // Phase 4: Layered canvas rendering
+    // Phase 5: Layered canvas rendering for performance
     if (paintFlags.layersEnabled && freePaintProManager.isLayeredEnabled()) {
         // Use layered canvas system
         const previewCtx = freePaintProManager.getPreviewContext();
         const baseCtx = freePaintProManager.getBaseContext();
         
-        // Clear preview layer (will be redrawn with active stroke)
-        freePaintProManager.clearPreview();
-        
-        // Render committed strokes to base layer (only if changed)
-        // For now, we still use the main canvas for rendering
-        // TODO: Migrate to layered system fully in next phase
-        if (baseCtx) {
-            // Base layer will be updated on stroke commit
-        }
-        
-        // Render active stroke to preview layer
-        if (previewCtx) {
-            drawingEngine.render(previewCtx, width, height);
+        if (baseCtx && previewCtx) {
+            // Clear preview layer (will be redrawn with active stroke)
+            freePaintProManager.clearPreview();
+            
+            // Phase 5: Render committed strokes to base layer only once per frame
+            // (Base layer is only redrawn when strokes change - handled separately)
+            // For now, render every frame but this will be optimized
+            
+            // Phase 5: Render current stroke to preview layer (every frame)
+            drawingEngine.renderCurrentStroke(previewCtx, width, height);
+            
+            // Phase 5: Render committed strokes to base layer (only once, but for now every frame)
+            // TODO: Track stroke changes and only redraw when needed
+            drawingEngine.renderCommittedStrokes(baseCtx, width, height);
         }
     } else {
         // Standard single canvas rendering (existing behavior)
         drawingEngine.render(ctx, width, height);
+    }
+
+    // Debug: Draw crosshairs if ?debug=airpaint
+    if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('debug') === 'airpaint') {
+            // Draw crosshair at renderPoint (cursor position - green)
+            if (renderPoint) {
+                drawCrosshair(ctx, renderPoint, width, height, '#00ff00', 12);
+            }
+            // Draw crosshair at filteredPoint (committed ink position - cyan)
+            if (filteredPoint) {
+                drawCrosshair(ctx, filteredPoint, width, height, '#00ffff', 10);
+            }
+        }
     }
 
     // End timing and update metrics (will be read by debug HUD)
@@ -191,7 +247,7 @@ export const freePaintLogic = (
             );
         }
     }
-    freePaintMetricsTracker.endDrawLoop(frameData);
+    freePaintMetricsTracker.endDrawLoop(frameData, width, height);
 };
 
 /**

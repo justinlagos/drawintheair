@@ -19,6 +19,7 @@ import { perf } from '../../core/perf';
 import { trackingFeatures } from '../../core/trackingFeatures';
 import { DynamicResolutionManager } from '../../core/tracking/DynamicResolution';
 import { TrackingDebugOverlay, type DebugMetrics } from '../../components/TrackingDebugOverlay';
+import { initCanvasCoordinateMapper, updateCanvasCoordinateMapper, getCanvasCoordinateMapper } from '../../core/canvasCoordinateMapper';
 
 /**
  * Mirror X coordinate for natural interaction
@@ -405,22 +406,57 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                         const canvas = canvasRef.current;
                         const ctx = canvas.getContext('2d');
 
-                        // Match canvas size to video
-                        if (videoRef.current) {
-                            if (canvas.width !== videoRef.current.videoWidth || 
-                                canvas.height !== videoRef.current.videoHeight) {
-                                canvas.width = videoRef.current.videoWidth;
-                                canvas.height = videoRef.current.videoHeight;
-                                
-                                // Update interaction state manager with new canvas size
-                                interactionStateManager.setCanvasSize(canvas.width, canvas.height);
+                        // Phase 3: Unified coordinate mapping - set up canvas with DPR scaling
+                        // Canvas CSS size matches layout (viewport), device size = CSS * DPR
+                        const rect = canvas.getBoundingClientRect();
+                        const dpr = window.devicePixelRatio || 1;
+                        const cssWidth = rect.width;
+                        const cssHeight = rect.height;
+                        const deviceWidth = Math.round(cssWidth * dpr);
+                        const deviceHeight = Math.round(cssHeight * dpr);
+
+                        // Update canvas device size if changed
+                        if (canvas.width !== deviceWidth || canvas.height !== deviceHeight) {
+                            canvas.width = deviceWidth;
+                            canvas.height = deviceHeight;
+                            
+                            // Initialize or update global coordinate mapper
+                            const mapper = getCanvasCoordinateMapper();
+                            if (mapper) {
+                                updateCanvasCoordinateMapper({
+                                    canvasWidth: deviceWidth,
+                                    canvasHeight: deviceHeight,
+                                    cssWidth,
+                                    cssHeight,
+                                    devicePixelRatio: dpr
+                                });
+                            } else {
+                                initCanvasCoordinateMapper({
+                                    canvasWidth: deviceWidth,
+                                    canvasHeight: deviceHeight,
+                                    cssWidth,
+                                    cssHeight,
+                                    devicePixelRatio: dpr
+                                });
                             }
+                            
+                            // Update interaction state manager with new canvas size
+                            interactionStateManager.setCanvasSize(deviceWidth, deviceHeight);
                         }
 
                         // Use latest frame data from ref (already updated by detection loop)
                         const frameData = lastFrameDataRef.current;
 
                         if (ctx) {
+                            // Phase 4: Reset canvas state before clearing
+                            // (clearRect clears pixels, but state remains)
+                            ctx.setTransform(1, 0, 0, 1, 0, 0);
+                            ctx.globalAlpha = 1;
+                            ctx.globalCompositeOperation = 'source-over';
+                            ctx.filter = 'none';
+                            ctx.shadowBlur = 0;
+                            ctx.shadowColor = 'transparent';
+                            
                             // Clear canvas
                             ctx.clearRect(0, 0, canvas.width, canvas.height);
 

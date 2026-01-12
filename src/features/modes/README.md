@@ -145,3 +145,101 @@ The upgrade will:
 4. Add paint tools (brushes, eraser, shapes, fill)
 5. Add performance monitoring and adaptive quality
 6. All behind feature flags (default OFF)
+
+## Coordinate Mapping Flow
+
+### Where Tracking Point Enters Free Paint
+
+**File**: `src/features/tracking/TrackingLayer.tsx`
+- **Line 252**: MediaPipe detection produces raw results (unmirrored)
+- **Line 273**: `mirrorResults()` transforms landmarks: `x: 1 - x` (mirrors X coordinate)
+- **Line 276**: `interactionStateManager.process(results, timestamp)` processes mirrored results
+- **File**: `src/core/InteractionState.ts`
+  - **Line 271**: Extracts index tip (landmark 8) and thumb tip (landmark 4) from mirrored landmarks
+  - **Line 279**: Applies One Euro filter to index tip → `filteredPoint`
+  - **Line 290**: Detects pinch via `PenStateManager` → `penDown`
+- **File**: `src/features/tracking/TrackingLayer.tsx`
+  - **Line 153**: `convertToFrameData()` converts `InteractionState` to `TrackingFrameData`
+  - **Line 331**: Frame data (including `filteredPoint`, `penDown`) passed to `onFrame` callback
+- **File**: `src/features/modes/freePaintLogic.ts`
+  - **Line 34**: Extracts `filteredPoint`, `filteredThumbTip`, `penDown` from `frameData`
+  - This is where tracking point **enters Free Paint logic**
+
+### How Coordinates Get Mapped to Canvas
+
+**Current Mapping Flow**:
+1. **MediaPipe output** (normalized 0-1, unmirrored)
+   - Landmark 8 (index tip): `{ x: 0.0-1.0, y: 0.0-1.0 }`
+   - Origin: top-left, X: right is +, Y: down is +
+
+2. **Mirroring** (`TrackingLayer.tsx` line 27, 273)
+   - `mirrorX(x) = 1 - x` applied to all landmark X coordinates
+   - Result: Mirrored normalized coordinates (0-1)
+
+3. **Filtering** (`InteractionState.ts` line 279)
+   - One Euro filter applied to mirrored index tip
+   - Result: `filteredPoint` (normalized 0-1, mirrored, smoothed)
+
+4. **Canvas Mapping** (`drawingEngine.ts` line 417, `coordinateUtils.ts` line 28)
+   - `normalizedToCanvas(point, width, height)`:
+     - `canvasX = point.x * width`
+     - `canvasY = point.y * height`
+   - Canvas size: Matches video dimensions (`TrackingLayer.tsx` line 410-413)
+   - Result: Canvas pixel coordinates (no DPR scaling currently)
+
+**Canvas Setup**:
+- **File**: `src/features/tracking/TrackingLayer.tsx`
+  - **Line 410-413**: Canvas width/height set to `videoWidth/videoHeight`
+  - **Line 425**: Canvas cleared each frame: `ctx.clearRect(0, 0, canvas.width, canvas.height)`
+  - **Line 509**: Canvas style uses `objectFit: 'cover'` (matches video element)
+
+**Note**: Currently no devicePixelRatio scaling. Canvas size matches video size directly.
+
+### Where Cursor is Drawn
+
+**File**: `src/components/MagicCursor.tsx`
+- **Props**: Receives `x`, `y` (normalized 0-1), `penDown`, `confidence`
+- **Rendering**: DOM element positioned absolutely using CSS `left`/`top`
+- **File**: `src/App.tsx`
+  - **Line 176-178**: Cursor point selection:
+    - If `airPaintEnabled` flag ON: Uses `filteredPoint` (for cursor)
+    - Otherwise: Uses `indexTip` (raw point)
+  - **Line 195-201**: `<MagicCursor>` component rendered with cursor point
+  - **Line 196-197**: Position: `x={cursorPoint.x * 100}%`, `y={cursorPoint.y * 100}%`
+  - **CSS**: Positioned using `position: fixed` with `left`/`top` as percentage
+
+**Coordinate Space for Cursor**:
+- Input: Normalized coordinates (0-1, mirrored)
+- Output: CSS percentage (0-100%)
+- Mapping: `left = x * 100%`, `top = y * 100%`
+- **No canvas coordinate conversion** - uses normalized coordinates directly
+
+### Where Strokes are Committed
+
+**File**: `src/core/drawingEngine.ts`
+- **Line 147**: `startStroke()` - Creates new stroke, adds to `strokes[]` array
+- **Line 166**: `this.strokes.push(this.currentStroke)` - Stroke committed immediately on start
+- **Line 226-228**: `addPointInternal()` - Adds points to `currentStroke.points[]` array
+- **Line 297**: `endStroke()` - Sets `currentStroke = null` (stroke remains in `strokes[]`)
+
+**Stroke Storage**:
+- **File**: `src/core/drawingEngine.ts`
+  - **Line 58**: `private strokes: Stroke[]` - Array of all committed strokes
+  - **Line 59**: `private currentStroke: Stroke | null` - Active stroke being drawn
+  - Strokes stored with normalized coordinates (0-1)
+
+**Stroke Rendering**:
+- **File**: `src/core/drawingEngine.ts`
+  - **Line 329**: `render(ctx, width, height)` - Renders all strokes from `strokes[]` array
+  - **Line 343-360**: Iterates through all strokes, renders each using Catmull-Rom splines
+  - **Line 417**: Coordinate conversion: `point.x * width`, `point.y * height` (normalized → canvas pixels)
+  - **File**: `src/features/modes/freePaintLogic.ts`
+    - **Line 172-173**: Calls `drawingEngine.render(ctx, width, height)` every frame
+
+**Stroke Lifecycle**:
+1. **Pen Down** → `processPoint()` → `startStroke()` → Stroke added to `strokes[]`
+2. **Pen Moving** → `processPoint()` → `addPointInternal()` → Points added to `currentStroke.points[]`
+3. **Pen Up** → `processPoint()` → `endStroke()` → `currentStroke = null` (stroke remains in `strokes[]`)
+4. **Every Frame** → `render()` → All strokes from `strokes[]` redrawn to canvas
+
+**Note**: Currently all strokes redrawn every frame. No layered canvas system yet.

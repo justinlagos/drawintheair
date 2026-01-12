@@ -1,18 +1,19 @@
 /**
  * Free Paint Debug HUD
  * 
- * Displays performance metrics when ?debug=freepaint is in URL.
+ * Displays performance metrics when ?debug=airpaint is in URL.
  * Shows:
- * - renderFPS
- * - detectFPS
- * - detection latency ms
- * - draw loop time
- * - rawPoint → filteredPoint → renderPoint
- * - active tool
- * - stroke points
- * - undo stack size
- * - memory estimate
+ * - Canvas CSS size (getBoundingClientRect)
+ * - Canvas internal size (width/height backing store)
+ * - devicePixelRatio
+ * - Video element rect (getBoundingClientRect)
+ * - objectFit mode (cover vs contain)
+ * - rawPoint (x,y) and filteredPoint (x,y) in normalized space (0..1)
+ * - computed renderPoint in CSS px and device px
+ * - draw FPS and average draw loop time
+ * - active tool, drawing state, pinch state, confidence
  * 
+ * Includes crosshair rendering on canvas (renderPoint and committed ink position).
  * Includes "Record 10s Metrics" button to log avg + p95 to console.
  */
 
@@ -23,10 +24,16 @@ export interface FreePaintDebugMetrics {
     detectFps: number;
     detectionLatencyMs: number;
     drawLoopTimeMs: number;
+    avgDrawLoopTimeMs: number;
     rawPoint: { x: number; y: number } | null;
     filteredPoint: { x: number; y: number } | null;
     renderPoint: { x: number; y: number } | null;
+    renderPointCssPx: { x: number; y: number } | null;
+    renderPointDevicePx: { x: number; y: number } | null;
     activeTool: string;
+    drawingState: 'idle' | 'drawing';
+    pinchState: 'open' | 'pinched';
+    confidence: number;
     strokePoints: number;
     undoStackSize: number;
     memoryEstimateMB: number;
@@ -40,6 +47,56 @@ export const FreePaintDebugHUD = ({ metrics }: FreePaintDebugHUDProps) => {
     const [isRecording, setIsRecording] = useState(false);
     const recordingStartTimeRef = useRef<number>(0);
     const metricsHistoryRef = useRef<FreePaintDebugMetrics[]>([]);
+    const [canvasInfo, setCanvasInfo] = useState<{
+        cssRect: DOMRect | null;
+        internalWidth: number;
+        internalHeight: number;
+        devicePixelRatio: number;
+    }>({
+        cssRect: null,
+        internalWidth: 0,
+        internalHeight: 0,
+        devicePixelRatio: window.devicePixelRatio || 1
+    });
+    const [videoInfo, setVideoInfo] = useState<{
+        rect: DOMRect | null;
+        objectFit: string;
+    }>({
+        rect: null,
+        objectFit: 'cover'
+    });
+
+    // Update canvas and video info periodically
+    useEffect(() => {
+        const updateInfo = () => {
+            // Find canvas element (z-index 100)
+            const canvas = document.querySelector('canvas[style*="z-index: 100"]') as HTMLCanvasElement;
+            if (canvas) {
+                const rect = canvas.getBoundingClientRect();
+                setCanvasInfo({
+                    cssRect: rect,
+                    internalWidth: canvas.width,
+                    internalHeight: canvas.height,
+                    devicePixelRatio: window.devicePixelRatio || 1
+                });
+            }
+
+            // Find video element
+            const video = document.querySelector('video') as HTMLVideoElement;
+            if (video) {
+                const rect = video.getBoundingClientRect();
+                const objectFit = window.getComputedStyle(video).objectFit || 'cover';
+                setVideoInfo({
+                    rect,
+                    objectFit
+                });
+            }
+        };
+
+        updateInfo();
+        const interval = setInterval(updateInfo, 100); // Update every 100ms
+        return () => clearInterval(interval);
+    }, []);
 
     const handleRecordMetrics = () => {
         if (isRecording) {
@@ -104,52 +161,112 @@ export const FreePaintDebugHUD = ({ metrics }: FreePaintDebugHUDProps) => {
                 position: 'fixed',
                 top: '10px',
                 right: '10px',
-                background: 'rgba(0, 0, 0, 0.85)',
+                background: 'rgba(0, 0, 0, 0.9)',
                 color: '#00ff00',
                 fontFamily: 'monospace',
-                fontSize: '11px',
-                padding: '12px',
-                borderRadius: '8px',
+                fontSize: '10px',
+                padding: '10px',
+                borderRadius: '6px',
                 border: '1px solid rgba(0, 255, 0, 0.3)',
                 zIndex: 10000,
-                maxWidth: '300px',
-                lineHeight: '1.4',
+                maxWidth: '380px',
+                maxHeight: '90vh',
+                overflowY: 'auto',
+                lineHeight: '1.3',
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
             }}
         >
             <div style={{ marginBottom: '8px', fontWeight: 'bold', borderBottom: '1px solid rgba(0, 255, 0, 0.3)', paddingBottom: '4px' }}>
-                🎨 Free Paint Debug
+                🎨 Air Paint Debug
             </div>
             
-            <div style={{ marginBottom: '4px' }}>
-                <span style={{ color: '#888' }}>renderFPS:</span> {metrics.renderFps.toFixed(1)}
+            {/* Canvas Info */}
+            <div style={{ marginBottom: '6px', borderTop: '1px solid rgba(0, 255, 0, 0.15)', paddingTop: '4px' }}>
+                <div style={{ fontSize: '9px', color: '#888', marginBottom: '2px' }}>Canvas:</div>
+                <div style={{ marginLeft: '8px', marginBottom: '1px' }}>
+                    CSS: {canvasInfo.cssRect ? `${Math.round(canvasInfo.cssRect.width)}×${Math.round(canvasInfo.cssRect.height)}` : 'N/A'}
+                </div>
+                <div style={{ marginLeft: '8px', marginBottom: '1px' }}>
+                    Internal: {canvasInfo.internalWidth}×{canvasInfo.internalHeight}
+                </div>
+                <div style={{ marginLeft: '8px', marginBottom: '1px' }}>
+                    DPR: {canvasInfo.devicePixelRatio.toFixed(2)}
+                </div>
             </div>
-            <div style={{ marginBottom: '4px' }}>
-                <span style={{ color: '#888' }}>detectFPS:</span> {metrics.detectFps.toFixed(1)}
+
+            {/* Video Info */}
+            <div style={{ marginBottom: '6px', borderTop: '1px solid rgba(0, 255, 0, 0.15)', paddingTop: '4px' }}>
+                <div style={{ fontSize: '9px', color: '#888', marginBottom: '2px' }}>Video:</div>
+                <div style={{ marginLeft: '8px', marginBottom: '1px' }}>
+                    Rect: {videoInfo.rect ? `${Math.round(videoInfo.rect.width)}×${Math.round(videoInfo.rect.height)}` : 'N/A'}
+                </div>
+                <div style={{ marginLeft: '8px', marginBottom: '1px' }}>
+                    objectFit: {videoInfo.objectFit}
+                </div>
             </div>
-            <div style={{ marginBottom: '4px' }}>
-                <span style={{ color: '#888' }}>detectLatency:</span> {metrics.detectionLatencyMs.toFixed(2)}ms
-            </div>
-            <div style={{ marginBottom: '4px' }}>
-                <span style={{ color: '#888' }}>drawLoopTime:</span> {metrics.drawLoopTimeMs.toFixed(2)}ms
+
+            {/* Performance */}
+            <div style={{ marginBottom: '6px', borderTop: '1px solid rgba(0, 255, 0, 0.15)', paddingTop: '4px' }}>
+                <div style={{ marginBottom: '2px' }}>
+                    <span style={{ color: '#888' }}>renderFPS:</span> {metrics.renderFps.toFixed(1)}
+                </div>
+                <div style={{ marginBottom: '2px' }}>
+                    <span style={{ color: '#888' }}>detectFPS:</span> {metrics.detectFps.toFixed(1)}
+                </div>
+                <div style={{ marginBottom: '2px' }}>
+                    <span style={{ color: '#888' }}>detectLatency:</span> {metrics.detectionLatencyMs.toFixed(2)}ms
+                </div>
+                <div style={{ marginBottom: '2px' }}>
+                    <span style={{ color: '#888' }}>drawLoopTime:</span> {metrics.drawLoopTimeMs.toFixed(2)}ms
+                </div>
+                <div style={{ marginBottom: '2px' }}>
+                    <span style={{ color: '#888' }}>avgDrawLoopTime:</span> {metrics.avgDrawLoopTimeMs.toFixed(2)}ms
+                </div>
             </div>
             
-            <div style={{ marginTop: '8px', marginBottom: '4px', borderTop: '1px solid rgba(0, 255, 0, 0.2)', paddingTop: '4px' }}>
-                <div style={{ marginBottom: '2px', fontSize: '10px', color: '#888' }}>Points:</div>
-                <div style={{ marginBottom: '2px', marginLeft: '8px' }}>
-                    raw: {metrics.rawPoint ? `${(metrics.rawPoint.x * 100).toFixed(1)}, ${(metrics.rawPoint.y * 100).toFixed(1)}` : 'null'}
+            {/* Coordinates */}
+            <div style={{ marginBottom: '6px', borderTop: '1px solid rgba(0, 255, 0, 0.15)', paddingTop: '4px' }}>
+                <div style={{ fontSize: '9px', color: '#888', marginBottom: '2px' }}>Points (norm 0-1):</div>
+                <div style={{ marginLeft: '8px', marginBottom: '1px' }}>
+                    raw: {metrics.rawPoint ? `${metrics.rawPoint.x.toFixed(3)}, ${metrics.rawPoint.y.toFixed(3)}` : 'null'}
                 </div>
-                <div style={{ marginBottom: '2px', marginLeft: '8px' }}>
-                    filtered: {metrics.filteredPoint ? `${(metrics.filteredPoint.x * 100).toFixed(1)}, ${(metrics.filteredPoint.y * 100).toFixed(1)}` : 'null'}
+                <div style={{ marginLeft: '8px', marginBottom: '1px' }}>
+                    filtered: {metrics.filteredPoint ? `${metrics.filteredPoint.x.toFixed(3)}, ${metrics.filteredPoint.y.toFixed(3)}` : 'null'}
                 </div>
-                <div style={{ marginBottom: '2px', marginLeft: '8px' }}>
-                    render: {metrics.renderPoint ? `${(metrics.renderPoint.x * 100).toFixed(1)}, ${(metrics.renderPoint.y * 100).toFixed(1)}` : 'null'}
+                <div style={{ marginLeft: '8px', marginBottom: '2px' }}>
+                    render: {metrics.renderPoint ? `${metrics.renderPoint.x.toFixed(3)}, ${metrics.renderPoint.y.toFixed(3)}` : 'null'}
                 </div>
+                {metrics.renderPointCssPx && (
+                    <div style={{ fontSize: '9px', color: '#888', marginTop: '2px', marginBottom: '1px' }}>renderPoint (CSS px):</div>
+                )}
+                {metrics.renderPointCssPx && (
+                    <div style={{ marginLeft: '8px', marginBottom: '1px' }}>
+                        {metrics.renderPointCssPx.x.toFixed(1)}, {metrics.renderPointCssPx.y.toFixed(1)}
+                    </div>
+                )}
+                {metrics.renderPointDevicePx && (
+                    <div style={{ fontSize: '9px', color: '#888', marginTop: '2px', marginBottom: '1px' }}>renderPoint (device px):</div>
+                )}
+                {metrics.renderPointDevicePx && (
+                    <div style={{ marginLeft: '8px', marginBottom: '1px' }}>
+                        {metrics.renderPointDevicePx.x.toFixed(1)}, {metrics.renderPointDevicePx.y.toFixed(1)}
+                    </div>
+                )}
             </div>
             
-            <div style={{ marginTop: '8px', marginBottom: '4px', borderTop: '1px solid rgba(0, 255, 0, 0.2)', paddingTop: '4px' }}>
+            {/* State */}
+            <div style={{ marginBottom: '6px', borderTop: '1px solid rgba(0, 255, 0, 0.15)', paddingTop: '4px' }}>
                 <div style={{ marginBottom: '2px' }}>
                     <span style={{ color: '#888' }}>tool:</span> {metrics.activeTool}
+                </div>
+                <div style={{ marginBottom: '2px' }}>
+                    <span style={{ color: '#888' }}>drawingState:</span> {metrics.drawingState}
+                </div>
+                <div style={{ marginBottom: '2px' }}>
+                    <span style={{ color: '#888' }}>pinchState:</span> {metrics.pinchState}
+                </div>
+                <div style={{ marginBottom: '2px' }}>
+                    <span style={{ color: '#888' }}>confidence:</span> {metrics.confidence.toFixed(2)}
                 </div>
                 <div style={{ marginBottom: '2px' }}>
                     <span style={{ color: '#888' }}>strokePoints:</span> {metrics.strokePoints}
@@ -165,7 +282,7 @@ export const FreePaintDebugHUD = ({ metrics }: FreePaintDebugHUDProps) => {
             <button
                 onClick={handleRecordMetrics}
                 style={{
-                    marginTop: '8px',
+                    marginTop: '6px',
                     width: '100%',
                     padding: '6px',
                     background: isRecording ? '#ff4444' : '#00aa00',
@@ -173,7 +290,7 @@ export const FreePaintDebugHUD = ({ metrics }: FreePaintDebugHUDProps) => {
                     border: 'none',
                     borderRadius: '4px',
                     cursor: 'pointer',
-                    fontSize: '11px',
+                    fontSize: '10px',
                     fontWeight: 'bold',
                     borderTop: '1px solid rgba(0, 255, 0, 0.2)',
                     paddingTop: '8px'
