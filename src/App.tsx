@@ -164,13 +164,19 @@ function App() {
       <PerfOverlay />
       <TrackingLayer onFrame={activeLogic}>
         {(frameData: TrackingFrameData) => {
-          const { results, indexTip, confidence } = frameData;
+          const { results, indexTip, confidence, filteredPoint } = frameData;
           const hasHand = results && results.landmarks && results.landmarks.length > 0;
 
           // Get pen state for cursor feedback
           const penState = gameMode === 'free' && appState === 'game'
             ? drawingEngine.getPenState()
             : PenState.UP;
+
+          // Use filteredPoint for cursor when airPaintEnabled (matches drawing position)
+          // Otherwise use indexTip (raw point)
+          const cursorPoint = (gameMode === 'free' && flags.airPaintEnabled && filteredPoint)
+            ? filteredPoint
+            : (indexTip ?? { x: 0.5, y: 0.5 });
 
           return (
             <>
@@ -188,12 +194,8 @@ function App() {
               
               {/* Magic Cursor - shows pen state */}
               <MagicCursor
-                x={gameMode === 'free' && flags.airPaintEnabled
-                  ? (freePaintProManager.getLastRenderPoint()?.x ?? indexTip?.x ?? 0.5)
-                  : (indexTip?.x ?? 0.5)}
-                y={gameMode === 'free' && flags.airPaintEnabled
-                  ? (freePaintProManager.getLastRenderPoint()?.y ?? indexTip?.y ?? 0.5)
-                  : (indexTip?.y ?? 0.5)}
+                x={cursorPoint.x}
+                y={cursorPoint.y}
                 active={!!hasHand}
                 penDown={penState === PenState.DOWN}
                 confidence={confidence}

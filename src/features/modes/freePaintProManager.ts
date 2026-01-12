@@ -19,6 +19,7 @@ class FreePaintProManager {
     private canvasWidth: number = 1920;
     private canvasHeight: number = 1080;
     private lastRenderPoint: { x: number; y: number } | null = null;
+    private lastFilteredPoint: { x: number; y: number } | null = null;
     
     /**
      * Initialize AIR PAINT PRO features if flags are enabled
@@ -96,7 +97,15 @@ class FreePaintProManager {
      * Always use filteredPoint for actual drawing
      */
     getFilteredPoint(frameData: TrackingFrameData): { x: number; y: number } | null {
+        this.lastFilteredPoint = frameData.filteredPoint;
         return frameData.filteredPoint;
+    }
+    
+    /**
+     * Get last filtered point (for cursor display - matches drawing position)
+     */
+    getLastFilteredPoint(): { x: number; y: number } | null {
+        return this.lastFilteredPoint;
     }
     
     /**
