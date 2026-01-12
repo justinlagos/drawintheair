@@ -12,6 +12,14 @@ import { drawingEngine } from '../../core/drawingEngine';
 import type { TrackingFrameData } from '../tracking/TrackingLayer';
 import { trackingFeatures } from '../../core/trackingFeatures';
 import { tactileAudioManager } from '../../core/TactileAudioManager';
+import { freePaintMetricsTracker } from './freePaintMetrics';
+import { freePaintProManager } from './freePaintProManager';
+import { featureFlags } from '../../core/featureFlags';
+import { paintToolsManager } from './freePaintTools';
+import { undoRedoManager } from './freePaintUndo';
+import { fillBucket } from './freePaintFill';
+import { zeroLagStrokeRenderer } from './freePaintZeroLag';
+import { performanceProtection } from './freePaintPerformance';
 
 export const freePaintLogic = (
     ctx: CanvasRenderingContext2D,
@@ -20,6 +28,9 @@ export const freePaintLogic = (
     height: number,
     _drawingUtils: any
 ) => {
+    // Start timing draw loop for metrics
+    freePaintMetricsTracker.startDrawLoop();
+
     // Use unified interaction state (pre-filtered, stable)
     const { filteredPoint, filteredThumbTip, penDown, confidence, timestamp, handScale, pressValue } = frameData;
 
@@ -53,24 +64,136 @@ export const freePaintLogic = (
         }
     }
 
-    // Process point using filtered data from unified state
-    // Only draw when pen is down (pinch active)
-    // Note: Use filteredPoint for actual stroke data (not predictedPoint)
-    if (penDown && filteredPoint && filteredThumbTip) {
-        drawingEngine.processPoint(
-            filteredPoint,
-            filteredThumbTip,
-            handScale,
-            confidence,
-            timestamp
-        );
+    // Phase 3: Two-path pointer system
+    // - filteredPoint → logic (stroke data)
+    // - renderPoint → visuals (cursor display)
+    const logicPoint = freePaintProManager.getFilteredPoint(frameData);
+    const renderPoint = freePaintProManager.getRenderPoint(frameData);
+    
+    // Update metrics with render point
+    if (renderPoint) {
+        freePaintMetricsTracker.updateRenderPoint(renderPoint);
+    }
+    
+    // Phase 5: Paint tools integration
+    const paintFlags = featureFlags.getFlags();
+    const activeTool = paintToolsManager.getTool();
+    const brushConfig = paintToolsManager.getBrushConfig();
+    
+    // Update drawing engine with tool settings (only for brush tools)
+    if (paintToolsManager.isBrushTool()) {
+        drawingEngine.setColor(brushConfig.color);
+        drawingEngine.setWidth(brushConfig.size);
+    }
+    
+    // Process point using filtered data for logic (stroke data)
+    // Only draw when pen is down (pinch active) and tool allows drawing
+    if (penDown && logicPoint && filteredThumbTip) {
+        // Check if tool is fill (special handling - only on stroke start)
+        if (paintFlags.fillEnabled && activeTool === 'fill') {
+            const currentStroke = drawingEngine.getCurrentStroke();
+            // Only fill once per pen down (when no current stroke)
+            if (!currentStroke) {
+                // Fill tool: fill on pen down at point location
+                const canvasX = logicPoint.x * width;
+                const canvasY = logicPoint.y * height;
+                
+                // Get appropriate context (base for layered, main for single)
+                const fillCtx = paintFlags.layersEnabled && freePaintProManager.isLayeredEnabled()
+                    ? freePaintProManager.getBaseContext()
+                    : ctx;
+                
+                if (fillCtx) {
+                    // Get full canvas image data before fill for undo
+                    const beforeImageData = fillCtx.getImageData(0, 0, width, height);
+                    
+                    // Perform fill operation (async)
+                    fillBucket.fill(fillCtx, canvasX, canvasY, brushConfig.color).then((result) => {
+                        // Commit fill to undo stack with before state
+                        if (result.filled > 0) {
+                            undoRedoManager.push({
+                                type: 'fill',
+                                imageData: beforeImageData,
+                                bounds: { x: 0, y: 0, width, height }
+                            });
+                        }
+                    }).catch((error) => {
+                        console.error('Fill operation failed:', error);
+                    });
+                }
+            }
+        } else if (paintToolsManager.isBrushTool() || paintToolsManager.isEraser()) {
+            // Brush or eraser: normal stroke drawing
+            // Set eraser mode if needed
+            if (activeTool === 'eraser') {
+                // Eraser uses destination-out composite mode
+                // This will be handled in rendering
+            }
+            drawingEngine.processPoint(
+                logicPoint,
+                filteredThumbTip,
+                handScale,
+                confidence,
+                timestamp
+            );
+        }
     } else {
         // Pen up or no hand - signal to drawing engine
-        drawingEngine.processPoint(null, null, 0.1, 0, timestamp);
+        // Capture stroke before it's cleared for undo
+        const currentStroke = drawingEngine.getCurrentStroke();
+        const event = drawingEngine.processPoint(null, null, 0.1, 0, timestamp);
+        
+        // Phase 8: Undo system - commit stroke to undo stack when it ends
+        if (event.type === 'stroke_end' && paintFlags.airPaintEnabled && currentStroke) {
+            undoRedoManager.push({ type: 'stroke', stroke: { ...currentStroke } });
+        }
     }
 
-    // Render all strokes
-    drawingEngine.render(ctx, width, height);
+    // Phase 4: Layered canvas rendering
+    const paintFlags = featureFlags.getFlags();
+    if (paintFlags.layersEnabled && freePaintProManager.isLayeredEnabled()) {
+        // Use layered canvas system
+        const previewCtx = freePaintProManager.getPreviewContext();
+        const baseCtx = freePaintProManager.getBaseContext();
+        
+        // Clear preview layer (will be redrawn with active stroke)
+        freePaintProManager.clearPreview();
+        
+        // Render committed strokes to base layer (only if changed)
+        // For now, we still use the main canvas for rendering
+        // TODO: Migrate to layered system fully in next phase
+        if (baseCtx) {
+            // Base layer will be updated on stroke commit
+        }
+        
+        // Render active stroke to preview layer
+        if (previewCtx) {
+            drawingEngine.render(previewCtx, width, height);
+        }
+    } else {
+        // Standard single canvas rendering (existing behavior)
+        drawingEngine.render(ctx, width, height);
+    }
+
+    // End timing and update metrics (will be read by debug HUD)
+    // Update FPS metrics from frameData if available
+    if (frameData.renderFps !== undefined && frameData.detectFps !== undefined && frameData.detectionLatencyMs !== undefined) {
+        freePaintMetricsTracker.updateFpsMetrics(
+            frameData.renderFps,
+            frameData.detectFps,
+            frameData.detectionLatencyMs
+        );
+        
+        // Phase 10: Dynamic performance protection
+        if (paintFlags.airPaintEnabled) {
+            performanceProtection.update(
+                frameData.renderFps,
+                frameData.detectFps,
+                frameData.detectionLatencyMs
+            );
+        }
+    }
+    freePaintMetricsTracker.endDrawLoop(frameData);
 };
 
 /**

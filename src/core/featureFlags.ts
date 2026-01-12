@@ -26,6 +26,12 @@ export interface FeatureFlags {
     tracingStreak: boolean;          // Tracing streak meter
     narrator: boolean;               // Safe narrator TTS
     
+    // Free Paint Pro features (AIR PAINT PRO)
+    airPaintEnabled: boolean;        // Enable AIR PAINT PRO mode
+    layersEnabled: boolean;          // Enable layered canvas system
+    fillEnabled: boolean;             // Enable fill bucket tool
+    shapesEnabled: boolean;          // Enable shape tools (line, rect, circle)
+    selectionEnabled: boolean;       // Enable selection tools (rect select, move, delete)
 }
 
 const DEFAULT_FLAGS: FeatureFlags = {
@@ -41,6 +47,12 @@ const DEFAULT_FLAGS: FeatureFlags = {
     stickerRewards: false,
     tracingStreak: false,
     narrator: false,
+    // Free Paint Pro - AIR PAINT PRO enabled
+    airPaintEnabled: true,
+    layersEnabled: true,
+    fillEnabled: true, // Fill bucket tool enabled
+    shapesEnabled: false, // Will enable when implemented
+    selectionEnabled: false, // Will enable when implemented
 };
 
 const STORAGE_KEY = 'feature-flags';

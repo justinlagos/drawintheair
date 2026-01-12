@@ -10,9 +10,16 @@
  * - Fully responsive across all screen sizes
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { drawingEngine } from '../../core/drawingEngine';
 import type { TrackingFrameData } from '../tracking/TrackingLayer';
+import { FreePaintDebugHUD } from '../../components/FreePaintDebugHUD';
+import { freePaintMetricsTracker } from './freePaintMetrics';
+import { freePaintProManager } from './freePaintProManager';
+import { featureFlags } from '../../core/featureFlags';
+import { paintToolsManager, type PaintTool } from './freePaintTools';
+import { undoRedoManager } from './freePaintUndo';
+import { fillBucket } from './freePaintFill';
 
 // Responsive breakpoint hook
 const useResponsiveLayout = () => {
@@ -106,6 +113,68 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
     const { isMobile, isTabletSmall, isLandscapePhone } = layout;
     const isCompact = isMobile || isTabletSmall || isLandscapePhone;
 
+    // Check if debug mode is enabled
+    const [showDebug, setShowDebug] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('debug') === 'freepaint';
+        }
+        return false;
+    });
+
+    // Track metrics for debug HUD
+    const [debugMetrics, setDebugMetrics] = useState(freePaintMetricsTracker.getMetrics());
+    const metricsUpdateIntervalRef = useRef<number | undefined>(undefined);
+
+    // Update metrics periodically when debug is enabled
+    useEffect(() => {
+        if (showDebug) {
+            // Update metrics at ~10Hz (every 100ms) to avoid React state spam
+            metricsUpdateIntervalRef.current = window.setInterval(() => {
+                setDebugMetrics(freePaintMetricsTracker.getMetrics());
+            }, 100);
+
+            return () => {
+                if (metricsUpdateIntervalRef.current !== undefined) {
+                    clearInterval(metricsUpdateIntervalRef.current);
+                }
+            };
+        }
+    }, [showDebug]);
+
+    // Initialize AIR PAINT PRO features if flags are enabled
+    useEffect(() => {
+        const flags = featureFlags.getFlags();
+        if (flags.airPaintEnabled || flags.layersEnabled) {
+            // Find the TrackingLayer container (parent of canvas)
+            // The canvas is in TrackingLayer, we'll create layered canvases as siblings
+            const findCanvasContainer = (): HTMLElement | null => {
+                const canvas = document.querySelector('canvas[style*="z-index: 100"]');
+                return canvas?.parentElement as HTMLElement | null;
+            };
+            
+            const updateSize = () => {
+                const container = findCanvasContainer();
+                if (container) {
+                    const width = container.clientWidth || window.innerWidth;
+                    const height = container.clientHeight || window.innerHeight;
+                    freePaintProManager.initialize(width, height, container);
+                }
+            };
+            
+            // Initialize after a short delay to ensure DOM is ready
+            const initTimer = setTimeout(updateSize, 100);
+            
+            // Resize on window resize
+            window.addEventListener('resize', updateSize);
+            return () => {
+                clearTimeout(initTimer);
+                window.removeEventListener('resize', updateSize);
+                freePaintProManager.destroy();
+            };
+        }
+    }, []);
+
     // Auto-fade hint after 5 seconds
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -118,16 +187,98 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
     const handleColorChange = (color: string) => {
         setActiveColor(color);
         drawingEngine.setColor(color);
+        paintToolsManager.setBrushColor(color);
     };
 
     const handleSizeChange = (size: number) => {
         setActiveSize(size);
         drawingEngine.setWidth(size);
+        paintToolsManager.setBrushSize(size);
     };
 
     const handleClear = () => {
         drawingEngine.clear();
+        undoRedoManager.clear();
     };
+    
+    // Tool selection handlers
+    const handleToolSelect = (tool: PaintTool) => {
+        paintToolsManager.setTool(tool);
+    };
+    
+    // Undo/Redo handlers
+    const handleUndo = () => {
+        const operation = undoRedoManager.pop();
+        if (operation) {
+            if (operation.type === 'stroke') {
+                // Remove last stroke
+                const strokes = drawingEngine.getStrokes();
+                if (strokes.length > 0) {
+                    strokes.pop();
+                    drawingEngine.setStrokes(strokes);
+                }
+            } else if (operation.type === 'clear') {
+                // Clear canvas
+                drawingEngine.clear();
+            } else if (operation.type === 'fill') {
+                // Restore previous image data for fill area
+                const canvas = document.querySelector('canvas[style*="z-index: 100"]') as HTMLCanvasElement;
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        ctx.putImageData(operation.imageData, operation.bounds.x, operation.bounds.y);
+                    }
+                }
+            }
+        }
+    };
+    
+    const handleRedo = () => {
+        const operation = undoRedoManager.redo();
+        if (operation) {
+            if (operation.type === 'stroke') {
+                // Add stroke back
+                const strokes = drawingEngine.getStrokes();
+                strokes.push(operation.stroke);
+                drawingEngine.setStrokes(strokes);
+            } else if (operation.type === 'fill') {
+                // Re-apply fill
+                const canvas = document.querySelector('canvas[style*="z-index: 100"]') as HTMLCanvasElement;
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    if (ctx && operation.imageData) {
+                        ctx.putImageData(operation.imageData, operation.bounds.x, operation.bounds.y);
+                    }
+                }
+            }
+        }
+    };
+    
+    // Save PNG handler
+    const handleSave = () => {
+        // Get canvas from TrackingLayer
+        const canvas = document.querySelector('canvas[style*="z-index: 100"]') as HTMLCanvasElement;
+        if (!canvas) return;
+        
+        // Create download link
+        canvas.toBlob((blob) => {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `draw-in-the-air-${Date.now()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 'image/png');
+    };
+    
+    // Get current tool state
+    const activeTool = paintToolsManager.getTool();
+    const canUndo = undoRedoManager.canUndo();
+    const canRedo = undoRedoManager.canRedo();
+    const flags = featureFlags.getFlags();
 
     const penDown = frameData?.penDown ?? false;
 
@@ -140,6 +291,11 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
 
     return (
         <>
+            {/* Debug HUD - shown when ?debug=freepaint */}
+            {showDebug && (
+                <FreePaintDebugHUD metrics={debugMetrics} />
+            )}
+
             {/* Top Left - Mode indicator */}
             <div style={{
                 position: 'absolute',
@@ -287,7 +443,7 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
                 </FloatingTool>
             </div>
 
-            {/* Bottom Center - Brush Preview + Clear (responsive) */}
+            {/* Bottom Center - Toolbar (responsive) */}
             <div style={{
                 position: 'absolute',
                 bottom: isCompact ? hudSpacing : '32px',
@@ -300,10 +456,154 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
                 <FloatingTool style={{ padding: isCompact ? '10px 16px' : '18px 28px' }} compact={isCompact}>
                     <div style={{
                         display: 'flex',
-                        gap: isCompact ? '12px' : '20px',
+                        gap: isCompact ? '8px' : '12px',
                         alignItems: 'center',
-                        flexWrap: 'nowrap'
+                        flexWrap: 'wrap',
+                        justifyContent: 'center'
                     }}>
+                        {/* Tool Selection - AIR PAINT PRO */}
+                        {flags.airPaintEnabled && (
+                            <>
+                                <div style={{
+                                    display: 'flex',
+                                    gap: isCompact ? '4px' : '6px',
+                                    padding: isCompact ? '6px' : '8px',
+                                    background: 'rgba(255,255,255,0.08)',
+                                    borderRadius: isCompact ? '10px' : '12px',
+                                    border: '1px solid rgba(255,255,255,0.15)'
+                                }}>
+                                    {(['brush', 'eraser', 'fill'] as PaintTool[]).map(tool => (
+                                        <button
+                                            key={tool}
+                                            onClick={() => handleToolSelect(tool)}
+                                            title={tool.charAt(0).toUpperCase() + tool.slice(1)}
+                                            style={{
+                                                width: isCompact ? '36px' : '44px',
+                                                height: isCompact ? '36px' : '44px',
+                                                borderRadius: '8px',
+                                                background: activeTool === tool
+                                                    ? 'rgba(255,255,255,0.25)'
+                                                    : 'rgba(255,255,255,0.08)',
+                                                border: activeTool === tool
+                                                    ? '2px solid rgba(255,255,255,0.7)'
+                                                    : '1px solid rgba(255,255,255,0.2)',
+                                                color: '#fff',
+                                                cursor: 'pointer',
+                                                fontSize: isCompact ? '1rem' : '1.2rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                transition: 'all 0.2s ease',
+                                                transform: activeTool === tool ? 'scale(1.1)' : 'scale(1)'
+                                            }}
+                                        >
+                                            {tool === 'brush' && '🖌️'}
+                                            {tool === 'eraser' && '🧹'}
+                                            {tool === 'fill' && '🪣'}
+                                        </button>
+                                    ))}
+                                </div>
+                                
+                                {/* Divider */}
+                                <div style={{
+                                    width: '1px',
+                                    height: '40px',
+                                    background: 'rgba(255,255,255,0.2)'
+                                }} />
+                                
+                                {/* Undo/Redo */}
+                                <div style={{
+                                    display: 'flex',
+                                    gap: isCompact ? '4px' : '6px'
+                                }}>
+                                    <button
+                                        onClick={handleUndo}
+                                        disabled={!canUndo}
+                                        title="Undo"
+                                        style={{
+                                            width: isCompact ? '36px' : '44px',
+                                            height: isCompact ? '36px' : '44px',
+                                            borderRadius: '8px',
+                                            background: canUndo
+                                                ? 'rgba(255,255,255,0.15)'
+                                                : 'rgba(255,255,255,0.05)',
+                                            border: '1px solid rgba(255,255,255,0.2)',
+                                            color: canUndo ? '#fff' : 'rgba(255,255,255,0.3)',
+                                            cursor: canUndo ? 'pointer' : 'not-allowed',
+                                            fontSize: isCompact ? '1rem' : '1.2rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            transition: 'all 0.2s ease',
+                                            opacity: canUndo ? 1 : 0.5
+                                        }}
+                                    >
+                                        ↶
+                                    </button>
+                                    <button
+                                        onClick={handleRedo}
+                                        disabled={!canRedo}
+                                        title="Redo"
+                                        style={{
+                                            width: isCompact ? '36px' : '44px',
+                                            height: isCompact ? '36px' : '44px',
+                                            borderRadius: '8px',
+                                            background: canRedo
+                                                ? 'rgba(255,255,255,0.15)'
+                                                : 'rgba(255,255,255,0.05)',
+                                            border: '1px solid rgba(255,255,255,0.2)',
+                                            color: canRedo ? '#fff' : 'rgba(255,255,255,0.3)',
+                                            cursor: canRedo ? 'pointer' : 'not-allowed',
+                                            fontSize: isCompact ? '1rem' : '1.2rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            transition: 'all 0.2s ease',
+                                            opacity: canRedo ? 1 : 0.5
+                                        }}
+                                    >
+                                        ↷
+                                    </button>
+                                </div>
+                                
+                                {/* Divider */}
+                                <div style={{
+                                    width: '1px',
+                                    height: '40px',
+                                    background: 'rgba(255,255,255,0.2)'
+                                }} />
+                                
+                                {/* Save */}
+                                <button
+                                    onClick={handleSave}
+                                    title="Save as PNG"
+                                    style={{
+                                        width: isCompact ? '36px' : '44px',
+                                        height: isCompact ? '36px' : '44px',
+                                        borderRadius: '8px',
+                                        background: 'rgba(0, 245, 212, 0.2)',
+                                        border: '1px solid rgba(0, 245, 212, 0.4)',
+                                        color: '#00f5d4',
+                                        cursor: 'pointer',
+                                        fontSize: isCompact ? '1rem' : '1.2rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                >
+                                    💾
+                                </button>
+                                
+                                {/* Divider */}
+                                <div style={{
+                                    width: '1px',
+                                    height: '40px',
+                                    background: 'rgba(255,255,255,0.2)'
+                                }} />
+                            </>
+                        )}
+                        
                         {/* Brush preview - hidden on very small screens */}
                         {!isLandscapePhone && (
                             <div style={{
@@ -321,14 +621,14 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
                                     fontSize: isCompact ? '0.7rem' : '0.85rem',
                                     fontWeight: 500
                                 }}>
-                                    Brush
+                                    {activeTool === 'brush' ? 'Brush' : activeTool === 'eraser' ? 'Eraser' : 'Fill'}
                                 </span>
                                 <div style={{
                                     width: `${Math.min(activeSize * (isCompact ? 1 : 1.5), isCompact ? 32 : 48)}px`,
                                     height: `${Math.min(activeSize * (isCompact ? 1 : 1.5), isCompact ? 32 : 48)}px`,
                                     borderRadius: '50%',
-                                    background: activeColor,
-                                    boxShadow: `0 0 25px ${activeColor}88, 0 0 50px ${activeColor}44`,
+                                    background: activeTool === 'eraser' ? '#ff4444' : activeColor,
+                                    boxShadow: `0 0 25px ${activeTool === 'eraser' ? '#ff4444' : activeColor}88, 0 0 50px ${activeTool === 'eraser' ? '#ff4444' : activeColor}44`,
                                     border: '2px solid rgba(255,255,255,0.3)',
                                     transition: 'all 0.3s ease',
                                     transform: penDown ? 'scale(1.1)' : 'scale(1)'

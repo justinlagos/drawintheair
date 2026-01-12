@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { TrackingLayer, type TrackingFrameData } from './features/tracking/TrackingLayer';
 import { FreePaintMode } from './features/modes/FreePaintMode';
 import { freePaintLogic } from './features/modes/freePaintLogic';
+import { freePaintProManager } from './features/modes/freePaintProManager';
 import { PreWritingMode } from './features/modes/PreWritingMode';
 import { preWritingLogic } from './features/modes/preWriting/preWritingLogic';
 import { BubbleCalibration } from './features/modes/calibration/BubbleCalibration';
@@ -190,8 +191,12 @@ function App() {
               
               {/* Magic Cursor - shows pen state */}
               <MagicCursor
-                x={indexTip?.x ?? 0.5}
-                y={indexTip?.y ?? 0.5}
+                x={gameMode === 'free' && flags.airPaintEnabled
+                  ? (freePaintProManager.getLastRenderPoint()?.x ?? indexTip?.x ?? 0.5)
+                  : (indexTip?.x ?? 0.5)}
+                y={gameMode === 'free' && flags.airPaintEnabled
+                  ? (freePaintProManager.getLastRenderPoint()?.y ?? indexTip?.y ?? 0.5)
+                  : (indexTip?.y ?? 0.5)}
                 active={!!hasHand}
                 penDown={penState === PenState.DOWN}
                 confidence={confidence}

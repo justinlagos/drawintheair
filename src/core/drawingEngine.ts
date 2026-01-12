@@ -348,8 +348,16 @@ export class DrawingEngine {
                 this.renderGlow(ctx, stroke, width, height, perfConfig);
             }
 
+            // Check if stroke is eraser (could be stored as metadata, for now check color)
+            const isEraser = stroke.color === '#eraser' || (stroke as any).isEraser === true;
+
+            // Render glow layer (only if visual quality is high or medium and not eraser)
+            if (perfConfig.visualQuality === 'high' && !isEraser) {
+                this.renderGlow(ctx, stroke, width, height, perfConfig);
+            }
+
             // Render main stroke with smooth curves
-            this.renderStroke(ctx, stroke, width, height, perfConfig);
+            this.renderStroke(ctx, stroke, width, height, perfConfig, isEraser);
         }
     }
 
@@ -389,9 +397,17 @@ export class DrawingEngine {
         stroke: Stroke,
         width: number,
         height: number,
-        perfConfig: { shadowBlurScale: number }
+        perfConfig: { shadowBlurScale: number },
+        isEraser: boolean = false
     ): void {
         const points = stroke.points;
+        
+        // Set composite mode for eraser
+        if (isEraser) {
+            ctx.globalCompositeOperation = 'destination-out';
+        } else {
+            ctx.globalCompositeOperation = 'source-over';
+        }
 
         // For very short strokes, just draw a simple line
         if (points.length < 3) {
@@ -518,6 +534,28 @@ export class DrawingEngine {
 
     getStrokeCount(): number {
         return this.strokes.length;
+    }
+    
+    /**
+     * Get current stroke (for undo system)
+     */
+    getCurrentStroke(): Stroke | null {
+        return this.currentStroke;
+    }
+    
+    /**
+     * Get all strokes (for undo/redo)
+     */
+    getStrokes(): Stroke[] {
+        return [...this.strokes];
+    }
+    
+    /**
+     * Set strokes (for undo/redo restore)
+     */
+    setStrokes(strokes: Stroke[]): void {
+        this.strokes = [...strokes];
+        this.currentStroke = null;
     }
 }
 

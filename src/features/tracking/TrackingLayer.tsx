@@ -68,6 +68,11 @@ export interface TrackingFrameData {
     // Enhanced features
     predictedPoint: { x: number; y: number } | null;
     pressValue: number;
+    
+    // Performance metrics (for debug HUD)
+    renderFps?: number;
+    detectFps?: number;
+    detectionLatencyMs?: number;
 }
 
 interface TrackingLayerProps {
@@ -324,6 +329,13 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                     
                     // Update frame data ref (no React state update here)
                     const frameData = convertToFrameData(interactionState);
+                    // Add FPS metrics to frame data
+                    const avgRenderFps = renderFpsHistory.current.length > 0
+                        ? renderFpsHistory.current[renderFpsHistory.current.length - 1]
+                        : 60;
+                    frameData.renderFps = avgRenderFps;
+                    frameData.detectFps = detectFps;
+                    frameData.detectionLatencyMs = detectionLatency;
                     lastFrameDataRef.current = frameData;
                     
                     // Update debug metrics
