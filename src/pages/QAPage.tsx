@@ -357,4 +357,4 @@ export const QAPage = () => {
             </div>
         </div>
     );
-};
+}

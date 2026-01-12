@@ -14,6 +14,8 @@ import { Accessibility } from './pages/Accessibility.tsx'
 import { Training } from './pages/Training.tsx'
 import { Admin } from './pages/Admin.tsx'
 import { QAPage } from './pages/QAPage.tsx'
+import { SchoolPilot } from './pages/SchoolPilot.tsx'
+import { ParentAccess } from './pages/ParentAccess.tsx'
 import { initAnalytics } from './lib/analytics.ts'
 
 // Helper function to determine route from pathname
@@ -33,6 +35,8 @@ function getRouteFromPath(path: string, hash: string): string {
   if (path === '/faq') return 'faq';
   if (path === '/schools/training') return 'training';
   if (path === '/schools') return 'schools';
+  if (path === '/school') return 'school';
+  if (path === '/parent') return 'parent';
   if (path === '/privacy') return 'privacy';
   if (path === '/terms') return 'terms';
   if (path === '/cookies') return 'cookies';
@@ -128,6 +132,14 @@ function Root() {
 
   if (route === 'qa') {
     return <QAPage />;
+  }
+
+  if (route === 'school') {
+    return <SchoolPilot />;
+  }
+
+  if (route === 'parent') {
+    return <ParentAccess />;
   }
 
   return <Landing />;
