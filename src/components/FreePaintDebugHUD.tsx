@@ -34,10 +34,9 @@ export interface FreePaintDebugMetrics {
 
 interface FreePaintDebugHUDProps {
     metrics: FreePaintDebugMetrics | null;
-    onRecordMetrics?: () => void;
 }
 
-export const FreePaintDebugHUD = ({ metrics, onRecordMetrics }: FreePaintDebugHUDProps) => {
+export const FreePaintDebugHUD = ({ metrics }: FreePaintDebugHUDProps) => {
     const [isRecording, setIsRecording] = useState(false);
     const recordingStartTimeRef = useRef<number>(0);
     const metricsHistoryRef = useRef<FreePaintDebugMetrics[]>([]);
@@ -177,8 +176,7 @@ export const FreePaintDebugHUD = ({ metrics, onRecordMetrics }: FreePaintDebugHU
                     fontSize: '11px',
                     fontWeight: 'bold',
                     borderTop: '1px solid rgba(0, 255, 0, 0.2)',
-                    paddingTop: '8px',
-                    marginTop: '8px'
+                    paddingTop: '8px'
                 }}
             >
                 {isRecording ? '⏹ Stop Recording' : '⏺ Record 10s Metrics'}
