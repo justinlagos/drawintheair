@@ -88,7 +88,22 @@ class FeatureFlagsManager {
             if (debugFlags) {
                 this.parseQueryFlags(debugFlags);
             }
+            
+            // Force enable AIR PAINT PRO if ?airpaint=true
+            if (params.get('airpaint') === 'true') {
+                this.flags.airPaintEnabled = true;
+                this.flags.layersEnabled = true;
+                this.flags.fillEnabled = true;
+                console.log('[FeatureFlags] AIR PAINT PRO forced enabled via URL');
+            }
         }
+        
+        // Log AIR PAINT PRO status
+        console.log('[FeatureFlags] AIR PAINT PRO:', {
+            airPaintEnabled: this.flags.airPaintEnabled,
+            layersEnabled: this.flags.layersEnabled,
+            fillEnabled: this.flags.fillEnabled
+        });
     }
 
     /**
@@ -100,8 +115,16 @@ class FeatureFlagsManager {
             if (stored) {
                 const parsed = JSON.parse(stored) as Partial<FeatureFlags>;
                 // Only load valid flags, merge with defaults
+                // BUT: Don't override AIR PAINT PRO flags if they're explicitly set in defaults
                 Object.keys(DEFAULT_FLAGS).forEach(key => {
                     const flagKey = key as keyof FeatureFlags;
+                    // Skip AIR PAINT PRO flags - always use defaults
+                    if (flagKey === 'airPaintEnabled' || flagKey === 'layersEnabled' || 
+                        flagKey === 'fillEnabled' || flagKey === 'shapesEnabled' || 
+                        flagKey === 'selectionEnabled') {
+                        // Use default value (don't load from storage)
+                        return;
+                    }
                     if (parsed[flagKey] === true || parsed[flagKey] === false) {
                         this.flags[flagKey] = parsed[flagKey] as boolean;
                     }

@@ -279,6 +279,16 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
     const canUndo = undoRedoManager.canUndo();
     const canRedo = undoRedoManager.canRedo();
     const flags = featureFlags.getFlags();
+    
+    // Debug: Log flags on mount
+    useEffect(() => {
+        console.log('[FreePaintMode] Flags:', {
+            airPaintEnabled: flags.airPaintEnabled,
+            layersEnabled: flags.layersEnabled,
+            fillEnabled: flags.fillEnabled,
+            activeTool
+        });
+    }, [flags.airPaintEnabled, flags.layersEnabled, flags.fillEnabled, activeTool]);
 
     const penDown = frameData?.penDown ?? false;
 
