@@ -8,6 +8,8 @@
 import type { FreePaintDebugMetrics } from '../../components/FreePaintDebugHUD';
 import { drawingEngine } from '../../core/drawingEngine';
 import type { TrackingFrameData } from '../tracking/TrackingLayer';
+import { paintToolsManager } from './freePaintTools';
+import { undoRedoManager } from './freePaintUndo';
 
 class FreePaintMetricsTracker {
     private metrics: FreePaintDebugMetrics = {
@@ -59,10 +61,6 @@ class FreePaintMetricsTracker {
         const strokeCount = drawingEngine.getStrokeCount();
         // Estimate stroke points (rough - actual count would require exposing internal state)
         const estimatedStrokePoints = strokeCount * 50; // Rough estimate
-
-        // Import managers for metrics
-        const { paintToolsManager } = require('./freePaintTools');
-        const { undoRedoManager } = require('./freePaintUndo');
 
         this.metrics = {
             ...this.metrics, // Preserve FPS metrics updated via updateFpsMetrics

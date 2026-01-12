@@ -8,7 +8,6 @@
  */
 
 import { freePaintProManager } from './freePaintProManager';
-import { perf } from '../../core/perf';
 
 interface PerformanceState {
     renderFps: number;
@@ -78,7 +77,6 @@ export class PerformanceProtection {
         freePaintProManager.setMaxDPR(1); // Cap at 1x DPR
         
         // Disable glow effects (via perf config)
-        const currentConfig = perf.getConfig();
         // Note: perf config doesn't directly expose glow, but we can reduce visual quality
         // This would need to be integrated with perf system
         

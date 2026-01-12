@@ -18,7 +18,6 @@ import { featureFlags } from '../../core/featureFlags';
 import { paintToolsManager } from './freePaintTools';
 import { undoRedoManager } from './freePaintUndo';
 import { fillBucket } from './freePaintFill';
-import { zeroLagStrokeRenderer } from './freePaintZeroLag';
 import { performanceProtection } from './freePaintPerformance';
 
 export const freePaintLogic = (

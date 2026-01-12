@@ -16,8 +16,6 @@ import type { TrackingFrameData } from '../tracking/TrackingLayer';
 class FreePaintProManager {
     private renderPointSmoother: RenderPointSmoother | null = null;
     private layeredCanvasSystem: LayeredCanvasSystem | null = null;
-    private canvasWidth: number = 1920;
-    private canvasHeight: number = 1080;
     private lastRenderPoint: { x: number; y: number } | null = null;
     private lastFilteredPoint: { x: number; y: number } | null = null;
     
@@ -25,9 +23,6 @@ class FreePaintProManager {
      * Initialize AIR PAINT PRO features if flags are enabled
      */
     initialize(width: number, height: number, container?: HTMLElement): void {
-        this.canvasWidth = width;
-        this.canvasHeight = height;
-        
         const flags = featureFlags.getFlags();
         
         // Initialize render point smoother if airPaintEnabled
@@ -48,10 +43,7 @@ class FreePaintProManager {
     /**
      * Resize all systems
      */
-    resize(width: number, height: number, container?: HTMLElement): void {
-        this.canvasWidth = width;
-        this.canvasHeight = height;
-        
+    resize(width: number, height: number): void {
         if (this.renderPointSmoother) {
             this.renderPointSmoother.setCanvasSize(width, height);
         }

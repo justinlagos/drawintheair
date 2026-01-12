@@ -19,7 +19,6 @@ import { freePaintProManager } from './freePaintProManager';
 import { featureFlags } from '../../core/featureFlags';
 import { paintToolsManager, type PaintTool } from './freePaintTools';
 import { undoRedoManager } from './freePaintUndo';
-import { fillBucket } from './freePaintFill';
 
 // Responsive breakpoint hook
 const useResponsiveLayout = () => {
@@ -114,13 +113,13 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
     const isCompact = isMobile || isTabletSmall || isLandscapePhone;
 
     // Check if debug mode is enabled
-    const [showDebug, setShowDebug] = useState(() => {
+    const showDebug = (() => {
         if (typeof window !== 'undefined') {
             const params = new URLSearchParams(window.location.search);
             return params.get('debug') === 'freepaint';
         }
         return false;
-    });
+    })();
 
     // Track metrics for debug HUD
     const [debugMetrics, setDebugMetrics] = useState(freePaintMetricsTracker.getMetrics());
