@@ -29,16 +29,11 @@ type AppState = 'onboarding' | 'menu' | 'game';
 
 // Debug: Allow URL params to skip to specific screens
 const getInitialState = (): { appState: AppState; gameMode: GameMode } => {
-  const path = window.location.pathname;
   const params = new URLSearchParams(window.location.search);
   const screen = params.get('screen');
   const mode = params.get('mode') as GameMode;
 
-  // If coming from /play or /onboarding, start at onboarding
-  if (path === '/play' || path === '/onboarding') {
-    return { appState: 'onboarding', gameMode: 'free' };
-  }
-
+  // Check screen param first - allows direct access to any screen
   if (screen === 'menu') return { appState: 'menu', gameMode: 'free' };
   if (screen === 'game') {
     const validMode = (mode === 'free' || mode === 'pre-writing' || mode === 'calibration' || mode === 'sort-and-place' || mode === 'word-search') ? mode : 'free';
@@ -47,6 +42,8 @@ const getInitialState = (): { appState: AppState; gameMode: GameMode } => {
       gameMode: validMode
     };
   }
+  
+  // Default to onboarding for /play or /onboarding paths
   return { appState: 'onboarding', gameMode: 'free' };
 };
 
