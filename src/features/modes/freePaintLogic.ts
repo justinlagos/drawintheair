@@ -150,7 +150,6 @@ export const freePaintLogic = (
     }
 
     // Phase 4: Layered canvas rendering
-    const paintFlags = featureFlags.getFlags();
     if (paintFlags.layersEnabled && freePaintProManager.isLayeredEnabled()) {
         // Use layered canvas system
         const previewCtx = freePaintProManager.getPreviewContext();
