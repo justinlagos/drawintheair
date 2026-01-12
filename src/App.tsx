@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { TrackingLayer, type TrackingFrameData } from './features/tracking/TrackingLayer';
 import { FreePaintMode } from './features/modes/FreePaintMode';
 import { freePaintLogic } from './features/modes/freePaintLogic';
-import { freePaintProManager } from './features/modes/freePaintProManager';
 import { PreWritingMode } from './features/modes/PreWritingMode';
 import { preWritingLogic } from './features/modes/preWriting/preWritingLogic';
 import { BubbleCalibration } from './features/modes/calibration/BubbleCalibration';
