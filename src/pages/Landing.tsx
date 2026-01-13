@@ -3,6 +3,7 @@ import { HeaderNav } from '../components/landing/HeaderNav';
 import { HeroSection } from '../components/landing/HeroSection';
 import { HowItWorks } from '../components/landing/HowItWorks';
 import { ModesGrid } from '../components/landing/ModesGrid';
+import { SocialProof } from '../components/landing/SocialProof';
 import { KidsImageSection } from '../components/landing/KidsImageSection';
 import { EYFSAlignment } from '../components/landing/EYFSAlignment';
 import { ForSchools } from '../components/landing/ForSchools';
@@ -64,6 +65,7 @@ export const Landing: React.FC = () => {
       <HeroSection onGetSchoolPack={handleGetSchoolPack} />
       <HowItWorks />
       <ModesGrid />
+      <SocialProof />
       <KidsImageSection onGetSchoolPack={handleGetSchoolPack} />
       <EYFSAlignment />
       <ForSchools onRequestSchoolPack={handleGetSchoolPack} />

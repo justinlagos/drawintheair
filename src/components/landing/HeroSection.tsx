@@ -2,25 +2,42 @@ import React from 'react';
 import './landing.css';
 
 interface HeroSectionProps {
-  onGetSchoolPack: () => void;
+  onGetSchoolPack?: () => void;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({ onGetSchoolPack }) => {
   return (
     <section className="landing-hero">
       <div className="landing-hero-container">
-        <div className="landing-hero-left">
+        {/* Left Column: Text Content */}
+        <div className="landing-hero-content">
+          {/* Trust Badge */}
+          <div className="landing-hero-badge">
+            <span className="badge-icon">✓</span>
+            <span>EYFS Aligned</span>
+            <span className="badge-separator">•</span>
+            <span>Free for Families</span>
+          </div>
+          
+          {/* Main Headline */}
           <h1 className="landing-hero-headline">
-            Draw, trace, and learn in the air
+            Screen Time That 
+            <span className="headline-highlight"> Makes You Smile</span>
           </h1>
+          
+          {/* Subheadline */}
           <p className="landing-hero-subhead">
-            Camera-based activities for early years. Built for EYFS motor skills, early literacy, and inclusive play.
+            Watch your child practice letters, numbers, and creativity using just their hands. 
+            No touchscreen. No controller. Just natural movement and imagination.
           </p>
-
-          <div className="landing-hero-buttons">
-            <button
+          
+          {/* CTA Buttons */}
+          <div className="landing-hero-ctas">
+            <a 
+              href="/demo"
               className="landing-btn landing-btn-primary landing-btn-large"
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
                 if (typeof window !== 'undefined' && (window as any).analytics) {
                   (window as any).analytics.logEvent('demo_try_click', {
                     source: 'hero',
@@ -29,62 +46,69 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGetSchoolPack }) => 
                 window.location.pathname = '/demo';
               }}
             >
-              Try the demo
-            </button>
-            <button
+              <span className="btn-icon">▶</span>
+              Try Free Now
+            </a>
+            <a 
+              href="/schools"
               className="landing-btn landing-btn-secondary landing-btn-large"
-              onClick={onGetSchoolPack}
+              onClick={(e) => {
+                e.preventDefault();
+                if (onGetSchoolPack) {
+                  onGetSchoolPack();
+                } else {
+                  window.location.pathname = '/schools';
+                }
+              }}
             >
-              Get the school pilot pack
-            </button>
+              For Schools
+            </a>
           </div>
-
-          <div className="landing-hero-trust-strip">
-            <span className="landing-hero-trust-pill">No child accounts</span>
-            <span className="landing-hero-trust-pill">Works on a laptop and webcam</span>
-            <span className="landing-hero-trust-pill">EYFS aligned activities</span>
+          
+          {/* Trust Indicators */}
+          <div className="landing-hero-trust">
+            <div className="trust-item">
+              <span className="trust-icon">🔒</span>
+              <span>No data stored</span>
+            </div>
+            <div className="trust-item">
+              <span className="trust-icon">💳</span>
+              <span>No credit card</span>
+            </div>
+            <div className="trust-item">
+              <span className="trust-icon">⚡</span>
+              <span>Works instantly</span>
+            </div>
           </div>
         </div>
-        <div className="landing-hero-right" aria-hidden="true">
-          <div className="landing-hero-gallery">
-            <div className="landing-hero-card landing-hero-card-top">
-              <img
-                src="https://i.postimg.cc/hj6Bd7pT/teacher_and_son.png"
-                srcSet="https://i.postimg.cc/hj6Bd7pT/teacher_and_son.png 1x, https://i.postimg.cc/hj6Bd7pT/teacher_and_son.png 2x"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 40vw, 420px"
-                alt=""
-                className="landing-hero-image landing-hero-image-main"
+        
+        {/* Right Column: Visual Demo */}
+        <div className="landing-hero-visual">
+          {/* Animated demo or video placeholder */}
+          <div className="hero-demo-container">
+            <div className="hero-demo-screen">
+              {/* Fallback static image */}
+              <img 
+                src="https://i.postimg.cc/hj6Bd7pT/teacher_and_son.png" 
+                alt="Child drawing in the air" 
+                className="hero-demo-image"
                 loading="eager"
                 decoding="async"
               />
-              <div className="landing-hero-overlay" />
             </div>
-            <div className="landing-hero-card landing-hero-card-middle">
-              <img
-                src="https://i.postimg.cc/4NzgYytR/a_kid.png"
-                srcSet="https://i.postimg.cc/4NzgYytR/a_kid.png 1x, https://i.postimg.cc/4NzgYytR/a_kid.png 2x"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 30vw, 280px"
-                alt=""
-                className="landing-hero-image landing-hero-image-kid"
-                loading="lazy"
-                decoding="async"
-              />
-              <div className="landing-hero-overlay" />
-            </div>
-            <div className="landing-hero-card landing-hero-card-bottom">
-              <img
-                src="https://i.postimg.cc/T13pVFVY/image-gen-(3).png"
-                srcSet="https://i.postimg.cc/T13pVFVY/image-gen-(3).png 1x, https://i.postimg.cc/T13pVFVY/image-gen-(3).png 2x"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 30vw, 280px"
-                alt=""
-                className="landing-hero-image landing-hero-image-classroom"
-                loading="lazy"
-                decoding="async"
-              />
-              <div className="landing-hero-overlay" />
-            </div>
+            
+            {/* Floating UI Elements (decorative) */}
+            <div className="hero-floating-element hero-float-1">🫧</div>
+            <div className="hero-floating-element hero-float-2">🎨</div>
+            <div className="hero-floating-element hero-float-3">✏️</div>
           </div>
         </div>
+      </div>
+      
+      {/* Scroll Indicator */}
+      <div className="landing-hero-scroll">
+        <span>Scroll to explore</span>
+        <div className="scroll-arrow">↓</div>
       </div>
     </section>
   );

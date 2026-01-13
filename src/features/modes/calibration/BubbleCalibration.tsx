@@ -23,7 +23,7 @@ import {
     getCurrentLevel,
     getCurrentGoal,
     hasReachedGoal,
-    type Level
+    type BubbleLevel
 } from './bubbleCalibrationLogic';
 import { Celebration } from '../../../components/Celebration';
 import { earnSticker } from '../../../core/stickerBook';
@@ -73,7 +73,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
     const [timeRemaining, setTimeRemaining] = useState(GAME_DURATION);
     const [showMilestoneCelebration, setShowMilestoneCelebration] = useState(false);
     const [showEndModal, setShowEndModal] = useState(false);
-    const [level, setLevel] = useState<Level>(1);
+    const [level, setLevel] = useState<BubbleLevel>(1);
     const [autoAdvanceScheduled, setAutoAdvanceScheduled] = useState(false);
     const [encouragementMessage, setEncouragementMessage] = useState<string | null>(null);
     
@@ -83,7 +83,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
 
     // Initialize game when level changes
     useEffect(() => {
-        startBubbleGame(level as Level);
+        startBubbleGame(level as BubbleLevel);
         // Reset UI state when level changes
         setShowEndModal(false);
         setScore(0);
@@ -149,11 +149,11 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
                 if (goalReached && featureFlags.getFlag('stickerRewards')) {
                     earnSticker('bubble-milestone');
                 }
-                if (goalReached && currentLevel < 6) {
+                if (goalReached && currentLevel < 3) {
                     setAutoAdvanceScheduled(true);
                     // Show reward, then auto-advance after 1200ms (brief celebration)
                     autoAdvanceTimeout = window.setTimeout(() => {
-                        const nextLevel = (currentLevel + 1) as Level;
+                        const nextLevel = (currentLevel + 1) as BubbleLevel;
                         // Close modal and reset state before advancing
                         setShowEndModal(false);
                         setAutoAdvanceScheduled(false);
@@ -177,7 +177,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
 
     const handleTryAgain = () => {
         // Reset all state and restart game
-        startBubbleGame(level as Level);
+        startBubbleGame(level as BubbleLevel);
         setShowEndModal(false);
         setScore(0);
         setTimeRemaining(GAME_DURATION);
@@ -196,7 +196,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
     };
 
     const goalReached = hasReachedGoal();
-    const isLastLevel = level === 6;
+    const isLastLevel = level === 3;
 
     // Responsive sizing
     const hudSpacing = isCompact ? '12px' : '20px';
@@ -484,7 +484,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
                             margin: `0 0 ${isCompact ? '10px' : '16px'} 0`
                         }}>
                             {goalReached 
-                                ? (isLastLevel ? 'All Levels Complete!' : 'Level Complete!')
+                                ? (isLastLevel ? 'All Levels Complete! 🎉' : 'Level Complete!')
                                 : 'Nice Try!'
                             }
                         </h2>
@@ -502,7 +502,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
                             )}
                             {goalReached && isLastLevel && (
                                 <div style={{ marginTop: '12px', fontSize: '1.1rem', color: '#FFD93D' }}>
-                                    Great job completing all levels! 🎉
+                                    Amazing! You completed all 3 levels! 🌟
                                 </div>
                             )}
                         </p>

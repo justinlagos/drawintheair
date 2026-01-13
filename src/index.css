@@ -4,49 +4,155 @@
   line-height: 1.5;
   font-weight: 400;
 
-  /* Core Visual System - Dark Background Dominant */
+  /* ===========================================
+     COLOR SYSTEM
+     =========================================== */
+  
+  /* Primary Backgrounds */
   --bg-color: #010C24;
   --bg-gradient: #010C24;
-
-  /* Primary Accent - Warm Yellow (Joy + Reward) */
+  --color-bg-deep: #010C24;
+  --color-bg-dark: #0A1628;
+  --color-bg-card: rgba(255, 255, 255, 0.03);
+  --color-bg-card-hover: rgba(255, 255, 255, 0.06);
+  
+  /* Light Backgrounds (for contrast sections) */
+  --color-bg-light: #F8FAFC;
+  --color-bg-light-alt: #F0F9FF;
+  
+  /* Primary Accent (Yellow - Joy, CTA) */
   --primary: #FFD93D;
   --primary-accent: #FFD93D;
-
-  /* Secondary Accent - Neon Magenta (Focus + Energy) */
-  --secondary: #DE3163;
-  --secondary-accent: #DE3163;
-
-  /* Support Tones - Cyan/Electric Blue for Interaction Hints */
+  --color-primary: #FFD93D;
+  --color-primary-hover: #FFE566;
+  --color-primary-text: #010C24;
+  
+  /* Secondary Accent (Cyan - Interaction) */
   --tertiary: #00E5FF;
   --accent: #00E5FF;
+  --color-secondary: #00E5FF;
+  --color-secondary-hover: #33EBFF;
+  
+  /* Tertiary (Pink - Celebration) */
+  --secondary: #DE3163;
+  --secondary-accent: #DE3163;
+  --color-tertiary: #FF6B9D;
+  
+  /* Success (Green - Trust, Safety) */
+  --color-success: #00F5A0;
+  --color-success-bg: rgba(0, 245, 160, 0.15);
+  
+  /* Warning */
+  --color-warning: #FFB74D;
+  
+  /* Error */
+  --color-error: #FF5252;
+  
+  /* Text Colors */
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.75);
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: rgba(255, 255, 255, 0.75);
+  --color-text-muted: rgba(255, 255, 255, 0.5);
+  --color-text-dark: #1E293B;
+  --color-text-dark-secondary: #64748B;
+  
+  /* Borders */
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-border-hover: rgba(255, 255, 255, 0.2);
+  --color-border-accent: rgba(255, 217, 61, 0.3);
+  --glass-border: rgba(255, 255, 255, 0.1);
 
   /* Glassmorphism - Subtle depth panels */
   --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
   --blur-amount: 20px;
 
-  /* Typography */
-  --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.75);
-
-  /* Responsive Typography Scale */
+  /* ===========================================
+     TYPOGRAPHY
+     =========================================== */
+  
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-family-display: 'Outfit', var(--font-family);
+  
+  /* Fluid Font Sizes */
   --font-size-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
-  --font-size-sm: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);
+  --font-size-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
   --font-size-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
-  --font-size-lg: clamp(1.125rem, 1rem + 0.625vw, 1.5rem);
-  --font-size-xl: clamp(1.25rem, 1.1rem + 0.75vw, 1.875rem);
-  --font-size-2xl: clamp(1.5rem, 1.3rem + 1vw, 2.25rem);
-  --font-size-3xl: clamp(1.875rem, 1.5rem + 1.875vw, 3rem);
-  --font-size-4xl: clamp(2.25rem, 1.75rem + 2.5vw, 3.75rem);
+  --font-size-lg: clamp(1.125rem, 1rem + 0.5vw, 1.35rem);
+  --font-size-xl: clamp(1.25rem, 1.1rem + 0.75vw, 1.75rem);
+  --font-size-2xl: clamp(1.5rem, 1.25rem + 1.25vw, 2.25rem);
+  --font-size-3xl: clamp(2rem, 1.5rem + 2.5vw, 3.5rem);
+  --font-size-4xl: clamp(2.5rem, 2rem + 3vw, 4.5rem);
+  
+  /* Line Heights */
+  --line-height-tight: 1.1;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.7;
+  
+  /* ===========================================
+     SPACING
+     =========================================== */
+  
+  --spacing-xs: 0.5rem;    /* 8px */
+  --spacing-sm: 1rem;      /* 16px */
+  --spacing-md: 1.5rem;    /* 24px */
+  --spacing-lg: 2rem;      /* 32px */
+  --spacing-xl: 3rem;      /* 48px */
+  --spacing-2xl: 4rem;     /* 64px */
+  --spacing-3xl: 6rem;     /* 96px */
+  
+  /* Section Padding (Responsive) */
+  --section-padding-y: clamp(3rem, 8vh, 6rem);
+  --section-padding-x: clamp(1.5rem, 5vw, 4rem);
+  
+  /* Container */
+  --container-max: 1280px;
+  --container-narrow: 800px;
+  
+  /* ===========================================
+     BORDERS & RADIUS
+     =========================================== */
+  
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+  
+  /* ===========================================
+     SHADOWS
+     =========================================== */
+  
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 40px rgba(255, 217, 61, 0.15);
+  
+  /* ===========================================
+     TRANSITIONS
+     =========================================== */
+  
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 400ms ease;
+  --transition-bounce: 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  
+  /* ===========================================
+     Z-INDEX SCALE
+     =========================================== */
+  
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal-backdrop: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-cursor: 9999;
 
-  /* Responsive Spacing Tokens */
-  --spacing-responsive-xs: clamp(0.25rem, 0.2rem + 0.25vw, 0.5rem);
-  --spacing-responsive-sm: clamp(0.5rem, 0.4rem + 0.5vw, 1rem);
-  --spacing-responsive-md: clamp(1rem, 0.8rem + 1vw, 1.5rem);
-  --spacing-responsive-lg: clamp(1.5rem, 1.2rem + 1.5vw, 2.5rem);
-  --spacing-responsive-xl: clamp(2rem, 1.5rem + 2.5vw, 4rem);
-  --spacing-responsive-2xl: clamp(3rem, 2rem + 5vw, 6rem);
+
 
   /* Container Max Widths */
   --container-xs: 100%;
@@ -85,6 +191,64 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===========================================
+   ACCESSIBILITY STANDARDS
+   =========================================== */
+
+/* Focus States - Always Visible */
+*:focus-visible {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 2px;
+}
+
+/* Skip Link */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1rem 2rem;
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  font-weight: 600;
+  z-index: 9999;
+  border-radius: var(--radius-md);
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Minimum Touch Targets */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Screen Reader Only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ═══════════════════════════════════════════════════════════════

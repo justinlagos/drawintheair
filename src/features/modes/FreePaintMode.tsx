@@ -19,6 +19,8 @@ import { freePaintProManager } from './freePaintProManager';
 import { featureFlags } from '../../core/featureFlags';
 import { paintToolsManager, type PaintTool } from './freePaintTools';
 import { undoRedoManager } from './freePaintUndo';
+import { HybridButton, type HybridButtonRef } from '../../components/HybridButton';
+import { normalizedToCanvas } from '../../core/coordinateUtils';
 
 // Responsive breakpoint hook
 const useResponsiveLayout = () => {
@@ -111,6 +113,12 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
     
     const { isMobile, isTabletSmall, isLandscapePhone } = layout;
     const isCompact = isMobile || isTabletSmall || isLandscapePhone;
+    
+    // Refs for hybrid buttons to enable tracking hover
+    const colorButtonRefs = useRef<Map<string, HybridButtonRef>>(new Map());
+    const brushButtonRefs = useRef<Map<string, HybridButtonRef>>(new Map());
+    const toolButtonRefs = useRef<Map<string, HybridButtonRef>>(new Map());
+    const actionButtonRefs = useRef<Map<string, HybridButtonRef>>(new Map());
 
     // Check if debug mode is enabled
     const showDebug = (() => {
@@ -290,6 +298,74 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
     }, [flags.airPaintEnabled, flags.layersEnabled, flags.fillEnabled, activeTool]);
 
     const penDown = frameData?.penDown ?? false;
+    
+    // Check tracking point against all buttons
+    useEffect(() => {
+        if (!frameData?.filteredPoint) return;
+        
+        const trackingPoint = frameData.filteredPoint;
+        const canvasPoint = normalizedToCanvas(trackingPoint, window.innerWidth, window.innerHeight);
+        
+        // Check color buttons
+        colorButtonRefs.current.forEach((ref, color) => {
+            const button = document.querySelector(`[data-color-button="${color}"]`) as HTMLElement;
+            if (button) {
+                const rect = button.getBoundingClientRect();
+                const isOver = (
+                    canvasPoint.x >= rect.left &&
+                    canvasPoint.x <= rect.right &&
+                    canvasPoint.y >= rect.top &&
+                    canvasPoint.y <= rect.bottom
+                );
+                ref.handleTrackingHover(isOver, canvasPoint);
+            }
+        });
+        
+        // Check brush size buttons
+        brushButtonRefs.current.forEach((ref, size) => {
+            const button = document.querySelector(`[data-brush-button="${size}"]`) as HTMLElement;
+            if (button) {
+                const rect = button.getBoundingClientRect();
+                const isOver = (
+                    canvasPoint.x >= rect.left &&
+                    canvasPoint.x <= rect.right &&
+                    canvasPoint.y >= rect.top &&
+                    canvasPoint.y <= rect.bottom
+                );
+                ref.handleTrackingHover(isOver, canvasPoint);
+            }
+        });
+        
+        // Check tool buttons
+        toolButtonRefs.current.forEach((ref, tool) => {
+            const button = document.querySelector(`[data-tool-button="${tool}"]`) as HTMLElement;
+            if (button) {
+                const rect = button.getBoundingClientRect();
+                const isOver = (
+                    canvasPoint.x >= rect.left &&
+                    canvasPoint.x <= rect.right &&
+                    canvasPoint.y >= rect.top &&
+                    canvasPoint.y <= rect.bottom
+                );
+                ref.handleTrackingHover(isOver, canvasPoint);
+            }
+        });
+        
+        // Check action buttons
+        actionButtonRefs.current.forEach((ref, action) => {
+            const button = document.querySelector(`[data-action-button="${action}"]`) as HTMLElement;
+            if (button) {
+                const rect = button.getBoundingClientRect();
+                const isOver = (
+                    canvasPoint.x >= rect.left &&
+                    canvasPoint.x <= rect.right &&
+                    canvasPoint.y >= rect.top &&
+                    canvasPoint.y <= rect.bottom
+                );
+                ref.handleTrackingHover(isOver, canvasPoint);
+            }
+        });
+    }, [frameData?.filteredPoint]);
 
     // Responsive sizing
     const colorButtonSize = isCompact ? '36px' : '48px';
@@ -357,9 +433,13 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
                         maxWidth: isCompact ? '180px' : 'none'
                     }}>
                         {COLORS.map(color => (
-                            <button
+                            <HybridButton
                                 key={color.value}
+                                ref={el => {
+                                    if (el) colorButtonRefs.current.set(color.value, el);
+                                }}
                                 onClick={() => handleColorChange(color.value)}
+                                isSelected={activeColor === color.value}
                                 title={color.name}
                                 style={{
                                     width: colorButtonSize,
@@ -373,15 +453,25 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
                                     border: activeColor === color.value
                                         ? (isCompact ? '3px solid white' : '4px solid white')
                                         : '2px solid rgba(255,255,255,0.3)',
-                                    cursor: 'pointer',
                                     padding: 0,
-                                    transition: 'all 0.2s ease',
                                     transform: activeColor === color.value ? 'scale(1.15)' : 'scale(1)',
                                     boxShadow: activeColor === color.value
                                         ? `0 0 20px ${color.value}, 0 0 40px ${color.value}88, inset 0 2px 4px rgba(255,255,255,0.3)`
                                         : `0 4px 12px rgba(0,0,0,0.3), inset 0 -2px 4px rgba(0,0,0,0.2)`
                                 }}
-                            />
+                                data-color-button={color.value}
+                            >
+                                {activeColor === color.value && (
+                                    <span style={{ 
+                                        color: color.value === '#ffffff' ? '#000' : '#fff',
+                                        fontSize: '1.2rem',
+                                        position: 'absolute',
+                                        top: '50%',
+                                        left: '50%',
+                                        transform: 'translate(-50%, -50%)'
+                                    }}>✓</span>
+                                )}
+                            </HybridButton>
                         ))}
                     </div>
                 </FloatingTool>
@@ -410,9 +500,13 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
                         alignItems: 'center'
                     }}>
                         {BRUSH_SIZES.map(brush => (
-                            <button
+                            <HybridButton
                                 key={brush.label}
+                                ref={el => {
+                                    if (el) brushButtonRefs.current.set(brush.size.toString(), el);
+                                }}
                                 onClick={() => handleSizeChange(brush.size)}
+                                isSelected={activeSize === brush.size}
                                 style={{
                                     width: brushButtonSize,
                                     height: brushButtonSize,
@@ -425,17 +519,16 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
                                     border: activeSize === brush.size
                                         ? '3px solid rgba(255,255,255,0.7)'
                                         : '2px solid rgba(255,255,255,0.2)',
-                                    cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    transition: 'all 0.2s ease',
                                     transform: activeSize === brush.size ? 'scale(1.1)' : 'scale(1)',
                                     boxShadow: activeSize === brush.size
                                         ? '0 0 20px rgba(255,255,255,0.4), inset 0 2px 4px rgba(255,255,255,0.2)'
                                         : '0 4px 12px rgba(0,0,0,0.3)',
                                     padding: 0
                                 }}
+                                data-brush-button={brush.size}
                             >
                                 <div style={{
                                     width: `${isCompact ? Math.max(brush.displaySize * 0.7, 6) : brush.displaySize}px`,
@@ -446,7 +539,15 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
                                         ? `0 0 15px ${activeColor}`
                                         : 'none'
                                 }} />
-                            </button>
+                                <span style={{ 
+                                    position: 'absolute',
+                                    bottom: '-20px',
+                                    fontSize: '0.75rem',
+                                    color: 'rgba(255,255,255,0.7)'
+                                }}>
+                                    {brush.label}
+                                </span>
+                            </HybridButton>
                         ))}
                     </div>
                 </FloatingTool>
@@ -482,9 +583,13 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
                                     border: '1px solid rgba(255,255,255,0.15)'
                                 }}>
                                     {(['brush', 'eraser', 'fill'] as PaintTool[]).map(tool => (
-                                        <button
+                                        <HybridButton
                                             key={tool}
+                                            ref={el => {
+                                                if (el) toolButtonRefs.current.set(tool, el);
+                                            }}
                                             onClick={() => handleToolSelect(tool)}
+                                            isSelected={activeTool === tool}
                                             title={tool.charAt(0).toUpperCase() + tool.slice(1)}
                                             style={{
                                                 width: isCompact ? '36px' : '44px',
@@ -497,19 +602,18 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
                                                     ? '2px solid rgba(255,255,255,0.7)'
                                                     : '1px solid rgba(255,255,255,0.2)',
                                                 color: '#fff',
-                                                cursor: 'pointer',
                                                 fontSize: isCompact ? '1rem' : '1.2rem',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                transition: 'all 0.2s ease',
                                                 transform: activeTool === tool ? 'scale(1.1)' : 'scale(1)'
                                             }}
+                                            data-tool-button={tool}
                                         >
                                             {tool === 'brush' && '🖌️'}
                                             {tool === 'eraser' && '🧹'}
                                             {tool === 'fill' && '🪣'}
-                                        </button>
+                                        </HybridButton>
                                     ))}
                                 </div>
                                 
@@ -525,7 +629,10 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
                                     display: 'flex',
                                     gap: isCompact ? '4px' : '6px'
                                 }}>
-                                    <button
+                                    <HybridButton
+                                        ref={el => {
+                                            if (el) actionButtonRefs.current.set('undo', el);
+                                        }}
                                         onClick={handleUndo}
                                         disabled={!canUndo}
                                         title="Undo"
@@ -538,18 +645,20 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
                                                 : 'rgba(255,255,255,0.05)',
                                             border: '1px solid rgba(255,255,255,0.2)',
                                             color: canUndo ? '#fff' : 'rgba(255,255,255,0.3)',
-                                            cursor: canUndo ? 'pointer' : 'not-allowed',
                                             fontSize: isCompact ? '1rem' : '1.2rem',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            transition: 'all 0.2s ease',
                                             opacity: canUndo ? 1 : 0.5
                                         }}
+                                        data-action-button="undo"
                                     >
                                         ↶
-                                    </button>
-                                    <button
+                                    </HybridButton>
+                                    <HybridButton
+                                        ref={el => {
+                                            if (el) actionButtonRefs.current.set('redo', el);
+                                        }}
                                         onClick={handleRedo}
                                         disabled={!canRedo}
                                         title="Redo"
@@ -562,17 +671,16 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
                                                 : 'rgba(255,255,255,0.05)',
                                             border: '1px solid rgba(255,255,255,0.2)',
                                             color: canRedo ? '#fff' : 'rgba(255,255,255,0.3)',
-                                            cursor: canRedo ? 'pointer' : 'not-allowed',
                                             fontSize: isCompact ? '1rem' : '1.2rem',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            transition: 'all 0.2s ease',
                                             opacity: canRedo ? 1 : 0.5
                                         }}
+                                        data-action-button="redo"
                                     >
                                         ↷
-                                    </button>
+                                    </HybridButton>
                                 </div>
                                 
                                 {/* Divider */}
@@ -583,7 +691,10 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
                                 }} />
                                 
                                 {/* Save */}
-                                <button
+                                <HybridButton
+                                    ref={el => {
+                                        if (el) actionButtonRefs.current.set('save', el);
+                                    }}
                                     onClick={handleSave}
                                     title="Save as PNG"
                                     style={{
@@ -593,16 +704,15 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
                                         background: 'rgba(0, 245, 212, 0.2)',
                                         border: '1px solid rgba(0, 245, 212, 0.4)',
                                         color: '#00f5d4',
-                                        cursor: 'pointer',
                                         fontSize: isCompact ? '1rem' : '1.2rem',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        justifyContent: 'center',
-                                        transition: 'all 0.2s ease'
+                                        justifyContent: 'center'
                                     }}
+                                    data-action-button="save"
                                 >
                                     💾
-                                </button>
+                                </HybridButton>
                                 
                                 {/* Divider */}
                                 <div style={{
@@ -655,7 +765,10 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
                         )}
 
                         {/* Clear button - responsive */}
-                        <button
+                        <HybridButton
+                            ref={el => {
+                                if (el) actionButtonRefs.current.set('clear', el);
+                            }}
                             onClick={handleClear}
                             style={{
                                 display: 'flex',
@@ -666,27 +779,17 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
                                 border: '2px solid rgba(255, 59, 48, 0.4)',
                                 borderRadius: isCompact ? '16px' : '24px',
                                 color: '#ff6b6b',
-                                cursor: 'pointer',
                                 fontSize: isCompact ? '0.85rem' : '1rem',
                                 fontWeight: 600,
-                                transition: 'all 0.2s ease',
                                 boxShadow: '0 4px 12px rgba(255, 59, 48, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
                                 minWidth: '44px',
                                 minHeight: '44px'
                             }}
-                            onMouseDown={(e) => {
-                                e.currentTarget.style.transform = 'scale(0.95)';
-                            }}
-                            onMouseUp={(e) => {
-                                e.currentTarget.style.transform = 'scale(1)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'scale(1)';
-                            }}
+                            data-action-button="clear"
                         >
                             <span style={{ fontSize: isCompact ? '1rem' : '1.2rem' }}>🗑️</span>
                             {!isLandscapePhone && 'Clear'}
-                        </button>
+                        </HybridButton>
                     </div>
                 </FloatingTool>
             </div>

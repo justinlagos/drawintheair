@@ -6,6 +6,7 @@ import { Landing } from './pages/Landing.tsx'
 import { DemoLoader } from './pages/DemoLoader.tsx'
 import { FAQ } from './pages/FAQ.tsx'
 import { Schools } from './pages/Schools.tsx'
+import { ParentsLanding } from './pages/ParentsLanding.tsx'
 import { Privacy } from './pages/Privacy.tsx'
 import { Terms } from './pages/Terms.tsx'
 import { Cookies } from './pages/Cookies.tsx'
@@ -17,6 +18,7 @@ import { QAPage } from './pages/QAPage.tsx'
 import { SchoolPilot } from './pages/SchoolPilot.tsx'
 import { ParentAccess } from './pages/ParentAccess.tsx'
 import { initAnalytics } from './lib/analytics.ts'
+import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 
 // Helper function to determine route from pathname
 function getRouteFromPath(path: string, hash: string): string {
@@ -36,6 +38,7 @@ function getRouteFromPath(path: string, hash: string): string {
   if (path === '/schools/training') return 'training';
   if (path === '/schools') return 'schools';
   if (path === '/school') return 'school';
+  if (path === '/parents') return 'parents';
   if (path === '/parent') return 'parent';
   if (path === '/privacy') return 'privacy';
   if (path === '/terms') return 'terms';
@@ -87,11 +90,19 @@ function Root() {
   }
 
   if (route === 'play') {
-    return <App />;
+    return (
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    );
   }
 
   if (route === 'app') {
-    return <App />;
+    return (
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    );
   }
 
   if (route === 'faq') {
@@ -100,6 +111,10 @@ function Root() {
 
   if (route === 'schools') {
     return <Schools />;
+  }
+
+  if (route === 'parents') {
+    return <ParentsLanding />;
   }
 
   if (route === 'privacy') {

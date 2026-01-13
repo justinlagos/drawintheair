@@ -445,13 +445,13 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
             justifyContent: isMobile ? 'flex-start' : 'center',
             zIndex: 50,
             background: '#010C24',
-            overflow: 'visible', // Allow glow effects to show
+            overflow: 'hidden', // CRITICAL: Prevent scrolling
             padding: containerPadding,
             paddingTop: isMobile ? 'max(env(safe-area-inset-top, 12px), 12px)' : '24px',
             paddingBottom: isMobile ? 'max(env(safe-area-inset-bottom, 12px), 12px)' : '24px',
             boxSizing: 'border-box',
-            height: '100%',
-            minHeight: isMobile ? '100dvh' : '100vh'
+            height: '100vh',
+            maxHeight: '100vh' // CRITICAL: Constrain to viewport
         }}>
             {/* Vignette overlay for depth */}
             <div style={{
@@ -521,97 +521,301 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
                     </div>
                 </div>
 
-                {/* Mode Cards Grid - 3 at top, 2 below */}
+                {/* Mode Cards Grid - Responsive single-screen layout */}
                 <div style={{
                     flex: isMobile ? '0 0 auto' : '1 1 auto',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: isMobile ? 'clamp(12px, 1.5vw, 16px)' : isTablet ? 'clamp(16px, 2vw, 20px)' : 'clamp(20px, 2.5vw, 28px)',
+                    gap: isMobile ? 'clamp(10px, 1.2vw, 12px)' : isTablet ? 'clamp(12px, 1.5vw, 16px)' : 'clamp(16px, 2vw, 20px)',
                     width: '100%',
                     maxWidth: isMobile ? '100%' : isTablet ? '900px' : 'clamp(900px, 88vw, 1200px)',
                     margin: '0 auto',
                     maxHeight: isMobile ? 'none' : '100%',
-                    overflow: 'visible'
+                    overflow: 'hidden', // CRITICAL: Prevent scrolling
+                    justifyContent: 'center'
                 }}>
-                    {/* First row: 3 cards */}
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: isMobile 
-                            ? '1fr' 
-                            : 'repeat(3, 1fr)',
-                        gap: isMobile ? 'clamp(12px, 1.5vw, 16px)' : isTablet ? 'clamp(16px, 2vw, 20px)' : 'clamp(20px, 2.5vw, 28px)',
-                        width: '100%'
-                    }}>
-                        {availableModes.slice(0, 3).map((mode) => {
-                            const isHovered = hoveredMode === mode.id;
-                            const isSelected = selectedMode === mode.id;
+                    {/* Calculate optimal layout based on viewport */}
+                    {(() => {
+                        // Desktop: Single row of 5 cards
+                        if (!isMobile && !isTablet) {
                             return (
-                                <div
-                                    key={mode.id}
-                                    style={{
-                                        minHeight: isMobile ? 'clamp(180px, 22vh, 220px)' : 0,
-                                        display: 'flex',
-                                        overflow: 'visible',
-                                        aspectRatio: (isMobile || isTablet) ? 'auto' : '1 / 1',
-                                        padding: '32px',
-                                        margin: '-32px',
-                                        boxSizing: 'content-box',
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(5, 1fr)',
+                                    gap: 'clamp(16px, 2vw, 20px)',
+                                    width: '100%',
+                                    height: '100%',
+                                    alignContent: 'center'
+                                }}>
+                                    {availableModes.map((mode) => {
+                                        const isHovered = hoveredMode === mode.id;
+                                        const isSelected = selectedMode === mode.id;
+                                        return (
+                                            <div
+                                                key={mode.id}
+                                                style={{
+                                                    display: 'flex',
+                                                    overflow: 'visible',
+                                                    padding: '24px',
+                                                    margin: '-24px',
+                                                    boxSizing: 'content-box',
+                                                    height: '100%',
+                                                    maxHeight: '180px' // Constrain height
+                                                }}
+                                            >
+                                                <ModeCard
+                                                    mode={mode}
+                                                    isHovered={isHovered}
+                                                    isSelected={isSelected}
+                                                    hoverProgress={hoverProgress}
+                                                    onSelect={onSelect}
+                                                    isFullWidth={false}
+                                                    screenSize={screenSize}
+                                                />
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        }
+                        
+                        // Tablet: 3 top + 2 bottom
+                        if (isTablet && !isMobile) {
+                            return (
+                                <>
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(3, 1fr)',
+                                        gap: 'clamp(12px, 1.5vw, 16px)',
                                         width: '100%'
-                                    }}
-                                >
-                                    <ModeCard
-                                        mode={mode}
-                                        isHovered={isHovered}
-                                        isSelected={isSelected}
-                                        hoverProgress={hoverProgress}
-                                        onSelect={onSelect}
-                                        isFullWidth={false}
-                                        screenSize={screenSize}
-                                    />
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                    {/* Second row: 2 cards centered */}
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'stretch',
-                        gap: isMobile ? 'clamp(12px, 1.5vw, 16px)' : isTablet ? 'clamp(16px, 2vw, 20px)' : 'clamp(20px, 2.5vw, 28px)',
-                        width: '100%'
-                    }}>
-                        {availableModes.slice(3).map((mode) => {
-                            const isHovered = hoveredMode === mode.id;
-                            const isSelected = selectedMode === mode.id;
-                            return (
-                                <div
-                                    key={mode.id}
-                                    style={{
-                                        minHeight: isMobile ? 'clamp(180px, 22vh, 220px)' : 0,
+                                    }}>
+                                        {availableModes.slice(0, 3).map((mode) => {
+                                            const isHovered = hoveredMode === mode.id;
+                                            const isSelected = selectedMode === mode.id;
+                                            return (
+                                                <div
+                                                    key={mode.id}
+                                                    style={{
+                                                        display: 'flex',
+                                                        overflow: 'visible',
+                                                        padding: '20px',
+                                                        margin: '-20px',
+                                                        boxSizing: 'content-box',
+                                                        height: '100%',
+                                                        maxHeight: '160px'
+                                                    }}
+                                                >
+                                                    <ModeCard
+                                                        mode={mode}
+                                                        isHovered={isHovered}
+                                                        isSelected={isSelected}
+                                                        hoverProgress={hoverProgress}
+                                                        onSelect={onSelect}
+                                                        isFullWidth={false}
+                                                        screenSize={screenSize}
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div style={{
                                         display: 'flex',
-                                        overflow: 'visible',
-                                        aspectRatio: (isMobile || isTablet) ? 'auto' : '1 / 1',
-                                        padding: '32px',
-                                        margin: '-32px',
-                                        boxSizing: 'content-box',
-                                        width: isMobile ? '100%' : 'calc((100% - clamp(20px, 2.5vw, 28px)) / 3)',
-                                        maxWidth: isMobile ? '100%' : 'calc((100% - clamp(20px, 2.5vw, 28px)) / 3)'
-                                    }}
-                                >
-                                    <ModeCard
-                                        mode={mode}
-                                        isHovered={isHovered}
-                                        isSelected={isSelected}
-                                        hoverProgress={hoverProgress}
-                                        onSelect={onSelect}
-                                        isFullWidth={false}
-                                        screenSize={screenSize}
-                                    />
+                                        justifyContent: 'center',
+                                        alignItems: 'stretch',
+                                        gap: 'clamp(12px, 1.5vw, 16px)',
+                                        width: '100%'
+                                    }}>
+                                        {availableModes.slice(3).map((mode) => {
+                                            const isHovered = hoveredMode === mode.id;
+                                            const isSelected = selectedMode === mode.id;
+                                            return (
+                                                <div
+                                                    key={mode.id}
+                                                    style={{
+                                                        display: 'flex',
+                                                        overflow: 'visible',
+                                                        padding: '20px',
+                                                        margin: '-20px',
+                                                        boxSizing: 'content-box',
+                                                        width: 'calc((100% - clamp(12px, 1.5vw, 16px)) / 3)',
+                                                        maxWidth: 'calc((100% - clamp(12px, 1.5vw, 16px)) / 3)',
+                                                        height: '100%',
+                                                        maxHeight: '160px'
+                                                    }}
+                                                >
+                                                    <ModeCard
+                                                        mode={mode}
+                                                        isHovered={isHovered}
+                                                        isSelected={isSelected}
+                                                        hoverProgress={hoverProgress}
+                                                        onSelect={onSelect}
+                                                        isFullWidth={false}
+                                                        screenSize={screenSize}
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </>
+                            );
+                        }
+                        
+                        // Mobile: 2+2+1 or 2+3 layout
+                        const isLandscape = window.innerWidth > window.innerHeight;
+                        if (isLandscape) {
+                            // Landscape: Single row of 5
+                            return (
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(5, 1fr)',
+                                    gap: '10px',
+                                    width: '100%',
+                                    height: '100%',
+                                    alignContent: 'center'
+                                }}>
+                                    {availableModes.map((mode) => {
+                                        const isHovered = hoveredMode === mode.id;
+                                        const isSelected = selectedMode === mode.id;
+                                        return (
+                                            <div
+                                                key={mode.id}
+                                                style={{
+                                                    display: 'flex',
+                                                    overflow: 'visible',
+                                                    padding: '16px',
+                                                    margin: '-16px',
+                                                    boxSizing: 'content-box',
+                                                    height: '100%',
+                                                    maxHeight: '120px'
+                                                }}
+                                            >
+                                                <ModeCard
+                                                    mode={mode}
+                                                    isHovered={isHovered}
+                                                    isSelected={isSelected}
+                                                    hoverProgress={hoverProgress}
+                                                    onSelect={onSelect}
+                                                    isFullWidth={false}
+                                                    screenSize={screenSize}
+                                                />
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             );
-                        })}
-                    </div>
+                        } else {
+                            // Portrait: 2+2+1
+                            return (
+                                <>
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(2, 1fr)',
+                                        gap: '10px',
+                                        width: '100%'
+                                    }}>
+                                        {availableModes.slice(0, 2).map((mode) => {
+                                            const isHovered = hoveredMode === mode.id;
+                                            const isSelected = selectedMode === mode.id;
+                                            return (
+                                                <div
+                                                    key={mode.id}
+                                                    style={{
+                                                        display: 'flex',
+                                                        overflow: 'visible',
+                                                        padding: '16px',
+                                                        margin: '-16px',
+                                                        boxSizing: 'content-box',
+                                                        height: '100%',
+                                                        maxHeight: '130px'
+                                                    }}
+                                                >
+                                                    <ModeCard
+                                                        mode={mode}
+                                                        isHovered={isHovered}
+                                                        isSelected={isSelected}
+                                                        hoverProgress={hoverProgress}
+                                                        onSelect={onSelect}
+                                                        isFullWidth={false}
+                                                        screenSize={screenSize}
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(2, 1fr)',
+                                        gap: '10px',
+                                        width: '100%'
+                                    }}>
+                                        {availableModes.slice(2, 4).map((mode) => {
+                                            const isHovered = hoveredMode === mode.id;
+                                            const isSelected = selectedMode === mode.id;
+                                            return (
+                                                <div
+                                                    key={mode.id}
+                                                    style={{
+                                                        display: 'flex',
+                                                        overflow: 'visible',
+                                                        padding: '16px',
+                                                        margin: '-16px',
+                                                        boxSizing: 'content-box',
+                                                        height: '100%',
+                                                        maxHeight: '130px'
+                                                    }}
+                                                >
+                                                    <ModeCard
+                                                        mode={mode}
+                                                        isHovered={isHovered}
+                                                        isSelected={isSelected}
+                                                        hoverProgress={hoverProgress}
+                                                        onSelect={onSelect}
+                                                        isFullWidth={false}
+                                                        screenSize={screenSize}
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        width: '100%'
+                                    }}>
+                                        {availableModes.slice(4).map((mode) => {
+                                            const isHovered = hoveredMode === mode.id;
+                                            const isSelected = selectedMode === mode.id;
+                                            return (
+                                                <div
+                                                    key={mode.id}
+                                                    style={{
+                                                        display: 'flex',
+                                                        overflow: 'visible',
+                                                        padding: '16px',
+                                                        margin: '-16px',
+                                                        boxSizing: 'content-box',
+                                                        width: '50%',
+                                                        height: '100%',
+                                                        maxHeight: '130px'
+                                                    }}
+                                                >
+                                                    <ModeCard
+                                                        mode={mode}
+                                                        isHovered={isHovered}
+                                                        isSelected={isSelected}
+                                                        hoverProgress={hoverProgress}
+                                                        onSelect={onSelect}
+                                                        isFullWidth={false}
+                                                        screenSize={screenSize}
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </>
+                            );
+                        }
+                    })()}
                 </div>
 
                 {/* Footer Instruction - Fixed Bottom */}

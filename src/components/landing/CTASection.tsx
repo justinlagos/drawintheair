@@ -26,11 +26,21 @@ export const CTASection: React.FC<CTASectionProps> = ({ onGetSchoolPack }) => {
         
         {/* Content Overlay */}
         <div className="landing-cta-content">
-          <h2 className="landing-cta-headline">Ready to try it</h2>
-          <div className="landing-cta-buttons">
-            <button 
-              className="landing-btn landing-btn-primary landing-btn-large" 
-              onClick={() => {
+          {/* Decorative elements */}
+          <div className="cta-decoration cta-deco-1">✨</div>
+          <div className="cta-decoration cta-deco-2">🌟</div>
+          
+          <h2 className="cta-headline">Ready to Transform Screen Time?</h2>
+          <p className="cta-subhead">
+            Join thousands of families making learning feel like play.
+          </p>
+          
+          <div className="cta-buttons">
+            <a 
+              href="/demo"
+              className="landing-btn landing-btn-primary landing-btn-large"
+              onClick={(e) => {
+                e.preventDefault();
                 // Track demo click
                 if (typeof window !== 'undefined' && (window as any).analytics) {
                   (window as any).analytics.logEvent('demo_try_click', {
@@ -40,15 +50,27 @@ export const CTASection: React.FC<CTASectionProps> = ({ onGetSchoolPack }) => {
                 window.location.pathname = '/demo';
               }}
             >
-              Try the demo
-            </button>
-            <button 
-              className="landing-btn landing-btn-secondary landing-btn-large" 
-              onClick={onGetSchoolPack}
+              Start Free — No Signup
+            </a>
+            <a 
+              href="/schools"
+              className="landing-btn landing-btn-secondary landing-btn-large"
+              onClick={(e) => {
+                e.preventDefault();
+                if (onGetSchoolPack) {
+                  onGetSchoolPack();
+                } else {
+                  window.location.pathname = '/schools';
+                }
+              }}
             >
-              Request school pack
-            </button>
+              Request School Pilot
+            </a>
           </div>
+          
+          <p className="cta-note">
+            Free forever for families. No credit card required.
+          </p>
         </div>
       </div>
     </section>

@@ -74,12 +74,12 @@ export class InteractionStateManager {
     // Pinch detection state (hysteresis)
     private lastPinchState: boolean = false;
     
-    // Configuration
-    private readonly minConfidence: number = 0.6;
-    private readonly lowConfidenceFramesThreshold: number = 3;
-    private readonly jumpThreshold: number = 0.06; // 6% of screen
-    private readonly pinchDownThreshold: number = 0.35;
-    private readonly pinchUpThreshold: number = 0.45;
+    // Configuration - Optimized for pen-like precision
+    private readonly minConfidence: number = 0.65; // Increased for higher quality
+    private readonly lowConfidenceFramesThreshold: number = 2; // Faster dropout detection
+    private readonly jumpThreshold: number = 0.05; // Tighter jump detection (5% of screen)
+    private readonly pinchDownThreshold: number = 0.30; // Tighter pinch to start
+    private readonly pinchUpThreshold: number = 0.42; // Looser release
     
     // State tracking
     private lowConfidenceFrames: number = 0;
@@ -89,10 +89,11 @@ export class InteractionStateManager {
     private canvasHeight: number = 1080;
     
     constructor() {
-        // One Euro Filter config for smooth, low-latency tracking
+        // One Euro Filter config - Optimized for pen-like feel
+        // Higher minCutoff = less smoothing = more responsive
         const filterConfig = {
-            minCutoff: 1.0,    // Smooth but responsive
-            beta: 0.01,        // Low beta for stable tracking
+            minCutoff: 1.5,    // Increased: Less smoothing = more responsive (pen-like)
+            beta: 0.007,       // Decreased: Less adaptive = more consistent feel
             dCutoff: 1.0
         };
         
@@ -276,6 +277,7 @@ export class InteractionStateManager {
             }
             
             // Jump protection: break interaction on large movement
+            // Also check minimum movement to capture fine details
             if (this.lastFilteredPoint && this.currentPenDown) {
                 const dx = filteredPoint.x - this.lastFilteredPoint.x;
                 const dy = filteredPoint.y - this.lastFilteredPoint.y;
@@ -286,6 +288,7 @@ export class InteractionStateManager {
                     this.currentPenDown = false;
                     this.lastFilteredPoint = null;
                 }
+                // Note: Removed minMovement check here - we want to capture all fine movements
             }
             
             this.lastFilteredPoint = filteredPoint;

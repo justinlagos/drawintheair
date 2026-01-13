@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import './landing.css';
 
-export const HeaderNav: React.FC = () => {
+interface HeaderNavProps {
+  variant?: 'transparent' | 'solid';
+}
+
+export const HeaderNav: React.FC<HeaderNavProps> = () => {
   const [activeSection, setActiveSection] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = window.location.pathname;
   const isLandingPage = pathname === '/' || pathname === '';
 
@@ -14,7 +19,7 @@ export const HeaderNav: React.FC = () => {
       setIsScrolled(window.scrollY > 50);
       
       // Determine active section
-      const sections = ['how', 'modes', 'schools', 'faq'];
+      const sections = ['how-it-works', 'modes', 'schools', 'faq'];
       const scrollPosition = window.scrollY + 150;
       
       for (let i = sections.length - 1; i >= 0; i--) {
@@ -32,6 +37,7 @@ export const HeaderNav: React.FC = () => {
   }, [isLandingPage]);
 
   const scrollTo = (id: string) => {
+    setMobileMenuOpen(false); // Close mobile menu on navigation
     if (!isLandingPage) {
       window.location.pathname = '/';
       setTimeout(() => {
@@ -80,27 +86,29 @@ export const HeaderNav: React.FC = () => {
             />
           </a>
         </div>
-        <div className="landing-nav-right">
+        
+        {/* Desktop Navigation */}
+        <div className="landing-nav-links desktop-only">
           <a 
-            href="#how" 
-            onClick={(e) => handleNavClick(e, '#how')} 
-            className={`landing-nav-link ${activeSection === 'how' ? 'active' : ''}`}
+            href="#how-it-works" 
+            onClick={(e) => handleNavClick(e, '#how-it-works')} 
+            className={`landing-nav-link ${activeSection === 'how-it-works' ? 'active' : ''}`}
           >
-            How it works
+            How It Works
           </a>
           <a 
             href="#modes" 
             onClick={(e) => handleNavClick(e, '#modes')} 
             className={`landing-nav-link ${activeSection === 'modes' ? 'active' : ''}`}
           >
-            Modes
+            Activities
           </a>
           <a 
             href="#schools" 
             onClick={(e) => handleNavClick(e, '#schools')} 
             className={`landing-nav-link ${activeSection === 'schools' ? 'active' : ''}`}
           >
-            For schools
+            For Schools
           </a>
           <a 
             href="#faq" 
@@ -109,9 +117,15 @@ export const HeaderNav: React.FC = () => {
           >
             FAQ
           </a>
-          <button 
-            className="landing-btn landing-btn-primary landing-btn-small" 
-            onClick={() => {
+        </div>
+        
+        {/* CTA Buttons */}
+        <div className="landing-nav-actions">
+          <a 
+            href="/demo"
+            className="landing-btn landing-btn-primary landing-btn-small"
+            onClick={(e) => {
+              e.preventDefault();
               // Track demo click
               if (typeof window !== 'undefined' && (window as any).analytics) {
                 (window as any).analytics.logEvent('demo_try_click', {
@@ -121,10 +135,39 @@ export const HeaderNav: React.FC = () => {
               window.location.pathname = '/demo';
             }}
           >
-            Try the demo
-          </button>
+            Try Free
+          </a>
+          <a 
+            href="/schools" 
+            className="landing-btn landing-btn-secondary landing-btn-small desktop-only"
+          >
+            School Pilot
+          </a>
         </div>
+        
+        {/* Mobile Menu Toggle */}
+        <button 
+          className="landing-nav-hamburger mobile-only"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Toggle menu"
+          aria-expanded={mobileMenuOpen}
+        >
+          <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
+          <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
+          <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
+        </button>
       </div>
+      
+      {/* Mobile Menu Dropdown */}
+      {mobileMenuOpen && (
+        <div className="landing-nav-mobile-menu">
+          <a href="#how-it-works" onClick={(e) => handleNavClick(e, '#how-it-works')}>How It Works</a>
+          <a href="#modes" onClick={(e) => handleNavClick(e, '#modes')}>Activities</a>
+          <a href="#schools" onClick={(e) => handleNavClick(e, '#schools')}>For Schools</a>
+          <a href="#faq" onClick={(e) => handleNavClick(e, '#faq')}>FAQ</a>
+          <a href="/schools" className="landing-btn landing-btn-secondary">School Pilot</a>
+        </div>
+      )}
     </nav>
   );
 };

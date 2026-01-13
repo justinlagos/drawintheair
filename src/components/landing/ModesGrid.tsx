@@ -2,48 +2,71 @@ import React from 'react';
 import './landing.css';
 
 interface ModeCard {
-  title: string;
+  id: string;
   icon: string;
-  whatKidsDo: string;
-  whatItBuilds: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  color: string;
+  gradient: string;
+  skills: string[];
   screenshot: string;
-  badge?: string;
 }
 
-const modes: ModeCard[] = [
+const MODES: ModeCard[] = [
   {
-    title: 'Bubble Pop',
+    id: 'bubble-pop',
     icon: '🫧',
-    whatKidsDo: 'Warm up',
-    whatItBuilds: 'Focus and coordination',
+    title: 'Bubble Pop',
+    subtitle: 'Warm Up',
+    description: 'Pop colorful bubbles to build hand-eye coordination and get comfortable with gestures.',
+    color: '#FF8C42',
+    gradient: 'linear-gradient(135deg, #FF8C42 0%, #FF6B9D 100%)',
+    skills: ['Hand-eye coordination', 'Reaction time', 'Focus'],
     screenshot: 'https://i.postimg.cc/RhBYpGkh/Balloons.png'
   },
   {
-    title: 'Free Paint',
+    id: 'free-paint',
     icon: '🎨',
-    whatKidsDo: 'Create',
-    whatItBuilds: 'Creative expression and confidence',
+    title: 'Free Paint',
+    subtitle: 'Create',
+    description: 'Unlimited creative canvas with colors, brushes, and no rules. Pure artistic expression.',
+    color: '#9B59B6',
+    gradient: 'linear-gradient(135deg, #9B59B6 0%, #8E44AD 100%)',
+    skills: ['Creativity', 'Fine motor control', 'Self-expression'],
     screenshot: 'https://i.postimg.cc/90Yn6Z21/Free_Paint.png'
   },
   {
-    title: 'Tracing',
+    id: 'tracing',
     icon: '✏️',
-    whatKidsDo: 'Learn',
-    whatItBuilds: 'Letter formation and early writing',
+    title: 'Tracing A-Z',
+    subtitle: 'Learn',
+    description: 'Trace letters and shapes with guided paths. Build pre-writing skills the fun way.',
+    color: '#2ECC71',
+    gradient: 'linear-gradient(135deg, #2ECC71 0%, #27AE60 100%)',
+    skills: ['Letter formation', 'Directional control', 'Pre-writing'],
     screenshot: 'https://i.postimg.cc/rsNPBxT9/Tracing.png'
   },
   {
-    title: 'Sort and Place',
-    icon: '🧩',
-    whatKidsDo: 'Think',
-    whatItBuilds: 'Maths foundations and categorising',
+    id: 'sort-place',
+    icon: '🗂️',
+    title: 'Sort & Place',
+    subtitle: 'Think',
+    description: 'Categorize objects by color, size, or type. Builds logical thinking and spatial awareness.',
+    color: '#3498DB',
+    gradient: 'linear-gradient(135deg, #3498DB 0%, #2980B9 100%)',
+    skills: ['Categorization', 'Problem solving', 'Spatial reasoning'],
     screenshot: 'https://i.postimg.cc/ZnSQsjGV/sort_and_place.png'
   },
   {
-    title: 'Word Search',
+    id: 'word-search',
     icon: '🔍',
-    whatKidsDo: 'Explore',
-    whatItBuilds: 'Early reading and pattern spotting',
+    title: 'Word Search',
+    subtitle: 'Focus',
+    description: 'Find hidden words in letter grids. Reinforces letter recognition and concentration.',
+    color: '#F1C40F',
+    gradient: 'linear-gradient(135deg, #F1C40F 0%, #F39C12 100%)',
+    skills: ['Letter recognition', 'Pattern spotting', 'Vocabulary'],
     screenshot: 'https://i.postimg.cc/WzwHBgVn/wordsearch.png'
   }
 ];
@@ -51,71 +74,38 @@ const modes: ModeCard[] = [
 export const ModesGrid: React.FC = () => {
   return (
     <section id="modes" className="landing-section landing-modes">
-      <h2 className="landing-section-title">Modes</h2>
-      <div className="landing-modes-grid">
-        {/* Top row: 3 equal-width cards */}
-        <div className="landing-modes-row landing-modes-row-top">
-          {modes.slice(0, 3).map((mode) => (
-            <article key={mode.title} className="landing-mode-card">
-              {mode.badge && (
-                <span className="landing-mode-badge">{mode.badge}</span>
-              )}
-              <header className="landing-mode-header">
-                <div className="landing-mode-icon-large" aria-hidden="true">
-                  {mode.icon}
-                </div>
-                <h3 className="landing-mode-title">{mode.title}</h3>
-                <p className="landing-mode-purpose">{mode.whatItBuilds}</p>
-              </header>
-              <div className="landing-mode-screenshot">
-                <img 
-                  src={mode.screenshot}
-                  srcSet={`${mode.screenshot} 1x, ${mode.screenshot} 2x`}
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 320px"
-                  alt={mode.title}
-                  className="landing-mode-img"
-                  loading="lazy"
-                  decoding="async"
-                />
-              </div>
-              <footer className="landing-mode-meta">
-                <p className="landing-mode-what">Children: {mode.whatKidsDo}</p>
-                <p className="landing-mode-builds">Builds: {mode.whatItBuilds}</p>
-              </footer>
-            </article>
-          ))}
+      <div className="landing-container">
+        <div className="section-header">
+          <span className="section-badge">5 Learning Adventures</span>
+          <h2 className="landing-section-title">Activities That Feel Like Play</h2>
+          <p className="section-subtitle">
+            Each mode targets different developmental skills while keeping kids engaged and having fun.
+          </p>
         </div>
-
-        {/* Bottom row: 2 wider cards, centred */}
-        <div className="landing-modes-row landing-modes-row-bottom">
-          {modes.slice(3).map((mode) => (
-            <article key={mode.title} className="landing-mode-card">
-              {mode.badge && (
-                <span className="landing-mode-badge">{mode.badge}</span>
-              )}
-              <header className="landing-mode-header">
-                <div className="landing-mode-icon-large" aria-hidden="true">
-                  {mode.icon}
+        
+        <div className="modes-grid">
+          {MODES.map((mode) => (
+            <div 
+              key={mode.id} 
+              className="mode-card"
+              style={{ '--mode-color': mode.color, '--mode-gradient': mode.gradient } as React.CSSProperties}
+            >
+              <div className="mode-card-header">
+                <span className="mode-icon">{mode.icon}</span>
+                <div className="mode-titles">
+                  <h3 className="mode-title">{mode.title}</h3>
+                  <span className="mode-subtitle">{mode.subtitle}</span>
                 </div>
-                <h3 className="landing-mode-title">{mode.title}</h3>
-                <p className="landing-mode-purpose">{mode.whatItBuilds}</p>
-              </header>
-              <div className="landing-mode-screenshot">
-                <img 
-                  src={mode.screenshot}
-                  srcSet={`${mode.screenshot} 1x, ${mode.screenshot} 2x`}
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 40vw, 420px"
-                  alt={mode.title}
-                  className="landing-mode-img"
-                  loading="lazy"
-                  decoding="async"
-                />
               </div>
-              <footer className="landing-mode-meta">
-                <p className="landing-mode-what">Children: {mode.whatKidsDo}</p>
-                <p className="landing-mode-builds">Builds: {mode.whatItBuilds}</p>
-              </footer>
-            </article>
+              
+              <p className="mode-description">{mode.description}</p>
+              
+              <div className="mode-skills">
+                {mode.skills.map((skill, i) => (
+                  <span key={i} className="skill-tag">{skill}</span>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </div>
