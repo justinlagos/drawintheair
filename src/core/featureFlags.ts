@@ -47,12 +47,12 @@ const DEFAULT_FLAGS: FeatureFlags = {
     stickerRewards: false,
     tracingStreak: false,
     narrator: false,
-    // Free Paint Pro - AIR PAINT PRO enabled
-    airPaintEnabled: true,
-    layersEnabled: true,
-    fillEnabled: true, // Fill bucket tool enabled
-    shapesEnabled: false, // Will enable when implemented
-    selectionEnabled: false, // Will enable when implemented
+    // Free Paint Pro - AIR PAINT PRO (default OFF as per requirements)
+    airPaintEnabled: false,  // Phase 1-5: All changes behind flag, default OFF
+    layersEnabled: false,    // Phase 5: Layered canvas system, default OFF
+    fillEnabled: false,      // Fill bucket tool, default OFF
+    shapesEnabled: false,    // Shape tools, default OFF
+    selectionEnabled: false, // Selection tools, default OFF
 };
 
 const STORAGE_KEY = 'feature-flags';
