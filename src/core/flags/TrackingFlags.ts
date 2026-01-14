@@ -31,7 +31,7 @@ export function getTrackingFlag(flag: TrackingFlag): boolean {
  * Check if any tracking improvements are enabled
  */
 export function hasAnyTrackingFlagsEnabled(): boolean {
-    return Object.values(TrackingFlags).some(v => v === true);
+    return Object.values(TrackingFlags).some(v => Boolean(v));
 }
 
 /**

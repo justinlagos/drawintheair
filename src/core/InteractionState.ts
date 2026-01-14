@@ -20,7 +20,7 @@ import { PredictiveSmoothing } from './tracking/PredictiveSmoothing';
 import { DepthSensitivity } from './tracking/DepthSensitivity';
 import { OcclusionRecovery, type LandmarkData } from './tracking/OcclusionRecovery';
 import { getTrackingFlag, isDebugModeEnabled } from './flags/TrackingFlags';
-import { computePinchState, applyVelocityTolerance } from './tracking/PinchLogic';
+import { computePinchState } from './tracking/PinchLogic';
 
 export interface StabilityState {
     isStable: boolean;
@@ -473,7 +473,6 @@ export class InteractionStateManager {
                 const velocity = Math.hypot(vx, vy);
                 
                 // Jitter spike guard (Part E)
-                let pointToUse = filteredPoint;
                 if (useJitterSpikeGuard && this.velocityHistory.length >= 2) {
                     const prevVelocity = this.lastVelocity;
                     const prevVelocityMag = Math.hypot(prevVelocity.x, prevVelocity.y);
@@ -486,7 +485,6 @@ export class InteractionStateManager {
                     
                     if (acceleration > accelerationThreshold || velocityJump > velocityJumpThreshold) {
                         // Ignore this frame's point update, keep previous filteredPoint
-                        pointToUse = this.lastFilteredPoint;
                         filteredPoint = this.lastFilteredPoint; // Use previous point
                         if (isDebugModeEnabled() || getTrackingFlag('metricsHud')) {
                             console.log("[Guard] jitterSpikeIgnored", { v: velocity.toFixed(3), a: acceleration.toFixed(3) });

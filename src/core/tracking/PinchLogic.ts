@@ -60,7 +60,7 @@ export function computePinchState(params: PinchParams): PinchStateResult {
  * When moving fast, loosen pinchUpThreshold to prevent accidental breaks
  */
 export function applyVelocityTolerance(
-    pinchDistance: number,
+    _pinchDistance: number,
     velocityMagnitude: number,
     maxBoost: number
 ): number {
@@ -86,7 +86,7 @@ export function applyConfidenceGating(
     hasHand: boolean,
     confidence: number,
     minConfidence: number,
-    currentPenDown: boolean
+    _currentPenDown: boolean
 ): { shouldForcePenUp: boolean; reason: string } {
     if (!hasHand || confidence < minConfidence) {
         return {

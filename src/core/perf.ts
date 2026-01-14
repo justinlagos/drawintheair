@@ -8,7 +8,7 @@
  * Part E: Gradual quality scaling with 6 levels (behind flag)
  */
 
-import { getTrackingFlag, isDebugModeEnabled } from './flags/TrackingFlags';
+import { getTrackingFlag } from './flags/TrackingFlags';
 
 export type PerformanceTier = 'high' | 'medium' | 'low';
 export type VisualQuality = 'high' | 'low';

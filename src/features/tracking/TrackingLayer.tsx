@@ -410,7 +410,7 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                     
                     // Update notification - always set to current value to ensure it clears when null
                     // Use functional update to avoid stale closure issues
-                    setCameraNotification(prev => {
+                    setCameraNotification(_prev => {
                         // Always update to current notification value (null clears it)
                         return notification;
                     });
