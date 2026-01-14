@@ -4,11 +4,132 @@
  * Detects device capabilities and applies appropriate quality settings
  * to ensure smooth performance on low-power devices while maintaining
  * premium experience on desktop.
+ * 
+ * Part E: Gradual quality scaling with 6 levels (behind flag)
  */
+
+import { getTrackingFlag, isDebugModeEnabled } from './flags/TrackingFlags';
 
 export type PerformanceTier = 'high' | 'medium' | 'low';
 export type VisualQuality = 'high' | 'low';
 export type PerformanceOverride = 'auto' | 'high' | 'low';
+
+/**
+ * Quality Level (Part E - 6 levels for gradual scaling)
+ */
+export type QualityLevel = 0 | 1 | 2 | 3 | 4 | 5;
+
+export interface QualityLevelConfig {
+    level: QualityLevel;
+    name: string;
+    targetDetectFps: number;
+    cameraWidth: number;
+    cameraHeight: number;
+    visualQuality: VisualQuality;
+    enableBackdropBlur: boolean;
+    maxParticles: number;
+    shadowBlurScale: number;
+    glowPasses: number;
+    resampleSpacingPx: number;
+    canvasDPR: number; // Device pixel ratio cap
+}
+
+/**
+ * Quality Levels - 6 levels for gradual scaling (Part E)
+ * Degrade order: 5→4→3→2→1→0 (reduce expensive effects first)
+ */
+export const QUALITY_LEVELS: QualityLevelConfig[] = [
+    // Level 5: Highest quality
+    {
+        level: 5,
+        name: 'High',
+        targetDetectFps: 30,
+        cameraWidth: 1280,
+        cameraHeight: 720,
+        visualQuality: 'high',
+        enableBackdropBlur: true,
+        maxParticles: 50,
+        shadowBlurScale: 1.0,
+        glowPasses: 3,
+        resampleSpacingPx: 2,
+        canvasDPR: 2.0
+    },
+    // Level 4: Reduce particles and glow
+    {
+        level: 4,
+        name: 'Medium High',
+        targetDetectFps: 30,
+        cameraWidth: 1280,
+        cameraHeight: 720,
+        visualQuality: 'high',
+        enableBackdropBlur: true,
+        maxParticles: 35,
+        shadowBlurScale: 0.9,
+        glowPasses: 2,
+        resampleSpacingPx: 2,
+        canvasDPR: 2.0
+    },
+    // Level 3: Reduce visual complexity
+    {
+        level: 3,
+        name: 'Medium',
+        targetDetectFps: 30,
+        cameraWidth: 960,
+        cameraHeight: 540,
+        visualQuality: 'high',
+        enableBackdropBlur: true,
+        maxParticles: 25,
+        shadowBlurScale: 0.8,
+        glowPasses: 2,
+        resampleSpacingPx: 2.5,
+        canvasDPR: 1.5
+    },
+    // Level 2: Reduce DPR cap
+    {
+        level: 2,
+        name: 'Medium Low',
+        targetDetectFps: 30,
+        cameraWidth: 960,
+        cameraHeight: 540,
+        visualQuality: 'high',
+        enableBackdropBlur: true,
+        maxParticles: 20,
+        shadowBlurScale: 0.7,
+        glowPasses: 1,
+        resampleSpacingPx: 2.5,
+        canvasDPR: 1.25
+    },
+    // Level 1: Reduce detection resolution
+    {
+        level: 1,
+        name: 'Low',
+        targetDetectFps: 24,
+        cameraWidth: 640,
+        cameraHeight: 480,
+        visualQuality: 'low',
+        enableBackdropBlur: false,
+        maxParticles: 15,
+        shadowBlurScale: 0.5,
+        glowPasses: 1,
+        resampleSpacingPx: 3,
+        canvasDPR: 1.0
+    },
+    // Level 0: Lowest quality
+    {
+        level: 0,
+        name: 'Very Low',
+        targetDetectFps: 20,
+        cameraWidth: 640,
+        cameraHeight: 480,
+        visualQuality: 'low',
+        enableBackdropBlur: false,
+        maxParticles: 10,
+        shadowBlurScale: 0.3,
+        glowPasses: 1,
+        resampleSpacingPx: 3.5,
+        canvasDPR: 1.0
+    }
+];
 
 export interface PerformanceConfig {
     tier: PerformanceTier;
@@ -133,12 +254,12 @@ function getConfigForTier(tier: PerformanceTier): PerformanceConfig {
         case 'medium':
             return {
                 tier: 'medium',
-                targetDetectFps: 24,
+                targetDetectFps: 30,  // Increased from 24 for better responsiveness
                 cameraWidth: 960,
                 cameraHeight: 540,
                 visualQuality: 'high',
                 enableBackdropBlur: true,
-                maxParticles: 30,
+                maxParticles: 25,  // Slightly reduced for stability
                 shadowBlurScale: 0.8,
                 glowPasses: 2,
                 resampleSpacingPx: 2.5
@@ -147,12 +268,12 @@ function getConfigForTier(tier: PerformanceTier): PerformanceConfig {
         case 'low':
             return {
                 tier: 'low',
-                targetDetectFps: 15,
+                targetDetectFps: 20,  // Increased from 15 for better responsiveness
                 cameraWidth: 640,
                 cameraHeight: 480,
                 visualQuality: 'low',
                 enableBackdropBlur: false,
-                maxParticles: 20,
+                maxParticles: 15,  // Reduced for better performance
                 shadowBlurScale: 0.5,
                 glowPasses: 1,
                 resampleSpacingPx: 3
@@ -167,7 +288,13 @@ class PerformanceManager {
     private config: PerformanceConfig;
     private override: PerformanceOverride = 'auto';
     private initialized: boolean = false;
-
+    
+    // Gradual quality scaling (Part E)
+    private currentQualityLevel: QualityLevel = 5;
+    private lastQualityChangeTime: number = 0;
+    private readonly qualityChangeCooldown: number = 3000; // 3 seconds between changes
+    private performanceHistory: Array<{ timestamp: number; renderFps: number; latency: number }> = [];
+    
     constructor() {
         // Default to high tier until measured
         this.config = getConfigForTier('high');
@@ -192,7 +319,103 @@ class PerformanceManager {
      * Get current performance configuration
      */
     getConfig(): PerformanceConfig {
+        const useGradualScaling = getTrackingFlag('gradualQualityScaling');
+        
+        if (useGradualScaling) {
+            // Use quality level config
+            const qualityConfig = QUALITY_LEVELS[this.currentQualityLevel];
+            return {
+                tier: this.config.tier, // Keep tier for compatibility
+                targetDetectFps: qualityConfig.targetDetectFps,
+                cameraWidth: qualityConfig.cameraWidth,
+                cameraHeight: qualityConfig.cameraHeight,
+                visualQuality: qualityConfig.visualQuality,
+                enableBackdropBlur: qualityConfig.enableBackdropBlur,
+                maxParticles: qualityConfig.maxParticles,
+                shadowBlurScale: qualityConfig.shadowBlurScale,
+                glowPasses: qualityConfig.glowPasses,
+                resampleSpacingPx: qualityConfig.resampleSpacingPx
+            };
+        }
+        
+        // Legacy tier-based config (current behavior when flag OFF)
         return { ...this.config };
+    }
+    
+    /**
+     * Update performance metrics for gradual quality scaling (Part E)
+     */
+    updatePerformanceMetrics(renderFps: number, latency: number): void {
+        if (!getTrackingFlag('gradualQualityScaling')) {
+            return; // Flag OFF - do nothing
+        }
+        
+        const now = Date.now();
+        this.performanceHistory.push({ timestamp: now, renderFps, latency });
+        
+        // Keep only last 5 seconds
+        const cutoff = now - 5000;
+        this.performanceHistory = this.performanceHistory.filter(h => h.timestamp >= cutoff);
+        
+        if (this.performanceHistory.length < 10) {
+            return; // Not enough data
+        }
+        
+        // Check cooldown
+        const timeSinceLastChange = now - this.lastQualityChangeTime;
+        if (timeSinceLastChange < this.qualityChangeCooldown) {
+            return;
+        }
+        
+        // Calculate averages over last 3 seconds
+        const recentHistory = this.performanceHistory.filter(h => h.timestamp >= now - 3000);
+        if (recentHistory.length === 0) return;
+        
+        const avgFps = recentHistory.reduce((sum, h) => sum + h.renderFps, 0) / recentHistory.length;
+        const avgLatency = recentHistory.reduce((sum, h) => sum + h.latency, 0) / recentHistory.length;
+        
+        // Degrade thresholds
+        const fpsDegradeThreshold = 45; // Degrade if FPS drops below 45
+        const latencyDegradeThreshold = 50; // Degrade if latency exceeds 50ms
+        
+        // Upgrade thresholds (more conservative)
+        const fpsUpgradeThreshold = 58; // Upgrade if FPS stable above 58
+        const latencyUpgradeThreshold = 30; // Upgrade if latency below 30ms
+        
+        const shouldDegrade = avgFps < fpsDegradeThreshold || avgLatency > latencyDegradeThreshold;
+        const shouldUpgrade = avgFps > fpsUpgradeThreshold && avgLatency < latencyUpgradeThreshold && this.currentQualityLevel < 5;
+        
+        if (shouldDegrade && this.currentQualityLevel > 0) {
+            // Degrade: step down one level
+            this.currentQualityLevel = (this.currentQualityLevel - 1) as QualityLevel;
+            this.lastQualityChangeTime = now;
+            const levelConfig = QUALITY_LEVELS[this.currentQualityLevel];
+            console.log("[Quality] scaleDown", { level: this.currentQualityLevel, name: levelConfig.name, fps: avgFps.toFixed(1), latency: avgLatency.toFixed(1) });
+        } else if (shouldUpgrade && timeSinceLastChange >= this.qualityChangeCooldown * 2) {
+            // Upgrade: require 2x cooldown period of stable performance
+            this.currentQualityLevel = (this.currentQualityLevel + 1) as QualityLevel;
+            this.lastQualityChangeTime = now;
+            const levelConfig = QUALITY_LEVELS[this.currentQualityLevel];
+            console.log("[Quality] scaleUp", { level: this.currentQualityLevel, name: levelConfig.name, fps: avgFps.toFixed(1), latency: avgLatency.toFixed(1) });
+        }
+    }
+    
+    /**
+     * Get current quality level (Part E)
+     */
+    getQualityLevel(): QualityLevel {
+        return getTrackingFlag('gradualQualityScaling') ? this.currentQualityLevel : 5;
+    }
+    
+    /**
+     * Get quality level name (Part E)
+     */
+    getQualityLevelName(): string {
+        if (getTrackingFlag('gradualQualityScaling')) {
+            return QUALITY_LEVELS[this.currentQualityLevel].name;
+        }
+        // Legacy: map tier to level name
+        return this.config.tier === 'high' ? 'High' : this.config.tier === 'medium' ? 'Medium' : 'Low';
     }
 
     /**

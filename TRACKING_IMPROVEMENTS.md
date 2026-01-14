@@ -1,130 +1,110 @@
-# Tracking Improvements - Preview Guide
+# Tracking Improvements - Part D
 
-## What Changed
+## Overview
+This document explains the tracking reliability improvements, pinch detection enhancements, and adaptive quality system implemented in Part D.
 
-### New Files Created (7 files)
-1. **`src/core/trackingFeatures.ts`** - Feature flag system and configuration
-2. **`src/core/filters/KalmanFilter.ts`** - Kalman filter for predictive smoothing
-3. **`src/core/tracking/PredictiveSmoothing.ts`** - Two-stage stabilizer (One Euro + Kalman)
-4. **`src/core/tracking/DynamicResolution.ts`** - Dynamic resolution scaling manager
-5. **`src/core/tracking/DepthSensitivity.ts`** - Z-coordinate based press detection
-6. **`src/core/tracking/OcclusionRecovery.ts`** - Ghost landmark logic for pinch stability
-7. **`src/components/TrackingDebugOverlay.tsx`** - Debug instrumentation panel
+## Pinch Detection Robustness
 
-### Modified Files (4 files)
-1. **`src/core/InteractionState.ts`** - Integrated all new features
-2. **`src/core/drawingEngine.ts`** - Added `getCurrentWidth()` method
-3. **`src/features/tracking/TrackingLayer.tsx`** - Added performance metrics and debug overlay
-4. **`src/features/modes/freePaintLogic.ts`** - Uses pressValue for brush width variation
+### Hysteresis Thresholds
+The pinch detection uses two separate thresholds with hysteresis to prevent flickering:
 
-## How to Preview Changes
+- **pinchStartDistance**: `0.32 * handScale` - Threshold to start drawing (easier for kids)
+- **pinchEndDistance**: `0.48 * handScale` - Threshold to stop drawing (wider gap for stability)
 
-### 1. View Debug Overlay (Easiest Way to See What's Working)
+The wider gap between start and end thresholds prevents accidental toggling when hands are near the threshold boundary, making it more forgiving for children with smaller hands.
 
-1. Start the dev server:
-   ```bash
-   npm run dev
-   ```
+### Confidence Gating
+- **minConfidence**: `0.6` - Minimum confidence to consider hand present (slightly lower for kids)
+- **lowConfidenceFramesThreshold**: `3` frames - Frames below confidence before triggering pen up
+- **confidenceHoldWindow**: `5` frames - Hold pen state during brief confidence dips
 
-2. Navigate to the app with debug parameter:
-   ```
-   http://localhost:5173/?debug=tracking
-   ```
+When confidence dips below threshold, the system freezes pen state for a short hold window instead of immediately stopping drawing. This prevents accidental stroke breaks during brief tracking loss.
 
-3. The debug overlay will show:
-   - Render FPS, Detect FPS, Detection Latency
-   - Confidence, Pen State, Pinch Distance
-   - Press Value (depth sensitivity)
-   - Resolution Scale State
-   - Raw vs Filtered vs Predicted point positions
+### Dropout Guard
+If tracking is completely lost (no hand detected), drawing stops immediately and does not connect the last point to the next reacquired point. This prevents stray lines when tracking drops.
 
-### 2. Enable Features for Testing
+### Debounce
+State changes are debounced to prevent accidental toggles. The system requires consistent pinch state for multiple frames before changing pen state.
 
-**All features are OFF by default.** To enable them, add this to your code (e.g., in `App.tsx` or a mode component):
+## Input Smoothing
 
-```typescript
-import { trackingFeatures } from './core/trackingFeatures';
+### One Euro Filter Tuning
+The One Euro Filter is tuned for a sharp, anchored feel without lag:
 
-// Enable predictive smoothing
-trackingFeatures.setFlags({ 
-  enablePredictiveSmoothing: true 
-});
+- **minCutoff**: `2.0` - Less smoothing = sharper, more responsive feel
+- **beta**: `0.01` - Slightly increased for more adaptive response to speed changes
+- **dCutoff**: `1.0` - Derivative cutoff for velocity smoothing
 
-// Or enable all features at once
-trackingFeatures.setFlags({
-  enablePredictiveSmoothing: true,
-  enableDynamicResolution: true,
-  enableDepthSensitivity: true,
-  enableOcclusionRecovery: true,
-});
-```
+This configuration provides fast response while maintaining stability, avoiding the laggy feel of over-smoothing.
 
-### 3. Test Each Feature Individually
+## Adaptive Quality System
 
-#### Predictive Smoothing
-```typescript
-trackingFeatures.setFlags({ enablePredictiveSmoothing: true });
-// Tune parameters:
-trackingFeatures.setPredictiveConfig({
-  minCutoff: 0.8,
-  beta: 0.01,
-  predictionMs: 16, // Predict 16ms ahead
-  maxPredictionDistancePx: 50
-});
-```
-**What to look for:** Cursor should feel "tighter" and more attached to finger. Check debug overlay for predicted vs filtered point differences.
+### Performance Tiers
+The system automatically detects device capabilities and applies appropriate quality settings:
 
-#### Depth Sensitivity
-```typescript
-trackingFeatures.setFlags({ enableDepthSensitivity: true });
-```
-**What to look for:** Move hand closer/farther from camera. In Free Paint mode, brush width should increase when hand is closer (press value increases). Check debug overlay for press value (0-1).
+- **Low Tier**: 
+  - Detection FPS: 20 (increased from 15)
+  - Camera: 640x480
+  - Visual quality: Low
+  - Particles: 15 (reduced)
+  - Glow passes: 1
 
-#### Occlusion Recovery
-```typescript
-trackingFeatures.setFlags({ enableOcclusionRecovery: true });
-```
-**What to look for:** Pinch gesture should remain stable when thumb briefly hides behind palm. No flickering of pen state.
+- **Medium Tier**:
+  - Detection FPS: 30 (increased from 24)
+  - Camera: 960x540
+  - Visual quality: High
+  - Particles: 25
+  - Glow passes: 2
 
-#### Dynamic Resolution
-```typescript
-trackingFeatures.setFlags({ enableDynamicResolution: true });
-```
-**Note:** Currently tracks metrics but can't fully scale due to MediaPipe API limitation. Check debug overlay for resolution scale state.
+- **High Tier**:
+  - Detection FPS: 30
+  - Camera: 1280x720
+  - Visual quality: High
+  - Particles: 50
+  - Glow passes: 3
 
-### 4. Compare Before/After
+### Runtime Adaptation
+The DynamicResolution system monitors performance and adapts quality:
 
-**Before (default):**
-- All features OFF
-- Standard One Euro Filter smoothing
-- No prediction
-- No depth sensitivity
-- No occlusion recovery
+- **Scale Down**: When FPS drops below threshold or latency exceeds threshold for sustained period (2 seconds)
+- **Scale Up**: When FPS is stable above threshold and latency is low for extended period (4 seconds minimum)
+- **Hysteresis**: 2 second minimum between scale changes to prevent oscillation
 
-**After (with features enabled):**
-- Predictive smoothing reduces perceived latency
-- Depth sensitivity adds brush width variation
-- Occlusion recovery prevents pinch flicker
-- Debug overlay shows all metrics
+The system does not restart the camera when scaling - it only adjusts detection resolution if MediaPipe supports it in the future.
 
-## Quick Test Checklist
+## Kid-Friendly Framing Guidance
 
-- [ ] Open app with `?debug=tracking` - see debug overlay
-- [ ] Enable `enablePredictiveSmoothing` - cursor feels tighter
-- [ ] Enable `enableDepthSensitivity` - move hand closer/farther, see brush width change
-- [ ] Enable `enableOcclusionRecovery` - pinch, hide thumb briefly, should stay stable
-- [ ] Check debug overlay shows all metrics updating
+When hands are detected too close to camera edges (within 15% of screen edges), a subtle guidance message appears:
 
-## Code Locations
+- "Move hands to the centre" - When hands are too close to left/right edges
+- "Step back a little" - When hands are too close to top/bottom edges
 
-- **Feature flags:** `src/core/trackingFeatures.ts`
-- **Main integration:** `src/core/InteractionState.ts`
-- **Debug overlay:** `src/components/TrackingDebugOverlay.tsx`
-- **Usage example:** `src/features/modes/freePaintLogic.ts` (uses pressValue)
+The guidance has a 2-second cooldown to prevent spamming and automatically clears when hands move to center.
 
-## Next Steps
+## Camera Constraints
 
-1. Test on target devices (Android tablet, older laptop)
-2. Tune parameters using debug overlay
-3. Enable features per mode once verified
-4. Monitor performance metrics
+### Frame Rate Optimization
+Camera frame rate is optimized based on performance tier:
+
+- **Low Tier**: 20-30 FPS
+- **Medium Tier**: 24-60 FPS (ideal 30)
+- **High Tier**: 30-60 FPS (ideal 60)
+
+### Aspect Ratio Stability
+Camera constraints include aspect ratio matching to ensure stable framing and prevent distortion.
+
+## Mobile Responsiveness
+
+All CSS uses responsive design with:
+- Media queries for mobile, tablet, and desktop
+- Clamp() for fluid font sizing
+- Safe padding and touch targets (minimum 44px)
+- No hardcoded widths that break on small screens
+- Proper overflow handling
+
+## Testing Checklist
+
+- [ ] Mobile Safari (iOS)
+- [ ] Android Chrome
+- [ ] Laptop Chrome
+- [ ] Low tier throttling simulation (Chrome DevTools Performance tab)

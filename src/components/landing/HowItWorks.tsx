@@ -16,7 +16,7 @@ const STEPS = [
   },
   {
     number: 3,
-    icon: '✌️',
+    icon: '🤏',
     title: 'Pinch to Draw',
     description: 'Pinch your thumb and finger together like holding a pencil. That\'s how you draw!',
   },

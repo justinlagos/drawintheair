@@ -36,12 +36,24 @@ export const useWebcam = ({
             const perfConfig = perf.getConfig();
             const cameraWidth = width ?? perfConfig.cameraWidth;
             const cameraHeight = height ?? perfConfig.cameraHeight;
+            const tier = perfConfig.tier;
+            
+            // Frame rate based on tier: low=30, mid=30-60, high=60
+            const frameRateRange = tier === 'low' 
+                ? { ideal: 30, min: 20, max: 30 }
+                : tier === 'medium'
+                ? { ideal: 30, min: 24, max: 60 }
+                : { ideal: 60, min: 30, max: 60 };
+            
+            // Calculate aspect ratio for stable framing
+            const aspectRatio = cameraWidth / cameraHeight;
             
             const constraints = {
                 video: {
                     width: { ideal: cameraWidth },
                     height: { ideal: cameraHeight },
-                    frameRate: { ideal: 30 },
+                    aspectRatio: { ideal: aspectRatio },
+                    frameRate: frameRateRange,
                     facingMode,
                 },
             };

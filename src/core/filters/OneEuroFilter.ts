@@ -47,6 +47,67 @@ const DEFAULT_CONFIG: OneEuroFilterConfig = {
     dCutoff: 1.0
 };
 
+/**
+ * Filter Profile Mode - Maps to game modes
+ */
+export type FilterProfileMode = 
+    | 'bubble-pop'
+    | 'tracing'
+    | 'free-paint'
+    | 'sort-and-place'
+    | 'word-search'
+    | 'menu'
+    | 'default';
+
+/**
+ * Filter Profiles - Mode-specific filter configurations
+ * Part E: Mode-specific tuning for optimal feel per activity
+ */
+export const FILTER_PROFILES: Record<FilterProfileMode, OneEuroFilterConfig> = {
+    'bubble-pop': {
+        minCutoff: 2.5,  // Very responsive for quick popping
+        beta: 0.015,     // More adaptive to speed changes
+        dCutoff: 1.2
+    },
+    'tracing': {
+        minCutoff: 1.8,  // Smooth and stable for precise tracing
+        beta: 0.008,     // Less adaptive, more consistent
+        dCutoff: 0.8
+    },
+    'free-paint': {
+        minCutoff: 2.0,  // Sharp, anchored feel (current default)
+        beta: 0.01,      // Balanced responsiveness
+        dCutoff: 1.0
+    },
+    'sort-and-place': {
+        minCutoff: 2.2,  // Responsive for grabbing and placing
+        beta: 0.012,     // Adaptive to movement speed
+        dCutoff: 1.1
+    },
+    'word-search': {
+        minCutoff: 1.9,  // Smooth for scanning and selecting
+        beta: 0.009,     // Stable feel
+        dCutoff: 0.9
+    },
+    'menu': {
+        minCutoff: 2.5,  // Very responsive for menu navigation
+        beta: 0.02,      // Highly adaptive
+        dCutoff: 1.5
+    },
+    'default': {
+        minCutoff: 2.0,  // Current default
+        beta: 0.01,
+        dCutoff: 1.0
+    }
+};
+
+/**
+ * Get filter profile for a given mode
+ */
+export function getFilterProfileForMode(mode: FilterProfileMode): OneEuroFilterConfig {
+    return FILTER_PROFILES[mode] || FILTER_PROFILES.default;
+}
+
 export class OneEuroFilter {
     private config: OneEuroFilterConfig;
     private xFilter: LowPassFilter;

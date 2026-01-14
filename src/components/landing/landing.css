@@ -386,6 +386,106 @@ img {
   max-width: 100%;
 }
 
+/* Landing CTA Button - Reusable Component */
+.landing-cta-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  font-family: inherit;
+  text-decoration: none;
+  min-height: 44px;
+  min-width: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+
+.landing-cta-button-label {
+  display: inline-block;
+}
+
+.landing-cta-button-icon-left {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+/* Primary Variant */
+.landing-cta-button-primary {
+  background: linear-gradient(135deg, #FFD93D 0%, #FFE066 100%);
+  color: #010C24;
+  box-shadow: 0 4px 20px rgba(255, 217, 61, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2),
+              0 2px 4px rgba(0, 0, 0, 0.1);
+  font-weight: 700;
+}
+
+.landing-cta-button-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), transparent);
+  border-radius: 50px 50px 0 0;
+}
+
+.landing-cta-button-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(255, 217, 61, 0.5),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3),
+              0 0 30px rgba(255, 217, 61, 0.2);
+  background: linear-gradient(135deg, #FFE066 0%, #FFD93D 100%);
+}
+
+.landing-cta-button-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Secondary Variant */
+.landing-cta-button-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.landing-cta-button-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.landing-cta-button-secondary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Sizes */
+.landing-cta-button-sm {
+  padding: 0.625rem 1.5rem;
+  font-size: 0.9rem;
+}
+
+.landing-cta-button-md {
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
+}
+
+.landing-cta-button-lg {
+  padding: 1.125rem 2.5rem;
+  font-size: 1.125rem;
+}
+
 /* Buttons - Touch Safety: Minimum 44px tap target */
 .landing-btn {
   border: none;
@@ -563,6 +663,57 @@ img {
   gap: 1rem;
   flex-wrap: wrap;
   margin-bottom: 2.5rem;
+}
+
+/* CTA Button Layout Rules */
+.landing-nav-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+@media (min-width: 769px) {
+  .landing-nav-actions {
+    flex-direction: row;
+  }
+  
+  .landing-hero-ctas {
+    flex-direction: row;
+  }
+}
+
+@media (max-width: 768px) {
+  .landing-nav-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.75rem;
+  }
+  
+  .landing-hero-ctas {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.75rem;
+  }
+  
+  .landing-cta-button {
+    width: 100%;
+  }
+}
+
+/* Ensure no underlines on CTA buttons */
+.landing-cta-button,
+.landing-cta-button:hover,
+.landing-cta-button:focus,
+.landing-cta-button:active {
+  text-decoration: none;
+  border-bottom: none;
+  outline: none;
+}
+
+.landing-cta-button:focus-visible {
+  outline: 2px solid #FFD93D;
+  outline-offset: 2px;
+  border-radius: 50px;
 }
 
 .btn-icon {
@@ -2459,6 +2610,14 @@ img {
   min-width: 0;
   overflow-wrap: anywhere;
   word-break: break-word;
+  width: 100%;
+  max-width: 100%;
+}
+
+.landing-footer-accordion-content {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 .landing-footer-links {
@@ -2493,8 +2652,18 @@ img {
 }
 
 .landing-footer-email {
-  white-space: nowrap;
   display: inline-block;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  text-overflow: clip;
+  white-space: normal;
+  letter-spacing: normal;
+  font-smoothing: antialiased;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .landing-footer-copyright {

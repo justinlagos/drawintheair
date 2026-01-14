@@ -112,19 +112,21 @@ export class DynamicResolutionManager {
         
         // Apply hysteresis: don't scale too frequently
         const timeSinceLastScale = now - this.lastScaleTime;
-        const minScaleInterval = 1000; // 1 second minimum between scales
+        const minScaleInterval = 2000; // 2 seconds minimum between scales (increased for stability)
         
+        // More aggressive scaling down, more conservative scaling up
         if (shouldScaleDown && this.currentResolutionIndex < this.config.resolutionLevels.length - 1) {
             if (timeSinceLastScale >= minScaleInterval) {
                 this.currentResolutionIndex++;
                 this.lastScaleTime = now;
-                console.log(`[DynamicResolution] Scaled DOWN to level ${this.currentResolutionIndex}`);
+                console.log(`[DynamicResolution] Scaled DOWN to level ${this.currentResolutionIndex} (FPS: ${avgRenderFps.toFixed(1)}, Latency: ${avgLatency.toFixed(1)}ms)`);
             }
-        } else if (shouldScaleUp) {
-            if (timeSinceLastScale >= minScaleInterval) {
+        } else if (shouldScaleUp && timeSinceLastScale >= minScaleInterval * 2) {
+            // Require 2x longer stable period before scaling up (prevent oscillation)
+            if (timeSinceLastScale >= minScaleInterval * 2) {
                 this.currentResolutionIndex--;
                 this.lastScaleTime = now;
-                console.log(`[DynamicResolution] Scaled UP to level ${this.currentResolutionIndex}`);
+                console.log(`[DynamicResolution] Scaled UP to level ${this.currentResolutionIndex} (FPS: ${avgRenderFps.toFixed(1)}, Latency: ${avgLatency.toFixed(1)}ms)`);
             }
         }
     }

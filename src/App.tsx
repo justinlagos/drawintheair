@@ -22,6 +22,9 @@ import { initToyMode } from './core/toyMode';
 import { initNarrator } from './core/narrator';
 import { featureFlags } from './core/featureFlags';
 import { type GameMode as FeatureGameMode } from './core/featureFlags';
+import { interactionStateManager } from './core/InteractionState';
+import { getTrackingFlag } from './core/flags/TrackingFlags';
+import type { FilterProfileMode } from './core/filters/OneEuroFilter';
 import './App.css';
 
 type AppState = 'onboarding' | 'menu' | 'game';
@@ -51,6 +54,20 @@ function App() {
   if (typeof window !== 'undefined') {
     (window as any).__DRAW_IN_AIR_VERSION__ = '2.0.0-updated';
     console.log('🎨 Draw in the Air v2.0.0 - Updated version loaded');
+    
+    // Tracking audit log
+    console.log("[TrackingAudit] Files touched:", [
+      "src/core/InteractionState.ts",
+      "src/core/filters/OneEuroFilter.ts",
+      "src/core/tracking/DynamicResolution.ts",
+      "src/features/tracking/TrackingLayer.tsx",
+      "src/App.tsx",
+      "src/core/perf.ts",
+      "src/core/flags/TrackingFlags.ts",
+      "src/components/HandGuidanceOverlay.tsx",
+      "src/core/tracking/PinchLogic.ts",
+      "scripts/tracking-smoke-test.ts"
+    ]);
   }
 
   const [appState, setAppState] = useState<AppState>(() => getInitialState().appState);
@@ -74,6 +91,23 @@ function App() {
     setAppState('game');
     // Enable flags for this mode
     featureFlags.enableForMode(mode as FeatureGameMode);
+    
+    // Map game mode to filter profile mode (Part E)
+    const modeMap: Record<GameMode, FilterProfileMode> = {
+      'free': 'free-paint',
+      'pre-writing': 'tracing',
+      'calibration': 'bubble-pop',
+      'sort-and-place': 'sort-and-place',
+      'word-search': 'word-search'
+    };
+    
+    const filterMode = modeMap[mode] || 'default';
+    
+    // Set mode in interaction state manager (only if flag enabled)
+    if (getTrackingFlag('modeFilterProfiles')) {
+      interactionStateManager.setMode(filterMode);
+    }
+    
     // Clear any previous drawings when starting fresh
     if (mode === 'free') {
       drawingEngine.clear();

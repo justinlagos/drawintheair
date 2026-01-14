@@ -20,6 +20,8 @@ import { trackingFeatures } from '../../core/trackingFeatures';
 import { DynamicResolutionManager } from '../../core/tracking/DynamicResolution';
 import { TrackingDebugOverlay, type DebugMetrics } from '../../components/TrackingDebugOverlay';
 import { initCanvasCoordinateMapper, updateCanvasCoordinateMapper, getCanvasCoordinateMapper } from '../../core/canvasCoordinateMapper';
+import { getTrackingFlag, isDebugModeEnabled } from '../../core/flags/TrackingFlags';
+import { HandGuidanceOverlay } from '../../components/HandGuidanceOverlay';
 
 /**
  * Mirror X coordinate for natural interaction
@@ -134,6 +136,23 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
     const renderFpsHistory = useRef<number[]>([]);
     const detectFpsHistory = useRef<number[]>([]);
     const detectionLatencyHistory = useRef<number[]>([]);
+    
+    // Enhanced metrics tracking (Part E)
+    const lastRawPointRef = useRef<{ x: number; y: number; timestamp: number } | null>(null);
+    const velocityRef = useRef<{ x: number; y: number; magnitude: number }>({ x: 0, y: 0, magnitude: 0 });
+    const drawLoopTimeRef = useRef<number>(0);
+    
+    // Kid-friendly framing guidance
+    const [framingGuidance, setFramingGuidance] = useState<string | null>(null);
+    const lastGuidanceTime = useRef<number>(0);
+    const guidanceTimeoutRef = useRef<number | undefined>(undefined);
+    const GUIDANCE_COOLDOWN_MS = 2000; // Don't spam guidance messages
+    
+    // Camera connection and positioning notifications
+    const [cameraNotification, setCameraNotification] = useState<string | null>(null);
+    const noHandFramesRef = useRef<number>(0);
+    const NO_HAND_THRESHOLD_FRAMES = 90; // ~3 seconds at 30fps detection
+    const TOO_CLOSE_HAND_SCALE = 0.16; // Hand scale threshold for "too close"
     
     // Offscreen canvas for dynamic resolution scaling
     const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -328,6 +347,74 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                         lastLogTime = now;
                     }
                     
+                    // Kid-friendly framing guidance: detect if hand is too close to edges
+                    const point = interactionState.filteredPoint;
+                    const edgeThreshold = 0.15; // 15% from edges
+                    let guidance: string | null = null;
+                    
+                    if (interactionState.hasHand && point) {
+                        // Check if hand is too close to edges
+                        if (point.x < edgeThreshold) {
+                            guidance = 'Move hands to the centre';
+                        } else if (point.x > 1 - edgeThreshold) {
+                            guidance = 'Move hands to the centre';
+                        } else if (point.y < edgeThreshold) {
+                            guidance = 'Step back a little';
+                        } else if (point.y > 1 - edgeThreshold) {
+                            guidance = 'Step back a little';
+                        }
+                    }
+                    
+                    // Clear any existing timeout
+                    if (guidanceTimeoutRef.current !== undefined) {
+                        clearTimeout(guidanceTimeoutRef.current);
+                        guidanceTimeoutRef.current = undefined;
+                    }
+                    
+                    // Update guidance if needed
+                    if (guidance && guidance !== framingGuidance) {
+                        // Only show new guidance if cooldown has passed
+                        if (now - lastGuidanceTime.current >= GUIDANCE_COOLDOWN_MS) {
+                            setFramingGuidance(guidance);
+                            lastGuidanceTime.current = now;
+                        }
+                    } else if (!guidance && framingGuidance) {
+                        // Clear guidance immediately when hands move to center
+                        setFramingGuidance(null);
+                    }
+                    
+                    // Camera connection and positioning notifications
+                    let notification: string | null = null;
+                    
+                    if (!interactionState.hasHand) {
+                        // No hand detected - track frames
+                        noHandFramesRef.current++;
+                        if (noHandFramesRef.current >= NO_HAND_THRESHOLD_FRAMES) {
+                            notification = 'Make sure your hands are visible to the camera';
+                        } else {
+                            // Not enough frames yet - clear notification if it was showing
+                            notification = null;
+                        }
+                    } else {
+                        // Hand detected - reset counter
+                        noHandFramesRef.current = 0;
+                        
+                        // Check if too close to camera (large handScale)
+                        if (interactionState.handScale > TOO_CLOSE_HAND_SCALE) {
+                            notification = 'Step back a bit for better tracking';
+                        } else {
+                            // Hand is detected and not too close - explicitly clear notification
+                            notification = null;
+                        }
+                    }
+                    
+                    // Update notification - always set to current value to ensure it clears when null
+                    // Use functional update to avoid stale closure issues
+                    setCameraNotification(prev => {
+                        // Always update to current notification value (null clears it)
+                        return notification;
+                    });
+                    
                     // Update frame data ref (no React state update here)
                     const frameData = convertToFrameData(interactionState);
                     // Add FPS metrics to frame data
@@ -339,14 +426,54 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                     frameData.detectionLatencyMs = detectionLatency;
                     lastFrameDataRef.current = frameData;
                     
-                    // Update debug metrics
-                    if (flags.showDebugOverlay) {
+                    // Calculate velocity (for enhanced metrics)
+                    if (frameData.indexTip && lastRawPointRef.current) {
+                        const dt = (timestamp - lastRawPointRef.current.timestamp) / 1000; // seconds
+                        if (dt > 0) {
+                            const dx = (frameData.indexTip.x - lastRawPointRef.current.x) / dt;
+                            const dy = (frameData.indexTip.y - lastRawPointRef.current.y) / dt;
+                            const magnitude = Math.hypot(dx, dy);
+                            // EMA smoothing for velocity
+                            const alpha = 0.3;
+                            velocityRef.current = {
+                                x: alpha * dx + (1 - alpha) * velocityRef.current.x,
+                                y: alpha * dy + (1 - alpha) * velocityRef.current.y,
+                                magnitude: alpha * magnitude + (1 - alpha) * velocityRef.current.magnitude
+                            };
+                        }
+                        lastRawPointRef.current = { x: frameData.indexTip.x, y: frameData.indexTip.y, timestamp };
+                    } else if (frameData.indexTip) {
+                        lastRawPointRef.current = { x: frameData.indexTip.x, y: frameData.indexTip.y, timestamp };
+                    } else {
+                        lastRawPointRef.current = null;
+                        velocityRef.current = { x: 0, y: 0, magnitude: 0 };
+                    }
+                    
+                    // Update debug metrics (show if flag enabled OR existing debug param)
+                    const shouldShowMetrics = getTrackingFlag('metricsHud') || flags.showDebugOverlay || isDebugModeEnabled();
+                    if (shouldShowMetrics) {
                         const pinchDistance = frameData.filteredPoint && frameData.filteredThumbTip
                             ? Math.hypot(
                                 frameData.filteredPoint.x - frameData.filteredThumbTip.x,
                                 frameData.filteredPoint.y - frameData.filteredThumbTip.y
                             )
                             : 0;
+                        
+                        // Get device hints
+                        const deviceHints = {
+                            deviceMemory: (navigator as any).deviceMemory || 0,
+                            hardwareConcurrency: navigator.hardwareConcurrency || 0,
+                            isMobile: /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase())
+                        };
+                        
+                        // Get quality level (Part E - Phase 8)
+                        const qualityLevel = perf.getQualityLevel();
+                        const qualityLevelName = perf.getQualityLevelName();
+                        
+                        // Update performance metrics for gradual scaling
+                        if (getTrackingFlag('gradualQualityScaling')) {
+                            perf.updatePerformanceMetrics(avgRenderFps, detectionLatency);
+                        }
                         
                         debugMetricsRef.current = {
                             renderFps: renderFpsHistory.current.length > 0
@@ -363,6 +490,19 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                             rawPoint: frameData.indexTip,
                             filteredPoint: frameData.filteredPoint,
                             predictedPoint: frameData.predictedPoint,
+                            // Enhanced metrics (Part E)
+                            velocity: velocityRef.current,
+                            qualityLevel: qualityLevel,
+                            qualityLevelName: qualityLevelName,
+                            deviceHints: deviceHints,
+                            drawLoopMs: drawLoopTimeRef.current,
+                            // Stability (Part E - Phase 6)
+                            stability: interactionState.stability ? {
+                                isStable: interactionState.stability.isStable,
+                                stableDuration: interactionState.stability.stableDuration,
+                                movementMagnitude: interactionState.stability.movementMagnitude,
+                                isHovering: interactionState.stability.isHovering
+                            } : undefined
                         };
                     }
                     
@@ -387,6 +527,7 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                 const elapsed = currentTime - lastRenderTime.current;
                 
                 if (elapsed >= renderInterval) {
+                    const renderStartTime = performance.now();
                     lastRenderTime.current = currentTime - (elapsed % renderInterval);
                     
                     // Update render FPS
@@ -469,6 +610,10 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                                 }
                             }
                         }
+                        
+                        // Track draw loop time
+                        const renderEndTime = performance.now();
+                        drawLoopTimeRef.current = renderEndTime - renderStartTime;
                     }
                 }
 
@@ -489,11 +634,18 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
             if (detectionIntervalRef.current) {
                 clearTimeout(detectionIntervalRef.current);
             }
+            if (guidanceTimeoutRef.current !== undefined) {
+                clearTimeout(guidanceTimeoutRef.current);
+            }
             cancelAnimationFrame(animationFrameId);
             interactionStateManager.reset();
             if (dynamicResolutionRef.current) {
                 dynamicResolutionRef.current.reset();
             }
+            // Reset notification state
+            noHandFramesRef.current = 0;
+            setCameraNotification(null);
+            setFramingGuidance(null);
             
             // Performance logging data is collected but not currently used
             // Can be enabled for debugging/analytics in the future
@@ -552,8 +704,108 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
             {/* Children receive stable, filtered frame data (from ref, updated throttled) */}
             {typeof children === 'function' ? children(lastFrameDataRef.current) : children}
             
-            {/* Debug overlay */}
-            {trackingFeatures.getFlags().showDebugOverlay && (
+            {/* Kid-friendly framing guidance */}
+            {framingGuidance && (
+                <>
+                    <style>{`
+                        @keyframes guidanceFadeIn {
+                            from {
+                                opacity: 0;
+                                transform: translate(-50%, -50%) scale(0.9);
+                            }
+                            to {
+                                opacity: 1;
+                                transform: translate(-50%, -50%) scale(1);
+                            }
+                        }
+                    `}</style>
+                    <div style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        zIndex: 200,
+                        background: 'rgba(15, 12, 41, 0.9)',
+                        backdropFilter: 'blur(20px)',
+                        borderRadius: '16px',
+                        padding: '16px 24px',
+                        border: '2px solid rgba(255, 217, 61, 0.5)',
+                        color: '#FFD93D',
+                        fontSize: '1.1rem',
+                        fontWeight: 600,
+                        textAlign: 'center',
+                        pointerEvents: 'none',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+                        animation: 'guidanceFadeIn 0.3s ease-out'
+                    }}>
+                        {framingGuidance}
+                    </div>
+                </>
+            )}
+            
+            {/* Subtle camera connection/positioning notification */}
+            {cameraNotification && (
+                <>
+                    <style>{`
+                        @keyframes notificationSlideUp {
+                            from {
+                                opacity: 0;
+                                transform: translateY(20px);
+                            }
+                            to {
+                                opacity: 1;
+                                transform: translateY(0);
+                            }
+                        }
+                        @keyframes notificationSlideDown {
+                            from {
+                                opacity: 1;
+                                transform: translateY(0);
+                            }
+                            to {
+                                opacity: 0;
+                                transform: translateY(20px);
+                            }
+                        }
+                    `}</style>
+                    <div style={{
+                        position: 'absolute',
+                        bottom: '24px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        zIndex: 150, // Below guidance but above canvas
+                        background: 'rgba(15, 12, 41, 0.85)',
+                        backdropFilter: 'blur(16px)',
+                        borderRadius: '12px',
+                        padding: '12px 20px',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        fontSize: '0.9rem',
+                        fontWeight: 500,
+                        textAlign: 'center',
+                        pointerEvents: 'none',
+                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+                        animation: 'notificationSlideUp 0.3s ease-out',
+                        maxWidth: '90%',
+                        whiteSpace: 'nowrap'
+                    }}>
+                        {cameraNotification}
+                    </div>
+                </>
+            )}
+            
+            {/* Visual guidance overlay (Part E) */}
+            {getTrackingFlag('visualGuidance') && latestInteractionStateRef.current && (
+                <HandGuidanceOverlay
+                    hasHand={latestInteractionStateRef.current.hasHand}
+                    confidence={latestInteractionStateRef.current.confidence}
+                    filteredPoint={latestInteractionStateRef.current.filteredPoint}
+                    minConfidence={0.6}
+                />
+            )}
+            
+            {/* Debug overlay - show if flag enabled OR existing debug param */}
+            {(getTrackingFlag('metricsHud') || trackingFeatures.getFlags().showDebugOverlay || isDebugModeEnabled()) && (
                 <TrackingDebugOverlay
                     metrics={debugMetricsRef.current}
                     canvasWidth={canvasRef.current?.width || 1920}

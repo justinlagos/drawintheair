@@ -110,7 +110,11 @@ export const Footer: React.FC = () => {
             className={`landing-footer-accordion-content ${openSection === 'contact' ? 'open' : ''}`}
           >
             <p className="landing-footer-text">
-              <a href="mailto:partnership@drawintheair.com" className="landing-footer-link landing-footer-email">
+              <a 
+                href="mailto:partnership@drawintheair.com" 
+                className="landing-footer-link landing-footer-email"
+                style={{ display: 'block', width: '100%', maxWidth: '100%' }}
+              >
                 partnership@drawintheair.com
               </a>
             </p>

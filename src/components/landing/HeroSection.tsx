@@ -1,5 +1,6 @@
 import React from 'react';
 import './landing.css';
+import { LandingCTAButton } from './LandingCTAButton';
 
 interface HeroSectionProps {
   onGetSchoolPack?: () => void;
@@ -33,9 +34,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGetSchoolPack }) => 
           
           {/* CTA Buttons */}
           <div className="landing-hero-ctas">
-            <a 
+            <LandingCTAButton
+              variant="primary"
+              size="lg"
               href="/demo"
-              className="landing-btn landing-btn-primary landing-btn-large"
+              label="Try Free Now"
+              iconLeft={<span>▶</span>}
               onClick={(e) => {
                 e.preventDefault();
                 if (typeof window !== 'undefined' && (window as any).analytics) {
@@ -45,13 +49,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGetSchoolPack }) => 
                 }
                 window.location.pathname = '/demo';
               }}
-            >
-              <span className="btn-icon">▶</span>
-              Try Free Now
-            </a>
-            <a 
+            />
+            <LandingCTAButton
+              variant="secondary"
+              size="lg"
               href="/schools"
-              className="landing-btn landing-btn-secondary landing-btn-large"
+              label="For Schools"
               onClick={(e) => {
                 e.preventDefault();
                 if (onGetSchoolPack) {
@@ -60,9 +63,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGetSchoolPack }) => 
                   window.location.pathname = '/schools';
                 }
               }}
-            >
-              For Schools
-            </a>
+            />
           </div>
           
           {/* Trust Indicators */}

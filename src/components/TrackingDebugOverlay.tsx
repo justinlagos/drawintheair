@@ -1,11 +1,12 @@
 /**
  * Tracking Debug Overlay
  * 
- * Hidden by default, accessible via ?debug=tracking
+ * Hidden by default, accessible via ?debug=tracking or TrackingFlags.metricsHud
  * Shows instrumentation for tuning parameters.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { getTrackingFlag, isDebugModeEnabled } from '../core/flags/TrackingFlags';
 
 export interface DebugMetrics {
     renderFps: number;
@@ -20,6 +21,13 @@ export interface DebugMetrics {
     rawPoint: { x: number; y: number } | null;
     filteredPoint: { x: number; y: number } | null;
     predictedPoint: { x: number; y: number } | null;
+    // Enhanced metrics (Part E)
+    velocity?: { x: number; y: number; magnitude: number };
+    stability?: { isStable: boolean; stableDuration: number; movementMagnitude: number; isHovering: boolean };
+    qualityLevel?: number;
+    qualityLevelName?: string;
+    deviceHints?: { deviceMemory: number; hardwareConcurrency: number; isMobile: boolean };
+    drawLoopMs?: number;
 }
 
 interface TrackingDebugOverlayProps {
@@ -28,13 +36,36 @@ interface TrackingDebugOverlayProps {
     canvasHeight: number;
 }
 
+/**
+ * Calculate percentile from sorted array
+ */
+function percentile(arr: number[], p: number): number {
+    if (arr.length === 0) return 0;
+    const sorted = [...arr].sort((a, b) => a - b);
+    const index = Math.ceil((p / 100) * sorted.length) - 1;
+    return sorted[Math.max(0, Math.min(index, sorted.length - 1))];
+}
+
 export const TrackingDebugOverlay = ({ metrics, canvasWidth, canvasHeight }: TrackingDebugOverlayProps) => {
     const [isVisible, setIsVisible] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingComplete, setRecordingComplete] = useState(false);
+    const recordingSamplesRef = useRef<Array<{
+        renderFps: number;
+        detectFps: number;
+        latency: number;
+        drawLoopMs: number;
+    }>>([]);
+    const recordingStartTimeRef = useRef<number>(0);
+    const recordingIntervalRef = useRef<number | undefined>(undefined);
 
     useEffect(() => {
-        // Check URL parameter
+        // Check URL parameter or flag
         const params = new URLSearchParams(window.location.search);
-        if (params.get('debug') === 'tracking') {
+        const debugParam = params.get('debug');
+        const shouldShow = isDebugModeEnabled() || getTrackingFlag('metricsHud');
+        
+        if (shouldShow || debugParam === 'tracking' || debugParam === 'freepaint' || debugParam === 'bubblepop') {
             setIsVisible(true);
         }
         
@@ -46,6 +77,76 @@ export const TrackingDebugOverlay = ({ metrics, canvasWidth, canvasHeight }: Tra
         };
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
+    }, []);
+
+    const startRecording = () => {
+        setIsRecording(true);
+        setRecordingComplete(false);
+        recordingSamplesRef.current = [];
+        recordingStartTimeRef.current = Date.now();
+        
+        // Collect samples every 100ms for 10 seconds
+        recordingIntervalRef.current = window.setInterval(() => {
+            if (metrics) {
+                recordingSamplesRef.current.push({
+                    renderFps: metrics.renderFps,
+                    detectFps: metrics.detectFps,
+                    latency: metrics.detectionLatencyMs,
+                    drawLoopMs: metrics.drawLoopMs || 0
+                });
+            }
+            
+            const elapsed = Date.now() - recordingStartTimeRef.current;
+            if (elapsed >= 10000) {
+                stopRecording();
+            }
+        }, 100);
+    };
+
+    const stopRecording = () => {
+        if (recordingIntervalRef.current) {
+            clearInterval(recordingIntervalRef.current);
+            recordingIntervalRef.current = undefined;
+        }
+        setIsRecording(false);
+        setRecordingComplete(true);
+        
+        // Calculate metrics
+        const samples = recordingSamplesRef.current;
+        if (samples.length > 0) {
+            const renderFps = samples.map(s => s.renderFps);
+            const detectFps = samples.map(s => s.detectFps);
+            const latency = samples.map(s => s.latency);
+            const drawLoopMs = samples.map(s => s.drawLoopMs);
+            
+            const avg = {
+                renderFps: renderFps.reduce((a, b) => a + b, 0) / renderFps.length,
+                detectFps: detectFps.reduce((a, b) => a + b, 0) / detectFps.length,
+                latency: latency.reduce((a, b) => a + b, 0) / latency.length,
+                drawLoopMs: drawLoopMs.reduce((a, b) => a + b, 0) / drawLoopMs.length
+            };
+            
+            const p95 = {
+                renderFps: percentile(renderFps, 95),
+                detectFps: percentile(detectFps, 95),
+                latency: percentile(latency, 95),
+                drawLoopMs: percentile(drawLoopMs, 95)
+            };
+            
+            console.log("[Metrics10s] summary", {
+                avg,
+                p95,
+                samplesCount: samples.length
+            });
+        }
+    };
+
+    useEffect(() => {
+        return () => {
+            if (recordingIntervalRef.current) {
+                clearInterval(recordingIntervalRef.current);
+            }
+        };
     }, []);
 
     if (!isVisible || !metrics) {
@@ -120,6 +221,95 @@ export const TrackingDebugOverlay = ({ metrics, canvasWidth, canvasHeight }: Tra
                 <div style={{ color: '#4dabf7' }}>
                     Predicted: {metrics.predictedPoint ? `${(metrics.predictedPoint.x * 100).toFixed(1)}%, ${(metrics.predictedPoint.y * 100).toFixed(1)}%` : 'N/A'}
                 </div>
+            </div>
+            
+            {/* Enhanced metrics (Part E) */}
+            {metrics.velocity && (
+                <>
+                    <div style={{ marginBottom: '4px', marginTop: '8px' }}>
+                        <strong>Velocity:</strong>
+                    </div>
+                    <div style={{ marginLeft: '8px', marginBottom: '8px', fontSize: '10px' }}>
+                        Magnitude: {metrics.velocity.magnitude.toFixed(3)}
+                        <br />
+                        X: {metrics.velocity.x.toFixed(3)}, Y: {metrics.velocity.y.toFixed(3)}
+                    </div>
+                </>
+            )}
+            
+            {metrics.stability && (
+                <>
+                    <div style={{ marginBottom: '4px', marginTop: '8px' }}>
+                        <strong>Stability:</strong>
+                    </div>
+                    <div style={{ marginLeft: '8px', marginBottom: '8px', fontSize: '10px' }}>
+                        Stable: <span style={{ color: metrics.stability.isStable ? '#51cf66' : '#999' }}>{metrics.stability.isStable ? 'YES' : 'NO'}</span>
+                        <br />
+                        Duration: {metrics.stability.stableDuration.toFixed(0)}ms
+                        <br />
+                        Hovering: <span style={{ color: metrics.stability.isHovering ? '#51cf66' : '#999' }}>{metrics.stability.isHovering ? 'YES' : 'NO'}</span>
+                        <br />
+                        Movement: {metrics.stability.movementMagnitude.toFixed(4)}
+                    </div>
+                </>
+            )}
+            
+            {metrics.qualityLevel !== undefined && (
+                <>
+                    <div style={{ marginBottom: '4px', marginTop: '8px' }}>
+                        <strong>Quality:</strong>
+                    </div>
+                    <div style={{ marginLeft: '8px', marginBottom: '8px' }}>
+                        Level: <span style={{ fontWeight: 'bold' }}>{metrics.qualityLevel}</span> ({metrics.qualityLevelName || 'N/A'})
+                    </div>
+                </>
+            )}
+            
+            {metrics.deviceHints && (
+                <>
+                    <div style={{ marginBottom: '4px', marginTop: '8px' }}>
+                        <strong>Device:</strong>
+                    </div>
+                    <div style={{ marginLeft: '8px', marginBottom: '8px', fontSize: '10px' }}>
+                        Memory: {metrics.deviceHints.deviceMemory || 'N/A'}GB
+                        <br />
+                        Cores: {metrics.deviceHints.hardwareConcurrency || 'N/A'}
+                        <br />
+                        Mobile: {metrics.deviceHints.isMobile ? 'YES' : 'NO'}
+                    </div>
+                </>
+            )}
+            
+            {metrics.drawLoopMs !== undefined && (
+                <div style={{ marginLeft: '8px', marginBottom: '8px', fontSize: '10px' }}>
+                    Draw Loop: <span style={{ color: metrics.drawLoopMs > 16 ? '#ff6b6b' : '#51cf66' }}>{metrics.drawLoopMs.toFixed(2)}ms</span>
+                </div>
+            )}
+            
+            {/* 10s Metrics Recorder */}
+            <div style={{ marginTop: '12px', borderTop: '1px solid #555', paddingTop: '8px' }}>
+                <button
+                    onClick={isRecording ? stopRecording : startRecording}
+                    disabled={isRecording}
+                    style={{
+                        width: '100%',
+                        padding: '6px 12px',
+                        background: isRecording ? '#666' : '#4dabf7',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: isRecording ? 'not-allowed' : 'pointer',
+                        fontSize: '11px',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    {isRecording ? 'Recording... (10s)' : 'Record 10s Metrics'}
+                </button>
+                {recordingComplete && (
+                    <div style={{ marginTop: '4px', fontSize: '10px', color: '#51cf66' }}>
+                        ✓ Check console for summary
+                    </div>
+                )}
             </div>
             
             <div style={{ marginTop: '8px', fontSize: '10px', color: '#999', borderTop: '1px solid #555', paddingTop: '4px' }}>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './landing.css';
+import { LandingCTAButton } from './LandingCTAButton';
 
 interface HeaderNavProps {
   variant?: 'transparent' | 'solid';
@@ -121,9 +122,11 @@ export const HeaderNav: React.FC<HeaderNavProps> = () => {
         
         {/* CTA Buttons */}
         <div className="landing-nav-actions">
-          <a 
+          <LandingCTAButton
+            variant="primary"
+            size="sm"
             href="/demo"
-            className="landing-btn landing-btn-primary landing-btn-small"
+            label="Try Free"
             onClick={(e) => {
               e.preventDefault();
               // Track demo click
@@ -134,15 +137,14 @@ export const HeaderNav: React.FC<HeaderNavProps> = () => {
               }
               window.location.pathname = '/demo';
             }}
-          >
-            Try Free
-          </a>
-          <a 
-            href="/schools" 
-            className="landing-btn landing-btn-secondary landing-btn-small desktop-only"
-          >
-            School Pilot
-          </a>
+          />
+          <LandingCTAButton
+            variant="secondary"
+            size="sm"
+            href="/schools"
+            label="School Pilot"
+            className="desktop-only"
+          />
         </div>
         
         {/* Mobile Menu Toggle */}
@@ -165,7 +167,12 @@ export const HeaderNav: React.FC<HeaderNavProps> = () => {
           <a href="#modes" onClick={(e) => handleNavClick(e, '#modes')}>Activities</a>
           <a href="#schools" onClick={(e) => handleNavClick(e, '#schools')}>For Schools</a>
           <a href="#faq" onClick={(e) => handleNavClick(e, '#faq')}>FAQ</a>
-          <a href="/schools" className="landing-btn landing-btn-secondary">School Pilot</a>
+          <LandingCTAButton
+            variant="secondary"
+            size="md"
+            href="/schools"
+            label="School Pilot"
+          />
         </div>
       )}
     </nav>
