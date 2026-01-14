@@ -120,10 +120,46 @@ export const SortAndPlaceMode = () => {
 
     return (
         <>
-            {/* Top Left - Enhanced Mode indicator - Responsive */}
+            {/* Top Left - Mode Name Badge (same style as Bubble Pop) */}
             <div style={{
                 position: 'absolute',
                 top: hudSpacing,
+                left: hudSpacing,
+                zIndex: 25,  // Above all other UI elements including instruction banner
+                pointerEvents: 'none'  // Don't block interactions
+            }}>
+                <div style={{
+                    background: 'rgba(15, 12, 41, 0.85)',
+                    backdropFilter: 'blur(12px)',
+                    borderRadius: isCompact ? '10px' : '12px',
+                    border: '1.5px solid rgba(255, 255, 255, 0.2)',
+                    padding: isCompact ? '8px 14px' : '10px 18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)'
+                }}>
+                    <span style={{ 
+                        fontSize: isCompact ? '1rem' : '1.2rem',
+                        filter: 'drop-shadow(0 0 6px rgba(255, 255, 255, 0.4))'
+                    }}>
+                        🗂️
+                    </span>
+                    <span style={{
+                        fontSize: isCompact ? '0.85rem' : '0.95rem',
+                        fontWeight: 600,
+                        color: 'rgba(255, 255, 255, 0.95)',
+                        letterSpacing: '0.3px'
+                    }}>
+                        Sort and Place
+                    </span>
+                </div>
+            </div>
+
+            {/* Top Left - Enhanced Mode indicator - Responsive */}
+            <div style={{
+                position: 'absolute',
+                top: isCompact ? `calc(${hudSpacing} + 50px)` : `calc(${hudSpacing} + 56px)`,  // Move down to make room for badge
                 left: hudSpacing,
                 zIndex: 20,
                 maxWidth: isCompact ? 'calc(50% - 16px)' : 'none'
@@ -157,7 +193,7 @@ export const SortAndPlaceMode = () => {
                             WebkitTextFillColor: 'transparent',
                             textShadow: '0 0 20px rgba(255, 255, 255, 0.3)'
                         }}>
-                            {isCompact ? 'Sort' : 'Sort and Place'}
+                            Sort and Place
                         </span>
                     </div>
                     

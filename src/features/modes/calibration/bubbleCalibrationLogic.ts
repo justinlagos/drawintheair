@@ -28,16 +28,22 @@ const renderLevel1Background = (
     timestamp: number
 ) => {
     // ===========================================
+    // BASE: Fill entire canvas first to prevent gaps
+    // ===========================================
+    ctx.fillStyle = '#4CAF50';  // Green base (matches bottom of hills)
+    ctx.fillRect(0, 0, width, height);
+    
+    // ===========================================
     // LAYER 1: SKY - Professional gradient with depth
     // ===========================================
-    const skyGradient = ctx.createLinearGradient(0, 0, 0, height * 0.6);
+    const skyGradient = ctx.createLinearGradient(0, 0, 0, height * 0.65);  // Extend to 65% for overlap
     skyGradient.addColorStop(0, '#E8F4F8');    // Very light blue-white (zenith)
     skyGradient.addColorStop(0.3, '#D6EBF5');  // Soft sky blue
     skyGradient.addColorStop(0.6, '#B8D9E8');  // Light blue
     skyGradient.addColorStop(1, '#A8D0E0');    // Horizon blue
     
     ctx.fillStyle = skyGradient;
-    ctx.fillRect(0, 0, width, height * 0.6);
+    ctx.fillRect(0, 0, width, height * 0.65);  // Fill sky area with overlap
     
     // ===========================================
     // LAYER 2: SUN - Professional sun with realistic glow
@@ -543,20 +549,9 @@ export const bubbleCalibrationLogic = (
     const timeRemaining = getTimeRemaining();
     const isActive = isGameActive();
 
-    // Draw landscape background
-    const perfConfig = perf.getConfig();
-    if (perfConfig.visualQuality !== 'low') {
-        // Special rendering for Level 1 with sun and clouds
-        if (currentLevel === 1) {
-            renderLevel1Background(ctx, width, height, now);
-        } else {
-            renderLandscapeBackground(ctx, config.background, width, height, now);
-        }
-    } else {
-        // Simplified background for low tier
-        ctx.fillStyle = currentLevel === 1 ? '#E3F2FD' : '#87CEEB';
-        ctx.fillRect(0, 0, width, height);
-    }
+    // Render level-specific landscape background
+    const levelConfig = LEVEL_CONFIGS[currentLevel];
+    renderLandscapeBackground(ctx, levelConfig.background, width, height, now);
 
     // Update bubble positions and animations with level-specific behaviors
     bubbles.forEach(bubble => {

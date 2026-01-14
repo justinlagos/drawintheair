@@ -364,6 +364,11 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
     const isTablet = screenSize === 'tablet';
     const isLarge = screenSize === 'large';
     const availableModes = MODES;
+    
+    // Debug: Log available modes to verify all 5 are present
+    useEffect(() => {
+        console.log('[ModeSelectionMenu] Available modes:', availableModes.map(m => m.id));
+    }, []);
 
     // Detect mobile (legacy compatibility)
     useEffect(() => {
@@ -470,7 +475,7 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
             {/* Main Container - Centered with strict spacing */}
             <div style={{
                 width: '100%',
-                maxWidth: isLarge ? '1100px' : '920px',
+                maxWidth: isLarge ? '1400px' : '1200px',
                 height: isMobile ? 'auto' : '100%',
                 minHeight: isMobile ? 'auto' : 0,
                 display: 'flex',
@@ -528,10 +533,10 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
                     flexDirection: 'column',
                     gap: isMobile ? 'clamp(10px, 1.2vw, 12px)' : isTablet ? 'clamp(12px, 1.5vw, 16px)' : 'clamp(16px, 2vw, 20px)',
                     width: '100%',
-                    maxWidth: isMobile ? '100%' : isTablet ? '900px' : 'clamp(900px, 88vw, 1200px)',
+                    maxWidth: isMobile ? '100%' : isTablet ? '900px' : 'clamp(1100px, 95vw, 1400px)',
                     margin: '0 auto',
                     maxHeight: isMobile ? 'none' : '100%',
-                    overflow: 'hidden', // CRITICAL: Prevent scrolling
+                    overflow: 'visible', // Allow all 5 cards to be visible
                     justifyContent: 'center'
                 }}>
                     {/* Calculate optimal layout based on viewport */}
@@ -637,8 +642,8 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
                                                         padding: '20px',
                                                         margin: '-20px',
                                                         boxSizing: 'content-box',
-                                                        width: 'calc((100% - clamp(12px, 1.5vw, 16px)) / 3)',
-                                                        maxWidth: 'calc((100% - clamp(12px, 1.5vw, 16px)) / 3)',
+                                                        width: 'calc((100% - clamp(12px, 1.5vw, 16px)) / 2)',
+                                                        maxWidth: 'calc((100% - clamp(12px, 1.5vw, 16px)) / 2)',
                                                         height: '100%',
                                                         maxHeight: '160px'
                                                     }}
