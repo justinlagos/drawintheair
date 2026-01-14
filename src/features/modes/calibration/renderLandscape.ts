@@ -559,6 +559,9 @@ const applyLightingEffects = (
     timestamp: number
 ) => {
     ctx.save();
+    // Currently lighting is static, but we may animate it in future using `timestamp`
+    // Read it to satisfy TypeScript's noUnusedParameters rule.
+    void timestamp;
     
     // Different lighting based on landscape type
     if (landscape.id === 'sunny-meadow') {

@@ -64,6 +64,9 @@ export const HybridButton = forwardRef<HybridButtonRef, HybridButtonProps>(({
     
     // Hand tracking dwell handler (called from parent via ref)
     const handleTrackingHover = (isHovered: boolean, point?: { x: number; y: number }) => {
+        // `point` is currently unused but kept for future visual effects (e.g., ripple from touch point)
+        // Read it to satisfy TypeScript's noUnusedParameters rule.
+        void point;
         if (disabled) return;
         
         setIsHoveredByTracking(isHovered);

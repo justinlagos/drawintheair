@@ -528,7 +528,7 @@ export const FreePaintMode = ({ frameData }: FreePaintModeProps) => {
                                         : '0 4px 12px rgba(0,0,0,0.3)',
                                     padding: 0
                                 }}
-                                data-brush-button={brush.size}
+                                data-brush-button={brush.size.toString()}
                             >
                                 <div style={{
                                     width: `${isCompact ? Math.max(brush.displaySize * 0.7, 6) : brush.displaySize}px`,
