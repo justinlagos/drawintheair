@@ -541,8 +541,10 @@ export const ModeSelectionMenu = ({ onSelect, trackingResults }: ModeSelectionMe
                 }}>
                     {/* Calculate optimal layout based on viewport */}
                     {(() => {
-                        // Desktop: Single row of 5 cards
-                        if (!isMobile && !isTablet) {
+                        // Desktop: Single row of 5 cards (width > 1024px)
+                        // Use explicit width check as fallback to ensure desktop layout
+                        const isDesktopWidth = window.innerWidth > 1024;
+                        if (screenSize === 'desktop' || screenSize === 'large' || isDesktopWidth) {
                             return (
                                 <div style={{
                                     display: 'grid',

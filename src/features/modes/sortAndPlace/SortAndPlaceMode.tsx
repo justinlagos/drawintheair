@@ -125,19 +125,21 @@ export const SortAndPlaceMode = () => {
                 position: 'absolute',
                 top: hudSpacing,
                 left: hudSpacing,
-                zIndex: 25,  // Above all other UI elements including instruction banner
-                pointerEvents: 'none'  // Don't block interactions
+                zIndex: 9999,  // Very high z-index to ensure it's above everything
+                pointerEvents: 'none',  // Don't block interactions
+                isolation: 'isolate'  // Create new stacking context
             }}>
                 <div style={{
-                    background: 'rgba(15, 12, 41, 0.85)',
+                    background: 'rgba(15, 12, 41, 0.95)',  // More opaque for better visibility
                     backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
                     borderRadius: isCompact ? '10px' : '12px',
-                    border: '1.5px solid rgba(255, 255, 255, 0.2)',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',  // Stronger border
                     padding: isCompact ? '8px 14px' : '10px 18px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
-                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)'
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1) inset'  // Stronger shadow
                 }}>
                     <span style={{ 
                         fontSize: isCompact ? '1rem' : '1.2rem',

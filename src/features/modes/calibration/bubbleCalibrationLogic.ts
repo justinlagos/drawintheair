@@ -1,13 +1,14 @@
 /**
- * Bubble Pop Logic - 3 Progressive Levels with Landscape Backgrounds
+ * Bubble Pop Logic - 6 Progressive Levels with Landscape Backgrounds
  * 
  * Timed 30-second rounds with:
- * - Level progression (3 levels)
+ * - Level progression (6 levels)
  * - Progressive difficulty with increasing speed
  * - 3D realistic balloons with depth
  * - Illustrated landscape backgrounds per level
  * - End-of-round modal with auto-advance/retry
  * - Milestone rewards at level goals
+ * - Kid-friendly gameplay with forgiving hit detection
  */
 
 import { DrawingUtils } from '@mediapipe/tasks-vision';
@@ -271,9 +272,10 @@ interface Bubble {
     rotation: number;
     float: number;
     z: number; // Depth for 3D effect
+    lastPopAttempt?: number; // Timestamp of last pop attempt to prevent double pops
 }
 
-export type BubbleLevel = 1 | 2 | 3;
+export type BubbleLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
 interface LevelConfig {
     level: BubbleLevel;
@@ -281,8 +283,10 @@ interface LevelConfig {
     targetScore: number;           // Bubbles needed to advance
     gameDuration: number;          // Time in milliseconds
     maxBubbles: number;            // Max bubbles on screen
+    minOnScreenBubbles: number;   // Minimum bubbles to maintain on screen
     spawnRate: number;             // ms between spawns
-    bubbleSpeed: number;           // Movement speed
+    bubbleSpeed: number;           // Movement speed (normalized per second)
+    driftSpeed: number;            // Drift speed (normalized per second)
     bubbleMinSize: number;         // Normalized (0-1)
     bubbleMaxSize: number;         // Normalized (0-1)
     specialBehavior?: string;      // Level-specific mechanics
@@ -295,28 +299,32 @@ const LEVEL_CONFIGS: Record<BubbleLevel, LevelConfig> = {
     1: {
         level: 1,
         name: "Sunny Meadow",
-        targetScore: 20,
+        targetScore: 12,
         gameDuration: 30000,         // 30 seconds
-        maxBubbles: 6,               // Even fewer bubbles - less overwhelming
-        spawnRate: 1200,             // Much slower spawn (1200ms = 1.2 seconds between bubbles)
-        bubbleSpeed: 0.0005,          // Slow but visible movement
-        bubbleMinSize: 0.055,        // Larger bubbles (easier to pop)
-        bubbleMaxSize: 0.09,         // Larger bubbles (easier to pop)
+        maxBubbles: 16,
+        minOnScreenBubbles: 8,
+        spawnRate: 300,
+        bubbleSpeed: 0.10,           // Kid-friendly: 10% of canvas per second
+        driftSpeed: 0.20,             // Drift speed
+        bubbleMinSize: 0.05,         // Big bubbles for easy targeting
+        bubbleMaxSize: 0.085,
         specialBehavior: 'float-gentle',
         background: LANDSCAPE_BACKGROUNDS.sunnyMeadow,
-        bubbleColors: ['#FF5252', '#FF4081', '#7C4DFF', '#448AFF', '#FFAB40', '#69F0AE', '#FF6E40', '#E040FB'],  // Brighter, more vibrant colors
+        bubbleColors: ['#FF5252', '#FF4081', '#7C4DFF', '#448AFF', '#FFAB40', '#69F0AE', '#FF6E40', '#E040FB'],
         particleCount: 12
     },
     2: {
         level: 2,
         name: "Misty Mountains",
-        targetScore: 25,
+        targetScore: 14,
         gameDuration: 30000,
-        maxBubbles: 14,
-        spawnRate: 350,              // Faster spawn
-        bubbleSpeed: 0.0008,         // Medium speed
-        bubbleMinSize: 0.04,         // Medium bubbles
-        bubbleMaxSize: 0.07,
+        maxBubbles: 18,
+        minOnScreenBubbles: 9,
+        spawnRate: 300,
+        bubbleSpeed: 0.12,            // Slightly faster
+        driftSpeed: 0.22,
+        bubbleMinSize: 0.045,        // Slightly smaller
+        bubbleMaxSize: 0.08,
         specialBehavior: 'drift-wind',
         background: LANDSCAPE_BACKGROUNDS.mistyMountains,
         bubbleColors: ['#FF5722', '#E91E63', '#9C27B0', '#FFEB3B', '#00E676', '#FF1744'],
@@ -325,19 +333,75 @@ const LEVEL_CONFIGS: Record<BubbleLevel, LevelConfig> = {
     3: {
         level: 3,
         name: "Sunset Peaks",
-        targetScore: 30,
+        targetScore: 16,
         gameDuration: 30000,
-        maxBubbles: 16,
-        spawnRate: 300,              // Fastest spawn
-        bubbleSpeed: 0.001,          // Fast movement
-        bubbleMinSize: 0.035,        // Smaller bubbles (harder)
-        bubbleMaxSize: 0.06,
+        maxBubbles: 20,
+        minOnScreenBubbles: 10,
+        spawnRate: 280,
+        bubbleSpeed: 0.14,
+        driftSpeed: 0.24,
+        bubbleMinSize: 0.04,
+        bubbleMaxSize: 0.075,
         specialBehavior: 'zigzag-rise',
         background: LANDSCAPE_BACKGROUNDS.sunsetPeaks,
         bubbleColors: ['#00E5FF', '#00BCD4', '#4DD0E1', '#FFEB3B', '#FFC107', '#FFFFFF'],
         particleCount: 20
+    },
+    4: {
+        level: 4,
+        name: "Sunny Meadow",
+        targetScore: 18,
+        gameDuration: 30000,
+        maxBubbles: 22,
+        minOnScreenBubbles: 11,
+        spawnRate: 280,
+        bubbleSpeed: 0.16,
+        driftSpeed: 0.26,
+        bubbleMinSize: 0.038,
+        bubbleMaxSize: 0.07,
+        specialBehavior: 'float-gentle',
+        background: LANDSCAPE_BACKGROUNDS.sunnyMeadow,
+        bubbleColors: ['#FF5252', '#FF4081', '#7C4DFF', '#448AFF', '#FFAB40', '#69F0AE', '#FF6E40', '#E040FB'],
+        particleCount: 18
+    },
+    5: {
+        level: 5,
+        name: "Misty Mountains",
+        targetScore: 20,
+        gameDuration: 30000,
+        maxBubbles: 24,
+        minOnScreenBubbles: 12,
+        spawnRate: 260,
+        bubbleSpeed: 0.18,
+        driftSpeed: 0.28,
+        bubbleMinSize: 0.035,
+        bubbleMaxSize: 0.065,
+        specialBehavior: 'drift-wind',
+        background: LANDSCAPE_BACKGROUNDS.mistyMountains,
+        bubbleColors: ['#FF5722', '#E91E63', '#9C27B0', '#FFEB3B', '#00E676', '#FF1744'],
+        particleCount: 20
+    },
+    6: {
+        level: 6,
+        name: "Sunset Peaks",
+        targetScore: 22,
+        gameDuration: 30000,
+        maxBubbles: 26,
+        minOnScreenBubbles: 13,
+        spawnRate: 250,
+        bubbleSpeed: 0.20,
+        driftSpeed: 0.30,
+        bubbleMinSize: 0.032,
+        bubbleMaxSize: 0.06,
+        specialBehavior: 'zigzag-rise',
+        background: LANDSCAPE_BACKGROUNDS.sunsetPeaks,
+        bubbleColors: ['#00E5FF', '#00BCD4', '#4DD0E1', '#FFEB3B', '#FFC107', '#FFFFFF'],
+        particleCount: 22
     }
 };
+
+// Calculate MAX_LEVEL from config keys
+export const MAX_LEVEL = Math.max(...Object.keys(LEVEL_CONFIGS).map(Number)) as BubbleLevel;
 
 // Get colors for current level
 const getColorsForLevel = (level: BubbleLevel): string[] => {
@@ -377,39 +441,44 @@ const spawnBubble = (level: BubbleLevel, onScreen: boolean = false): Bubble => {
     const margin = 0.1;
     
     let x, y, vx, vy;
-    const baseSpeed = config.bubbleSpeed;
+    // Convert speed from "per second" to "per frame" (assuming ~60fps)
+    // bubbleSpeed is normalized (0-1), so 0.10 = 10% of canvas per second
+    // Per frame: 0.10 / 60 ≈ 0.00167
+    const baseSpeedPerFrame = config.bubbleSpeed / 60;
+    const driftSpeedPerFrame = config.driftSpeed / 60;
     
     if (onScreen) {
         // Spawn on-screen for immediate visibility
         x = margin + Math.random() * (1 - margin * 2);
         y = margin + Math.random() * (1 - margin * 2);
         // Random gentle movement
-        vx = (Math.random() - 0.5) * baseSpeed * 2;
-        vy = (Math.random() - 0.5) * baseSpeed * 2;
+        vx = (Math.random() - 0.5) * driftSpeedPerFrame * 2;
+        vy = (Math.random() - 0.5) * driftSpeedPerFrame * 2;
     } else {
-        // Spawn off-screen and move in
+        // Spawn off-screen and move in - gentle entry speed
         const side = Math.floor(Math.random() * 4);
+        const speedMultiplier = 1.2 + Math.random() * 0.3; // 1.2x to 1.5x base speed for entry
         
-        if (side === 0) { // Top
+        if (side === 0) { // Top - bubbles float down
             x = margin + Math.random() * (1 - margin * 2);
-            y = -0.1;
-            vx = (Math.random() - 0.5) * baseSpeed * 0.7;
-            vy = baseSpeed + Math.random() * baseSpeed * 0.5;
-        } else if (side === 1) { // Right
-            x = 1.1;
+            y = -0.12;
+            vx = (Math.random() - 0.5) * driftSpeedPerFrame * 1.2;
+            vy = baseSpeedPerFrame * speedMultiplier;
+        } else if (side === 1) { // Right - bubbles drift left
+            x = 1.12;
             y = margin + Math.random() * (1 - margin * 2);
-            vx = -(baseSpeed + Math.random() * baseSpeed * 0.5);
-            vy = (Math.random() - 0.5) * baseSpeed * 0.7;
-        } else if (side === 2) { // Bottom
+            vx = -baseSpeedPerFrame * speedMultiplier;
+            vy = (Math.random() - 0.5) * driftSpeedPerFrame * 1.2;
+        } else if (side === 2) { // Bottom - bubbles rise up
             x = margin + Math.random() * (1 - margin * 2);
-            y = 1.1;
-            vx = (Math.random() - 0.5) * baseSpeed * 0.7;
-            vy = -(baseSpeed + Math.random() * baseSpeed * 0.5);
-        } else { // Left
-            x = -0.1;
+            y = 1.12;
+            vx = (Math.random() - 0.5) * driftSpeedPerFrame * 1.2;
+            vy = -baseSpeedPerFrame * speedMultiplier;
+        } else { // Left - bubbles drift right
+            x = -0.12;
             y = margin + Math.random() * (1 - margin * 2);
-            vx = baseSpeed + Math.random() * baseSpeed * 0.5;
-            vy = (Math.random() - 0.5) * baseSpeed * 0.7;
+            vx = baseSpeedPerFrame * speedMultiplier;
+            vy = (Math.random() - 0.5) * driftSpeedPerFrame * 1.2;
         }
     }
     
@@ -434,13 +503,13 @@ const spawnBubble = (level: BubbleLevel, onScreen: boolean = false): Bubble => {
 };
 
 export const startBubbleGame = (level: BubbleLevel | undefined = 1) => {
-    const actualLevel = Math.min(Math.max(1, level ?? 1), 3) as BubbleLevel;
+    const actualLevel = Math.min(Math.max(1, level ?? 1), MAX_LEVEL) as BubbleLevel;
     currentLevel = actualLevel;
     bubbles = [];
     score = 0;
     nextBubbleId = 0;
-    lastSpawnTime = 0;
     gameStartTime = Date.now();
+    lastSpawnTime = gameStartTime; // Initialize to game start so first spawn happens after spawnRate delay
     gameEndTime = null;
     milestoneReached = false;
     milestoneCelebrated = false;
@@ -454,12 +523,15 @@ export const startBubbleGame = (level: BubbleLevel | undefined = 1) => {
     }
     
     const config = LEVEL_CONFIGS[actualLevel];
-    // Spawn initial bubbles - Level 1 starts with fewer bubbles for gentler start
-    // Spawn them ON-SCREEN so they're immediately visible
-    const initialCount = actualLevel === 1 ? 3 : Math.min(Math.floor(config.maxBubbles * 0.7), config.maxBubbles - 1);
+    // Spawn initial bubbles to meet minimum on-screen requirement
+    const initialCount = Math.min(config.maxBubbles, config.minOnScreenBubbles);
     for (let i = 0; i < initialCount; i++) {
-        bubbles.push(spawnBubble(actualLevel, true)); // true = spawn on-screen
+        // Mix of on-screen and off-screen spawns for visual variety
+        const spawnOnScreen = i < Math.min(4, initialCount * 0.3);
+        bubbles.push(spawnBubble(actualLevel, spawnOnScreen));
     }
+    // Set lastSpawnTime to now so first periodic spawn happens after spawnRate delay
+    lastSpawnTime = Date.now();
 };
 
 export const resetBubbles = () => {
@@ -485,7 +557,11 @@ export const getGameEndTime = () => gameEndTime;
 export const getCurrentGoal = () => LEVEL_CONFIGS[currentLevel].targetScore;
 export const canAdvanceLevel = () => {
     const currentGoal = LEVEL_CONFIGS[currentLevel].targetScore;
-    return score >= currentGoal && currentLevel < 3;
+    return score >= currentGoal && currentLevel < MAX_LEVEL;
+};
+
+export const isLastLevel = () => {
+    return currentLevel === MAX_LEVEL;
 };
 export const hasReachedGoal = () => {
     const currentGoal = LEVEL_CONFIGS[currentLevel].targetScore;
@@ -554,37 +630,49 @@ export const bubbleCalibrationLogic = (
     renderLandscapeBackground(ctx, levelConfig.background, width, height, now);
 
     // Update bubble positions and animations with level-specific behaviors
+    // Calculate max movement per frame to prevent teleports on low fps
+    const maxPxPerFrame = Math.max(6, Math.min(width, height) * 0.01);
+    const maxNormalizedPerFrame = maxPxPerFrame / Math.min(width, height);
+    
     bubbles.forEach(bubble => {
         if (!bubble.popping && isActive) {
             // Apply DDS speed multiplier if enabled
             const speedMultiplier = flags.enableDynamicDifficulty ? difficultyMultipliers.speed : 1.0;
             
-            // Level-specific movement behaviors
+            // Level-specific movement behaviors - reduced jitter for smoother motion
             const behavior = config.specialBehavior || 'float-gentle';
             switch (behavior) {
                 case 'float-gentle':
                     // Level 1: Gentle floating, mostly upward
-                    bubble.vy -= 0.0001 * (now - bubble.createdAt) * 0.001;
-                    bubble.vx += Math.sin(now * 0.001 + bubble.id) * 0.00001;
+                    bubble.vy -= 0.00005 * (now - bubble.createdAt) * 0.001; // Reduced acceleration
+                    bubble.vx += Math.sin(now * 0.0005 + bubble.id) * 0.000005; // Slower, smoother drift
                     bubble.float += 0.008;
                     break;
                 case 'drift-wind':
                     // Level 2: Wind effect, horizontal drift
-                    bubble.vx += 0.00005 * (now - bubble.createdAt) * 0.001;
-                    bubble.vy += Math.sin(now * 0.002 + bubble.id * 0.5) * 0.00002;
+                    bubble.vx += 0.00003 * (now - bubble.createdAt) * 0.001; // Reduced acceleration
+                    bubble.vy += Math.sin(now * 0.001 + bubble.id * 0.5) * 0.00001; // Slower oscillation
                     bubble.float += 0.008;
                     break;
                 case 'zigzag-rise':
-                    // Level 3: Zigzag pattern, faster and more erratic
-                    bubble.vy -= 0.00015 * (now - bubble.createdAt) * 0.001;
-                    bubble.vx = Math.sin(now * 0.005 + bubble.id * 2) * 0.001;
+                    // Level 3+: Zigzag pattern, but smoother
+                    bubble.vy -= 0.00008 * (now - bubble.createdAt) * 0.001; // Reduced acceleration
+                    bubble.vx = Math.sin(now * 0.003 + bubble.id * 2) * 0.0005; // Smoother zigzag
                     bubble.float += 0.008;
                     bubble.rotation += 0.02;
                     break;
             }
             
-            bubble.x += bubble.vx * speedMultiplier;
-            bubble.y += bubble.vy * speedMultiplier;
+            // Calculate movement
+            let dx = bubble.vx * speedMultiplier;
+            let dy = bubble.vy * speedMultiplier;
+            
+            // Clamp movement to prevent teleports
+            dx = Math.max(-maxNormalizedPerFrame, Math.min(maxNormalizedPerFrame, dx));
+            dy = Math.max(-maxNormalizedPerFrame, Math.min(maxNormalizedPerFrame, dy));
+            
+            bubble.x += dx;
+            bubble.y += dy;
             bubble.rotation += 0.003;
             
             // Remove if off-screen
@@ -595,13 +683,42 @@ export const bubbleCalibrationLogic = (
         }
     });
 
-    // Spawn new bubbles periodically
-    if (isActive && now - lastSpawnTime > config.spawnRate && 
-        bubbles.filter(b => !b.popping).length < config.maxBubbles) {
-        // Alternate between on-screen and off-screen spawns for variety
-        const spawnOnScreen = bubbles.filter(b => !b.popping).length < 2;
-        bubbles.push(spawnBubble(currentLevel, spawnOnScreen));
-        lastSpawnTime = now;
+    // Spawn new bubbles periodically - maintain minimum on-screen count
+    const activeBubbleCount = bubbles.filter(b => !b.popping).length;
+    if (isActive && activeBubbleCount < config.maxBubbles) {
+        // Check if enough time has passed since last spawn
+        const timeSinceLastSpawn = now - lastSpawnTime;
+        if (timeSinceLastSpawn >= config.spawnRate) {
+            // Maintain minimum on-screen bubbles
+            const onScreenBubbles = bubbles.filter(b => !b.popping && b.x >= 0 && b.x <= 1 && b.y >= 0 && b.y <= 1).length;
+            const bubblesNeeded = Math.min(
+                config.maxBubbles - activeBubbleCount,
+                onScreenBubbles < config.minOnScreenBubbles 
+                    ? config.minOnScreenBubbles - onScreenBubbles 
+                    : 1
+            );
+            
+            for (let i = 0; i < bubblesNeeded; i++) {
+                // Spawn on-screen if we're below minimum, otherwise spawn from edges
+                const spawnOnScreen = onScreenBubbles < config.minOnScreenBubbles && i < 2;
+                bubbles.push(spawnBubble(currentLevel, spawnOnScreen));
+            }
+            lastSpawnTime = now;
+        }
+    }
+    
+    // Continuous spawn check to maintain minimum - spawn immediately if below threshold
+    if (isActive && activeBubbleCount < config.maxBubbles) {
+        let onScreenBubbles = bubbles.filter(b => !b.popping && b.x >= 0 && b.x <= 1 && b.y >= 0 && b.y <= 1).length;
+        const bubblesToSpawn = Math.min(
+            config.minOnScreenBubbles - onScreenBubbles,
+            config.maxBubbles - activeBubbleCount
+        );
+        if (bubblesToSpawn > 0) {
+            for (let i = 0; i < bubblesToSpawn; i++) {
+                bubbles.push(spawnBubble(currentLevel, true)); // Always spawn on-screen when catching up
+            }
+        }
     }
 
     // Remove old popping bubbles
@@ -637,6 +754,9 @@ export const bubbleCalibrationLogic = (
         return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
     };
 
+    // Get performance config once for all bubbles
+    const perfConfig = perf.getConfig();
+    
     // Draw bubbles with enhanced 3D realistic balloon effect
     bubbles.forEach(bubble => {
         const canvasPoint = normalizedToCanvas({ x: bubble.x, y: bubble.y }, width, height);
@@ -674,8 +794,8 @@ export const bubbleCalibrationLogic = (
                 const sy = canvasPoint.y + floatOffset + Math.sin(angle) * dist;
                 const particleSize = (currentLevel >= 2 ? 8 : 7) * alpha;
 
-                // Level 3 gets extra glow on particles (skip on low tier)
-                if (currentLevel === 3 && perfConfig.visualQuality === 'high') {
+                // Level 3+ gets extra glow on particles (skip on low tier)
+                if (currentLevel >= 3 && perfConfig.visualQuality === 'high') {
                     ctx.save();
                     ctx.globalAlpha = alpha * 0.5;
                     ctx.beginPath();
@@ -804,6 +924,8 @@ export const bubbleCalibrationLogic = (
     });
 
     // Check for hand collision using filtered point
+    // Pop works on hover (filteredPoint exists) - no pinch required
+    // Pinch can still be used but is not required
     if (filteredPoint && isActive) {
         const fingerCanvas = normalizedToCanvas(filteredPoint, width, height);
 
@@ -819,6 +941,11 @@ export const bubbleCalibrationLogic = (
         // Check collision with each bubble
         bubbles.forEach(bubble => {
             if (bubble.popping) return;
+            
+            // Cooldown to prevent double pops (100ms cooldown per bubble)
+            if (bubble.lastPopAttempt && now - bubble.lastPopAttempt < 100) {
+                return;
+            }
 
             const bubbleCanvas = normalizedToCanvas({ x: bubble.x, y: bubble.y }, width, height);
             const floatOffset = Math.sin(bubble.float) * 4;
@@ -827,16 +954,20 @@ export const bubbleCalibrationLogic = (
             
             const dx = fingerCanvas.x - bubbleCanvas.x;
             const dy = fingerCanvas.y - (bubbleCanvas.y + floatOffset);
-            const dist = Math.hypot(dx, dy);
+            const distSq = dx * dx + dy * dy;
+            const dist = Math.sqrt(distSq);
 
-            // More forgiving pop radius (1.4x instead of 1.3x)
+            // More forgiving hit detection - 1.35x radius for kid-friendly gameplay
             // Apply DDS size multiplier to pop radius for consistency
             const popRadiusMultiplier = flags.enableDynamicDifficulty ? difficultyMultipliers.size : 1.0;
-            const effectivePopRadius = r * 1.4 * popRadiusMultiplier;
+            const effectiveRadius = r * 1.35 * popRadiusMultiplier;
+            const effectiveRadiusSq = effectiveRadius * effectiveRadius;
             
-            if (dist < effectivePopRadius) {
+            // Pop on hover - no pinch required
+            if (distSq <= effectiveRadiusSq) {
                 bubble.popping = true;
                 bubble.createdAt = now;
+                bubble.lastPopAttempt = now;
                 score++;
                 bubbleHits++;
                 
@@ -846,7 +977,7 @@ export const bubbleCalibrationLogic = (
                 }
             } else {
                 // Track near misses for difficulty adjustment
-                if (dist < effectivePopRadius * 1.5) {
+                if (dist < effectiveRadius * 1.5) {
                     bubbleMisses++;
                 }
             }

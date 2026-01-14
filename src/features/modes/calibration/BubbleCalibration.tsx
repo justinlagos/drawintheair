@@ -20,9 +20,10 @@ import {
     setMilestoneCelebrated,
     getGameEndTime,
     startBubbleGame,
-    getCurrentLevel,
     getCurrentGoal,
     hasReachedGoal,
+    MAX_LEVEL,
+    isLastLevel,
     type BubbleLevel
 } from './bubbleCalibrationLogic';
 import { Celebration } from '../../../components/Celebration';
@@ -101,13 +102,12 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
             const currentScore = getScore();
             const currentTimeRemaining = getTimeRemaining();
             const currentMilestoneReached = hasReachedMilestone();
-            const currentLevel = getCurrentLevel();
             const currentGoal = getCurrentGoal();
             const gameIsActive = isGameActive();
             
+            // Update score and time only - do NOT overwrite React level state
             setScore(currentScore);
             setTimeRemaining(currentTimeRemaining);
-            setLevel(currentLevel);
             
             // Show milestone celebration when reached
             if (currentMilestoneReached && !hasCelebratedMilestone()) {
@@ -149,11 +149,11 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
                 if (goalReached && featureFlags.getFlag('stickerRewards')) {
                     earnSticker('bubble-milestone');
                 }
-                if (goalReached && currentLevel < 3) {
+                if (goalReached && level < MAX_LEVEL) {
                     setAutoAdvanceScheduled(true);
                     // Show reward, then auto-advance after 1200ms (brief celebration)
                     autoAdvanceTimeout = window.setTimeout(() => {
-                        const nextLevel = (currentLevel + 1) as BubbleLevel;
+                        const nextLevel = (level + 1) as BubbleLevel;
                         // Close modal and reset state before advancing
                         setShowEndModal(false);
                         setAutoAdvanceScheduled(false);
@@ -185,6 +185,16 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
         setAutoAdvanceScheduled(false);
     };
 
+    const handleNextLevel = () => {
+        if (level < MAX_LEVEL) {
+            const nextLevel = (level + 1) as BubbleLevel;
+            // Just set level - useEffect will handle starting the game
+            setLevel(nextLevel);
+            setShowEndModal(false);
+            setAutoAdvanceScheduled(false);
+        }
+    };
+
     const currentGoal = getCurrentGoal();
 
     // Format time as M:SS
@@ -196,7 +206,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
     };
 
     const goalReached = hasReachedGoal();
-    const isLastLevel = level === 3;
+    const isLastLevel = level === MAX_LEVEL;
 
     // Responsive sizing
     const hudSpacing = isCompact ? '12px' : '20px';
@@ -502,7 +512,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
                             )}
                             {goalReached && isLastLevel && (
                                 <div style={{ marginTop: '12px', fontSize: '1.1rem', color: '#FFD93D' }}>
-                                    Amazing! You completed all 3 levels! 🌟
+                                    Amazing! You completed all {MAX_LEVEL} levels! 🌟
                                 </div>
                             )}
                         </p>
@@ -513,6 +523,37 @@ export const BubbleCalibration = ({ onComplete: _onComplete }: BubbleCalibration
                             justifyContent: 'center',
                             flexWrap: 'wrap'
                         }}>
+                            {/* Next Level button - shown when goal reached and not last level */}
+                            {goalReached && !isLastLevel && (
+                                <button
+                                    onClick={handleNextLevel}
+                                    style={{
+                                        padding: isCompact ? '12px 24px' : '16px 32px',
+                                        background: 'linear-gradient(180deg, rgba(255, 217, 61, 0.4) 0%, rgba(255, 217, 61, 0.3) 100%)',
+                                        border: '2px solid rgba(255, 217, 61, 0.6)',
+                                        borderRadius: isCompact ? '16px' : '24px',
+                                        color: '#FFD93D',
+                                        cursor: 'pointer',
+                                        fontSize: isCompact ? '0.95rem' : '1.1rem',
+                                        fontWeight: 700,
+                                        transition: 'all 0.2s ease',
+                                        boxShadow: '0 4px 16px rgba(255, 217, 61, 0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
+                                        minWidth: '44px',
+                                        minHeight: '44px'
+                                    }}
+                                    onMouseDown={(e) => {
+                                        e.currentTarget.style.transform = 'scale(0.95)';
+                                    }}
+                                    onMouseUp={(e) => {
+                                        e.currentTarget.style.transform = 'scale(1)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'scale(1)';
+                                    }}
+                                >
+                                    Next Level
+                                </button>
+                            )}
                             {/* Try Again button - always shown */}
                             <button
                                 onClick={handleTryAgain}

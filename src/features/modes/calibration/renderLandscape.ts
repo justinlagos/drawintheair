@@ -13,8 +13,12 @@ export const renderLandscapeBackground = (
     height: number,
     timestamp: number
 ) => {
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
+    // Fill entire canvas with base color first to prevent gaps
+    // Use the last color of the ground layer (or last layer) as the base
+    const groundLayer = landscape.layers.find(l => l.type === 'ground') || landscape.layers[landscape.layers.length - 1];
+    const baseColor = groundLayer?.colors[groundLayer.colors.length - 1] || '#4CAF50';
+    ctx.fillStyle = baseColor;
+    ctx.fillRect(0, 0, width, height);
     
     // Render each layer from back to front
     landscape.layers.forEach(layer => {
@@ -124,8 +128,10 @@ const renderLayer = (
             break;
             
         case 'ground':
-            // Simple ground fill
-            ctx.fillRect(0, yStart, width, layerHeight);
+            // Simple ground fill - ensure it extends to bottom of canvas
+            // Always fill from yStart to the very bottom (height) to prevent any gaps
+            const groundFillHeight = height - yStart;
+            ctx.fillRect(0, yStart, width, groundFillHeight);
             break;
             
         case 'dune':
