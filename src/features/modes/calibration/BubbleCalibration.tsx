@@ -23,7 +23,6 @@ import {
     getCurrentGoal,
     hasReachedGoal,
     MAX_LEVEL,
-    isLastLevel,
     type BubbleLevel
 } from './bubbleCalibrationLogic';
 import { Celebration } from '../../../components/Celebration';
