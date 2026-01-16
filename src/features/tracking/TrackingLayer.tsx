@@ -142,11 +142,11 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
     const velocityRef = useRef<{ x: number; y: number; magnitude: number }>({ x: 0, y: 0, magnitude: 0 });
     const drawLoopTimeRef = useRef<number>(0);
     
-    // Kid-friendly framing guidance
-    const [framingGuidance, setFramingGuidance] = useState<string | null>(null);
-    const lastGuidanceTime = useRef<number>(0);
-    const guidanceTimeoutRef = useRef<number | undefined>(undefined);
-    const GUIDANCE_COOLDOWN_MS = 2000; // Don't spam guidance messages
+    // Kid-friendly framing guidance - DISABLED: centered notification removed per user request
+    // const [framingGuidance, setFramingGuidance] = useState<string | null>(null);
+    // const lastGuidanceTime = useRef<number>(0);
+    // const guidanceTimeoutRef = useRef<number | undefined>(undefined);
+    // const GUIDANCE_COOLDOWN_MS = 2000; // Don't spam guidance messages
     
     // Camera connection and positioning notifications
     const [cameraNotification, setCameraNotification] = useState<string | null>(null);
@@ -635,9 +635,9 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
             if (detectionIntervalRef.current) {
                 clearTimeout(detectionIntervalRef.current);
             }
-            if (guidanceTimeoutRef.current !== undefined) {
-                clearTimeout(guidanceTimeoutRef.current);
-            }
+            // if (guidanceTimeoutRef.current !== undefined) {
+            //     clearTimeout(guidanceTimeoutRef.current);
+            // } // DISABLED: centered notification removed
             cancelAnimationFrame(animationFrameId);
             interactionStateManager.reset();
             if (dynamicResolutionRef.current) {
@@ -646,7 +646,7 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
             // Reset notification state
             noHandFramesRef.current = 0;
             setCameraNotification(null);
-            setFramingGuidance(null);
+            // setFramingGuidance(null); // DISABLED: centered notification removed
             
             // Performance logging data is collected but not currently used
             // Can be enabled for debugging/analytics in the future
