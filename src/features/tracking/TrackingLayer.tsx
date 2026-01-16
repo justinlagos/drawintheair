@@ -348,40 +348,41 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                     }
                     
                     // Kid-friendly framing guidance: detect if hand is too close to edges
-                    const point = interactionState.filteredPoint;
-                    const edgeThreshold = 0.15; // 15% from edges
-                    let guidance: string | null = null;
-                    
-                    if (interactionState.hasHand && point) {
-                        // Check if hand is too close to edges
-                        if (point.x < edgeThreshold) {
-                            guidance = 'Move hands to the centre';
-                        } else if (point.x > 1 - edgeThreshold) {
-                            guidance = 'Move hands to the centre';
-                        } else if (point.y < edgeThreshold) {
-                            guidance = 'Step back a little';
-                        } else if (point.y > 1 - edgeThreshold) {
-                            guidance = 'Step back a little';
-                        }
-                    }
-                    
-                    // Clear any existing timeout
-                    if (guidanceTimeoutRef.current !== undefined) {
-                        clearTimeout(guidanceTimeoutRef.current);
-                        guidanceTimeoutRef.current = undefined;
-                    }
-                    
-                    // Update guidance if needed
-                    if (guidance && guidance !== framingGuidance) {
-                        // Only show new guidance if cooldown has passed
-                        if (now - lastGuidanceTime.current >= GUIDANCE_COOLDOWN_MS) {
-                            setFramingGuidance(guidance);
-                            lastGuidanceTime.current = now;
-                        }
-                    } else if (!guidance && framingGuidance) {
-                        // Clear guidance immediately when hands move to center
-                        setFramingGuidance(null);
-                    }
+                    // DISABLED: centered notification removed per user request
+                    // const point = interactionState.filteredPoint;
+                    // const edgeThreshold = 0.15; // 15% from edges
+                    // let guidance: string | null = null;
+                    // 
+                    // if (interactionState.hasHand && point) {
+                    //     // Check if hand is too close to edges
+                    //     if (point.x < edgeThreshold) {
+                    //         guidance = 'Move hands to the centre';
+                    //     } else if (point.x > 1 - edgeThreshold) {
+                    //         guidance = 'Move hands to the centre';
+                    //     } else if (point.y < edgeThreshold) {
+                    //         guidance = 'Step back a little';
+                    //     } else if (point.y > 1 - edgeThreshold) {
+                    //         guidance = 'Step back a little';
+                    //     }
+                    // }
+                    // 
+                    // // Clear any existing timeout
+                    // if (guidanceTimeoutRef.current !== undefined) {
+                    //     clearTimeout(guidanceTimeoutRef.current);
+                    //     guidanceTimeoutRef.current = undefined;
+                    // }
+                    // 
+                    // // Update guidance if needed
+                    // if (guidance && guidance !== framingGuidance) {
+                    //     // Only show new guidance if cooldown has passed
+                    //     if (now - lastGuidanceTime.current >= GUIDANCE_COOLDOWN_MS) {
+                    //         setFramingGuidance(guidance);
+                    //         lastGuidanceTime.current = now;
+                    //     }
+                    // } else if (!guidance && framingGuidance) {
+                    //     // Clear guidance immediately when hands move to center
+                    //     setFramingGuidance(null);
+                    // }
                     
                     // Camera connection and positioning notifications
                     let notification: string | null = null;
@@ -704,8 +705,8 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
             {/* Children receive stable, filtered frame data (from ref, updated throttled) */}
             {typeof children === 'function' ? children(lastFrameDataRef.current) : children}
             
-            {/* Kid-friendly framing guidance */}
-            {framingGuidance && (
+            {/* Kid-friendly framing guidance - DISABLED: centered notification removed per user request */}
+            {/* {framingGuidance && (
                 <>
                     <style>{`
                         @keyframes guidanceFadeIn {
@@ -741,7 +742,7 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                         {framingGuidance}
                     </div>
                 </>
-            )}
+            )} */}
             
             {/* Subtle camera connection/positioning notification */}
             {cameraNotification && (
