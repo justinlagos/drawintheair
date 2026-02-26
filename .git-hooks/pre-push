@@ -1,0 +1,17 @@
+#!/bin/sh
+# Pre-push hook to validate TypeScript and build before pushing
+
+echo "🔍 Running pre-push validation..."
+
+# Run type checking
+echo "📝 Checking TypeScript..."
+npm run type-check
+
+if [ $? -ne 0 ]; then
+  echo "❌ TypeScript errors found. Please fix them before pushing."
+  exit 1
+fi
+
+echo "✅ Pre-push validation passed!"
+exit 0
+

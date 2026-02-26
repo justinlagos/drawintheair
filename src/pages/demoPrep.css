@@ -1,0 +1,279 @@
+/**
+ * Demo Prep Page Styles
+ */
+
+.demo-prep {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #0f0c29 0%, #1a1542 50%, #0f0c29 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+    z-index: 1000;
+}
+
+.demo-prep-background {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.demo-prep-stars {
+    position: absolute;
+    inset: 0;
+    background-image: 
+        radial-gradient(2px 2px at 20% 30%, white, transparent),
+        radial-gradient(2px 2px at 60% 70%, white, transparent),
+        radial-gradient(1px 1px at 50% 50%, white, transparent),
+        radial-gradient(1px 1px at 80% 10%, white, transparent),
+        radial-gradient(2px 2px at 90% 40%, white, transparent),
+        radial-gradient(1px 1px at 33% 60%, white, transparent),
+        radial-gradient(1px 1px at 66% 20%, white, transparent);
+    background-size: 200% 200%;
+    animation: starMove 20s linear infinite;
+    opacity: 0.4;
+}
+
+@keyframes starMove {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 100% 100%; }
+}
+
+.demo-prep-container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 600px;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3rem;
+}
+
+.demo-prep-logo {
+    margin-bottom: 1rem;
+}
+
+.demo-prep-logo-img {
+    max-width: 200px;
+    height: auto;
+    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+}
+
+.demo-prep-panel {
+    background: rgba(15, 12, 41, 0.92);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 24px;
+    padding: 3rem 2.5rem;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.demo-prep-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: white;
+    text-align: center;
+    margin: 0 0 2.5rem;
+    background: linear-gradient(135deg, #00FFFF, #FF00FF, #FFFF00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.demo-prep-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.demo-prep-step {
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+}
+
+.demo-prep-step-number {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.demo-prep-step-content h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+}
+
+.demo-prep-step-content p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.5;
+}
+
+.demo-prep-error {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(255, 59, 48, 0.1);
+    border: 1px solid rgba(255, 59, 48, 0.3);
+    border-radius: 12px;
+    color: #ff6b6b;
+    font-size: 0.9rem;
+}
+
+.demo-prep-cta {
+    margin-top: 2rem;
+    width: 100%;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    border: none;
+    border-radius: 24px;
+    color: #0f0c29;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(255, 215, 0, 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.demo-prep-cta:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(255, 215, 0, 0.5);
+}
+
+.demo-prep-cta:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+}
+
+.demo-prep-cta:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Loading State */
+.demo-prep-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+}
+
+.demo-prep-loading-spinner {
+    position: relative;
+    width: 80px;
+    height: 80px;
+}
+
+.demo-prep-spinner-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 4px solid transparent;
+    border-top-color: #00FFFF;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.demo-prep-spinner-ring:nth-child(2) {
+    border-top-color: #FF00FF;
+    animation-duration: 1.5s;
+    animation-direction: reverse;
+}
+
+.demo-prep-spinner-ring:nth-child(3) {
+    border-top-color: #FFFF00;
+    animation-duration: 2s;
+    width: 60%;
+    height: 60%;
+    top: 20%;
+    left: 20%;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.demo-prep-loading-text {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+}
+
+.demo-prep-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.demo-prep-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00FFFF, #FF00FF, #FFFF00);
+    border-radius: 3px;
+    transition: width 0.1s linear;
+}
+
+/* Ready State */
+.demo-prep-ready {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.demo-prep-checkmark {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00FFFF, #FF00FF);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3rem;
+    font-weight: 700;
+    animation: checkmarkPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes checkmarkPop {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.demo-prep-ready h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+    background: linear-gradient(135deg, #00FFFF, #FF00FF, #FFFF00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+

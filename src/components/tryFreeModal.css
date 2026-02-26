@@ -1,0 +1,278 @@
+/* ─── Try Free Modal ─────────────────────────────────────────── */
+
+.tryfree-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  animation: tryfree-fade-in 0.25s ease-out;
+  padding: 1rem;
+}
+
+@keyframes tryfree-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.tryfree-card {
+  background: rgba(10, 18, 42, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 28px;
+  padding: 2.5rem 2rem 2rem;
+  max-width: 420px;
+  width: 100%;
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  animation: tryfree-slide-up 0.3s ease-out;
+  position: relative;
+}
+
+@keyframes tryfree-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.tryfree-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.tryfree-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  transform: scale(1.1);
+}
+
+.tryfree-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 0.25rem 0;
+  text-align: center;
+}
+
+.tryfree-subtitle {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+  margin: 0 0 1.75rem 0;
+}
+
+/* ─── Age Band Selector ─────────────────────────────────────── */
+
+.tryfree-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.tryfree-age-pills {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.tryfree-age-pill {
+  padding: 0.625rem 1.125rem;
+  border-radius: 50px;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  min-width: 56px;
+  text-align: center;
+}
+
+.tryfree-age-pill:hover {
+  background: rgba(255, 217, 61, 0.1);
+  border-color: rgba(255, 217, 61, 0.4);
+  color: #FFD93D;
+  transform: translateY(-1px);
+}
+
+.tryfree-age-pill[data-selected="true"] {
+  background: rgba(255, 217, 61, 0.2);
+  border-color: #FFD93D;
+  color: #FFD93D;
+  box-shadow: 0 0 12px rgba(255, 217, 61, 0.2);
+}
+
+/* ─── Admin Fields ───────────────────────────────────────────── */
+
+.tryfree-admin-fields {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border-radius: 14px;
+  border: 1px dashed rgba(0, 229, 255, 0.3);
+  background: rgba(0, 229, 255, 0.03);
+}
+
+.tryfree-admin-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #00E5FF;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tryfree-admin-badge::before {
+  content: '🔑';
+  font-size: 0.8rem;
+}
+
+.tryfree-admin-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.tryfree-admin-input {
+  flex: 1;
+  padding: 0.625rem 0.875rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+
+.tryfree-admin-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.tryfree-admin-input:focus {
+  outline: none;
+  border-color: rgba(0, 229, 255, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ─── Privacy Copy ───────────────────────────────────────────── */
+
+.tryfree-privacy {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+  padding: 0 0.5rem;
+}
+
+.tryfree-privacy-icon {
+  margin-right: 0.3rem;
+}
+
+/* ─── Buttons ────────────────────────────────────────────────── */
+
+.tryfree-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.tryfree-btn {
+  flex: 1;
+  padding: 0.875rem 1.25rem;
+  border-radius: 50px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: inherit;
+}
+
+.tryfree-btn-start {
+  background: linear-gradient(135deg, #FFD93D 0%, #FFE066 100%);
+  color: #010C24;
+  box-shadow: 0 4px 20px rgba(255, 217, 61, 0.3);
+}
+
+.tryfree-btn-start:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(255, 217, 61, 0.4);
+}
+
+.tryfree-btn-start:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.tryfree-btn-cancel {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.tryfree-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+  .tryfree-card {
+    padding: 2rem 1.5rem 1.5rem;
+    border-radius: 20px;
+  }
+
+  .tryfree-title {
+    font-size: 1.3rem;
+  }
+
+  .tryfree-age-pills {
+    gap: 0.4rem;
+  }
+
+  .tryfree-age-pill {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.85rem;
+    min-width: 48px;
+  }
+
+  .tryfree-admin-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}

@@ -1,0 +1,268 @@
+/**
+ * Magic Cursor Styles — Hyper-casual 3D Toy Pointer
+ *
+ * Visual states:
+ * - pen-up: Soft glowing ring, ready to draw
+ * - pen-down: Solid toy-like dot, actively drawing
+ *
+ * 3D feel via layered shadows, inner highlights, gradient fills
+ */
+
+.magic-cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 56px;
+    height: 56px;
+    margin-left: -28px;
+    margin-top: -28px;
+    pointer-events: none;
+    z-index: 9999;
+    transition: opacity 0.15s ease-out;
+}
+
+/* Outer ring — toy-plastic feel with inner highlight */
+.cursor-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 46px;
+    height: 46px;
+    margin-left: -23px;
+    margin-top: -23px;
+    border-radius: 50%;
+    border: 3px solid rgba(0, 229, 255, 0.8);
+    background: radial-gradient(
+        circle at 35% 30%,
+        rgba(0, 229, 255, 0.15) 0%,
+        rgba(0, 229, 255, 0.05) 40%,
+        transparent 70%
+    );
+    box-shadow:
+        0 0 12px rgba(0, 229, 255, 0.5),
+        0 0 24px rgba(0, 229, 255, 0.2),
+        inset 0 2px 4px rgba(255, 255, 255, 0.2),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.15);
+    transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pen-down .cursor-ring {
+    border-color: rgba(255, 107, 157, 0.9);
+    background: radial-gradient(
+        circle at 35% 30%,
+        rgba(255, 107, 157, 0.2) 0%,
+        rgba(255, 107, 157, 0.08) 40%,
+        transparent 70%
+    );
+    box-shadow:
+        0 0 16px rgba(255, 107, 157, 0.6),
+        0 0 32px rgba(255, 107, 157, 0.25),
+        inset 0 2px 4px rgba(255, 255, 255, 0.25),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.15);
+    transform: scale(0.88);
+}
+
+/* Inner dot — glossy 3D sphere */
+.cursor-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    margin-left: -6px;
+    margin-top: -6px;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle at 35% 30%,
+        rgba(255, 255, 255, 0.9) 0%,
+        rgba(200, 220, 255, 0.6) 40%,
+        rgba(150, 180, 220, 0.3) 100%
+    );
+    box-shadow:
+        0 0 8px rgba(255, 255, 255, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.2),
+        inset 0 1px 2px rgba(255, 255, 255, 0.5);
+    opacity: 0.6;
+    transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cursor-dot.active {
+    width: 22px;
+    height: 22px;
+    margin-left: -11px;
+    margin-top: -11px;
+    background: radial-gradient(
+        circle at 35% 28%,
+        rgba(255, 160, 200, 1) 0%,
+        rgba(255, 107, 157, 0.9) 40%,
+        rgba(200, 60, 120, 0.7) 100%
+    );
+    box-shadow:
+        0 0 16px rgba(255, 107, 157, 0.7),
+        0 4px 8px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(255, 255, 255, 0.4),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+    opacity: 1;
+}
+
+/* Decorative rotating ring — softer, less distracting */
+.cursor-decoration {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 52px;
+    height: 52px;
+    margin-left: -26px;
+    margin-top: -26px;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(255, 255, 255, 0.15);
+    animation: spin 10s linear infinite;
+}
+
+.pen-down .cursor-decoration {
+    border-color: rgba(255, 107, 157, 0.3);
+    animation: spin 3s linear infinite;
+}
+
+/* Trail effect when drawing — soft glow */
+.cursor-trail {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 28px;
+    height: 28px;
+    margin-left: -14px;
+    margin-top: -14px;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        rgba(255, 107, 157, 0.5) 0%,
+        rgba(255, 107, 157, 0.1) 50%,
+        transparent 70%
+    );
+    opacity: 0.5;
+    animation: trailPulse 0.6s ease-out infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes trailPulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(2.2);
+        opacity: 0;
+    }
+}
+
+/* High confidence — thicker, crisper ring */
+.magic-cursor.high-confidence .cursor-ring {
+    border-width: 3.5px;
+    box-shadow:
+        0 0 14px rgba(0, 229, 255, 0.6),
+        0 0 28px rgba(0, 229, 255, 0.25),
+        inset 0 2px 4px rgba(255, 255, 255, 0.25),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Low confidence — faded, dashed */
+.magic-cursor.low-confidence .cursor-ring {
+    border-style: dashed;
+    opacity: 0.5;
+    box-shadow:
+        0 0 6px rgba(0, 229, 255, 0.2),
+        inset 0 1px 2px rgba(255, 255, 255, 0.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CHARACTER CURSOR STYLES (ToyMode) — Glossy firefly pointer
+═══════════════════════════════════════════════════════════════ */
+
+.magic-cursor.character-cursor {
+    width: 44px;
+    height: 44px;
+    margin-left: -22px;
+    margin-top: -22px;
+}
+
+.character-cursor.cursor-idle .cursor-character-main {
+    animation: cursorIdle 2.5s ease-in-out infinite;
+}
+
+.character-cursor.cursor-hover .cursor-character-main {
+    animation: cursorHover 1.2s ease-in-out infinite;
+}
+
+.character-cursor.cursor-active .cursor-character-main {
+    animation: cursorActive 0.6s ease-in-out infinite;
+}
+
+.character-cursor.cursor-success .cursor-character-main {
+    animation: cursorSuccess 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.character-cursor.cursor-lost .cursor-character-main {
+    opacity: 0.25;
+    animation: cursorLost 1.2s ease-in-out infinite;
+}
+
+@keyframes cursorIdle {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.85;
+    }
+    50% {
+        transform: scale(1.08);
+        opacity: 1;
+    }
+}
+
+@keyframes cursorHover {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 16px rgba(255, 230, 109, 0.7), 0 0 32px rgba(255, 107, 157, 0.3);
+    }
+    50% {
+        transform: scale(1.12);
+        box-shadow: 0 0 24px rgba(255, 230, 109, 0.9), 0 0 48px rgba(255, 107, 157, 0.5);
+    }
+}
+
+@keyframes cursorActive {
+    0%, 100% {
+        transform: scale(1.08);
+        box-shadow: 0 0 24px rgba(255, 230, 109, 0.9), 0 0 48px rgba(255, 107, 157, 0.7);
+    }
+    50% {
+        transform: scale(1.18);
+        box-shadow: 0 0 32px rgba(255, 230, 109, 1), 0 0 64px rgba(255, 107, 157, 0.9);
+    }
+}
+
+@keyframes cursorSuccess {
+    0% { transform: scale(1); }
+    50% {
+        transform: scale(1.5);
+        box-shadow: 0 0 40px rgba(255, 230, 109, 1), 0 0 80px rgba(0, 245, 160, 0.8);
+    }
+    100% {
+        transform: scale(1.1);
+        box-shadow: 0 0 20px rgba(255, 230, 109, 0.8), 0 0 40px rgba(0, 245, 160, 0.4);
+    }
+}
+
+@keyframes cursorLost {
+    0%, 100% {
+        opacity: 0.25;
+        transform: scale(0.85);
+    }
+    50% {
+        opacity: 0.45;
+        transform: scale(0.95);
+    }
+}
