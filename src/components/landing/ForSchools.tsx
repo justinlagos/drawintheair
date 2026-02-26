@@ -40,7 +40,7 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate and sanitize inputs
     const sanitizedData = {
       contactName: validateInput(formData.contactName, 100),
@@ -66,7 +66,7 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
 
     setIsSubmitting(true);
     setError('');
-    
+
     try {
       // Track form submission event
       if (typeof window !== 'undefined' && (window as any).analytics) {
@@ -76,60 +76,64 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
         });
       }
 
-      // Submit to API endpoint with sanitized data
-      const response = await fetch('/api/school-pack', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          school_name: sanitizedData.schoolName,
-          contact_name: sanitizedData.contactName,
-          role: sanitizedData.role,
-          email: sanitizedData.email,
-          year_group: sanitizedData.yearGroup || null,
-          device_type: sanitizedData.deviceType || null,
-          send_notes: sanitizedData.sendNotes || null,
-        }),
+      // Submit to Google Sheets endpoint using tracking logic
+      const endpoint = import.meta.env.VITE_SHEETS_ENDPOINT;
+      if (!endpoint) {
+        throw new Error('Endpoint not configured');
+      }
+
+      const payloadData = {
+        school_name: sanitizedData.schoolName,
+        contact_name: sanitizedData.contactName,
+        role: sanitizedData.role,
+        email: sanitizedData.email,
+        year_group: sanitizedData.yearGroup || null,
+        device_type: sanitizedData.deviceType || null,
+        send_notes: sanitizedData.sendNotes || null,
+      };
+
+      const data = JSON.stringify({ type: 'school_pack', payload: payloadData });
+      const url = `${endpoint}?data=${encodeURIComponent(data)}`;
+
+      const response = await fetch(url, { redirect: 'follow' });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit');
+      }
+
+      setSubmitted(true);
+      setFormData({
+        contactName: '',
+        email: '',
+        schoolName: '',
+        role: '',
+        yearGroup: '',
+        deviceType: '',
+        sendNotes: ''
       });
-
-        if (!response.ok) {
-          throw new Error('Failed to submit');
-        }
-
+      setTimeout(() => {
+        setShowForm(false);
+        setSubmitted(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      // Fallback to localStorage if API fails (with sanitized data)
+      try {
+        const forms = JSON.parse(localStorage.getItem('schoolPackForms') || '[]');
+        forms.push({ ...sanitizedData, timestamp: new Date().toISOString() });
+        localStorage.setItem('schoolPackForms', JSON.stringify(forms));
         setSubmitted(true);
-        setFormData({ 
-          contactName: '', 
-          email: '', 
-          schoolName: '', 
-          role: '', 
-          yearGroup: '', 
-          deviceType: '', 
-          sendNotes: '' 
-        });
         setTimeout(() => {
           setShowForm(false);
           setSubmitted(false);
         }, 3000);
-      } catch (error) {
-        console.error('Error submitting form:', error);
-        // Fallback to localStorage if API fails (with sanitized data)
-        try {
-          const forms = JSON.parse(localStorage.getItem('schoolPackForms') || '[]');
-          forms.push({ ...sanitizedData, timestamp: new Date().toISOString() });
-          localStorage.setItem('schoolPackForms', JSON.stringify(forms));
-          setSubmitted(true);
-          setTimeout(() => {
-            setShowForm(false);
-            setSubmitted(false);
-          }, 3000);
-        } catch (storageError) {
-          setError('Failed to save form. Please try again.');
-          setIsSubmitting(false);
-        }
-      } finally {
+      } catch (storageError) {
+        setError('Failed to save form. Please try again.');
         setIsSubmitting(false);
       }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleRequestClick = () => {
@@ -234,7 +238,7 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
             </div>
           </div>
           <div className="landing-schools-ctas">
-            <button 
+            <button
               className="landing-btn landing-btn-primary landing-btn-large"
               onClick={handleRequestClick}
             >
@@ -245,14 +249,14 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
       </section>
 
       {showForm && (
-        <div 
-          className="landing-mapping-modal" 
+        <div
+          className="landing-mapping-modal"
           onClick={handleClose}
           ref={modalRef}
         >
           <div className="landing-mapping-content" onClick={(e) => e.stopPropagation()}>
-            <button 
-              className="landing-modal-close" 
+            <button
+              className="landing-modal-close"
               onClick={handleClose}
               aria-label="Close modal"
               disabled={isSubmitting || submitted}
@@ -342,8 +346,8 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
                   rows={4}
                   aria-label="SEND notes"
                 />
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="landing-btn landing-btn-primary"
                   disabled={isSubmitting}
                   style={{ marginTop: 'var(--spacing-sm)' }}

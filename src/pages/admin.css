@@ -443,3 +443,115 @@
     font-size: 0.7rem;
   }
 }
+/* ─── Admin Tabs ──────────────────────────────────────────────── */
+.admin-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.admin-tab {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-family: inherit;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-tab:hover {
+  background: var(--surface-light);
+  color: var(--text-primary);
+}
+
+.admin-tab-active {
+  background: var(--primary-blue);
+  color: var(--text-primary);
+}
+
+.admin-tab-active:hover {
+  background: var(--primary-blue);
+}
+
+.admin-badge {
+  background: var(--primary-red);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 99px;
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+.admin-tab-count {
+  font-size: 0.9rem;
+  font-weight: normal;
+  color: var(--text-secondary);
+  background: var(--surface-light);
+  padding: 0.2rem 0.6rem;
+  border-radius: 99px;
+}
+
+/* ─── Feedback Grid ───────────────────────────────────────────── */
+.admin-feedback-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.admin-feedback-card {
+  background: var(--surface-light);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-feedback-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.admin-feedback-email {
+  color: var(--primary-blue);
+  text-decoration: none;
+}
+
+.admin-feedback-email:hover {
+  text-decoration: underline;
+}
+
+.admin-feedback-text {
+  font-size: 1rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.admin-feedback-meta {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: auto;
+  padding-top: 1rem;
+}
+
+.admin-feedback-meta a {
+  color: var(--text-secondary);
+}

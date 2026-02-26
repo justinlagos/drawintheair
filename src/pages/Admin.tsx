@@ -29,10 +29,30 @@ interface RecentSession {
   stagesCompleted: number;
 }
 
+interface SchoolPackRequest {
+  timestamp: string;
+  contactName: string;
+  email: string;
+  schoolName: string;
+  role: string;
+  yearGroup: string;
+  deviceType: string;
+  sendNotes: string;
+}
+
+interface FeedbackRequest {
+  timestamp: string;
+  feedback: string;
+  email: string;
+  url: string;
+}
+
 interface SummaryData {
   kpi: SummaryKPI;
   breakdowns: SummaryBreakdowns;
   recentSessions: RecentSession[];
+  recentSchoolPacks?: SchoolPackRequest[];
+  recentFeedback?: FeedbackRequest[];
 }
 
 // ─── Helpers ────────────────────────────────────────────────────
@@ -68,6 +88,7 @@ export const Admin: React.FC = () => {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'requests' | 'feedback'>('overview');
 
   // Rate limiting
   const [loginAttempts, setLoginAttempts] = useState(0);
@@ -127,6 +148,8 @@ export const Admin: React.FC = () => {
           dropOutcomes: { correct: 0, wrong: 0 },
         },
         recentSessions: [],
+        recentSchoolPacks: [],
+        recentFeedback: [],
       });
       setLastUpdated(new Date());
       return;
@@ -233,231 +256,335 @@ export const Admin: React.FC = () => {
           </div>
         )}
 
-        {/* ─── KPI Strip ──────────────────────────────────────── */}
-        <div className="admin-kpi-strip">
-          <div className="admin-kpi-card">
-            <div className="admin-kpi-value">{kpi?.totalSessions ?? 0}</div>
-            <div className="admin-kpi-label">Total Sessions</div>
-          </div>
-          <div className="admin-kpi-card">
-            <div className="admin-kpi-value">{formatPlaytime(kpi?.totalPlaytimeMs ?? 0)}</div>
-            <div className="admin-kpi-label">Total Playtime</div>
-          </div>
-          <div className="admin-kpi-card">
-            <div className="admin-kpi-value">{formatDuration(kpi?.avgSessionDurationMs ?? 0)}</div>
-            <div className="admin-kpi-label">Avg Session</div>
-          </div>
-          <div className="admin-kpi-card">
-            <div className="admin-kpi-value">{kpi?.avgAccuracy ?? 0}%</div>
-            <div className="admin-kpi-label">Avg Accuracy</div>
-          </div>
-          <div className="admin-kpi-card">
-            <div className="admin-kpi-value">{kpi?.totalStagesCompleted ?? 0}</div>
-            <div className="admin-kpi-label">Stages Completed</div>
-          </div>
+        <div className="admin-tabs">
+          <button
+            className={`admin-tab ${activeTab === 'overview' ? 'admin-tab-active' : ''}`}
+            onClick={() => setActiveTab('overview')}
+          >
+            Overview
+          </button>
+          <button
+            className={`admin-tab ${activeTab === 'requests' ? 'admin-tab-active' : ''}`}
+            onClick={() => setActiveTab('requests')}
+          >
+            Pilot Requests {data?.recentSchoolPacks && data.recentSchoolPacks.length > 0 && <span className="admin-badge">{data.recentSchoolPacks.length}</span>}
+          </button>
+          <button
+            className={`admin-tab ${activeTab === 'feedback' ? 'admin-tab-active' : ''}`}
+            onClick={() => setActiveTab('feedback')}
+          >
+            Feedback {data?.recentFeedback && data.recentFeedback.length > 0 && <span className="admin-badge">{data.recentFeedback.length}</span>}
+          </button>
         </div>
 
-        {/* ─── Breakdowns Grid ────────────────────────────────── */}
-        <div className="admin-breakdowns-grid">
-          {/* Sessions by Age Band */}
-          <div className="admin-section admin-section-half">
-            <h2 className="admin-section-title">Sessions by Age Band</h2>
-            <div className="admin-chart-container">
-              {br && Object.keys(br.sessionsByAgeBand).length > 0 ? (
-                Object.entries(br.sessionsByAgeBand).map(([band, count]) => (
-                  <div key={band} className="admin-bar-row">
-                    <span className="admin-bar-label">{band}</span>
-                    <div className="admin-bar-track">
-                      <div
-                        className="admin-bar-fill admin-bar-fill-gold"
-                        style={{ width: `${(count / getMaxValue(br.sessionsByAgeBand)) * 100}%` }}
-                      />
-                    </div>
-                    <span className="admin-bar-value">{count}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="admin-empty">No data yet</p>
-              )}
+        {activeTab === 'overview' && (
+          <>
+            {/* ─── KPI Strip ──────────────────────────────────────── */}
+            <div className="admin-kpi-strip">
+              <div className="admin-kpi-card">
+                <div className="admin-kpi-value">{kpi?.totalSessions ?? 0}</div>
+                <div className="admin-kpi-label">Total Sessions</div>
+              </div>
+              <div className="admin-kpi-card">
+                <div className="admin-kpi-value">{formatPlaytime(kpi?.totalPlaytimeMs ?? 0)}</div>
+                <div className="admin-kpi-label">Total Playtime</div>
+              </div>
+              <div className="admin-kpi-card">
+                <div className="admin-kpi-value">{formatDuration(kpi?.avgSessionDurationMs ?? 0)}</div>
+                <div className="admin-kpi-label">Avg Session</div>
+              </div>
+              <div className="admin-kpi-card">
+                <div className="admin-kpi-value">{kpi?.avgAccuracy ?? 0}%</div>
+                <div className="admin-kpi-label">Avg Accuracy</div>
+              </div>
+              <div className="admin-kpi-card">
+                <div className="admin-kpi-value">{kpi?.totalStagesCompleted ?? 0}</div>
+                <div className="admin-kpi-label">Stages Completed</div>
+              </div>
             </div>
-          </div>
 
-          {/* Sessions by Game */}
-          <div className="admin-section admin-section-half">
-            <h2 className="admin-section-title">Sessions by Game</h2>
-            <div className="admin-chart-container">
-              {br && Object.keys(br.sessionsByGame).length > 0 ? (
-                Object.entries(br.sessionsByGame).map(([game, count]) => (
-                  <div key={game} className="admin-bar-row">
-                    <span className="admin-bar-label">{game}</span>
-                    <div className="admin-bar-track">
-                      <div
-                        className="admin-bar-fill admin-bar-fill-cyan"
-                        style={{ width: `${(count / getMaxValue(br.sessionsByGame)) * 100}%` }}
-                      />
-                    </div>
-                    <span className="admin-bar-value">{count}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="admin-empty">No data yet</p>
-              )}
+            {/* ─── Breakdowns Grid ────────────────────────────────── */}
+            <div className="admin-breakdowns-grid">
+              {/* Sessions by Age Band */}
+              <div className="admin-section admin-section-half">
+                <h2 className="admin-section-title">Sessions by Age Band</h2>
+                <div className="admin-chart-container">
+                  {br && Object.keys(br.sessionsByAgeBand).length > 0 ? (
+                    Object.entries(br.sessionsByAgeBand).map(([band, count]) => (
+                      <div key={band} className="admin-bar-row">
+                        <span className="admin-bar-label">{band}</span>
+                        <div className="admin-bar-track">
+                          <div
+                            className="admin-bar-fill admin-bar-fill-gold"
+                            style={{ width: `${(count / getMaxValue(br.sessionsByAgeBand)) * 100}%` }}
+                          />
+                        </div>
+                        <span className="admin-bar-value">{count}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="admin-empty">No data yet</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Sessions by Game */}
+              <div className="admin-section admin-section-half">
+                <h2 className="admin-section-title">Sessions by Game</h2>
+                <div className="admin-chart-container">
+                  {br && Object.keys(br.sessionsByGame).length > 0 ? (
+                    Object.entries(br.sessionsByGame).map(([game, count]) => (
+                      <div key={game} className="admin-bar-row">
+                        <span className="admin-bar-label">{game}</span>
+                        <div className="admin-bar-track">
+                          <div
+                            className="admin-bar-fill admin-bar-fill-cyan"
+                            style={{ width: `${(count / getMaxValue(br.sessionsByGame)) * 100}%` }}
+                          />
+                        </div>
+                        <span className="admin-bar-value">{count}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="admin-empty">No data yet</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Accuracy by Stage */}
+              <div className="admin-section admin-section-half">
+                <h2 className="admin-section-title">Accuracy by Stage</h2>
+                <div className="admin-chart-container">
+                  {br && Object.keys(br.accuracyByStage).length > 0 ? (
+                    Object.entries(br.accuracyByStage).map(([stage, pct]) => (
+                      <div key={stage} className="admin-bar-row">
+                        <span className="admin-bar-label">{stage}</span>
+                        <div className="admin-bar-track">
+                          <div
+                            className="admin-bar-fill admin-bar-fill-green"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <span className="admin-bar-value">{pct}%</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="admin-empty">No data yet</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Avg Time per Stage */}
+              <div className="admin-section admin-section-half">
+                <h2 className="admin-section-title">Avg Time per Stage</h2>
+                <div className="admin-chart-container">
+                  {br && Object.keys(br.avgTimeByStage).length > 0 ? (
+                    Object.entries(br.avgTimeByStage).map(([stage, ms]) => (
+                      <div key={stage} className="admin-bar-row">
+                        <span className="admin-bar-label">{stage}</span>
+                        <div className="admin-bar-track">
+                          <div
+                            className="admin-bar-fill admin-bar-fill-purple"
+                            style={{ width: `${(ms / getMaxValue(br.avgTimeByStage)) * 100}%` }}
+                          />
+                        </div>
+                        <span className="admin-bar-value">{formatDuration(ms)}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="admin-empty">No data yet</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Drop Outcomes */}
+              <div className="admin-section admin-section-half">
+                <h2 className="admin-section-title">Drop Outcomes</h2>
+                <div className="admin-chart-container">
+                  {br && (br.dropOutcomes.correct + br.dropOutcomes.wrong) > 0 ? (
+                    <>
+                      <div className="admin-bar-row">
+                        <span className="admin-bar-label">Correct</span>
+                        <div className="admin-bar-track">
+                          <div
+                            className="admin-bar-fill admin-bar-fill-green"
+                            style={{
+                              width: `${(br.dropOutcomes.correct / (br.dropOutcomes.correct + br.dropOutcomes.wrong)) * 100}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="admin-bar-value">{br.dropOutcomes.correct}</span>
+                      </div>
+                      <div className="admin-bar-row">
+                        <span className="admin-bar-label">Wrong</span>
+                        <div className="admin-bar-track">
+                          <div
+                            className="admin-bar-fill admin-bar-fill-red"
+                            style={{
+                              width: `${(br.dropOutcomes.wrong / (br.dropOutcomes.correct + br.dropOutcomes.wrong)) * 100}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="admin-bar-value">{br.dropOutcomes.wrong}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="admin-empty">No data yet</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Most Failed Items */}
+              <div className="admin-section admin-section-half">
+                <h2 className="admin-section-title">Most Failed Items</h2>
+                <div className="admin-chart-container">
+                  {br && br.mostFailedItems.length > 0 ? (
+                    br.mostFailedItems.slice(0, 8).map((item) => (
+                      <div key={item.item} className="admin-bar-row">
+                        <span className="admin-bar-label">{item.item}</span>
+                        <div className="admin-bar-track">
+                          <div
+                            className="admin-bar-fill admin-bar-fill-red"
+                            style={{
+                              width: `${(item.count / br.mostFailedItems[0].count) * 100}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="admin-bar-value">{item.count}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="admin-empty">No failed items yet</p>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Accuracy by Stage */}
-          <div className="admin-section admin-section-half">
-            <h2 className="admin-section-title">Accuracy by Stage</h2>
-            <div className="admin-chart-container">
-              {br && Object.keys(br.accuracyByStage).length > 0 ? (
-                Object.entries(br.accuracyByStage).map(([stage, pct]) => (
-                  <div key={stage} className="admin-bar-row">
-                    <span className="admin-bar-label">{stage}</span>
-                    <div className="admin-bar-track">
-                      <div
-                        className="admin-bar-fill admin-bar-fill-green"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className="admin-bar-value">{pct}%</span>
-                  </div>
-                ))
-              ) : (
-                <p className="admin-empty">No data yet</p>
-              )}
-            </div>
-          </div>
-
-          {/* Avg Time per Stage */}
-          <div className="admin-section admin-section-half">
-            <h2 className="admin-section-title">Avg Time per Stage</h2>
-            <div className="admin-chart-container">
-              {br && Object.keys(br.avgTimeByStage).length > 0 ? (
-                Object.entries(br.avgTimeByStage).map(([stage, ms]) => (
-                  <div key={stage} className="admin-bar-row">
-                    <span className="admin-bar-label">{stage}</span>
-                    <div className="admin-bar-track">
-                      <div
-                        className="admin-bar-fill admin-bar-fill-purple"
-                        style={{ width: `${(ms / getMaxValue(br.avgTimeByStage)) * 100}%` }}
-                      />
-                    </div>
-                    <span className="admin-bar-value">{formatDuration(ms)}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="admin-empty">No data yet</p>
-              )}
-            </div>
-          </div>
-
-          {/* Drop Outcomes */}
-          <div className="admin-section admin-section-half">
-            <h2 className="admin-section-title">Drop Outcomes</h2>
-            <div className="admin-chart-container">
-              {br && (br.dropOutcomes.correct + br.dropOutcomes.wrong) > 0 ? (
-                <>
-                  <div className="admin-bar-row">
-                    <span className="admin-bar-label">Correct</span>
-                    <div className="admin-bar-track">
-                      <div
-                        className="admin-bar-fill admin-bar-fill-green"
-                        style={{
-                          width: `${(br.dropOutcomes.correct / (br.dropOutcomes.correct + br.dropOutcomes.wrong)) * 100}%`,
-                        }}
-                      />
-                    </div>
-                    <span className="admin-bar-value">{br.dropOutcomes.correct}</span>
-                  </div>
-                  <div className="admin-bar-row">
-                    <span className="admin-bar-label">Wrong</span>
-                    <div className="admin-bar-track">
-                      <div
-                        className="admin-bar-fill admin-bar-fill-red"
-                        style={{
-                          width: `${(br.dropOutcomes.wrong / (br.dropOutcomes.correct + br.dropOutcomes.wrong)) * 100}%`,
-                        }}
-                      />
-                    </div>
-                    <span className="admin-bar-value">{br.dropOutcomes.wrong}</span>
-                  </div>
-                </>
-              ) : (
-                <p className="admin-empty">No data yet</p>
-              )}
-            </div>
-          </div>
-
-          {/* Most Failed Items */}
-          <div className="admin-section admin-section-half">
-            <h2 className="admin-section-title">Most Failed Items</h2>
-            <div className="admin-chart-container">
-              {br && br.mostFailedItems.length > 0 ? (
-                br.mostFailedItems.slice(0, 8).map((item) => (
-                  <div key={item.item} className="admin-bar-row">
-                    <span className="admin-bar-label">{item.item}</span>
-                    <div className="admin-bar-track">
-                      <div
-                        className="admin-bar-fill admin-bar-fill-red"
-                        style={{
-                          width: `${(item.count / br.mostFailedItems[0].count) * 100}%`,
-                        }}
-                      />
-                    </div>
-                    <span className="admin-bar-value">{item.count}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="admin-empty">No failed items yet</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ─── Recent Sessions Table ──────────────────────────── */}
-        <div className="admin-section">
-          <h2 className="admin-section-title">Recent Sessions</h2>
-          <div className="admin-table-container">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Started</th>
-                  <th>Age Band</th>
-                  <th>Games</th>
-                  <th>Duration</th>
-                  <th>Accuracy</th>
-                  <th>Stages</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recent.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="admin-table-empty">
-                      No sessions yet
-                    </td>
-                  </tr>
-                ) : (
-                  recent.map((s, i) => (
-                    <tr key={i}>
-                      <td>{s.startedAt ? new Date(s.startedAt).toLocaleString() : '-'}</td>
-                      <td>
-                        <span className="admin-age-badge">{s.ageBand}</span>
-                      </td>
-                      <td>{s.gamesPlayed}</td>
-                      <td>{formatDuration(s.durationMs)}</td>
-                      <td>
-                        <span className={`admin-accuracy ${s.accuracy >= 70 ? 'admin-accuracy-good' : s.accuracy >= 40 ? 'admin-accuracy-mid' : 'admin-accuracy-low'}`}>
-                          {s.accuracy}%
-                        </span>
-                      </td>
-                      <td>{s.stagesCompleted}</td>
+            {/* ─── Recent Sessions Table ──────────────────────────── */}
+            <div className="admin-section" style={{ marginTop: 'var(--spacing-lg)' }}>
+              <h2 className="admin-section-title">Recent Sessions</h2>
+              <div className="admin-table-container">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Started</th>
+                      <th>Age Band</th>
+                      <th>Games</th>
+                      <th>Duration</th>
+                      <th>Accuracy</th>
+                      <th>Stages</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {recent.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="admin-table-empty">
+                          No sessions yet
+                        </td>
+                      </tr>
+                    ) : (
+                      recent.map((s, i) => (
+                        <tr key={i}>
+                          <td>{s.startedAt ? new Date(s.startedAt).toLocaleString() : '-'}</td>
+                          <td>
+                            <span className="admin-age-badge">{s.ageBand}</span>
+                          </td>
+                          <td>{s.gamesPlayed}</td>
+                          <td>{formatDuration(s.durationMs)}</td>
+                          <td>
+                            <span className={`admin-accuracy ${s.accuracy >= 70 ? 'admin-accuracy-good' : s.accuracy >= 40 ? 'admin-accuracy-mid' : 'admin-accuracy-low'}`}>
+                              {s.accuracy}%
+                            </span>
+                          </td>
+                          <td>{s.stagesCompleted}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ─── Pilot Requests Tab ──────────────────────────── */}
+        {activeTab === 'requests' && (
+          <div className="admin-section">
+            <h2 className="admin-section-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>School Pilot Requests</span>
+              <span className="admin-tab-count">{data?.recentSchoolPacks?.length || 0} Total</span>
+            </h2>
+            <div className="admin-table-container">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>School</th>
+                    <th>Role</th>
+                    <th>Info</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {!data?.recentSchoolPacks || data.recentSchoolPacks.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="admin-table-empty">
+                        No requests yet
+                      </td>
+                    </tr>
+                  ) : (
+                    data.recentSchoolPacks.map((p, i) => (
+                      <tr key={i}>
+                        <td>{p.timestamp ? new Date(p.timestamp).toLocaleString() : '-'}</td>
+                        <td>{p.contactName}</td>
+                        <td><a href={`mailto:${p.email}`}>{p.email}</a></td>
+                        <td>{p.schoolName}</td>
+                        <td>{p.role}</td>
+                        <td>
+                          <div style={{ fontSize: '0.8em', color: 'var(--text-secondary)' }}>
+                            {p.yearGroup && <div>Year: {p.yearGroup}</div>}
+                            {p.deviceType && <div>Device: {p.deviceType}</div>}
+                            {p.sendNotes && <div>Notes: {p.sendNotes}</div>}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* ─── Feedback Tab ──────────────────────────── */}
+        {activeTab === 'feedback' && (
+          <div className="admin-section">
+            <h2 className="admin-section-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>User Feedback</span>
+              <span className="admin-tab-count">{data?.recentFeedback?.length || 0} Total</span>
+            </h2>
+            <div className="admin-feedback-grid">
+              {!data?.recentFeedback || data.recentFeedback.length === 0 ? (
+                <div className="admin-empty">No feedback yet</div>
+              ) : (
+                data.recentFeedback.map((f, i) => (
+                  <div key={i} className="admin-feedback-card">
+                    <div className="admin-feedback-header">
+                      <span className="admin-feedback-date">{f.timestamp ? new Date(f.timestamp).toLocaleString() : '-'}</span>
+                      {f.email && <a href={`mailto:${f.email}`} className="admin-feedback-email">{f.email}</a>}
+                    </div>
+                    <p className="admin-feedback-text">"{f.feedback}"</p>
+                    <div className="admin-feedback-meta">
+                      <span>URL: <a href={f.url} target="_blank" rel="noreferrer">[{f.url.split('/').pop() || 'link'}]</a></span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

@@ -39,6 +39,10 @@ function doPost(e) {
       for (var i = 0; i < payload.length; i++) {
         appendEvent(payload[i]);
       }
+    } else if (type === 'school_pack') {
+      appendSchoolPack(payload);
+    } else if (type === 'feedback') {
+      appendFeedback(payload);
     } else {
       return jsonResponse({ error: 'Unknown type: ' + type }, 400);
     }
@@ -92,6 +96,33 @@ function appendEvent(ev) {
   ]);
 }
 
+function appendSchoolPack(p) {
+  var sheet = getSheet('SchoolPacks');
+  if (!sheet) throw new Error('SchoolPacks tab not found');
+  sheet.appendRow([
+    new Date().toISOString(),
+    p.contact_name || '',
+    p.email || '',
+    p.school_name || '',
+    p.role || '',
+    p.year_group || '',
+    p.device_type || '',
+    p.send_notes || ''
+  ]);
+}
+
+function appendFeedback(f) {
+  var sheet = getSheet('Feedback');
+  if (!sheet) throw new Error('Feedback tab not found');
+  sheet.appendRow([
+    new Date().toISOString(),
+    f.feedback || '',
+    f.email || '',
+    f.url || '',
+    f.userAgent || ''
+  ]);
+}
+
 // ─── GET handler — summary endpoint AND data ingestion ──────────
 //
 // Google Apps Script 302-redirects POST requests, which causes browsers
@@ -119,6 +150,10 @@ function doGet(e) {
         for (var i = 0; i < payload.length; i++) {
           appendEvent(payload[i]);
         }
+      } else if (type === 'school_pack') {
+        appendSchoolPack(payload);
+      } else if (type === 'feedback') {
+        appendFeedback(payload);
       } else {
         return jsonResponse({ error: 'Unknown type: ' + type }, 400);
       }
@@ -269,6 +304,45 @@ function buildSummary() {
   var avgAccuracy = totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0;
   var avgSessionDurationMs = totalSessions > 0 ? Math.round(totalPlaytimeMs / totalSessions) : 0;
 
+  // ── School Packs data ──
+  var schoolPacksSheet = getSheet('SchoolPacks');
+  var schoolPacksData = schoolPacksSheet ? schoolPacksSheet.getDataRange().getValues() : [];
+  var packRows = schoolPacksData.slice(1);
+  var recentSchoolPacks = [];
+  
+  // Take last 50
+  var startIndex = Math.max(0, packRows.length - 50);
+  for (var k = startIndex; k < packRows.length; k++) {
+    var pRow = packRows[k];
+    recentSchoolPacks.push({
+      timestamp: String(pRow[0]),
+      contactName: String(pRow[1]),
+      email: String(pRow[2]),
+      schoolName: String(pRow[3]),
+      role: String(pRow[4]),
+      yearGroup: String(pRow[5]),
+      deviceType: String(pRow[6]),
+      sendNotes: String(pRow[7])
+    });
+  }
+
+  // ── Feedback data ──
+  var feedbackSheet = getSheet('Feedback');
+  var feedbackData = feedbackSheet ? feedbackSheet.getDataRange().getValues() : [];
+  var feedbackRows = feedbackData.slice(1);
+  var recentFeedback = [];
+  
+  var fbStart = Math.max(0, feedbackRows.length - 50);
+  for (var m = fbStart; m < feedbackRows.length; m++) {
+    var fbRow = feedbackRows[m];
+    recentFeedback.push({
+      timestamp: String(fbRow[0]),
+      feedback: String(fbRow[1]),
+      email: String(fbRow[2]),
+      url: String(fbRow[3])
+    });
+  }
+
   return {
     kpi: {
       totalSessions: totalSessions,
@@ -288,7 +362,9 @@ function buildSummary() {
         wrong: wrongCount
       }
     },
-    recentSessions: recentSessions.reverse()
+    recentSessions: recentSessions.reverse(),
+    recentSchoolPacks: recentSchoolPacks.reverse(),
+    recentFeedback: recentFeedback.reverse()
   };
 }
 
