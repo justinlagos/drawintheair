@@ -4,6 +4,7 @@ import { normalizedToCanvas } from '../../../core/coordinateUtils';
 import { OneEuroFilter2D } from '../../../core/filters/OneEuroFilter';
 import { trackingFeatures } from '../../../core/trackingFeatures';
 import { tactileAudioManager } from '../../../core/TactileAudioManager';
+import { isCountdownActive } from '../../../core/countdownService';
 
 export type BinId = string;
 
@@ -444,6 +445,9 @@ export const sortAndPlaceLogic = (
     _drawingUtils: DrawingUtils | null
 ) => {
     if (!currentStage) return;
+
+    // Block input during countdown
+    if (isCountdownActive()) return;
 
     const { filteredPoint, pinchActive, timestamp } = frameData;
     

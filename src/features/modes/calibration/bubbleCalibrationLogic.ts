@@ -18,6 +18,7 @@ import { perf } from '../../../core/perf';
 import { trackingFeatures } from '../../../core/trackingFeatures';
 import { DifficultyController } from '../../../core/DifficultyController';
 import { tactileAudioManager } from '../../../core/TactileAudioManager';
+import { isCountdownActive } from '../../../core/countdownService';
 import { LANDSCAPE_BACKGROUNDS, type LandscapeBackground } from './landscapeBackgrounds';
 import { renderLandscapeBackground } from './renderLandscape';
 
@@ -264,14 +265,15 @@ const spawnBubble = (level: BubbleLevel, onScreen: boolean = false): Bubble => {
     };
 };
 
-export const startBubbleGame = (level: BubbleLevel | undefined = 1) => {
+export const startBubbleGame = (level: BubbleLevel | undefined = 1, startAt: number | null = null) => {
     const actualLevel = Math.min(Math.max(1, level ?? 1), MAX_LEVEL) as BubbleLevel;
     currentLevel = actualLevel;
     bubbles = [];
     score = 0;
     nextBubbleId = 0;
-    gameStartTime = Date.now();
-    lastSpawnTime = gameStartTime; // Initialize to game start so first spawn happens after spawnRate delay
+    const startTime = startAt ?? Date.now();
+    gameStartTime = startTime;
+    lastSpawnTime = startTime; // Initialize to game start so first spawn happens after spawnRate delay
     gameEndTime = null;
     milestoneReached = false;
     milestoneCelebrated = false;
@@ -292,8 +294,8 @@ export const startBubbleGame = (level: BubbleLevel | undefined = 1) => {
         const spawnOnScreen = i < Math.min(4, initialCount * 0.3);
         bubbles.push(spawnBubble(actualLevel, spawnOnScreen));
     }
-    // Set lastSpawnTime to now so first periodic spawn happens after spawnRate delay
-    lastSpawnTime = Date.now();
+    // Keep lastSpawnTime aligned to start time for countdown gating
+    lastSpawnTime = startTime;
 };
 
 export const resetBubbles = () => {
@@ -302,14 +304,17 @@ export const resetBubbles = () => {
 
 export const getBubbles = () => bubbles;
 export const getScore = () => score;
+export const getBubbleMisses = () => bubbleMisses;
 export const getCurrentLevel = () => currentLevel;
 export const getTimeRemaining = () => {
     if (!gameStartTime) return gameDuration;
+    if (Date.now() < gameStartTime) return gameDuration;
     const elapsed = Date.now() - gameStartTime;
     return Math.max(0, gameDuration - elapsed);
 };
 export const isGameActive = () => {
     if (!gameStartTime) return false;
+    if (Date.now() < gameStartTime) return false;
     return getTimeRemaining() > 0;
 };
 export const hasReachedMilestone = () => milestoneReached;
@@ -339,6 +344,7 @@ export const bubbleCalibrationLogic = (
 ) => {
     const now = Date.now();
     const { filteredPoint } = frameData;
+    const countdownActive = isCountdownActive(now);
     let config = LEVEL_CONFIGS[currentLevel];
     
     // Initialize game if not started
@@ -397,7 +403,7 @@ export const bubbleCalibrationLogic = (
     const maxNormalizedPerFrame = maxPxPerFrame / Math.min(width, height);
     
     bubbles.forEach(bubble => {
-        if (!bubble.popping && isActive) {
+        if (!bubble.popping && isActive && !countdownActive) {
             // Apply DDS speed multiplier if enabled
             const speedMultiplier = flags.enableDynamicDifficulty ? difficultyMultipliers.speed : 1.0;
             
@@ -681,7 +687,7 @@ export const bubbleCalibrationLogic = (
     // Check for hand collision using filtered point
     // Pop works on hover (filteredPoint exists) - no pinch required
     // Pinch can still be used but is not required
-    if (filteredPoint && isActive) {
+    if (filteredPoint && isActive && !countdownActive) {
         const fingerCanvas = normalizedToCanvas(filteredPoint, width, height);
 
         // Draw finger indicator

@@ -70,9 +70,9 @@ export const FILTER_PROFILES: Record<FilterProfileMode, OneEuroFilterConfig> = {
         dCutoff: 1.2
     },
     'tracing': {
-        minCutoff: 1.8,  // Smooth and stable for precise tracing
-        beta: 0.008,     // Less adaptive, more consistent
-        dCutoff: 0.8
+        minCutoff: 2.8,  // Minimal smoothing — fast response
+        beta: 0.025,     // Very responsive to fast movements
+        dCutoff: 1.2
     },
     'free-paint': {
         minCutoff: 2.0,  // Sharp, anchored feel (current default)
@@ -185,4 +185,3 @@ export class OneEuroFilter2D {
         this.yFilter.reset();
     }
 }
-

@@ -14,7 +14,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { type HandLandmarkerResult } from '@mediapipe/tasks-vision';
 
-export type GameMode = 'calibration' | 'free' | 'pre-writing' | 'sort-and-place' | 'word-search';
+export type GameMode = 'calibration' | 'free' | 'pre-writing' | 'sort-and-place' | 'word-search' | 'colour-builder';
 
 interface ModeOption {
     id: GameMode;
@@ -129,8 +129,8 @@ const GameCard = ({ mode, featured, isHovered, isSelected, hoverProgress, onClic
                 boxShadow: isSelected
                     ? `inset 0 2px 6px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)`
                     : isHovered
-                    ? `0 8px 32px ${mode.accentGlow}, 0 16px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2)`
-                    : `0 6px 20px rgba(0,0,0,0.35), 0 12px 40px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15)`,
+                        ? `0 8px 32px ${mode.accentGlow}, 0 16px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2)`
+                        : `0 6px 20px rgba(0,0,0,0.35), 0 12px 40px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15)`,
                 outline: isHovered
                     ? `2.5px solid ${mode.accentColor}88`
                     : '2px solid rgba(255,255,255,0.12)',
@@ -138,8 +138,8 @@ const GameCard = ({ mode, featured, isHovered, isSelected, hoverProgress, onClic
                 transform: pressed || isSelected
                     ? 'scale(0.97)'
                     : isHovered
-                    ? 'scale(1.03) translateY(-4px)'
-                    : 'scale(1)',
+                        ? 'scale(1.03) translateY(-4px)'
+                        : 'scale(1)',
                 transition: 'transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 200ms ease, outline 150ms ease',
                 isolation: 'isolate',
             }}
@@ -443,8 +443,8 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
                     flexDirection: 'column',
                     alignItems: 'center',
                 }}>
-                    <img 
-                        src="/logo.png" 
+                    <img
+                        src="/logo.png"
                         alt="Draw in the Air"
                         style={{
                             height: isPhone ? '40px' : '60px',

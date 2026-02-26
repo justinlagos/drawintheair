@@ -23,6 +23,7 @@ import { trackingFeatures } from '../../../core/trackingFeatures';
 import { DifficultyController } from '../../../core/DifficultyController';
 import { tactileAudioManager } from '../../../core/TactileAudioManager';
 import { featureFlags } from '../../../core/featureFlags';
+import { isCountdownActive } from '../../../core/countdownService';
 
 export interface TracingState {
     path: TracingPath | null;
@@ -295,6 +296,7 @@ export const tracingLogicV2 = (
     
     // Handle pause/resume with grace window
     const now = frameData.timestamp;
+    const countdownActive = isCountdownActive(now);
     const isPinching = frameData.pinchActive;
     
     if (!isPinching) {
@@ -326,14 +328,14 @@ export const tracingLogicV2 = (
     }
     
     // Need filtered point to continue (but still draw path and other elements)
-    if (!frameData.filteredPoint || !frameData.hasHand) {
+    if (countdownActive || !frameData.filteredPoint || !frameData.hasHand) {
         tracingState.onPath = false;
         if (frameData.filteredPoint) {
             tracingState.lastFingerPos = frameData.filteredPoint;
         }
         // Don't return early - path and other visuals should still be drawn
         // Just skip finger feedback and progress updates
-        if (!frameData.filteredPoint) {
+        if (!frameData.filteredPoint || countdownActive) {
             return; // Only return if no point at all
         }
     }
@@ -765,6 +767,8 @@ const drawPath = (
     const points = path.points;
     if (points.length < 2) return;
     const tol = path.tolerancePx;
+    const thicknessScale = 2.0;
+    const blurScale = Math.min(0.6, perfConfig.shadowBlurScale);
 
     // Helper to draw a polyline through points
     const traceLine = (pts: {x:number;y:number}[], endFraction?: number) => {
@@ -804,11 +808,11 @@ const drawPath = (
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     if (perfConfig.visualQuality === 'high') {
-        ctx.shadowBlur = 12 * perfConfig.shadowBlurScale;
-        ctx.shadowColor = 'rgba(100, 140, 255, 0.15)';
+        ctx.shadowBlur = 6 * blurScale;
+        ctx.shadowColor = 'rgba(100, 140, 255, 0.12)';
     }
     ctx.strokeStyle = 'rgba(80, 120, 200, 0.10)';
-    ctx.lineWidth = tol * 3.5;   // was 2.2 — ~1.6× wider ghost tube
+    ctx.lineWidth = tol * 3.5 * thicknessScale;
     traceLine(points);
     ctx.stroke();
     ctx.restore();
@@ -818,7 +822,7 @@ const drawPath = (
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.strokeStyle = 'rgba(150, 180, 255, 0.15)';
-    ctx.lineWidth = tol * 2.0;   // was 1.2 — ~1.6× wider inner ghost
+    ctx.lineWidth = tol * 2.0 * thicknessScale;
     traceLine(points);
     ctx.stroke();
     ctx.restore();
@@ -828,7 +832,7 @@ const drawPath = (
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.strokeStyle = 'rgba(200, 220, 255, 0.12)';
-    ctx.lineWidth = 3;            // was 2 — 1.5× wider guide
+    ctx.lineWidth = 3 * thicknessScale;
     traceLine(points);
     ctx.stroke();
     ctx.restore();
@@ -840,10 +844,10 @@ const drawPath = (
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         const glowColor = onPath ? 'rgba(0, 245, 212, 0.3)' : 'rgba(255, 160, 50, 0.25)';
-        ctx.shadowBlur = 30 * perfConfig.shadowBlurScale;
+        ctx.shadowBlur = 8 * blurScale;
         ctx.shadowColor = onPath ? 'rgba(0, 245, 212, 0.6)' : 'rgba(255, 160, 50, 0.5)';
         ctx.strokeStyle = glowColor;
-        ctx.lineWidth = tol * 3.2;   // was 2.0 — 1.6× wider progress glow
+        ctx.lineWidth = tol * 3.2 * thicknessScale;
         traceLine(points, progress);
         ctx.stroke();
         ctx.restore();
@@ -852,10 +856,10 @@ const drawPath = (
         ctx.save();
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.shadowBlur = 15 * perfConfig.shadowBlurScale;
+        ctx.shadowBlur = 6 * blurScale;
         ctx.shadowColor = onPath ? 'rgba(0, 245, 212, 0.8)' : 'rgba(255, 200, 80, 0.7)';
         ctx.strokeStyle = onPath ? '#00F5D4' : '#FFB830';
-        ctx.lineWidth = tol * 1.3;   // was 0.8 — 1.625× wider core stroke
+        ctx.lineWidth = tol * 1.3 * thicknessScale;
         traceLine(points, progress);
         ctx.stroke();
         ctx.restore();
@@ -865,7 +869,7 @@ const drawPath = (
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.strokeStyle = onPath ? 'rgba(200, 255, 245, 0.7)' : 'rgba(255, 240, 200, 0.5)';
-        ctx.lineWidth = tol * 0.4;   // was 0.25 — 1.6× wider hot-center highlight
+        ctx.lineWidth = tol * 0.4 * thicknessScale;
         traceLine(points, progress);
         ctx.stroke();
         ctx.restore();
@@ -921,7 +925,7 @@ const drawStartDot = (
     orbGrad.addColorStop(0.4, '#00F5D4');
     orbGrad.addColorStop(1, '#008B76');
 
-    ctx.shadowBlur = 25 * perfConfig.shadowBlurScale;
+    ctx.shadowBlur = 6 * perfConfig.shadowBlurScale;
     ctx.shadowColor = 'rgba(0, 245, 212, 0.8)';
     ctx.beginPath();
     ctx.arc(px, py, size, 0, Math.PI * 2);
@@ -935,7 +939,7 @@ const drawStartDot = (
     ctx.fill();
 
     // "START" label
-    ctx.shadowBlur = 4 * perfConfig.shadowBlurScale;
+    ctx.shadowBlur = 3 * perfConfig.shadowBlurScale;
     ctx.shadowColor = 'rgba(0, 245, 212, 0.5)';
     ctx.fillStyle = '#00F5D4';
     ctx.font = prominent ? 'bold 13px Arial' : 'bold 11px Arial';
@@ -983,7 +987,7 @@ const drawEndTarget = (
     orbGrad.addColorStop(0.4, '#FFD700');
     orbGrad.addColorStop(1, '#B8860B');
 
-    ctx.shadowBlur = 20 * perfConfig.shadowBlurScale;
+    ctx.shadowBlur = 6 * perfConfig.shadowBlurScale;
     ctx.shadowColor = `rgba(255, 215, 0, ${0.4 + glow * 0.5})`;
     ctx.globalAlpha = 0.5 + glow * 0.5;
     ctx.beginPath();
@@ -1022,10 +1026,10 @@ const drawFingerFeedback = (
     
     // High quality glow (more subtle)
     if (perfConfig.visualQuality === 'high' && onPath) {
-        ctx.shadowBlur = 15 * perfConfig.shadowBlurScale; // Reduced from 30
+        ctx.shadowBlur = 6 * perfConfig.shadowBlurScale;
         ctx.shadowColor = `rgba(0, 245, 212, 0.5)`; // More subtle
     } else if (perfConfig.visualQuality === 'high') {
-        ctx.shadowBlur = 10 * perfConfig.shadowBlurScale; // Reduced from 15
+        ctx.shadowBlur = 4 * perfConfig.shadowBlurScale;
         ctx.shadowColor = `rgba(255, 217, 61, 0.4)`; // More subtle
     }
     
@@ -1050,7 +1054,7 @@ const drawOffPathHint = (
     ctx.font = 'bold 18px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = 5;
     ctx.shadowColor = 'rgba(255, 217, 61, 0.5)';
     ctx.fillText('Try staying on the glowing path', width / 2, height / 2 + 100);
     ctx.restore();
@@ -1074,7 +1078,7 @@ const drawIdleHint = (
         ctx.beginPath();
         ctx.arc(startPoint.x * width, startPoint.y * height, size, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255, 215, 0, ${0.6 * pulse})`;
-        ctx.shadowBlur = 20 * pulse;
+        ctx.shadowBlur = 6 * pulse;
         ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
         ctx.fill();
     } else {
@@ -1094,7 +1098,7 @@ const drawIdleHint = (
                 ctx.strokeStyle = `rgba(255, 215, 0, ${0.8 * pulse})`;
                 ctx.lineWidth = path.tolerancePx * 1.5 * pulse;
                 ctx.lineCap = 'round';
-                ctx.shadowBlur = 15 * pulse;
+                ctx.shadowBlur = 5 * pulse;
                 ctx.shadowColor = 'rgba(255, 215, 0, 0.6)';
                 ctx.beginPath();
                 ctx.moveTo(path.points[i].x * width, path.points[i].y * height);
@@ -1118,7 +1122,7 @@ const drawSparkleTrail = (
         const alpha = particle.life;
         const size = 3 * alpha;
         ctx.fillStyle = `rgba(255, 255, 255, ${0.8 * alpha})`;
-        ctx.shadowBlur = 5 * alpha;
+        ctx.shadowBlur = 3 * alpha;
         ctx.shadowColor = 'rgba(0, 245, 212, 0.6)';
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, size, 0, Math.PI * 2);
@@ -1148,7 +1152,7 @@ const drawPausedIndicator = (
     ctx.font = 'bold 20px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = 5;
     ctx.shadowColor = 'rgba(255, 217, 61, 0.8)';
     ctx.fillText('⏸️ Paused', width / 2, height - 55);
     ctx.restore();

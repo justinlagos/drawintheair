@@ -60,9 +60,12 @@ export class CanvasCoordinateMapper {
      * @returns Canvas device pixel coordinates
      */
     mapToCanvasDevicePixels(point: NormalizedPoint): CanvasDevicePoint {
+        // Clamp normalized coordinates to [0, 1] before mapping
+        const cx = Math.max(0, Math.min(1, point.x));
+        const cy = Math.max(0, Math.min(1, point.y));
         return {
-            x: point.x * this.config.canvasWidth,
-            y: point.y * this.config.canvasHeight
+            x: cx * this.config.canvasWidth,
+            y: cy * this.config.canvasHeight
         };
     }
 

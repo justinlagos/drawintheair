@@ -10,7 +10,7 @@
  * - Calm, clear feedback without floating banners
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, type MutableRefObject } from 'react';
 import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import { generateGrid } from './wordSearchGenerator';
 import { renderGrid } from './wordSearchRender';
@@ -18,10 +18,11 @@ import { processWordSearchFrame, createWordSearchState, type WordSearchState } f
 import { selectWords, getWordIcon } from './wordSearchAssets';
 import { WORD_COUNTS, WORD_LENGTHS } from './wordSearchConstants';
 import type { WordSearchSettings, Theme, Difficulty, Chapter, Word } from './wordSearchTypes';
-import { showToast, getRandomMotivation } from '../../../core/toastService';
+import { showMessageCard, getRandomMessageCopy } from '../../../core/messageCardService';
+import { isCountdownActive } from '../../../core/countdownService';
 
 export interface WordSearchModeProps {
-    frameData?: TrackingFrameData;
+    frameRef?: MutableRefObject<TrackingFrameData>;
     showSettings?: boolean;
     onCloseSettings?: () => void;
     onExit?: () => void;
@@ -92,7 +93,7 @@ const getInstructionText = (state: 'idle' | 'hint' | 'selecting' | 'success' | '
     }
 };
 
-export const WordSearchMode = ({ frameData, showSettings = false, onCloseSettings, onExit }: WordSearchModeProps) => {
+export const WordSearchMode = ({ frameRef, showSettings = false, onCloseSettings, onExit }: WordSearchModeProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const stateRef = useRef<WordSearchState>(createWordSearchState(DEFAULT_SETTINGS));
     const animationFrameRef = useRef<number | undefined>(undefined);
@@ -107,6 +108,9 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
     const [showLevelComplete, setShowLevelComplete] = useState(false);
     const [justFoundWord, setJustFoundWord] = useState<string | null>(null);
     const [hoverTileId, setHoverTileId] = useState<string | null>(null);
+    const stageStartTimeRef = useRef<number>(Date.now());
+    const successCountRef = useRef<number>(0);
+    const streakRef = useRef<number>(0);
 
     // Force re-render for word list updates
     const [, forceUpdate] = useState({});
@@ -181,6 +185,9 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
         setInstructionState('idle');
         setJustFoundWord(null);
         setShowOnboarding(true);
+        stageStartTimeRef.current = Date.now();
+        successCountRef.current = 0;
+        streakRef.current = 0;
 
         // Re-show onboarding briefly
         setTimeout(() => setShowOnboarding(false), 3000);
@@ -193,8 +200,8 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
         }
 
         const processAndRender = () => {
-            // Process frame only if frameData exists
-            if (frameData) {
+            const frameData = frameRef?.current;
+            if (frameData && !isCountdownActive()) {
                 const result = processWordSearchFrame(stateRef, frameData, Date.now());
 
                 // Update hint state
@@ -215,12 +222,17 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
                     setInstructionState('success');
                     forceUpdate({});
 
-                    // Toast every 3 words found
-                    const newFoundCount = stateRef.current.grid
-                        ? stateRef.current.grid.words.filter(w => w.found).length
-                        : 0;
-                    if (newFoundCount > 0 && newFoundCount % 3 === 0) {
-                        showToast(getRandomMotivation(), 'success', 1800);
+                    const now = Date.now();
+                    const eligible = now - stageStartTimeRef.current >= 2000;
+                    if (eligible) {
+                        successCountRef.current += 1;
+                        streakRef.current += 1;
+                        if (successCountRef.current % 3 === 0) {
+                            showMessageCard({ text: getRandomMessageCopy(), variant: 'success', durationMs: 1000 });
+                        }
+                        if (streakRef.current === 5) {
+                            showMessageCard({ text: getRandomMessageCopy(), variant: 'success', durationMs: 1000 });
+                        }
                     }
 
                     // Clear just-found highlight after animation (1-1.5 seconds)
@@ -239,6 +251,9 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
                         // Show level complete
                         setInstructionState('levelComplete');
                         setShowLevelComplete(true);
+                        if (Date.now() - stageStartTimeRef.current >= 2000) {
+                            showMessageCard({ text: getRandomMessageCopy(), variant: 'success', durationMs: 1100 });
+                        }
 
                         // Auto-advance to next chapter after delay
                         setTimeout(() => {
@@ -294,7 +309,7 @@ export const WordSearchMode = ({ frameData, showSettings = false, onCloseSetting
                 cancelAnimationFrame(animationFrameRef.current);
             }
         };
-    }, [frameData, settings.theme, hoverTileId, hintTileIds, hintPhase, chapter]);
+    }, [frameRef, settings.theme, hoverTileId, hintTileIds, hintPhase, chapter]);
 
     // Setup canvas
     useEffect(() => {

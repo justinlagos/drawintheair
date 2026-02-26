@@ -8,131 +8,164 @@
  * - ToyMode: Character cursor style (firefly/wand with tail)
  */
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, type MutableRefObject } from 'react';
 import { isToyModeEnabled } from '../core/toyMode';
+import { getCanvasCoordinateMapper } from '../core/canvasCoordinateMapper';
+import type { TrackingFrameData } from '../features/tracking/TrackingLayer';
 import './MagicCursor.css';
 
 export type CursorStyle = 'ring' | 'character';
 export type CursorState = 'idle' | 'hover' | 'active' | 'success' | 'lost';
 
 interface MagicCursorProps {
-    x: number;
-    y: number;
-    active: boolean;
-    penDown?: boolean;
-    confidence?: number;
+    frameRef: MutableRefObject<TrackingFrameData>;
+    getPenDown?: () => boolean;
+    airPaintEnabled?: boolean;
+    mode?: 'calibration' | 'free' | 'pre-writing' | 'sort-and-place' | 'word-search' | 'colour-builder';
     style?: CursorStyle;
     state?: CursorState;
 }
 
 export const MagicCursor = ({
-    x,
-    y,
-    active,
-    penDown = false,
-    confidence = 1,
+    frameRef,
+    getPenDown,
+    airPaintEnabled = false,
+    mode,
     style,
     state
 }: MagicCursorProps) => {
     const cursorRef = useRef<HTMLDivElement>(null);
-    const [smoothX, setSmoothX] = useState(x);
-    const [smoothY, setSmoothY] = useState(y);
-    const idleAnimationFrameRef = useRef<number | null>(null);
-    const [tailPoints, setTailPoints] = useState<Array<{ x: number; y: number; opacity: number }>>([]);
-    
+    const rafRef = useRef<number | null>(null);
+    const currentRef = useRef<{ x: number; y: number }>({ x: 0.5, y: 0.5 });
+    const lastTimeRef = useRef<number>(performance.now());
+    const tailHistoryRef = useRef<Array<{ x: number; y: number }>>([]);
+    const tailRefs = useRef<Array<HTMLDivElement | null>>([]);
+    const activeRef = useRef<boolean>(false);
+    const penDownRef = useRef<boolean>(false);
+    const confidenceRef = useRef<number>(1);
+
     // Determine cursor style - default ring, character in ToyMode
     const toyModeEnabled = isToyModeEnabled();
     const cursorStyle: CursorStyle = style || (toyModeEnabled ? 'character' : 'ring');
-    
-    // Determine cursor state
-    let cursorState: CursorState = 'idle';
-    if (!active) cursorState = 'idle';
-    else if (state) cursorState = state;
-    else if (penDown) cursorState = 'active';
-    else cursorState = 'hover';
 
-    // Smooth cursor movement for visual feedback
     useEffect(() => {
-        const smoothing = 0.3;
-        setSmoothX(prev => prev + (x - prev) * smoothing);
-        setSmoothY(prev => prev + (y - prev) * smoothing);
-    }, [x, y]);
+        const updateCursor = (time: number) => {
+            const frame = frameRef.current;
+            const { filteredPoint, indexTip, hasHand, confidence } = frame;
+            const useFiltered = mode === 'free' && airPaintEnabled && filteredPoint;
+            const target = useFiltered ? filteredPoint! : (indexTip ?? { x: 0.5, y: 0.5 });
 
-    // Update tail points for character cursor
-    useEffect(() => {
-        if (cursorStyle === 'character' && active) {
-            setTailPoints(prev => {
-                const newPoints = [{ x: smoothX, y: smoothY, opacity: 1 }, ...prev];
-                return newPoints.slice(0, 8).map((p, i) => ({
-                    ...p,
-                    opacity: Math.max(0, 1 - i * 0.15)
-                }));
-            });
-        } else {
-            setTailPoints([]);
-        }
-    }, [smoothX, smoothY, cursorStyle, active]);
+            activeRef.current = Boolean(hasHand);
+            confidenceRef.current = confidence ?? 1;
+            penDownRef.current = getPenDown ? getPenDown() : frame.penDown;
 
-    // Idle animation for character cursor
-    useEffect(() => {
-        if (cursorStyle === 'character' && cursorState === 'idle' && active) {
-            const animate = () => {
-                idleAnimationFrameRef.current = requestAnimationFrame(animate);
-            };
-            idleAnimationFrameRef.current = requestAnimationFrame(animate);
-        } else {
-            if (idleAnimationFrameRef.current !== null) {
-                cancelAnimationFrame(idleAnimationFrameRef.current);
-                idleAnimationFrameRef.current = null;
+            const mapper = getCanvasCoordinateMapper();
+            const cssWidth = mapper?.getCanvasCssSize().width || window.innerWidth;
+            const cssHeight = mapper?.getCanvasCssSize().height || window.innerHeight;
+
+            const clampedX = Math.min(1, Math.max(0, target.x));
+            const clampedY = Math.min(1, Math.max(0, target.y));
+
+            const dt = Math.max((time - lastTimeRef.current) / 1000, 0.001);
+            lastTimeRef.current = time;
+            const current = currentRef.current;
+            const dx = clampedX - current.x;
+            const dy = clampedY - current.y;
+            const speed = Math.hypot(dx, dy) / dt;
+            const smoothing = speed > 1.2 ? 0.75 : speed > 0.5 ? 0.5 : 0.3;
+
+            current.x += dx * smoothing;
+            current.y += dy * smoothing;
+
+            if (cursorRef.current) {
+                const opacity = activeRef.current ? Math.max(0.3, confidenceRef.current) : 0;
+                const px = current.x * cssWidth;
+                const py = current.y * cssHeight;
+                cursorRef.current.style.transform = `translate(${px}px, ${py}px)`;
+                cursorRef.current.style.opacity = `${opacity}`;
+                cursorRef.current.classList.toggle('pen-down', penDownRef.current);
+                cursorRef.current.classList.toggle('pen-up', !penDownRef.current);
+                cursorRef.current.classList.toggle('high-confidence', confidenceRef.current > 0.8);
+                cursorRef.current.classList.toggle('low-confidence', confidenceRef.current < 0.5);
+                if (cursorStyle === 'character') {
+                    const nextState: CursorState = !activeRef.current
+                        ? 'idle'
+                        : (state || (penDownRef.current ? 'active' : 'hover'));
+                    cursorRef.current.classList.toggle('cursor-idle', nextState === 'idle');
+                    cursorRef.current.classList.toggle('cursor-hover', nextState === 'hover');
+                    cursorRef.current.classList.toggle('cursor-active', nextState === 'active');
+                    cursorRef.current.classList.toggle('cursor-success', nextState === 'success');
+                    cursorRef.current.classList.toggle('cursor-lost', nextState === 'lost');
+                }
             }
-        }
+
+            if (cursorStyle === 'character') {
+                if (activeRef.current) {
+                    tailHistoryRef.current.unshift({ x: current.x, y: current.y });
+                    if (tailHistoryRef.current.length > 8) tailHistoryRef.current.length = 8;
+                } else {
+                    tailHistoryRef.current.length = 0;
+                }
+
+                tailRefs.current.forEach((node, i) => {
+                    if (!node) return;
+                    const point = tailHistoryRef.current[i];
+                    if (!point) {
+                        node.style.opacity = '0';
+                        return;
+                    }
+                    const size = 8 - i;
+                    const opacity = Math.max(0, 1 - i * 0.15);
+                    node.style.opacity = `${opacity}`;
+                    node.style.width = `${size}px`;
+                    node.style.height = `${size}px`;
+                    node.style.left = `${point.x * cssWidth}px`;
+                    node.style.top = `${point.y * cssHeight}px`;
+                    node.style.marginLeft = `${-size / 2}px`;
+                    node.style.marginTop = `${-size / 2}px`;
+                });
+            }
+
+            rafRef.current = requestAnimationFrame(updateCursor);
+        };
+
+        rafRef.current = requestAnimationFrame(updateCursor);
         return () => {
-            if (idleAnimationFrameRef.current !== null) {
-                cancelAnimationFrame(idleAnimationFrameRef.current);
-                idleAnimationFrameRef.current = null;
+            if (rafRef.current !== null) {
+                cancelAnimationFrame(rafRef.current);
+                rafRef.current = null;
             }
         };
-    }, [cursorStyle, cursorState, active]);
+    }, [frameRef, airPaintEnabled, cursorStyle, mode, getPenDown]);
 
     // Calculate opacity based on active state and confidence
-    const opacity = active ? Math.max(0.3, confidence) : 0;
-
     // Character cursor render
     if (cursorStyle === 'character') {
-        const glowIntensity = penDown ? 1.5 : cursorState === 'success' ? 2 : 1;
-        const scale = cursorState === 'success' ? 1.2 : penDown ? 1.1 : 1;
-        
+        const glowIntensity = penDownRef.current ? 1.5 : 1;
+        const scale = penDownRef.current ? 1.1 : 1;
+
         return (
             <div
                 ref={cursorRef}
-                className={`magic-cursor character-cursor cursor-${cursorState}`}
-                style={{
-                    transform: `translate(${smoothX * window.innerWidth}px, ${smoothY * window.innerHeight}px)`,
-                    opacity
-                }}
+                className="magic-cursor character-cursor cursor-idle"
             >
                 {/* Tail trail */}
-                {tailPoints.map((point, i) => (
+                {Array.from({ length: 8 }).map((_, i) => (
                     <div
                         key={i}
                         className="cursor-tail-point"
+                        ref={(node) => { tailRefs.current[i] = node; }}
                         style={{
                             position: 'absolute',
-                            left: `${point.x * window.innerWidth}px`,
-                            top: `${point.y * window.innerHeight}px`,
-                            width: `${8 - i}px`,
-                            height: `${8 - i}px`,
-                            marginLeft: `${-(8 - i) / 2}px`,
-                            marginTop: `${-(8 - i) / 2}px`,
                             borderRadius: '50%',
-                            background: `radial-gradient(circle, rgba(255, 230, 109, ${point.opacity * 0.8}) 0%, rgba(255, 107, 157, ${point.opacity * 0.4}) 100%)`,
-                            boxShadow: `0 0 ${10 * point.opacity}px rgba(255, 230, 109, ${point.opacity * 0.6})`,
+                            background: 'radial-gradient(circle, rgba(255, 230, 109, 0.8) 0%, rgba(255, 107, 157, 0.4) 100%)',
+                            boxShadow: '0 0 10px rgba(255, 230, 109, 0.6)',
                             transform: 'translate(-50%, -50%)',
-                            opacity: point.opacity
+                            opacity: 0
                         }}
                     />
                 ))}
-                
+
                 {/* Main firefly/wand tip */}
                 <div
                     className="cursor-character-main"
@@ -145,8 +178,8 @@ export const MagicCursor = ({
                         borderRadius: '50%',
                         background: `radial-gradient(circle, rgba(255, 230, 109, 1) 0%, rgba(255, 107, 157, 0.8) 50%, transparent 100%)`,
                         boxShadow: `0 0 ${20 * glowIntensity}px rgba(255, 230, 109, ${0.8 * glowIntensity}), 0 0 ${40 * glowIntensity}px rgba(255, 107, 157, ${0.4 * glowIntensity})`,
-                        transform: cursorState === 'idle' ? 'scale(1)' : 'scale(1)',
-                        animation: cursorState === 'idle' ? 'cursorIdle 2s ease-in-out infinite' : 'none',
+                        transform: (state || 'idle') === 'idle' ? 'scale(1)' : 'scale(1)',
+                        animation: (state || 'idle') === 'idle' ? 'cursorIdle 2s ease-in-out infinite' : 'none',
                         transition: 'all 0.2s ease'
                     }}
                 />
@@ -158,23 +191,19 @@ export const MagicCursor = ({
     return (
         <div
             ref={cursorRef}
-            className={`magic-cursor ${penDown ? 'pen-down' : 'pen-up'}`}
-            style={{
-                transform: `translate(${smoothX * window.innerWidth}px, ${smoothY * window.innerHeight}px)`,
-                opacity
-            }}
+            className="magic-cursor pen-up"
         >
             {/* Outer ring - shows pen state */}
             <div className="cursor-ring" />
 
             {/* Inner dot - solid when drawing */}
-            <div className={`cursor-dot ${penDown ? 'active' : ''}`} />
+            <div className={`cursor-dot ${penDownRef.current ? 'active' : ''}`} />
 
             {/* Decorative rotating ring */}
             <div className="cursor-decoration" />
 
             {/* Trail effect when drawing */}
-            {penDown && (
+            {penDownRef.current && (
                 <div className="cursor-trail" />
             )}
         </div>

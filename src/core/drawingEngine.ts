@@ -33,10 +33,10 @@ export interface Stroke {
     baseWidth: number;
 }
 
-// Filter config tuned for ultra-smooth drawing
+// Filter config tuned for sharp, responsive tracing
 const FILTER_CONFIG = {
-    minCutoff: 0.8,    // Lower = more smoothing (was 1.2)
-    beta: 0.01,        // Lower = less responsive to speed (was 0.02)
+    minCutoff: 1.8,    // Higher = less smoothing, more immediate feel
+    beta: 0.02,        // Higher = more responsive to fast movements
     dCutoff: 1.0
 };
 
@@ -529,11 +529,16 @@ export class DrawingEngine {
             ctx.globalCompositeOperation = 'source-over';
         }
 
+        // Crisp stroke rendering
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.shadowBlur = 0;
+
         // For very short strokes, just draw a simple line
         if (points.length < 3) {
             ctx.beginPath();
             ctx.strokeStyle = stroke.color;
-            ctx.lineWidth = stroke.baseWidth;
+            ctx.lineWidth = stroke.baseWidth * 1.75;
             ctx.moveTo(points[0].x * width, points[0].y * height);
             for (let i = 1; i < points.length; i++) {
                 ctx.lineTo(points[i].x * width, points[i].y * height);
@@ -572,9 +577,9 @@ export class DrawingEngine {
                 p2.x * width, p2.y * height
             );
 
-            // Variable width based on pressure
+            // Variable width based on pressure — 1.75x thicker for visibility
             const pressure = (p1.pressure ?? 1) * 0.4 + (p2.pressure ?? 1) * 0.6;
-            ctx.lineWidth = stroke.baseWidth * pressure;
+            ctx.lineWidth = stroke.baseWidth * 1.75 * pressure;
             ctx.stroke();
             
             // Restart path for next segment with new width

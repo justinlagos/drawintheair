@@ -446,14 +446,28 @@ export class InteractionStateManager {
                 filteredPoint = { x: filtered.x, y: filtered.y };
             }
             
+            // Clamp filtered point to [0, 1] — prevents right-side/edge blind spots
+            if (filteredPoint) {
+                filteredPoint = {
+                    x: Math.max(0, Math.min(1, filteredPoint.x)),
+                    y: Math.max(0, Math.min(1, filteredPoint.y)),
+                };
+            }
+
             // Filter thumb tip (use inferred thumb if occluded, otherwise raw)
             if (thumbToUse) {
                 const filteredThumb = this.thumbFilter.filter(thumbToUse.x, thumbToUse.y, timestamp);
-                filteredThumbTip = { x: filteredThumb.x, y: filteredThumb.y };
+                filteredThumbTip = {
+                    x: Math.max(0, Math.min(1, filteredThumb.x)),
+                    y: Math.max(0, Math.min(1, filteredThumb.y)),
+                };
             } else if (rawThumbTip) {
                 // Fallback to raw thumb if no inferred thumb available
                 const filteredThumb = this.thumbFilter.filter(rawThumbTip.x, rawThumbTip.y, timestamp);
-                filteredThumbTip = { x: filteredThumb.x, y: filteredThumb.y };
+                filteredThumbTip = {
+                    x: Math.max(0, Math.min(1, filteredThumb.x)),
+                    y: Math.max(0, Math.min(1, filteredThumb.y)),
+                };
             }
             
             // Teleport guard and jitter spike guard (Part E)

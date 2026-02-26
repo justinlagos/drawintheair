@@ -19,6 +19,7 @@ import { paintToolsManager } from './freePaintTools';
 import { undoRedoManager } from './freePaintUndo';
 import { fillBucket } from './freePaintFill';
 import { performanceProtection } from './freePaintPerformance';
+import { isCountdownActive } from '../../core/countdownService';
 
 /**
  * Draw crosshair at point for debug visualization
@@ -75,6 +76,9 @@ export const freePaintLogic = (
 
     // Update canvas size for resampling
     drawingEngine.setCanvasSize(width, height);
+    if (isCountdownActive(timestamp)) {
+        return;
+    }
 
     // Apply depth sensitivity: increase brush width with press (if enabled)
     // Press value: 0 = no press, 1 = full press

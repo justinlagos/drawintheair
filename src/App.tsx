@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { TrackingLayer, type TrackingFrameData } from './features/tracking/TrackingLayer';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { TrackingLayer } from './features/tracking/TrackingLayer';
 import { FreePaintMode } from './features/modes/FreePaintMode';
 import { freePaintLogic } from './features/modes/freePaintLogic';
 import { PreWritingMode } from './features/modes/PreWritingMode';
@@ -10,12 +10,16 @@ import { SortAndPlaceMode } from './features/modes/sortAndPlace/SortAndPlaceMode
 import { sortAndPlaceLogic } from './features/modes/sortAndPlace/sortAndPlaceLogic';
 import { WordSearchMode } from './features/modes/wordSearch/WordSearchMode';
 import { wordSearchLogic } from './features/modes/wordSearch/wordSearchLogic';
+import { ColourBuilderMode } from './features/modes/colourBuilder/ColourBuilderMode';
+import { colourBuilderLogic } from './features/modes/colourBuilder/colourBuilderLogic';
 import { WaveToWake } from './features/onboarding/WaveToWake';
 import { ModeSelectionMenu, type GameMode } from './features/menu/ModeSelectionMenu';
 import { AdultGate } from './features/safety/AdultGate';
 import { MagicCursor } from './components/MagicCursor';
 import { ModeBackground } from './components/ModeBackground';
 import { PerfOverlay } from './components/PerfOverlay';
+import { MessageCardOverlay } from './components/MessageCardOverlay';
+import { CountdownOverlay } from './components/CountdownOverlay';
 import { drawingEngine, PenState } from './core/drawingEngine';
 import { perf } from './core/perf';
 import { initToyMode } from './core/toyMode';
@@ -23,10 +27,11 @@ import { initNarrator } from './core/narrator';
 import { featureFlags } from './core/featureFlags';
 import { type GameMode as FeatureGameMode } from './core/featureFlags';
 import { interactionStateManager } from './core/InteractionState';
-import { getTrackingFlag } from './core/flags/TrackingFlags';
+import { getTrackingFlag, isDebugModeEnabled } from './core/flags/TrackingFlags';
 import type { FilterProfileMode } from './core/filters/OneEuroFilter';
 import { logEvent, hasActiveSession, endSession } from './lib/pilotAnalytics';
 import './App.css';
+import { startCountdown } from './core/countdownService';
 
 type AppState = 'onboarding' | 'menu' | 'game';
 
@@ -39,7 +44,7 @@ const getInitialState = (): { appState: AppState; gameMode: GameMode } => {
   // Check screen param first - allows direct access to any screen
   if (screen === 'menu') return { appState: 'menu', gameMode: 'free' };
   if (screen === 'game') {
-    const validMode = (mode === 'free' || mode === 'pre-writing' || mode === 'calibration' || mode === 'sort-and-place' || mode === 'word-search') ? mode : 'free';
+    const validMode = (mode === 'free' || mode === 'pre-writing' || mode === 'calibration' || mode === 'sort-and-place' || mode === 'word-search' || mode === 'colour-builder') ? mode : 'free';
     return {
       appState: 'game',
       gameMode: validMode
@@ -54,21 +59,21 @@ function App() {
   // Version marker - v2.0 with all updates
   if (typeof window !== 'undefined') {
     (window as any).__DRAW_IN_AIR_VERSION__ = '2.0.0-updated';
-    console.log('🎨 Draw in the Air v2.0.0 - Updated version loaded');
-
-    // Tracking audit log
-    console.log("[TrackingAudit] Files touched:", [
-      "src/core/InteractionState.ts",
-      "src/core/filters/OneEuroFilter.ts",
-      "src/core/tracking/DynamicResolution.ts",
-      "src/features/tracking/TrackingLayer.tsx",
-      "src/App.tsx",
-      "src/core/perf.ts",
-      "src/core/flags/TrackingFlags.ts",
-      "src/components/HandGuidanceOverlay.tsx",
-      "src/core/tracking/PinchLogic.ts",
-      "scripts/tracking-smoke-test.ts"
-    ]);
+    if (isDebugModeEnabled()) {
+      console.log('🎨 Draw in the Air v2.0.0 - Updated version loaded');
+      console.log("[TrackingAudit] Files touched:", [
+        "src/core/InteractionState.ts",
+        "src/core/filters/OneEuroFilter.ts",
+        "src/core/tracking/DynamicResolution.ts",
+        "src/features/tracking/TrackingLayer.tsx",
+        "src/App.tsx",
+        "src/core/perf.ts",
+        "src/core/flags/TrackingFlags.ts",
+        "src/components/HandGuidanceOverlay.tsx",
+        "src/core/tracking/PinchLogic.ts",
+        "scripts/tracking-smoke-test.ts"
+      ]);
+    }
   }
 
   const [appState, setAppState] = useState<AppState>(() => getInitialState().appState);
@@ -117,7 +122,8 @@ function App() {
       'pre-writing': 'tracing',
       'calibration': 'bubble-pop',
       'sort-and-place': 'sort-and-place',
-      'word-search': 'word-search'
+      'word-search': 'word-search',
+      'colour-builder': 'sort-and-place' // using similar filter profile as sort and place
     };
 
     const filterMode = modeMap[mode] || 'default';
@@ -142,6 +148,16 @@ function App() {
       logEvent('menu_opened');
     }
   }, [gameMode]);
+
+  const lastCountdownKeyRef = useRef<string>('');
+
+  useEffect(() => {
+    if (appState !== 'game') return;
+    const key = `${appState}:${gameMode}`;
+    if (lastCountdownKeyRef.current === key) return;
+    lastCountdownKeyRef.current = key;
+    startCountdown(3000);
+  }, [appState, gameMode]);
 
   const handleCalibrationComplete = useCallback(() => {
     // After calibration, go to menu to pick another mode
@@ -175,6 +191,9 @@ function App() {
         break;
       case 'word-search':
         logic = wordSearchLogic;
+        break;
+      case 'colour-builder':
+        logic = colourBuilderLogic;
         break;
       default:
         logic = undefined;
@@ -219,22 +238,10 @@ function App() {
   return (
     <div className="App">
       <PerfOverlay />
+      <MessageCardOverlay />
+      <CountdownOverlay />
       <TrackingLayer onFrame={activeLogic}>
-        {(frameData: TrackingFrameData) => {
-          const { results, indexTip, confidence, filteredPoint } = frameData;
-          const hasHand = results && results.landmarks && results.landmarks.length > 0;
-
-          // Get pen state for cursor feedback
-          const penState = gameMode === 'free' && appState === 'game'
-            ? drawingEngine.getPenState()
-            : PenState.UP;
-
-          // Use filteredPoint for cursor when airPaintEnabled (matches drawing position)
-          // Otherwise use indexTip (raw point)
-          const cursorPoint = (gameMode === 'free' && flags.airPaintEnabled && filteredPoint)
-            ? filteredPoint
-            : (indexTip ?? { x: 0.5, y: 0.5 });
-
+        {(frameRef) => {
           return (
             <>
               {/* Mode Background — unified toy world on every screen */}
@@ -246,24 +253,26 @@ function App() {
                         gameMode === 'sort-and-place' ? 'sort-and-place' :
                           gameMode === 'pre-writing' ? 'pre-writing' :
                             gameMode === 'word-search' ? 'word-search' :
-                              'free'
+                              gameMode === 'colour-builder' ? 'sort-and-place' : // placeholder bg for colour-builder
+                                'free'
                   }
                 />
               )}
 
               {/* Magic Cursor - shows pen state */}
               <MagicCursor
-                x={cursorPoint.x}
-                y={cursorPoint.y}
-                active={!!hasHand}
-                penDown={penState === PenState.DOWN}
-                confidence={confidence}
+                frameRef={frameRef}
+                airPaintEnabled={flags.airPaintEnabled}
+                mode={gameMode}
+                getPenDown={() => (gameMode === 'free' && appState === 'game'
+                  ? drawingEngine.getPenState() === PenState.DOWN
+                  : false)}
               />
 
               {/* State: Onboarding */}
               {appState === 'onboarding' && (
                 <WaveToWake
-                  trackingResults={results}
+                  trackingResults={frameRef.current.results}
                   onWake={handleWake}
                 />
               )}
@@ -273,7 +282,7 @@ function App() {
                 <ModeSelectionMenu
                   onSelect={handleModeSelect}
                   onBack={handleBackToLanding}
-                  trackingResults={results}
+                  trackingResults={frameRef.current.results}
                 />
               )}
 
@@ -295,7 +304,7 @@ function App() {
                   )}
 
                   {gameMode === 'free' && (
-                    <FreePaintMode frameData={frameData} onExit={handleExitToMenu} />
+                    <FreePaintMode frameRef={frameRef} onExit={handleExitToMenu} />
                   )}
 
                   {gameMode === 'pre-writing' && (
@@ -308,11 +317,15 @@ function App() {
 
                   {gameMode === 'word-search' && (
                     <WordSearchMode
-                      frameData={frameData}
+                      frameRef={frameRef}
                       showSettings={wordSearchSettingsOpen}
                       onCloseSettings={() => setWordSearchSettingsOpen(false)}
                       onExit={handleExitToMenu}
                     />
+                  )}
+
+                  {gameMode === 'colour-builder' && (
+                    <ColourBuilderMode onExit={handleExitToMenu} />
                   )}
 
                 </>

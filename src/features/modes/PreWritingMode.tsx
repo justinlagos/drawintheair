@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     resetPath,
     nextPath,
@@ -10,9 +10,8 @@ import {
     isCurrentLetter,
     setCompleteCallback
 } from './preWriting/preWritingLogic';
-import { Celebration } from '../../components/Celebration';
 import { GameTopBar } from '../../components/GameTopBar';
-import { showToast, getRandomMotivation } from '../../core/toastService';
+import { showMessageCard, getRandomMessageCopy } from '../../core/messageCardService';
 
 // Responsive hook
 const useResponsiveLayout = () => {
@@ -57,7 +56,9 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [totalPaths] = useState(getTotalPaths());
     const [isLetter, setIsLetter] = useState(false);
-    const [showCelebration, setShowCelebration] = useState(false);
+    const stageStartTimeRef = useRef<number>(Date.now());
+    const successCountRef = useRef<number>(0);
+    const streakRef = useRef<number>(0);
 
     const layout = useResponsiveLayout();
     const { isMobile, isTabletSmall, isLandscapePhone } = layout;
@@ -66,10 +67,19 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
     // Set up completion callback
     useEffect(() => {
         setCompleteCallback(() => {
-            setShowCelebration(true);
-            showToast(getRandomMotivation(), 'success', 1500);
+            const now = Date.now();
+            if (now - stageStartTimeRef.current >= 2000) {
+                successCountRef.current += 1;
+                streakRef.current += 1;
+                if (successCountRef.current % 3 === 0) {
+                    showMessageCard({ text: getRandomMessageCopy(), variant: 'success', durationMs: 1000 });
+                }
+                if (streakRef.current === 5) {
+                    showMessageCard({ text: getRandomMessageCopy(), variant: 'success', durationMs: 1000 });
+                }
+                showMessageCard({ text: getRandomMessageCopy(), variant: 'success', durationMs: 1100 });
+            }
             setTimeout(() => {
-                setShowCelebration(false);
                 // Auto-advance to next path
                 if (nextPath()) {
                     setProgress(0);
@@ -77,6 +87,7 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
                     setPathName(newName);
                     setCurrentIndex(getCurrentPathIndex());
                     setIsLetter(isCurrentLetter());
+                    stageStartTimeRef.current = Date.now();
                 }
             }, 2500);
         });
@@ -106,7 +117,7 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
     const handleNext = () => {
         nextPath();
         setProgress(0);
-        setShowCelebration(false);
+        stageStartTimeRef.current = Date.now();
         const newName = getCurrentPathName();
         setPathName(newName);
         setCurrentIndex(getCurrentPathIndex());
@@ -116,14 +127,14 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
     const handleRestart = () => {
         resetPath();
         setProgress(0);
-        setShowCelebration(false);
+        stageStartTimeRef.current = Date.now();
     };
 
     const handleRestartAll = () => {
         resetAllPaths();
         setProgress(0);
         setCurrentIndex(0);
-        setShowCelebration(false);
+        stageStartTimeRef.current = Date.now();
         const newName = getCurrentPathName();
         setPathName(newName);
         setIsLetter(isCurrentLetter());
@@ -410,7 +421,7 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
             </div>
 
             {/* Instructions - Responsive */}
-            {progress < 0.1 && !showCelebration && (
+            {progress < 0.1 && (
                 <div style={{
                     position: 'absolute',
                     bottom: isCompact ? '90px' : '120px',
@@ -440,19 +451,6 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
                         👆 {isCompact ? 'Pinch to draw!' : 'Pinch to draw — start at the green dot!'}
                     </div>
                 </div>
-            )}
-
-            {/* Central Celebration */}
-            {showCelebration && (
-                <Celebration
-                    show={true}
-                    message="Great Job!"
-                    subMessage={`You traced ${pathName}! ${currentIndex < totalPaths - 1 ? 'Keep going! ✨' : 'All done! 🎉'}`}
-                    icon="⭐"
-                    duration={2500}
-                    showConfetti={true}
-                    soundEffect={true}
-                />
             )}
 
             {/* CSS animation */}

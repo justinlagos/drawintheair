@@ -13,6 +13,7 @@
 import { useEffect, useState, useRef } from 'react';
 import {
     getScore,
+    getBubbleMisses,
     getTimeRemaining,
     isGameActive,
     hasReachedMilestone,
@@ -25,11 +26,11 @@ import {
     MAX_LEVEL,
     type BubbleLevel
 } from './bubbleCalibrationLogic';
-import { Celebration } from '../../../components/Celebration';
 import { GameTopBar } from '../../../components/GameTopBar';
 import { earnSticker } from '../../../core/stickerBook';
 import { featureFlags } from '../../../core/featureFlags';
-import { showToast, getRandomMotivation } from '../../../core/toastService';
+import { showMessageCard, getRandomMessageCopy } from '../../../core/messageCardService';
+import { startCountdown } from '../../../core/countdownService';
 
 interface BubbleCalibrationProps {
     onComplete: () => void;
@@ -74,13 +75,16 @@ const useResponsiveHUD = () => {
 export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCalibrationProps) => {
     const [score, setScore] = useState(0);
     const [timeRemaining, setTimeRemaining] = useState(GAME_DURATION);
-    const [showMilestoneCelebration, setShowMilestoneCelebration] = useState(false);
     const [showEndModal, setShowEndModal] = useState(false);
     const [showResultsOverlay, setShowResultsOverlay] = useState(false);
     const [finalScore, setFinalScore] = useState(0);
     const [level, setLevel] = useState<BubbleLevel>(1);
     const [autoAdvanceScheduled, setAutoAdvanceScheduled] = useState(false);
-    const lastToastScoreRef = useRef(0);
+    const stageStartTimeRef = useRef<number>(Date.now());
+    const successCountRef = useRef<number>(0);
+    const streakRef = useRef<number>(0);
+    const lastScoreRef = useRef<number>(0);
+    const lastMissesRef = useRef<number>(0);
 
     const layout = useResponsiveHUD();
     const { isMobile, isTabletSmall, isLandscapePhone } = layout;
@@ -88,13 +92,18 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
 
     // Initialize game when level changes
     useEffect(() => {
-        startBubbleGame(level as BubbleLevel);
+        const countdownEndsAt = startCountdown(3000);
+        startBubbleGame(level as BubbleLevel, countdownEndsAt);
         // Reset UI state when level changes
         setShowEndModal(false);
         setScore(0);
         setTimeRemaining(GAME_DURATION);
         setAutoAdvanceScheduled(false);
-        lastToastScoreRef.current = 0;
+        lastScoreRef.current = 0;
+        lastMissesRef.current = 0;
+        successCountRef.current = 0;
+        streakRef.current = 0;
+        stageStartTimeRef.current = countdownEndsAt;
     }, [level]);
 
     // Game state update interval
@@ -106,6 +115,9 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
             const currentTimeRemaining = getTimeRemaining();
             const currentMilestoneReached = hasReachedMilestone();
             const gameIsActive = isGameActive();
+            const currentMisses = getBubbleMisses();
+            const now = Date.now();
+            const eligible = now - stageStartTimeRef.current >= 2000;
 
             // Update score and time only - do NOT overwrite React level state
             setScore(currentScore);
@@ -113,17 +125,30 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
 
             // Show milestone celebration when reached
             if (currentMilestoneReached && !hasCelebratedMilestone()) {
-                setShowMilestoneCelebration(true);
                 setMilestoneCelebrated();
-                setTimeout(() => {
-                    setShowMilestoneCelebration(false);
-                }, 2500);
+                if (eligible) {
+                    showMessageCard({ text: getRandomMessageCopy(), variant: 'success', durationMs: 1100 });
+                }
             }
 
-            // Show motivation toast every 3 correct pops
-            if (gameIsActive && currentScore > 0 && currentScore >= lastToastScoreRef.current + 3) {
-                lastToastScoreRef.current = currentScore;
-                showToast(getRandomMotivation(), 'success', 1800);
+            if (currentMisses > lastMissesRef.current) {
+                streakRef.current = 0;
+                lastMissesRef.current = currentMisses;
+            }
+
+            if (currentScore > lastScoreRef.current) {
+                const delta = currentScore - lastScoreRef.current;
+                lastScoreRef.current = currentScore;
+                if (eligible) {
+                    successCountRef.current += delta;
+                    streakRef.current += delta;
+                    if (successCountRef.current % 3 === 0) {
+                        showMessageCard({ text: getRandomMessageCopy(), variant: 'success', durationMs: 1000 });
+                    }
+                    if (streakRef.current === 5) {
+                        showMessageCard({ text: getRandomMessageCopy(), variant: 'success', durationMs: 1000 });
+                    }
+                }
             }
 
             // Check for game end - more robust detection
@@ -156,6 +181,9 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
                         }, 1200);
                     }
                 }
+                if (eligible) {
+                    showMessageCard({ text: getRandomMessageCopy(), variant: 'success', durationMs: 1100 });
+                }
             }
         }, 100);
 
@@ -169,13 +197,18 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
 
     const handleTryAgain = () => {
         // Reset all state and restart game
-        startBubbleGame(level as BubbleLevel);
+        const countdownEndsAt = startCountdown(3000);
+        startBubbleGame(level as BubbleLevel, countdownEndsAt);
         setShowEndModal(false);
         setShowResultsOverlay(false);
         setScore(0);
         setTimeRemaining(GAME_DURATION);
-        lastToastScoreRef.current = 0;
         setAutoAdvanceScheduled(false);
+        lastScoreRef.current = 0;
+        lastMissesRef.current = 0;
+        successCountRef.current = 0;
+        streakRef.current = 0;
+        stageStartTimeRef.current = countdownEndsAt;
     };
 
     // Play Again from results overlay — restart from level 1
@@ -252,18 +285,16 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
                     }}>
                         {/* Mode Name */}
                         <div style={{
-                            background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                            
-                            
+                            background: 'linear-gradient(180deg, #1B274F, #0F1836)',
                             borderRadius: hudRadius,
-                            border: '2px solid rgba(0, 229, 255, 0.2)',
+                            border: '1px solid rgba(255, 255, 255, 0.16)',
                             padding: hudPadding,
-                            boxShadow: '0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15)'
+                            boxShadow: '0 8px 20px rgba(0,0,0,0.35)'
                         }}>
                             <span style={{
                                 fontSize: '1rem',
                                 fontWeight: 700,
-                                color: '#00E5FF'
+                                color: '#FFFFFF'
                             }}>
                                 Bubble Pop
                             </span>
@@ -271,26 +302,22 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
 
                         {/* Timer */}
                         <div style={{
-                            background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                            
-                            
+                            background: 'linear-gradient(180deg, #1B274F, #0F1836)',
                             borderRadius: hudRadius,
                             border: timeRemaining < 5000
-                                ? '2px solid rgba(222, 49, 99, 0.6)'
-                                : '2px solid rgba(255, 255, 255, 0.1)',
+                                ? '1px solid rgba(222, 49, 99, 0.6)'
+                                : '1px solid rgba(255, 255, 255, 0.16)',
                             padding: hudPadding,
                             display: 'flex',
                             alignItems: 'center',
                             gap: '6px',
-                            boxShadow: timeRemaining < 5000
-                                ? '0 0 15px rgba(222, 49, 99, 0.4)'
-                                : '0 4px 16px rgba(0, 0, 0, 0.3)'
+                            boxShadow: '0 8px 20px rgba(0,0,0,0.35)'
                         }}>
                             <span style={{ fontSize: '1rem' }}>⏱</span>
                             <span style={{
                                 fontSize: '1.1rem',
                                 fontWeight: 'bold',
-                                color: timeRemaining < 5000 ? '#DE3163' : '#00E5FF',
+                                color: timeRemaining < 5000 ? '#DE3163' : '#FFD966',
                                 fontFamily: 'monospace'
                             }}>
                                 {formatTime(timeRemaining)}
@@ -299,18 +326,16 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
 
                         {/* Score */}
                         <div style={{
-                            background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                            
-                            
+                            background: 'linear-gradient(180deg, #1B274F, #0F1836)',
                             borderRadius: hudRadius,
-                            border: '2px solid rgba(255, 255, 255, 0.1)',
+                            border: '1px solid rgba(255, 255, 255, 0.16)',
                             padding: hudPadding,
-                            boxShadow: '0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15)'
+                            boxShadow: '0 8px 20px rgba(0,0,0,0.35)'
                         }}>
                             <span style={{
                                 fontSize: '1.1rem',
                                 fontWeight: 'bold',
-                                color: goalReached ? '#FFD93D' : '#00E5FF'
+                                color: '#FFD966'
                             }}>
                                 {score}/{currentGoal}
                             </span>
@@ -321,19 +346,16 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
                     <>
                         {/* Left: Mode Name */}
                         <div style={{
-                            background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                            
-                            
+                            background: 'linear-gradient(180deg, #1B274F, #0F1836)',
                             borderRadius: hudRadius,
-                            border: '2px solid rgba(0, 229, 255, 0.2)',
+                            border: '1px solid rgba(255, 255, 255, 0.16)',
                             padding: hudPadding,
-                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+                            boxShadow: '0 8px 20px rgba(0,0,0,0.35)'
                         }}>
                             <div style={{
                                 fontSize: '1.25rem',
                                 fontWeight: 700,
-                                color: '#00E5FF',
-                                textShadow: '0 0 10px rgba(0, 229, 255, 0.5)'
+                                color: '#FFFFFF'
                             }}>
                                 Bubble Pop
                             </div>
@@ -341,30 +363,23 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
 
                         {/* Center: Timer */}
                         <div style={{
-                            background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                            
-                            
+                            background: 'linear-gradient(180deg, #1B274F, #0F1836)',
                             borderRadius: hudRadius,
                             border: timeRemaining < 5000
-                                ? '2px solid rgba(222, 49, 99, 0.6)'
-                                : '2px solid rgba(255, 255, 255, 0.1)',
+                                ? '1px solid rgba(222, 49, 99, 0.6)'
+                                : '1px solid rgba(255, 255, 255, 0.16)',
                             padding: hudPadding,
                             display: 'flex',
                             alignItems: 'center',
                             gap: '12px',
-                            boxShadow: timeRemaining < 5000
-                                ? '0 0 20px rgba(222, 49, 99, 0.4)'
-                                : '0 8px 32px rgba(0, 0, 0, 0.3)'
+                            boxShadow: '0 8px 20px rgba(0,0,0,0.35)'
                         }}>
                             <span style={{ fontSize: '1.5rem' }}>⏱</span>
                             <span style={{
                                 fontSize: '1.75rem',
                                 fontWeight: 'bold',
-                                color: timeRemaining < 5000 ? '#DE3163' : '#00E5FF',
-                                fontFamily: 'monospace',
-                                textShadow: timeRemaining < 5000
-                                    ? '0 0 15px rgba(222, 49, 99, 0.6)'
-                                    : '0 0 10px rgba(0, 229, 255, 0.5)'
+                                color: timeRemaining < 5000 ? '#DE3163' : '#FFD966',
+                                fontFamily: 'monospace'
                             }}>
                                 {formatTime(timeRemaining)}
                             </span>
@@ -372,29 +387,24 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
 
                         {/* Right: Score and Goal */}
                         <div style={{
-                            background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                            
-                            
+                            background: 'linear-gradient(180deg, #1B274F, #0F1836)',
                             borderRadius: hudRadius,
-                            border: '2px solid rgba(255, 255, 255, 0.1)',
+                            border: '1px solid rgba(255, 255, 255, 0.16)',
                             padding: hudPadding,
                             textAlign: 'center',
-                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+                            boxShadow: '0 8px 20px rgba(0,0,0,0.35)'
                         }}>
                             <div style={{
                                 fontSize: '1.75rem',
                                 fontWeight: 'bold',
-                                color: goalReached ? '#FFD93D' : '#00E5FF',
-                                textShadow: goalReached
-                                    ? '0 0 20px rgba(255, 217, 61, 0.6)'
-                                    : '0 0 10px rgba(0, 229, 255, 0.5)',
+                                color: '#FFD966',
                                 marginBottom: '4px'
                             }}>
                                 Score {score} / {currentGoal}
                             </div>
                             <div style={{
                                 fontSize: '0.85rem',
-                                color: 'rgba(255,255,255,0.7)',
+                                color: '#FFFFFF',
                                 marginTop: '2px'
                             }}>
                                 Pop {currentGoal} bubbles
@@ -419,13 +429,13 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
                     justifyContent: 'center',
                     zIndex: 10000,
                     background: 'rgba(0, 0, 0, 0.6)',
-                    
+
                     padding: isCompact ? '16px' : '24px',
                     boxSizing: 'border-box'
                 }}>
                     <div style={{
                         background: 'rgba(1, 12, 36, 0.95)',
-                        
+
                         borderRadius: isCompact ? '24px' : '32px',
                         border: '3px solid rgba(255, 255, 255, 0.1)',
                         padding: isCompact ? '24px 28px' : '48px 56px',
@@ -707,19 +717,6 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
                         </div>
                     </div>
                 </div>
-            )}
-
-            {/* Milestone Celebration */}
-            {showMilestoneCelebration && (
-                <Celebration
-                    show={true}
-                    message="Great job!"
-                    subMessage={`${score} bubbles popped! 🎊`}
-                    icon="🎉"
-                    duration={2500}
-                    showConfetti={true}
-                    soundEffect={true}
-                />
             )}
 
             {/* CSS animations */}

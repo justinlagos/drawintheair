@@ -8,7 +8,7 @@
  * - A simple acceptance test
  */
 
-export type GameMode = 'calibration' | 'free' | 'pre-writing' | 'sort-and-place' | 'word-search';
+export type GameMode = 'calibration' | 'free' | 'pre-writing' | 'sort-and-place' | 'word-search' | 'colour-builder';
 
 export interface FeatureFlags {
     // Tracking features

@@ -2,6 +2,7 @@ import { DrawingUtils } from '@mediapipe/tasks-vision';
 import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import { LETTER_PATHS, getAvailableLetters, type PathPoint } from './letterPaths';
 import { normalizedToCanvas } from '../../../core/coordinateUtils';
+import { isCountdownActive } from '../../../core/countdownService';
 
 // Start with shapes, then move to letters
 const SHAPES: Array<{ name: string; points: PathPoint[] }> = [
@@ -138,7 +139,7 @@ export const preWritingLogic = (
     ctx.save();
     ctx.setLineDash([20, 20]);
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.lineWidth = 30;
+    ctx.lineWidth = 45;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
@@ -165,14 +166,15 @@ export const preWritingLogic = (
         if (progressPoints.length >= 2) {
             // Glow layers
             [
-                { width: 40, alpha: 0.1, blur: 20 },
-                { width: 30, alpha: 0.2, blur: 10 },
-                { width: 20, alpha: 0.4, blur: 5 }
+                { width: 60, alpha: 0.08 },
+                { width: 45, alpha: 0.16 },
+                { width: 30, alpha: 0.3 }
             ].forEach(layer => {
                 ctx.save();
-                ctx.filter = `blur(${layer.blur}px)`;
                 ctx.globalAlpha = layer.alpha;
                 ctx.strokeStyle = '#00F5D4';
+                ctx.shadowBlur = 6;
+                ctx.shadowColor = 'rgba(0, 245, 212, 0.4)';
                 ctx.lineWidth = layer.width;
                 ctx.lineCap = 'round';
 
@@ -189,7 +191,7 @@ export const preWritingLogic = (
 
             // Main progress line
             ctx.strokeStyle = '#00F5D4';
-        ctx.lineWidth = 20;
+            ctx.lineWidth = 30;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
 
@@ -211,7 +213,7 @@ export const preWritingLogic = (
     ctx.arc(startCanvasPoint.x, startCanvasPoint.y, pulse, 0, Math.PI * 2);
     ctx.fillStyle = progress < 0.05 ? '#00FF00' : 'rgba(0, 255, 0, 0.3)';
     ctx.shadowColor = '#00FF00';
-    ctx.shadowBlur = 15;
+    ctx.shadowBlur = 6;
     ctx.fill();
     ctx.shadowBlur = 0;
 
@@ -232,7 +234,7 @@ export const preWritingLogic = (
     ctx.restore();
 
     // Process finger position - only when pinching (pen down)
-    if (indexTip && thumbTip) {
+    if (!isCountdownActive() && indexTip && thumbTip) {
         // Detect pinch
         const pinchDistance = Math.hypot(
             indexTip.x - thumbTip.x,

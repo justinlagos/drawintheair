@@ -10,7 +10,7 @@
  * - Fully responsive across all screen sizes
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type MutableRefObject } from 'react';
 import { drawingEngine } from '../../core/drawingEngine';
 import type { TrackingFrameData } from '../tracking/TrackingLayer';
 import { FreePaintDebugHUD } from '../../components/FreePaintDebugHUD';
@@ -103,11 +103,11 @@ const FloatingTool = ({ children, style = {}, compact = false }: FloatingToolPro
 );
 
 interface FreePaintModeProps {
-    frameData?: TrackingFrameData;
+    frameRef?: MutableRefObject<TrackingFrameData>;
     onExit?: () => void;
 }
 
-export const FreePaintMode = ({ frameData, onExit }: FreePaintModeProps) => {
+export const FreePaintMode = ({ frameRef, onExit }: FreePaintModeProps) => {
     const [activeColor, setActiveColor] = useState(COLORS[0].value);
     const [activeSize, setActiveSize] = useState(BRUSH_SIZES[1].size);
     const [showHint, setShowHint] = useState(true);
@@ -290,17 +290,16 @@ export const FreePaintMode = ({ frameData, onExit }: FreePaintModeProps) => {
     const canRedo = undoRedoManager.canRedo();
     const flags = featureFlags.getFlags();
     
-    // Debug: Log flags on mount
+    const penDownRef = useRef(false);
+    const [penDown, setPenDown] = useState(false);
     useEffect(() => {
-        console.log('[FreePaintMode] Flags:', {
-            airPaintEnabled: flags.airPaintEnabled,
-            layersEnabled: flags.layersEnabled,
-            fillEnabled: flags.fillEnabled,
-            activeTool
-        });
-    }, [flags.airPaintEnabled, flags.layersEnabled, flags.fillEnabled, activeTool]);
-
-    const penDown = frameData?.penDown ?? false;
+        const interval = setInterval(() => {
+            const next = frameRef?.current?.penDown ?? false;
+            penDownRef.current = next;
+            setPenDown(next);
+        }, 100);
+        return () => clearInterval(interval);
+    }, [frameRef]);
     
     // Throttled tracking hover check - runs at most every 100ms to avoid per-frame DOM queries
     const lastHoverCheckRef = useRef<number>(0);
@@ -308,15 +307,20 @@ export const FreePaintMode = ({ frameData, onExit }: FreePaintModeProps) => {
 
     // Check tracking point against all buttons
     useEffect(() => {
-        if (!frameData?.filteredPoint) return;
-        
-        // Throttle to avoid running every frame
-        const now = Date.now();
-        if (now - lastHoverCheckRef.current < HOVER_CHECK_INTERVAL) return;
-        lastHoverCheckRef.current = now;
-        
-        const trackingPoint = frameData.filteredPoint;
-        const canvasPoint = normalizedToCanvas(trackingPoint, window.innerWidth, window.innerHeight);
+        let rafId: number;
+        const tick = () => {
+            if (!frameRef?.current?.filteredPoint) {
+                rafId = requestAnimationFrame(tick);
+                return;
+            }
+            const now = Date.now();
+            if (now - lastHoverCheckRef.current < HOVER_CHECK_INTERVAL) {
+                rafId = requestAnimationFrame(tick);
+                return;
+            }
+            lastHoverCheckRef.current = now;
+            const trackingPoint = frameRef.current.filteredPoint;
+            const canvasPoint = normalizedToCanvas(trackingPoint, window.innerWidth, window.innerHeight);
         
         // Check color buttons
         colorButtonRefs.current.forEach((ref, color) => {
@@ -377,7 +381,11 @@ export const FreePaintMode = ({ frameData, onExit }: FreePaintModeProps) => {
                 ref.handleTrackingHover(isOver, canvasPoint);
             }
         });
-    }, [frameData?.filteredPoint]);
+            rafId = requestAnimationFrame(tick);
+        };
+        rafId = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(rafId);
+    }, [frameRef]);
 
     // Responsive sizing
     const colorButtonSize = isCompact ? '36px' : '48px';

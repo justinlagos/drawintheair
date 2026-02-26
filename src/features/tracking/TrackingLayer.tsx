@@ -73,7 +73,7 @@ interface TrackingLayerProps {
         height: number,
         drawingUtils: DrawingUtils | null,
     ) => void;
-    children?: React.ReactNode | ((frameData: TrackingFrameData) => React.ReactNode);
+    children?: React.ReactNode | ((frameDataRef: React.MutableRefObject<TrackingFrameData>) => React.ReactNode);
 }
 
 // ---------------------------------------------------------------------------
@@ -148,7 +148,7 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
             setTrackerReady(true);
             return;
         }
-        
+
         handTracker.initialize()
             .then(() => setTrackerReady(true))
             .catch(err => {
@@ -362,9 +362,6 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
         let lastRenderFpsTime = Date.now();
         let renderFrameCount = 0;
         let renderFps = 60;
-        const RENDER_FPS = 60;
-        const RENDER_INTERVAL = 1000 / RENDER_FPS;
-        let lastRenderTime = 0;
 
         // Set up initial canvas coordinate mapper
         if (canvasRef.current) {
@@ -374,73 +371,67 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
             );
         }
 
-        const renderLoop = (currentTime: number) => {
+        const renderLoop = () => {
             if (!isRunning) return;
+            const renderStartTime = performance.now();
 
-            const elapsed = currentTime - lastRenderTime;
-            if (elapsed >= RENDER_INTERVAL) {
-                const renderStartTime = performance.now();
-                lastRenderTime = currentTime - (elapsed % RENDER_INTERVAL);
-
-                // Render FPS
-                renderFrameCount++;
-                const now = Date.now();
-                if (now - lastRenderFpsTime >= 1000) {
-                    renderFps = renderFrameCount;
-                    renderFrameCount = 0;
-                    lastRenderFpsTime = now;
-                }
-                renderFpsHistoryRef.current.push(renderFps);
-                if (renderFpsHistoryRef.current.length > 60) renderFpsHistoryRef.current.shift();
-
-                if (canvasRef.current && latestInteractionStateRef.current) {
-                    const canvas = canvasRef.current;
-                    const ctx = canvas.getContext('2d');
-
-                    // DPR-aware canvas sizing
-                    const rect = canvas.getBoundingClientRect();
-                    const dpr = window.devicePixelRatio || 1;
-                    const cssWidth = rect.width;
-                    const cssHeight = rect.height;
-                    const deviceWidth = Math.round(cssWidth * dpr);
-                    const deviceHeight = Math.round(cssHeight * dpr);
-
-                    if (canvas.width !== deviceWidth || canvas.height !== deviceHeight) {
-                        canvas.width = deviceWidth;
-                        canvas.height = deviceHeight;
-                        const mapper = getCanvasCoordinateMapper();
-                        if (mapper) {
-                            updateCanvasCoordinateMapper({ canvasWidth: deviceWidth, canvasHeight: deviceHeight, cssWidth, cssHeight, devicePixelRatio: dpr });
-                        } else {
-                            initCanvasCoordinateMapper({ canvasWidth: deviceWidth, canvasHeight: deviceHeight, cssWidth, cssHeight, devicePixelRatio: dpr });
-                        }
-                        interactionStateManager.setCanvasSize(deviceWidth, deviceHeight);
-                    }
-
-                    const frameData = lastFrameDataRef.current;
-
-                    if (ctx) {
-                        ctx.setTransform(1, 0, 0, 1, 0, 0);
-                        ctx.globalAlpha = 1;
-                        ctx.globalCompositeOperation = 'source-over';
-                        ctx.filter = 'none';
-                        ctx.shadowBlur = 0;
-                        ctx.shadowColor = 'transparent';
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                        if (onFrame) {
-                            try {
-                                onFrame(ctx, frameData, canvas.width, canvas.height, drawingUtils);
-                            } catch (error) {
-                                if (CAMERA_DEBUG) console.error('[RenderLoop] onFrame error:', error);
-                            }
-                        }
-                    }
-
-                    drawLoopTimeRef.current = performance.now() - renderStartTime;
-                }
+            // Render FPS
+            renderFrameCount++;
+            const now = Date.now();
+            if (now - lastRenderFpsTime >= 1000) {
+                renderFps = renderFrameCount;
+                renderFrameCount = 0;
+                lastRenderFpsTime = now;
             }
+            renderFpsHistoryRef.current.push(renderFps);
+            if (renderFpsHistoryRef.current.length > 60) renderFpsHistoryRef.current.shift();
 
+            if (canvasRef.current && latestInteractionStateRef.current) {
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+
+                // DPR-aware canvas sizing
+                const rect = canvas.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                const cssWidth = rect.width;
+                const cssHeight = rect.height;
+                const deviceWidth = Math.round(cssWidth * dpr);
+                const deviceHeight = Math.round(cssHeight * dpr);
+
+                if (canvas.width !== deviceWidth || canvas.height !== deviceHeight) {
+                    canvas.width = deviceWidth;
+                    canvas.height = deviceHeight;
+                    const mapper = getCanvasCoordinateMapper();
+                    if (mapper) {
+                        updateCanvasCoordinateMapper({ canvasWidth: deviceWidth, canvasHeight: deviceHeight, cssWidth, cssHeight, devicePixelRatio: dpr });
+                    } else {
+                        initCanvasCoordinateMapper({ canvasWidth: deviceWidth, canvasHeight: deviceHeight, cssWidth, cssHeight, devicePixelRatio: dpr });
+                    }
+                    interactionStateManager.setCanvasSize(deviceWidth, deviceHeight);
+                }
+
+                const frameData = lastFrameDataRef.current;
+
+                if (ctx) {
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+                    ctx.globalAlpha = 1;
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.filter = 'none';
+                    ctx.shadowBlur = 0;
+                    ctx.shadowColor = 'transparent';
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    if (onFrame) {
+                        try {
+                            onFrame(ctx, frameData, canvas.width, canvas.height, drawingUtils);
+                        } catch (error) {
+                            if (CAMERA_DEBUG) console.error('[RenderLoop] onFrame error:', error);
+                        }
+                    }
+                }
+
+                drawLoopTimeRef.current = performance.now() - renderStartTime;
+            }
             animationFrameId = requestAnimationFrame(renderLoop);
         };
 
@@ -458,6 +449,8 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
     // ------------------------------------------------------------------
     // Render
     // ------------------------------------------------------------------
+    const showDebugBounds = isDebugModeEnabled();
+
     return (
         <div style={{
             position: 'relative',
@@ -504,7 +497,21 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
             />
 
             {/* Children receive frame data via render-prop or as static children */}
-            {typeof children === 'function' ? children(lastFrameDataRef.current) : children}
+            {typeof children === 'function' ? children(lastFrameDataRef) : children}
+
+            {/* DEBUG: active interaction bounds */}
+            {showDebugBounds && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        inset: 0,
+                        border: '1px solid rgba(255,255,255,0.18)',
+                        boxSizing: 'border-box',
+                        pointerEvents: 'none',
+                        zIndex: 120,
+                    }}
+                />
+            )}
 
             {/* Camera / positioning notification */}
             {cameraNotification && (

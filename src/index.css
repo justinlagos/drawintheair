@@ -764,48 +764,109 @@ button:active::before {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   TOAST SYSTEM — Kid-friendly animated pills
-   Rules: transform + opacity ONLY, no blur, no box-shadow
+   MESSAGE CARD — Glassy, lightweight, non-blocking
+   Rules: transform + opacity ONLY, no blur, no animated shadow
 ═══════════════════════════════════════════════════════════════ */
 
-.toy-toast {
+.message-card-overlay {
   position: fixed;
-  bottom: calc(var(--safe-margin) + var(--hud-bottom-safe));
-  left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  opacity: 0;
+  inset: 0;
   z-index: var(--z-toast);
   pointer-events: none;
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 24px;
-  border-radius: var(--radius-full);
-  background: linear-gradient(145deg, rgba(30, 26, 60, 0.92) 0%, rgba(18, 14, 45, 0.88) 100%);
-  border: 1.5px solid var(--line-soft);
-  font-size: var(--font-size-sm);
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: calc(var(--hud-top-safe) + 10px);
+}
+
+.message-card {
+  position: absolute;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #ffffff;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
-  white-space: nowrap;
-  will-change: transform, opacity;
-  transition: transform var(--toast-in) var(--ease-spring),
-    opacity var(--toast-in) var(--ease-smooth);
-}
-
-.toy-toast.visible {
-  transform: translateX(-50%) translateY(0);
-  opacity: 1;
-}
-
-.toy-toast.hiding {
-  transform: translateX(-50%) translateY(10px);
+  font-size: 0.95rem;
+  line-height: 1.2;
   opacity: 0;
-  transition-duration: var(--toast-out);
+  transform: translateY(-8px) scale(0.98);
+  transition: transform 140ms ease-out, opacity 140ms ease-out;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+  will-change: transform, opacity;
+  pointer-events: none;
 }
 
-.toy-toast-icon {
-  font-size: 1.3em;
-  line-height: 1;
+@media (max-width: 600px) {
+  .message-card {
+    max-width: min(320px, calc(100vw - 24px));
+  }
+}
+
+.message-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.10));
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.message-card-text {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 0 2px;
+}
+
+.message-card.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.message-card.hiding {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  transition: transform 120ms ease-in, opacity 120ms ease-in;
+}
+
+.message-card--top-center {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px) scale(0.98);
+}
+
+.message-card--top-center.visible {
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.message-card--top-center.hiding {
+  transform: translateX(-50%) translateY(-6px) scale(0.98);
+}
+
+.message-card--top-right {
+  top: 0;
+  right: calc(var(--safe-margin) + var(--hud-side-safe));
+  left: auto;
+  transform: translateY(-8px) scale(0.98);
+}
+
+.message-card--top-right.visible {
+  transform: translateY(0) scale(1);
+}
+
+.message-card--top-right.hiding {
+  transform: translateY(-6px) scale(0.98);
+}
+
+.message-card.variant-success {
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.message-card.variant-warning {
+  border-color: rgba(255, 204, 51, 0.35);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -836,6 +897,40 @@ button:active::before {
   100% {
     transform: translateY(0px);
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COUNTDOWN OVERLAY — Lightweight, centered
+═══════════════════════════════════════════════════════════════ */
+
+.countdown-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: var(--z-toast);
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.countdown-label {
+  font-size: clamp(4rem, 14vw, 7rem);
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+  transform: scale(0.96);
+  opacity: 0.95;
+}
+
+.countdown-label.countdown-pop {
+  animation: countdownPop 140ms ease-out;
+}
+
+@keyframes countdownPop {
+  from { transform: scale(0.88); opacity: 0.7; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 @keyframes pulse-glow {
