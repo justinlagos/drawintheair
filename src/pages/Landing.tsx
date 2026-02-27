@@ -162,8 +162,8 @@ export const Landing: React.FC = () => {
       {/* ═══════ NAV ═══════ */}
       <nav className="fixed top-0 left-0 right-0 z-50 nl-nav-blur" style={{ background: 'rgba(10,14,26,.7)', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <a href="#top" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="flex items-center gap-3 no-underline text-white group cursor-pointer">
-            <img src="/logo.png" alt="Draw in the Air" className="h-9 w-auto transition-all duration-300 ease-out group-hover:scale-110 group-hover:-rotate-6 group-hover:drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
+          <a href="#top" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="flex items-center gap-3 no-underline text-white group cursor-pointer flex-shrink-0">
+            <img src="/logo.png" alt="Draw in the Air" className="h-8 md:h-9 w-auto object-contain flex-shrink-0 transition-all duration-300 ease-out group-hover:scale-110 group-hover:-rotate-6 group-hover:drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]" style={{ maxHeight: '36px', height: '36px' }} />
           </a>
           <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
             <a href="#how-it-works" onClick={(e) => scrollToSection(e, 'how-it-works')} className="hover:text-cyan-400 hover:scale-110 transition-all no-underline cursor-pointer">How It Works</a>
