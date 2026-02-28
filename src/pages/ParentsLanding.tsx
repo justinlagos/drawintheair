@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { HeaderNav } from '../components/landing/HeaderNav';
 import { Footer } from '../components/landing/Footer';
+import { TryFreeModal } from '../components/TryFreeModal';
 import '../components/landing/landing.css';
 
 // Pain Points Data
@@ -91,27 +92,28 @@ const PARENT_FAQ = [
 
 export const ParentsLanding: React.FC = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  
+  const [tryFreeOpen, setTryFreeOpen] = useState(false);
+
   return (
     <div className="landing-page parents-landing">
       <HeaderNav />
-      
+
       {/* HERO SECTION */}
       <section className="landing-hero parents-hero">
         <div className="landing-container">
           <div className="parents-hero-content">
             <span className="hero-badge">Free for Families</span>
             <h1 className="landing-hero-headline">
-              Screen Time That 
+              Screen Time That
               <span className="headline-highlight"> Actually Teaches</span>
             </h1>
             <p className="landing-hero-subhead">
               Watch your child practice handwriting, numbers, and creativity — using nothing but their hands and imagination. No guilt. No passive scrolling. Just joyful learning.
             </p>
             <div className="landing-hero-ctas">
-              <a href="/demo" className="landing-btn landing-btn-primary landing-btn-large">
+              <button onClick={() => setTryFreeOpen(true)} className="landing-btn landing-btn-primary landing-btn-large border-none cursor-pointer">
                 Try Free Now — No Signup
-              </a>
+              </button>
             </div>
             <div className="hero-trust-badges">
               <span>✓ No account needed</span>
@@ -121,7 +123,7 @@ export const ParentsLanding: React.FC = () => {
           </div>
         </div>
       </section>
-      
+
       {/* PAIN POINTS SECTION */}
       <section className="landing-section pain-points-section">
         <div className="landing-container">
@@ -142,7 +144,7 @@ export const ParentsLanding: React.FC = () => {
           </div>
         </div>
       </section>
-      
+
       {/* BENEFITS SECTION */}
       <section className="landing-section benefits-section">
         <div className="landing-container">
@@ -159,7 +161,7 @@ export const ParentsLanding: React.FC = () => {
           </div>
         </div>
       </section>
-      
+
       {/* HOW IT HELPS SECTION */}
       <section className="landing-section how-helps-section">
         <div className="landing-container">
@@ -183,18 +185,18 @@ export const ParentsLanding: React.FC = () => {
           </div>
         </div>
       </section>
-      
+
       {/* FAQ SECTION */}
       <section className="landing-section faq-section">
         <div className="landing-container">
           <h2 className="landing-section-title">Questions Parents Ask</h2>
           <div className="faq-list">
             {PARENT_FAQ.map((faq, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className={`faq-item ${openFaq === index ? 'open' : ''}`}
               >
-                <button 
+                <button
                   className="faq-question"
                   onClick={() => setOpenFaq(openFaq === index ? null : index)}
                 >
@@ -211,7 +213,7 @@ export const ParentsLanding: React.FC = () => {
           </div>
         </div>
       </section>
-      
+
       {/* FINAL CTA */}
       <section className="landing-section final-cta-section">
         <div className="landing-container">
@@ -220,15 +222,16 @@ export const ParentsLanding: React.FC = () => {
             <p className="cta-subhead">
               Free forever for families. Takes 30 seconds to start.
             </p>
-            <a href="/demo" className="landing-btn landing-btn-primary landing-btn-large">
+            <button onClick={() => setTryFreeOpen(true)} className="landing-btn landing-btn-primary landing-btn-large border-none cursor-pointer">
               Launch Draw in the Air
-            </a>
+            </button>
             <p className="cta-note">No signup • No download • No credit card</p>
           </div>
         </div>
       </section>
-      
+
       <Footer />
+      <TryFreeModal open={tryFreeOpen} onClose={() => setTryFreeOpen(false)} />
     </div>
   );
 };

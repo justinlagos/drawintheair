@@ -7,6 +7,7 @@
 import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import type { Grid, Tile, SelectionState, DwellState, WordSearchSettings, HintState } from './wordSearchTypes';
 import { DWELL_TIME_MS, STABLE_FRAMES, HINT_TIMINGS } from './wordSearchConstants';
+import { pilotAnalytics } from '../../../lib/pilotAnalytics';
 
 /**
  * Word Search Logic Function (for onFrame callback)
@@ -92,7 +93,7 @@ export function processWordSearchFrame(
 } {
     const state = stateRef.current;
     const { filteredPoint, pinchActive, hasHand } = frameData;
-    
+
     // Early return if no grid or no hand
     if (!state.grid || !hasHand) {
         // No grid or no hand - clear selection
@@ -112,30 +113,30 @@ export function processWordSearchFrame(
         }
         return { wordFound: null, roundComplete: false, needsRender: false, hintPhase: 0, hintWordIndex: null, hintTileIds: [] };
     }
-    
+
     // Update hint state - track activity (only if grid exists)
     const hintState = state.hintState;
     const currentTile = filteredPoint ? getTileAtPoint(state.grid, filteredPoint) : null;
     const currentTileId = currentTile?.id || null;
-    
+
     // Track hover activity
     if (currentTileId && currentTileId !== state.lastHoverTileId) {
         state.lastHoverTileId = currentTileId;
         state.lastHoverTime = timestamp;
         hintState.lastActivityTime = timestamp;
     }
-    
+
     // Track pinch activity
     if (pinchActive) {
         hintState.lastPinchTime = timestamp;
         hintState.lastActivityTime = timestamp;
     }
-    
+
     // Detect pinch start/end transitions
     const pinchJustStarted = pinchActive && !state.lastPinchState;
     const pinchJustEnded = !pinchActive && state.lastPinchState;
     state.lastPinchState = pinchActive;
-    
+
     // Handle pinch start
     if (pinchJustStarted && filteredPoint) {
         const tile = getTileAtPoint(state.grid, filteredPoint);
@@ -154,10 +155,20 @@ export function processWordSearchFrame(
             return { wordFound: null, roundComplete: false, needsRender: true, hintPhase: 0, hintWordIndex: null, hintTileIds: [] };
         }
     }
-    
+
     // Handle pinch end
     if (pinchJustEnded && state.selectionState.isActive) {
+
+        // Log item grab (when they click on the anchor tile)
+        if (state.selectionState.anchorTileId) {
+            pilotAnalytics.logEvent('item_grabbed', { gameId: 'wordSearch', stageId: state.chapter.toString(), itemInstanceId: state.selectionState.anchorTileId });
+        }
+
         const result = checkWordMatch(state);
+
+        // Log the drop (did they find a word or not?)
+        pilotAnalytics.logEvent('item_dropped', { gameId: 'wordSearch', stageId: state.chapter.toString(), itemKey: result.wordFound || 'unknown_word', itemInstanceId: state.selectionState.selectionPath.join(','), isCorrect: !!result.wordFound });
+
         state.selectionState = {
             anchorTileId: null,
             currentTileId: null,
@@ -169,7 +180,7 @@ export function processWordSearchFrame(
             startTime: null,
             stableFrames: 0
         };
-        
+
         // Update hint state on word found
         if (result.wordFound) {
             hintState.lastWordFoundTime = timestamp;
@@ -177,10 +188,10 @@ export function processWordSearchFrame(
             hintState.hintWordIndex = null;
             hintState.hintCooldown = timestamp + HINT_TIMINGS.COOLDOWN;
         }
-        
+
         // Process hints
         const hintResult = processHints(state, timestamp);
-        
+
         return {
             ...result,
             hintPhase: hintResult.phase,
@@ -188,22 +199,22 @@ export function processWordSearchFrame(
             hintTileIds: hintResult.tileIds
         };
     }
-    
+
     // Handle active selection (while pinching)
     if (pinchActive && state.selectionState.isActive && filteredPoint) {
         const tile = getTileAtPoint(state.grid, filteredPoint);
-        
+
         if (tile) {
             // Update dwell state
             if (tile.id === state.dwellState.tileId) {
                 // Same tile - increment stable frames
                 state.dwellState.stableFrames++;
-                
+
                 // Check if we should switch to this tile
-                const shouldSwitch = 
+                const shouldSwitch =
                     state.dwellState.stableFrames >= STABLE_FRAMES ||
                     (state.dwellState.startTime && timestamp - state.dwellState.startTime >= DWELL_TIME_MS);
-                
+
                 if (shouldSwitch && tile.id !== state.selectionState.currentTileId) {
                     // Update current tile and rebuild path
                     state.selectionState.currentTileId = tile.id;
@@ -222,15 +233,15 @@ export function processWordSearchFrame(
                     startTime: timestamp,
                     stableFrames: 1
                 };
-                
+
                 // More responsive: update path immediately if tile is adjacent to current path
                 // This makes dragging feel smoother and more responsive
                 const currentTileId = state.selectionState.currentTileId || state.selectionState.anchorTileId;
-                const shouldSwitchImmediately = 
+                const shouldSwitchImmediately =
                     !currentTileId || // No current tile yet
                     isAdjacentTile(state.grid, currentTileId, tile.id) || // Adjacent to current
                     state.selectionState.selectionPath.length === 0; // Empty path
-                
+
                 if (shouldSwitchImmediately && tile.id !== state.selectionState.currentTileId) {
                     state.selectionState.currentTileId = tile.id;
                     state.selectionState.selectionPath = buildSelectionPath(
@@ -250,12 +261,12 @@ export function processWordSearchFrame(
                 stableFrames: 0
             };
         }
-        
+
         // Always render during active selection to show current path
         const hintResult = processHints(state, timestamp);
         return { wordFound: null, roundComplete: false, needsRender: true, hintPhase: hintResult.phase, hintWordIndex: hintResult.wordIndex, hintTileIds: hintResult.tileIds };
     }
-    
+
     // Process hints
     const hintResult = processHints(state, timestamp);
     return { wordFound: null, roundComplete: false, needsRender: false, hintPhase: hintResult.phase, hintWordIndex: hintResult.wordIndex, hintTileIds: hintResult.tileIds };
@@ -275,40 +286,40 @@ function processHints(
     if (!state.grid) {
         return { phase: 0, wordIndex: null, tileIds: [] };
     }
-    
+
     const hintState = state.hintState;
     const timeSinceActivity = timestamp - hintState.lastActivityTime;
     const timeSinceLastPinch = hintState.lastPinchTime > 0 ? timestamp - hintState.lastPinchTime : Infinity;
     const timeSinceLastWord = timestamp - hintState.lastWordFoundTime;
     const timeSinceLastHint = timestamp - hintState.lastHintTime;
-    
+
     // Check cooldown
     if (timeSinceLastHint < HINT_TIMINGS.COOLDOWN) {
         return { phase: hintState.currentPhase, wordIndex: hintState.hintWordIndex, tileIds: [] };
     }
-    
+
     // Find unfound words
     const unfoundWords = state.grid.words
         .map((word, index) => ({ word, index }))
         .filter(({ word }) => !word.found);
-    
+
     if (unfoundWords.length === 0) {
         return { phase: 0, wordIndex: null, tileIds: [] };
     }
-    
+
     // Determine inactivity
-    const isIdle = timeSinceActivity > HINT_TIMINGS.IDLE_THRESHOLD && 
-                   (state.lastHoverTileId === null || timeSinceActivity > HINT_TIMINGS.IDLE_THRESHOLD);
-    const noProgress = timeSinceLastPinch < HINT_TIMINGS.NO_PROGRESS_THRESHOLD && 
-                       timeSinceLastWord > HINT_TIMINGS.NO_PROGRESS_THRESHOLD;
-    
+    const isIdle = timeSinceActivity > HINT_TIMINGS.IDLE_THRESHOLD &&
+        (state.lastHoverTileId === null || timeSinceActivity > HINT_TIMINGS.IDLE_THRESHOLD);
+    const noProgress = timeSinceLastPinch < HINT_TIMINGS.NO_PROGRESS_THRESHOLD &&
+        timeSinceLastWord > HINT_TIMINGS.NO_PROGRESS_THRESHOLD;
+
     // Phase 1: 8s idle - pulse word tray and first letter
     if (isIdle && timeSinceActivity >= HINT_TIMINGS.IDLE_THRESHOLD && timeSinceActivity < HINT_TIMINGS.PHASE_2_THRESHOLD) {
         const wordIndex = hintState.hintWordIndex ?? unfoundWords[0].index;
         hintState.currentPhase = 1;
         hintState.hintWordIndex = wordIndex;
         hintState.lastHintTime = timestamp;
-        
+
         const word = state.grid.words[wordIndex];
         const firstTile = word.startTile;
         return {
@@ -317,14 +328,14 @@ function processHints(
             tileIds: firstTile ? [firstTile.id] : []
         };
     }
-    
+
     // Phase 2: 12s no progress - shimmer path for first 2 letters
     if (noProgress && timeSinceLastWord >= HINT_TIMINGS.PHASE_2_THRESHOLD && timeSinceLastWord < HINT_TIMINGS.PHASE_3_THRESHOLD) {
         const wordIndex = hintState.hintWordIndex ?? unfoundWords[0].index;
         hintState.currentPhase = 2;
         hintState.hintWordIndex = wordIndex;
         hintState.lastHintTime = timestamp;
-        
+
         const word = state.grid.words[wordIndex];
         const tileIds = getWordTileIds(state.grid, word.text);
         return {
@@ -333,14 +344,14 @@ function processHints(
             tileIds: tileIds.slice(0, 2) // First 2 letters only
         };
     }
-    
+
     // Phase 3: 18s still no progress - briefly reveal full word
     if (noProgress && timeSinceLastWord >= HINT_TIMINGS.PHASE_3_THRESHOLD) {
         const wordIndex = hintState.hintWordIndex ?? unfoundWords[0].index;
         hintState.currentPhase = 3;
         hintState.hintWordIndex = wordIndex;
         hintState.lastHintTime = timestamp;
-        
+
         const word = state.grid.words[wordIndex];
         const tileIds = getWordTileIds(state.grid, word.text);
         return {
@@ -349,7 +360,7 @@ function processHints(
             tileIds
         };
     }
-    
+
     return { phase: 0, wordIndex: null, tileIds: [] };
 }
 
@@ -359,20 +370,20 @@ function processHints(
 function getWordTileIds(grid: Grid, wordText: string): string[] {
     const word = grid.words.find(w => w.text === wordText);
     if (!word || !word.startTile || !word.endTile) return [];
-    
+
     const tiles: string[] = [];
     const startRow = word.startTile.row;
     const startCol = word.startTile.col;
     const endRow = word.endTile.row;
     const endCol = word.endTile.col;
-    
+
     const dr = endRow > startRow ? 1 : endRow < startRow ? -1 : 0;
     const dc = endCol > startCol ? 1 : endCol < startCol ? -1 : 0;
-    
+
     let row = startRow;
     let col = startCol;
     const wordLength = wordText.length;
-    
+
     for (let i = 0; i < wordLength; i++) {
         if (row >= 0 && row < grid.size && col >= 0 && col < grid.size) {
             tiles.push(grid.tiles[row][col].id);
@@ -380,7 +391,7 @@ function getWordTileIds(grid: Grid, wordText: string): string[] {
         row += dr;
         col += dc;
     }
-    
+
     return tiles;
 }
 
@@ -410,18 +421,18 @@ function getTileAtPoint(grid: Grid, point: { x: number; y: number }): Tile | nul
 function buildSelectionPath(grid: Grid, anchorTileId: string, currentTileId: string): string[] {
     const anchorTile = findTileById(grid, anchorTileId);
     const currentTile = findTileById(grid, currentTileId);
-    
+
     if (!anchorTile || !currentTile) {
         return [anchorTileId];
     }
-    
+
     const dr = currentTile.row - anchorTile.row;
     const dc = currentTile.col - anchorTile.col;
-    
+
     // Determine direction (quantize to 8 directions)
     let directionRow = 0;
     let directionCol = 0;
-    
+
     if (Math.abs(dr) > Math.abs(dc)) {
         // Vertical movement dominates
         directionRow = dr > 0 ? 1 : -1;
@@ -435,20 +446,20 @@ function buildSelectionPath(grid: Grid, anchorTileId: string, currentTileId: str
         directionRow = dr > 0 ? 1 : -1;
         directionCol = dc > 0 ? 1 : -1;
     }
-    
+
     // Build path along direction
     const path: string[] = [];
     const maxDistance = Math.max(Math.abs(dr), Math.abs(dc));
-    
+
     for (let i = 0; i <= maxDistance; i++) {
         const row = anchorTile.row + directionRow * i;
         const col = anchorTile.col + directionCol * i;
-        
+
         if (row >= 0 && row < grid.size && col >= 0 && col < grid.size) {
             path.push(grid.tiles[row][col].id);
         }
     }
-    
+
     return path;
 }
 
@@ -472,12 +483,12 @@ function findTileById(grid: Grid, tileId: string): Tile | null {
 function isAdjacentTile(grid: Grid, tileId1: string, tileId2: string): boolean {
     const tile1 = findTileById(grid, tileId1);
     const tile2 = findTileById(grid, tileId2);
-    
+
     if (!tile1 || !tile2) return false;
-    
+
     const rowDiff = Math.abs(tile1.row - tile2.row);
     const colDiff = Math.abs(tile1.col - tile2.col);
-    
+
     // Adjacent if row or col differs by 1 (including diagonals)
     return (rowDiff <= 1 && colDiff <= 1) && (rowDiff + colDiff > 0);
 }
@@ -493,11 +504,11 @@ function checkWordMatch(
     needsRender: boolean;
 } {
     const { selectionPath, anchorTileId } = state.selectionState;
-    
+
     if (!state.grid || selectionPath.length < 3 || !anchorTileId) {
         return { wordFound: null, roundComplete: false, needsRender: true };
     }
-    
+
     // Convert selection path to string
     const selectedWord = selectionPath
         .map(id => {
@@ -510,24 +521,28 @@ function checkWordMatch(
             return '';
         })
         .join('');
-    
+
     // Check forward match
     for (const word of state.grid.words) {
         if (word.found || state.foundWords.has(word.text)) continue;
-        
+
         if (word.text === selectedWord) {
             // Word found!
             word.found = true;
             state.foundWords.add(word.text);
-            
+
             // Mark tiles as found
             for (const tileId of selectionPath) {
                 state.foundTileIds.add(tileId);
             }
-            
+
             // Check if round is complete
             const allFound = state.grid?.words.every(w => w.found) ?? false;
-            
+
+            if (allFound) {
+                pilotAnalytics.logEvent('stage_completed', { gameId: 'wordSearch', stageId: state.chapter.toString() });
+            }
+
             return {
                 wordFound: word.text,
                 roundComplete: allFound,
@@ -535,27 +550,31 @@ function checkWordMatch(
             };
         }
     }
-    
+
     // Check backward match (if enabled)
     if (state.settings.backwardWords) {
         const reversedWord = selectedWord.split('').reverse().join('');
-        
+
         for (const word of state.grid.words) {
             if (word.found || state.foundWords.has(word.text)) continue;
-            
+
             if (word.text === reversedWord) {
-            // Word found (backward)!
-            word.found = true;
-            state.foundWords.add(word.text);
-            
-            // Mark tiles as found
-            for (const tileId of selectionPath) {
-                state.foundTileIds.add(tileId);
-            }
-            
-            // Check if round is complete
-            const allFound = state.grid?.words.every(w => w.found) ?? false;
-                
+                // Word found (backward)!
+                word.found = true;
+                state.foundWords.add(word.text);
+
+                // Mark tiles as found
+                for (const tileId of selectionPath) {
+                    state.foundTileIds.add(tileId);
+                }
+
+                // Check if round is complete
+                const allFound = state.grid?.words.every(w => w.found) ?? false;
+
+                if (allFound) {
+                    pilotAnalytics.logEvent('stage_completed', { gameId: 'wordSearch', stageId: state.chapter.toString() });
+                }
+
                 return {
                     wordFound: word.text,
                     roundComplete: allFound,
@@ -564,7 +583,7 @@ function checkWordMatch(
             }
         }
     }
-    
+
     // No match - gentle fail feedback
     return { wordFound: null, roundComplete: false, needsRender: true };
 }

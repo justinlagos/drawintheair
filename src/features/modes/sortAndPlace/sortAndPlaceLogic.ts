@@ -5,6 +5,7 @@ import { OneEuroFilter2D } from '../../../core/filters/OneEuroFilter';
 import { trackingFeatures } from '../../../core/trackingFeatures';
 import { tactileAudioManager } from '../../../core/TactileAudioManager';
 import { isCountdownActive } from '../../../core/countdownService';
+import { pilotAnalytics } from '../../../lib/pilotAnalytics';
 
 export type BinId = string;
 
@@ -327,12 +328,12 @@ export function startStage(stageIndex?: number) {
     grabFilter = new OneEuroFilter2D({ minCutoff: 1.5, beta: 0.02, dCutoff: 1.0 });
 }
 
-export function getItems() { 
-    return currentStage?.items || []; 
+export function getItems() {
+    return currentStage?.items || [];
 }
 
-export function getBins() { 
-    return currentStage ? [currentStage.bins.left, currentStage.bins.right] : []; 
+export function getBins() {
+    return currentStage ? [currentStage.bins.left, currentStage.bins.right] : [];
 }
 
 export function getGrabbedObject() { return grabbedObject; }
@@ -351,7 +352,7 @@ function determineDropBinId(x: number, y: number): BinId | null {
     const left = currentStage.bins.left;
     const right = currentStage.bins.right;
 
-    const inLeft = 
+    const inLeft =
         x >= left.x - left.width / 2 &&
         x <= left.x + left.width / 2 &&
         y >= left.y - left.height / 2 &&
@@ -359,7 +360,7 @@ function determineDropBinId(x: number, y: number): BinId | null {
 
     if (inLeft) return left.id;
 
-    const inRight = 
+    const inRight =
         x >= right.x - right.width / 2 &&
         x <= right.x + right.width / 2 &&
         y >= right.y - right.height / 2 &&
@@ -379,6 +380,7 @@ export function releaseItem(itemId: string, x: number, y: number) {
 
     if (result === 'none') {
         obj.grabbed = false;
+        pilotAnalytics.logEvent('item_dropped', { gameId: 'sortAndPlace', stageId: currentStage.id, itemKey: itemId, itemInstanceId: obj.id, isCorrect: false });
         return;
     }
 
@@ -408,11 +410,17 @@ export function releaseItem(itemId: string, x: number, y: number) {
         obj.vy = 0;
         obj.rotation = 0;
         score++;
+
+        pilotAnalytics.logEvent('item_dropped', { gameId: 'sortAndPlace', stageId: currentStage.id, itemKey: itemId, itemInstanceId: obj.id, binId: dropBinId || undefined, isCorrect: true });
+
         return;
     } else {
         obj.vx = (obj.x - x) * 0.015;
         obj.vy = (obj.y - y) * 0.015;
         obj.grabbed = false;
+
+        pilotAnalytics.logEvent('item_dropped', { gameId: 'sortAndPlace', stageId: currentStage.id, itemKey: itemId, itemInstanceId: obj.id, binId: dropBinId || undefined, isCorrect: false });
+
         return;
     }
 }
@@ -450,7 +458,7 @@ export const sortAndPlaceLogic = (
     if (isCountdownActive()) return;
 
     const { filteredPoint, pinchActive, timestamp } = frameData;
-    
+
     const flags = trackingFeatures.getFlags();
     if (flags.enableTactileAudio) {
         tactileAudioManager.updatePinchState(pinchActive);
@@ -476,7 +484,7 @@ export const sortAndPlaceLogic = (
         if (!obj.grabbed && !obj.placed) {
             obj.x += obj.vx;
             obj.y += obj.vy;
-            
+
             if (obj.x < 0.05 || obj.x > 0.95) obj.vx *= -1;
             if (obj.y < 0.05 || obj.y > 0.65) obj.vy *= -1;
             obj.x = Math.max(0.05, Math.min(0.95, obj.x));
@@ -488,7 +496,7 @@ export const sortAndPlaceLogic = (
         if (!grabbedObject) {
             let minDist = Infinity;
             let nearest: StageItem | null = null;
-            
+
             for (const obj of currentStage.items) {
                 if (obj.grabbed || obj.placed) continue;
                 const dist = Math.hypot(
@@ -500,25 +508,28 @@ export const sortAndPlaceLogic = (
                     nearest = obj;
                 }
             }
-            
+
             if (nearest) {
                 grabbedObject = nearest;
                 nearest.grabbed = true;
                 if (grabFilter) {
                     grabFilter.reset();
                 }
+                if (currentStage) {
+                    pilotAnalytics.logEvent('item_grabbed', { gameId: 'sortAndPlace', stageId: currentStage.id, itemKey: nearest.key, itemInstanceId: nearest.id });
+                }
             }
         } else if (grabbedObject) {
             let targetX = filteredPoint.x;
             let targetY = filteredPoint.y;
-            
+
             const magneticConfig = trackingFeatures.getMagneticTargetsConfig();
             let snappedToBin: StageBin | null = null;
-            
+
             if (flags.enableMagneticTargets) {
                 let nearestBin: StageBin | null = null;
                 let minSnapDist = Infinity;
-                
+
                 const bins = [currentStage.bins.left, currentStage.bins.right];
                 for (const bin of bins) {
                     const objCanvas = normalizedToCanvas(
@@ -531,39 +542,39 @@ export const sortAndPlaceLogic = (
                         width,
                         height
                     );
-                    
+
                     const dx = objCanvas.x - binCanvas.x;
                     const dy = objCanvas.y - binCanvas.y;
                     const dist = Math.hypot(dx, dy);
-                    
+
                     if (dist < magneticConfig.snapDistancePx) {
                         const isCorrect = grabbedObject!.binId === bin.id;
-                        
+
                         if (isCorrect && dist < minSnapDist) {
                             minSnapDist = dist;
                             nearestBin = bin;
                         }
                     }
                 }
-                
+
                 if (nearestBin !== null && minSnapDist < magneticConfig.snapDistancePx) {
                     const snapBinCanvas = normalizedToCanvas(
                         { x: nearestBin.x, y: nearestBin.y },
                         width,
                         height
                     );
-                    
+
                     const snapTargetX = snapBinCanvas.x / width;
                     const snapTargetY = snapBinCanvas.y / height;
-                    
+
                     const easing = magneticConfig.snapEasingStrength;
                     targetX = targetX + (snapTargetX - targetX) * easing;
                     targetY = targetY + (snapTargetY - targetY) * easing;
-                    
+
                     snappedToBin = nearestBin;
                 }
             }
-            
+
             if (grabFilter) {
                 const smoothed = grabFilter.filter(targetX, targetY, timestamp);
                 grabbedObject.x = smoothed.x;
@@ -587,8 +598,8 @@ export const sortAndPlaceLogic = (
                 );
                 const binW = bin.width * width;
                 const binH = bin.height * height;
-                
-                const isHovering = 
+
+                const isHovering =
                     objCanvas.x >= binCanvas.x - binW / 2 &&
                     objCanvas.x <= binCanvas.x + binW / 2 &&
                     objCanvas.y >= binCanvas.y - binH / 2 &&
@@ -604,10 +615,10 @@ export const sortAndPlaceLogic = (
         if (grabbedObject) {
             const grabbed = grabbedObject;
             const flags = trackingFeatures.getFlags();
-            
+
             let droppedInBin = false;
             let requiresPressConfirm = false;
-            
+
             if (flags.enablePressIntegration) {
                 const bins = [currentStage.bins.left, currentStage.bins.right];
                 bins.forEach(bin => {
@@ -623,27 +634,27 @@ export const sortAndPlaceLogic = (
                     );
                     const binW = bin.width * width;
                     const binH = bin.height * height;
-                    
-                    const isHovering = 
+
+                    const isHovering =
                         objCanvas.x >= binCanvas.x - binW / 2 &&
                         objCanvas.x <= binCanvas.x + binW / 2 &&
                         objCanvas.y >= binCanvas.y - binH / 2 &&
                         objCanvas.y <= binCanvas.y + binH / 2;
-                    
+
                     const isCorrect = grabbed.binId === bin.id;
-                    
+
                     if (isHovering && isCorrect) {
                         requiresPressConfirm = true;
                     }
                 });
             }
-            
+
             let hasPressed = true;
             if (flags.enablePressIntegration && frameData.pressValue) {
                 const pressConfig = trackingFeatures.getPressIntegrationConfig();
                 hasPressed = frameData.pressValue >= pressConfig.sortingConfirmThreshold;
             }
-            
+
             const bins = [currentStage.bins.left, currentStage.bins.right];
             bins.forEach(bin => {
                 const objCanvas = normalizedToCanvas(
@@ -658,7 +669,7 @@ export const sortAndPlaceLogic = (
                 );
                 const binW = bin.width * width;
                 const binH = bin.height * height;
-                
+
                 if (
                     objCanvas.x >= binCanvas.x - binW / 2 &&
                     objCanvas.x <= binCanvas.x + binW / 2 &&
@@ -666,35 +677,35 @@ export const sortAndPlaceLogic = (
                     objCanvas.y <= binCanvas.y + binH / 2
                 ) {
                     const isCorrect = grabbed.binId === bin.id;
-                    
+
                     if (isCorrect && (!requiresPressConfirm || hasPressed)) {
                         if (!currentStage) return;
                         const placedInBin = currentStage.items.filter(o => o.placed && o.placedZone === bin.id);
                         const stackIndex = placedInBin.length;
-                        
+
                         const binCanvasCoords = normalizedToCanvas({ x: bin.x, y: bin.y }, width, height);
                         const zoneW = bin.width * width;
                         const objW = grabbed.width * width;
                         const objH = grabbed.height * height;
-                        
+
                         const objectsPerRow = Math.floor(zoneW / (objW * 1.2));
                         const row = Math.floor(stackIndex / objectsPerRow);
                         const col = stackIndex % objectsPerRow;
                         const rowsTotal = Math.ceil(totalObjects / objectsPerRow);
-                        
+
                         const totalWidth = Math.min(objectsPerRow, totalObjects) * objW * 1.2;
                         const startX = binCanvasCoords.x - totalWidth / 2 + objW * 0.6;
                         const stackHeight = rowsTotal * objH * 1.2;
                         const startY = binCanvasCoords.y - stackHeight / 2 + objH * 0.6;
-                        
+
                         const stackX = startX + col * objW * 1.2;
                         const stackY = startY + row * objH * 1.2;
-                        
+
                         const stackNormalized = {
                             x: stackX / width,
                             y: stackY / height
                         };
-                        
+
                         grabbed.x = stackNormalized.x;
                         grabbed.y = stackNormalized.y;
                         grabbed.placed = true;
@@ -706,21 +717,23 @@ export const sortAndPlaceLogic = (
                         score++;
                         droppedInBin = true;
                         bin.glow = false;
-                        
+
                         if (flags.enableTactileAudio) {
                             tactileAudioManager.playSuccess('sorting');
                         }
+
+                        pilotAnalytics.logEvent('item_dropped', { gameId: 'sortAndPlace', stageId: currentStage.id, itemKey: grabbed.key, itemInstanceId: grabbed.id, binId: bin.id, isCorrect: true });
                     } else {
                         grabbed.vx = (grabbed.x - bin.x) * 0.015;
                         grabbed.vy = (grabbed.y - bin.y) * 0.015;
                     }
                 }
             });
-            
+
             if (!droppedInBin) {
                 grabbed.grabbed = false;
             }
-            
+
             grabbedObject = null;
         }
 
@@ -735,6 +748,8 @@ export const sortAndPlaceLogic = (
         roundComplete = true;
         celebrationTime = Date.now();
         isTransitioning = true;
+
+        pilotAnalytics.logEvent('stage_completed', { gameId: 'sortAndPlace', stageId: currentStage.id });
     }
 
     if (!currentStage) return;
@@ -940,13 +955,13 @@ export const sortAndPlaceLogic = (
 
     if (filteredPoint) {
         const fingerCanvas = normalizedToCanvas(filteredPoint, width, height);
-        
+
         ctx.beginPath();
         ctx.arc(fingerCanvas.x, fingerCanvas.y, 28, 0, Math.PI * 2);
         ctx.strokeStyle = pinchActive ? '#FFD700' : 'rgba(0, 255, 255, 0.6)';
         ctx.lineWidth = 3;
         ctx.stroke();
-        
+
         ctx.beginPath();
         ctx.arc(fingerCanvas.x, fingerCanvas.y, pinchActive ? 18 : 12, 0, Math.PI * 2);
         ctx.fillStyle = pinchActive ? '#FFD700' : 'rgba(255, 255, 255, 0.9)';
@@ -958,7 +973,7 @@ export const sortAndPlaceLogic = (
 };
 
 if (!CanvasRenderingContext2D.prototype.roundRect) {
-    CanvasRenderingContext2D.prototype.roundRect = function(x: number, y: number, w: number, h: number, r: number) {
+    CanvasRenderingContext2D.prototype.roundRect = function (x: number, y: number, w: number, h: number, r: number) {
         if (w < 2 * r) r = w / 2;
         if (h < 2 * r) r = h / 2;
         this.beginPath();

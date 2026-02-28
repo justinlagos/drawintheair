@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { TryFreeModal } from '../components/TryFreeModal';
 import '../components/landing/new-landing.css';
 
 const SHEETS_ENDPOINT = import.meta.env.VITE_SHEETS_ENDPOINT || '';
@@ -37,6 +38,7 @@ export const Landing: React.FC = () => {
   const [pilotSubmitError, setPilotSubmitError] = useState('');
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [tryFreeOpen, setTryFreeOpen] = useState(false);
 
   // Scroll reveal
   useEffect(() => {
@@ -58,6 +60,7 @@ export const Landing: React.FC = () => {
       if (e.key === 'Escape') {
         setFeedbackOpen(false);
         closePilotModal();
+        setTryFreeOpen(false);
       }
     };
     document.addEventListener('keydown', handler);
@@ -171,8 +174,8 @@ export const Landing: React.FC = () => {
             <a href="#parents" onClick={(e) => scrollToSection(e, 'parents')} className="hover:text-cyan-400 hover:scale-110 transition-all no-underline cursor-pointer">For Parents</a>
             <a href="#schools" onClick={(e) => scrollToSection(e, 'schools')} className="hover:text-cyan-400 hover:scale-110 transition-all no-underline cursor-pointer">For Schools</a>
             <a href="/faq" className="hover:text-cyan-400 hover:scale-110 transition-all no-underline">FAQ</a>
-            <a href="/play" className="nl-btn-primary text-white font-semibold px-5 py-2 rounded-lg text-sm no-underline">Try Free</a>
-            <button onClick={openPilotModal} className="nl-btn-secondary font-semibold px-5 py-2 rounded-lg text-sm">School Pilot</button>
+            <button onClick={() => setTryFreeOpen(true)} className="nl-btn-primary text-white font-semibold px-5 py-2 rounded-lg text-sm border-none cursor-pointer">Try Free</button>
+            <button onClick={openPilotModal} className="nl-btn-secondary font-semibold px-5 py-2 rounded-lg text-sm border-none cursor-pointer">School Pilot</button>
           </div>
           <button className="md:hidden text-gray-400" style={{ background: 'none', border: 'none', boxShadow: 'none' }} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
@@ -185,8 +188,8 @@ export const Landing: React.FC = () => {
             <a href="#parents" onClick={(e) => scrollToSection(e, 'parents')} className="block py-2 no-underline text-gray-400 hover:text-cyan-400">For Parents</a>
             <a href="#schools" onClick={(e) => scrollToSection(e, 'schools')} className="block py-2 no-underline text-gray-400 hover:text-cyan-400">For Schools</a>
             <a href="/faq" className="block py-2 no-underline text-gray-400 hover:text-cyan-400">FAQ</a>
-            <a href="/play" className="block nl-btn-primary text-white font-semibold px-5 py-2.5 rounded-lg text-center mt-2 no-underline">Try Free</a>
-            <button onClick={() => { closeMobileMenu(); openPilotModal(); }} className="block w-full nl-btn-secondary font-semibold px-5 py-2.5 rounded-lg text-center">School Pilot</button>
+            <button onClick={() => { closeMobileMenu(); setTryFreeOpen(true); }} className="block w-full nl-btn-primary text-white font-semibold px-5 py-2.5 rounded-lg text-center mt-2 border-none cursor-pointer">Try Free</button>
+            <button onClick={() => { closeMobileMenu(); openPilotModal(); }} className="block w-full nl-btn-secondary font-semibold px-5 py-2.5 rounded-lg text-center border-none cursor-pointer">School Pilot</button>
           </div>
         )}
       </nav>
@@ -210,7 +213,7 @@ export const Landing: React.FC = () => {
               Draw in the Air turns your child's hands into the controller. No touch screens. No downloads. Just motion, creativity, and real engagement.
             </p>
             <div className="flex flex-wrap gap-4 mb-8">
-              <a href="/play" className="nl-btn-primary text-white font-bold px-8 py-3.5 rounded-xl text-base no-underline">Try It Now</a>
+              <button onClick={() => setTryFreeOpen(true)} className="nl-btn-primary text-white font-bold px-8 py-3.5 rounded-xl text-base border-none cursor-pointer">Try It Now</button>
               <a href="#how-it-works" className="nl-btn-secondary font-semibold px-8 py-3.5 rounded-xl text-base no-underline">See How It Works</a>
             </div>
             <p className="text-sm text-gray-500 flex items-center gap-2">
@@ -449,7 +452,7 @@ export const Landing: React.FC = () => {
             <p className="text-lg text-gray-400 leading-relaxed mb-8">
               Everything runs locally in the browser. Your child's camera feed never leaves the device. No accounts. No tracking. No surprises.
             </p>
-            <a href="/play" className="nl-btn-primary inline-block text-white font-bold px-8 py-3.5 rounded-xl text-base no-underline">Start in 10 Seconds</a>
+            <button onClick={() => setTryFreeOpen(true)} className="nl-btn-primary inline-block text-white font-bold px-8 py-3.5 rounded-xl text-base border-none cursor-pointer">Start in 10 Seconds</button>
           </div>
         </div>
       </section>
@@ -574,7 +577,7 @@ export const Landing: React.FC = () => {
             Let Them Draw.<br />Let Them Move.<br />Let Them <span className="text-cyan-400 nl-glow-text">Learn.</span>
           </h2>
           <div className="flex flex-wrap justify-center gap-4 mt-10 mb-6">
-            <a href="/play" className="nl-btn-primary text-white font-bold px-10 py-4 rounded-xl text-lg no-underline">Launch Draw in the Air</a>
+            <button onClick={() => setTryFreeOpen(true)} className="nl-btn-primary text-white font-bold px-10 py-4 rounded-xl text-lg border-none cursor-pointer">Launch Draw in the Air</button>
             <a href="#how-it-works" className="nl-btn-secondary font-semibold px-10 py-4 rounded-xl text-lg no-underline">See It in Action</a>
           </div>
           <p className="text-sm text-gray-600">Works on modern browsers with camera access.</p>
@@ -595,7 +598,7 @@ export const Landing: React.FC = () => {
             <div>
               <h4 className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-4">Product</h4>
               <div className="space-y-2.5">
-                <a href="/play" className="block text-sm text-gray-500 hover:text-cyan-400 transition-colors no-underline">Try Free</a>
+                <button onClick={() => setTryFreeOpen(true)} className="block text-sm text-gray-500 hover:text-cyan-400 transition-colors text-left" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>Try Free</button>
                 <a href="/demo" className="block text-sm text-gray-500 hover:text-cyan-400 transition-colors no-underline">Demo</a>
                 <a href="/schools" className="block text-sm text-gray-500 hover:text-cyan-400 transition-colors no-underline">School Pilot Pack</a>
                 <a href="/faq" className="block text-sm text-gray-500 hover:text-cyan-400 transition-colors no-underline">FAQ</a>
@@ -745,6 +748,8 @@ export const Landing: React.FC = () => {
           )}
         </div>
       </div>
+
+      <TryFreeModal open={tryFreeOpen} onClose={() => setTryFreeOpen(false)} />
     </div>
   );
 };

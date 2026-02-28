@@ -428,3 +428,12 @@ export function initPilotAnalytics(): void {
 if (typeof window !== 'undefined') {
   initPilotAnalytics();
 }
+
+export const pilotAnalytics = {
+  startSession,
+  logEvent,
+  endSession,
+  getSessionId,
+  hasActiveSession,
+  initPilotAnalytics
+};

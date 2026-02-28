@@ -3,6 +3,7 @@ import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import { normalizedToCanvas } from '../../../core/coordinateUtils';
 import { OneEuroFilter2D } from '../../../core/filters/OneEuroFilter';
 import { isCountdownActive } from '../../../core/countdownService';
+import { pilotAnalytics } from '../../../lib/pilotAnalytics';
 import type { StageConfig, SlotConfig, ColourId } from './ColourBuilderStages';
 import { STAGES, ColorPalette } from './ColourBuilderStages';
 
@@ -136,6 +137,9 @@ export function colourBuilderLogic(
                 grabbedBlock = nearest;
                 nearest.state = "grabbed";
                 grabFilter?.reset();
+                if (currentStage) {
+                    pilotAnalytics.logEvent('item_grabbed', { gameId: 'colourBuilder', stageId: currentStage.id, itemKey: nearest.colorId, itemInstanceId: nearest.id });
+                }
             }
         } else if (grabbedBlock) {
             let targetX = filteredPoint.x;
@@ -185,12 +189,16 @@ export function colourBuilderLogic(
                 // For canvas: we will dispatch an event or handle it in Mode component
                 window.dispatchEvent(new CustomEvent('colour-builder-burst', { detail: { x: nearestSlot.pos.x, y: nearestSlot.pos.y } }));
 
+                pilotAnalytics.logEvent('item_dropped', { gameId: 'colourBuilder', stageId: currentStage.id, itemKey: grabbedBlock.colorId, itemInstanceId: grabbedBlock.id, binId: nearestSlot.id, isCorrect: true });
+
             } else {
                 grabbedBlock.state = "idle";
                 if (currentStage.difficulty.wrongDropRule.includes('bounceBack')) {
                     grabbedBlock.bounceBack = true;
                 }
                 streak = 0;
+
+                pilotAnalytics.logEvent('item_dropped', { gameId: 'colourBuilder', stageId: currentStage.id, itemKey: grabbedBlock.colorId, itemInstanceId: grabbedBlock.id, binId: nearestSlot?.id || undefined, isCorrect: false });
             }
             grabbedBlock = null;
         }
@@ -199,6 +207,7 @@ export function colourBuilderLogic(
     if (blocks.filter(b => b.state === 'placed').length === totalBlocks && !roundComplete) {
         roundComplete = true;
         celebrationTime = Date.now();
+        pilotAnalytics.logEvent('stage_completed', { gameId: 'colourBuilder', stageId: currentStage.id });
     }
 
     // DRAWING

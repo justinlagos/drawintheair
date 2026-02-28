@@ -3,6 +3,7 @@ import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import { LETTER_PATHS, getAvailableLetters, type PathPoint } from './letterPaths';
 import { normalizedToCanvas } from '../../../core/coordinateUtils';
 import { isCountdownActive } from '../../../core/countdownService';
+import { pilotAnalytics } from '../../../lib/pilotAnalytics';
 
 // Start with shapes, then move to letters
 const SHAPES: Array<{ name: string; points: PathPoint[] }> = [
@@ -125,7 +126,7 @@ export const preWritingLogic = (
 
     const pathPoints = currentPath.points;
     const { indexTip, thumbTip, handScale, confidence } = frameData;
-    
+
     // Pre-calculate canvas points for start/end markers
     const startPoint = pathPoints[0];
     const endPoint = pathPoints[pathPoints.length - 1];
@@ -257,18 +258,18 @@ export const preWritingLogic = (
 
                 // Update progress if moving forward
                 if (t > progress + PROGRESS_THRESHOLD * 0.5 && t < progress + 0.15) {
-                progress = t;
+                    progress = t;
                 } else if (t < progress - 0.05) {
                     // Moved backward significantly - ignore
-            }
+                }
 
                 // Draw on-path feedback (green brush)
-            ctx.beginPath();
+                ctx.beginPath();
                 ctx.arc(fingerCanvas.x, fingerCanvas.y, 18, 0, Math.PI * 2);
                 ctx.fillStyle = '#00F5D4';
                 ctx.shadowColor = '#00F5D4';
                 ctx.shadowBlur = 15;
-            ctx.fill();
+                ctx.fill();
                 ctx.shadowBlur = 0;
 
                 // Streak indicator
@@ -327,6 +328,7 @@ export const preWritingLogic = (
     // Check completion - trigger callback instead of drawing on canvas
     if (progress >= 0.95 && celebrationTime === 0) {
         celebrationTime = Date.now();
+        pilotAnalytics.logEvent('stage_completed', { gameId: 'preWriting', stageId: currentPath.name });
         if (completeCallback) {
             completeCallback();
         }
