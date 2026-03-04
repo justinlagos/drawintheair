@@ -1,4 +1,4 @@
-import { StrictMode, useState, useEffect } from 'react'
+import React, { StrictMode, useState, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
@@ -19,6 +19,11 @@ import { SchoolPilot } from './pages/SchoolPilot.tsx'
 import { ParentAccess } from './pages/ParentAccess.tsx'
 import { initAnalytics } from './lib/analytics.ts'
 import { ErrorBoundary } from './components/ErrorBoundary.tsx'
+
+// SEO Lazy Imports
+const EmbedPage = React.lazy(() => import('./pages/seo/EmbedPage.tsx'));
+const PressPage = React.lazy(() => import('./pages/seo/PressPage.tsx'));
+const FreeResourcesPage = React.lazy(() => import('./pages/seo/FreeResourcesPage.tsx'));
 
 // Helper function to determine route from pathname
 function getRouteFromPath(path: string, hash: string): string {
@@ -45,6 +50,12 @@ function getRouteFromPath(path: string, hash: string): string {
   if (path === '/cookies') return 'cookies';
   if (path === '/safeguarding') return 'safeguarding';
   if (path === '/accessibility') return 'accessibility';
+
+  // Growth Engine Pages
+  if (path === '/embed') return 'embed';
+  if (path === '/press') return 'press';
+  if (path === '/free-resources') return 'free-resources';
+
   return 'landing';
 }
 
@@ -71,10 +82,10 @@ function Root() {
 
     window.addEventListener('popstate', handleNavigation);
     window.addEventListener('hashchange', handleNavigation);
-    
+
     // Handle programmatic navigation
     const originalPushState = history.pushState;
-    history.pushState = function(...args) {
+    history.pushState = function (...args) {
       originalPushState.apply(history, args);
       handleNavigation();
     };
@@ -155,6 +166,31 @@ function Root() {
 
   if (route === 'parent') {
     return <ParentAccess />;
+  }
+
+  // Growth Engine Pages
+  if (route === 'embed') {
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <EmbedPage />
+      </React.Suspense>
+    );
+  }
+
+  if (route === 'press') {
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <PressPage />
+      </React.Suspense>
+    );
+  }
+
+  if (route === 'free-resources') {
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <FreeResourcesPage />
+      </React.Suspense>
+    );
   }
 
   return <Landing />;
