@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { SeoLayout, PageHero, Section } from './SeoLayout';
 import { SEOMeta } from '../../seo/SEOMeta';
 
 export default function EmbedPage() {
   const [copied, setCopied] = useState(false);
-  
+
   const embedCode = `<iframe 
   src="https://drawintheair.com/app" 
   width="100%" 
@@ -30,7 +30,7 @@ export default function EmbedPage() {
         description="Get the free embed code to add Draw in the Air to your classroom blog, school website, or educational portal. No download required for students."
         canonical="/embed"
       />
-      
+
       <PageHero
         badge="For Teachers & Schools"
         emoji="💻"
@@ -45,11 +45,11 @@ export default function EmbedPage() {
               The Perfect Classroom Widget
             </h2>
             <p style={{ color: '#94a3b8', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: 24 }}>
-              Thousands of teachers use Draw in the Air for morning brain breaks, 
-              indoor recess, and fine motor skills practice. By embedding it on your 
+              Thousands of teachers use Draw in the Air for morning brain breaks,
+              indoor recess, and fine motor skills practice. By embedding it on your
               class page, students can safely play without navigating to external sites.
             </p>
-            
+
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
               {[
                 'Requires only an internet browser and webcam',
@@ -64,7 +64,7 @@ export default function EmbedPage() {
               ))}
             </ul>
           </div>
-          
+
           <div style={{ background: '#111629', borderRadius: 16, padding: 32, border: '1px solid rgba(108,71,255,0.2)' }}>
             <h3 style={{ color: 'white', fontSize: '1.2rem', fontWeight: 700, marginBottom: 16 }}>
               Copy the Embed Code
@@ -72,12 +72,12 @@ export default function EmbedPage() {
             <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: 20 }}>
               Paste this HTML directly into your site builder (Wordpress, Google Sites, Canvas, Seesaw, etc.)
             </p>
-            
+
             <div style={{ position: 'relative' }}>
-              <pre style={{ 
-                background: '#0a0e1a', 
-                padding: '20px', 
-                borderRadius: 8, 
+              <pre style={{
+                background: '#0a0e1a',
+                padding: '20px',
+                borderRadius: 8,
                 color: '#22d3ee',
                 fontSize: '0.85rem',
                 overflowX: 'auto',
@@ -85,19 +85,19 @@ export default function EmbedPage() {
               }}>
                 {embedCode}
               </pre>
-              
-              <button 
+
+              <button
                 onClick={copyToClipboard}
-                style={{ 
-                  position: 'absolute', 
-                  top: 12, 
-                  right: 12, 
-                  background: copied ? '#22c55e' : '#6c47ff', 
-                  color: 'white', 
-                  border: 'none', 
-                  borderRadius: 6, 
-                  padding: '8px 16px', 
-                  fontWeight: 600, 
+                style={{
+                  position: 'absolute',
+                  top: 12,
+                  right: 12,
+                  background: copied ? '#22c55e' : '#6c47ff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '8px 16px',
+                  fontWeight: 600,
                   fontSize: '0.8rem',
                   cursor: 'pointer',
                   transition: 'background 0.2s'

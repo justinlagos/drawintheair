@@ -1,4 +1,3 @@
-import React from 'react';
 import { SeoLayout, PageHero, Section } from './SeoLayout';
 import { SEOMeta } from '../../seo/SEOMeta';
 
@@ -10,7 +9,7 @@ export default function PressPage() {
         description="Official press kit for Draw in the Air. Download high-resolution logos, screenshots, founder bios, and statistics for articles covering gesture-based educational games."
         canonical="/press"
       />
-      
+
       <PageHero
         badge="Press Kit & Media"
         emoji="📰"
@@ -51,7 +50,7 @@ export default function PressPage() {
           </h3>
           <p style={{ color: '#94a3b8', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: 20 }}>
             For interviews, quotes, or additional high-resolution screenshots, please contact our team:
-            <br/><br/>
+            <br /><br />
             <strong>Email:</strong> <a href="mailto:partnership@drawintheair.com" style={{ color: '#6c47ff', textDecoration: 'none', fontWeight: 600 }}>partnership@drawintheair.com</a>
           </p>
 

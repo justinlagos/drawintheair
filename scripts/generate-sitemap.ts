@@ -17,7 +17,10 @@ const routes = [
   '/letter-tracing',
   '/for-parents',
   '/for-teachers',
-  '/learn'
+  '/learn',
+  '/embed',
+  '/press',
+  '/free-resources'
 ];
 
 // Add activities manually or from your config
@@ -29,7 +32,7 @@ const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 letters.forEach(l => routes.push(`/trace-${l.toLowerCase()}`));
 
 // Add numbers
-const numbers = ['1','2','3','4','5','6','7','8','9','10'];
+const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
 numbers.forEach(n => routes.push(`/trace-number-${n}`));
 
 // Add shapes
