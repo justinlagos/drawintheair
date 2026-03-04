@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /demo
+Disallow: /school
+Disallow: /parent
+Disallow: /*?debug=
+
+Sitemap: https://drawintheair.com/sitemap.xml
