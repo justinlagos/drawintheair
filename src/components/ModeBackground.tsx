@@ -12,7 +12,7 @@
  */
 
 
-type ModeId = 'free' | 'calibration' | 'sort-and-place' | 'pre-writing' | 'word-search';
+type ModeId = 'free' | 'calibration' | 'sort-and-place' | 'pre-writing' | 'word-search' | 'colour-builder' | 'balloon-math' | 'rainbow-bridge' | 'gesture-spelling';
 
 interface ModeBackgroundProps {
     modeId: ModeId;

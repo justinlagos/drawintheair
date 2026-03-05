@@ -50,14 +50,18 @@ export const Celebration = ({
 }: CelebrationProps) => {
     const [visible, setVisible] = useState(false);
     const timerRef = useRef<number | undefined>(undefined);
+    // Keep onComplete in a ref so it never goes stale in the effect closure
+    // and — critically — changing its identity does NOT cancel the timer.
+    const onCompleteRef = useRef(onComplete);
+    useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
 
     // Generate confetti once when shown — never updated per frame
     const particles = useMemo<StaticParticle[]>(() => {
         if (!show || !showConfetti) return [];
         const perfConfig = perf.getConfig();
-        const count = Math.min(perfConfig.maxParticles, 30); // Cap at 30 for perf
+        const count = Math.min(perfConfig.maxParticles, 30);
         return Array.from({ length: count }, () => ({
-            x: 40 + Math.random() * 20,  // cluster near center
+            x: 40 + Math.random() * 20,
             y: 35 + Math.random() * 10,
             dx: (Math.random() - 0.5) * 60,
             dy: Math.random() * 50 + 20,
@@ -67,11 +71,10 @@ export const Celebration = ({
         }));
     }, [show, showConfetti]);
 
-    // Play sound effect
     const playSound = () => {
         if (!soundEffect) return;
         try {
-            const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+            const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
             if (!Ctx) return;
             const ctx = new Ctx({ sampleRate: 44100 });
             const osc = ctx.createOscillator();
@@ -96,14 +99,17 @@ export const Celebration = ({
 
             timerRef.current = window.setTimeout(() => {
                 setVisible(false);
-                onComplete?.();
+                onCompleteRef.current?.();
             }, duration);
+        } else {
+            if (timerRef.current) clearTimeout(timerRef.current);
         }
 
         return () => {
             if (timerRef.current) clearTimeout(timerRef.current);
         };
-    }, [show, duration, onComplete, soundEffect]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [show]); // onComplete intentionally in ref — including it here would reset the timer on every render
 
     if (!visible) return null;
 

@@ -225,19 +225,30 @@ const MAX_RECENT_WORDS = 50;
 export const getRandomWords = (
     count: number,
     difficulty?: 1 | 2 | 3,
-    category?: string
+    category?: string,
+    minLength?: number,
+    maxLength?: number
 ): string[] => {
     let availableWords: string[] = [];
-    
+
     WORD_CATEGORIES.forEach(cat => {
         if (difficulty && cat.difficulty !== difficulty) return;
         if (category && cat.name !== category) return;
         availableWords = availableWords.concat(cat.words);
     });
-    
+
+    // Apply word-length constraints if provided
+    if (minLength !== undefined || maxLength !== undefined) {
+        availableWords = availableWords.filter(word => {
+            if (minLength !== undefined && word.length < minLength) return false;
+            if (maxLength !== undefined && word.length > maxLength) return false;
+            return true;
+        });
+    }
+
     // Filter out recently used words
     availableWords = availableWords.filter(word => !recentlyUsedWords.has(word));
-    
+
     // If we've used most words, reset the recent list
     if (availableWords.length < count) {
         recentlyUsedWords.clear();
@@ -247,17 +258,24 @@ export const getRandomWords = (
             if (category && cat.name !== category) return;
             availableWords = availableWords.concat(cat.words);
         });
+        // Re-apply length filter after reset
+        if (minLength !== undefined || maxLength !== undefined) {
+            availableWords = availableWords.filter(word => {
+                if (minLength !== undefined && word.length < minLength) return false;
+                if (maxLength !== undefined && word.length > maxLength) return false;
+                return true;
+            });
+        }
     }
-    
+
     // Shuffle and select
     const shuffled = availableWords.sort(() => Math.random() - 0.5);
     const selected = shuffled.slice(0, count);
-    
+
     // Track selected words
     selected.forEach(word => {
         recentlyUsedWords.add(word);
         if (recentlyUsedWords.size > MAX_RECENT_WORDS) {
-            // Remove oldest entries
             const iterator = recentlyUsedWords.values();
             const firstValue = iterator.next().value;
             if (firstValue !== undefined) {
@@ -265,7 +283,7 @@ export const getRandomWords = (
             }
         }
     });
-    
+
     return selected;
 };
 

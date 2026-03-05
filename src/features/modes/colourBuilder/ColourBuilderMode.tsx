@@ -51,6 +51,8 @@ export const ColourBuilderMode = ({ onExit }: ColourBuilderModeProps = {}) => {
     const [, setStreak] = useState(0); // Using streak in the burst/badge logic using getStreak() directly, but keeping interval hook to re-render. Wait, if I don't use the state, just remove it.
     const [showCelebration, setShowCelebration] = useState(false);
     const [stageNumber, setStageNumber] = useState(1);
+    // Guard: fires exactly once per round completion, cleared before stage advances
+    const roundCompletedRef = useRef(false);
 
     const burstLayerRef = useRef<HTMLDivElement>(null);
     const badgeLayerRef = useRef<HTMLDivElement>(null);
@@ -66,7 +68,8 @@ export const ColourBuilderMode = ({ onExit }: ColourBuilderModeProps = {}) => {
             setScore(getScore());
             setStreak(getStreak());
 
-            if (isRoundComplete() && getCelebrationTime() > 0) {
+            if (isRoundComplete() && getCelebrationTime() > 0 && !roundCompletedRef.current) {
+                roundCompletedRef.current = true;
                 setShowCelebration(true);
                 // Pulse skyline on complete
                 if (skylineRef.current) {
@@ -77,6 +80,7 @@ export const ColourBuilderMode = ({ onExit }: ColourBuilderModeProps = {}) => {
                 }
 
                 setTimeout(() => {
+                    roundCompletedRef.current = false;
                     setShowCelebration(false);
                     if (stageNumber < STAGES.length) {
                         setStageNumber(prev => prev + 1);

@@ -6,24 +6,26 @@
 
 // Grid configuration - Progressive chapter-based level system
 export const GRID_SIZES = {
-    easy: 4,      // Legacy: Level 1
-    standard: 5,  // Legacy: Level 2
-    hard: 6,      // Legacy: Level 3
-    // Chapter-based sizes (these are the active ones)
-    1: 4,         // Chapter 1: 4x4 grid, 2 words, horizontal only
-    2: 5,         // Chapter 2: 5x5 grid, 3 words, horizontal + vertical
-    3: 6          // Chapter 3: 6x6 grid, 4 words, horizontal + vertical
+    easy: 4,  // Easy: 4x4 grid
+    standard: 5,  // Standard: 5x5 grid
+    hard: 6,  // Hard: 6x6 grid
+    advanced: 7,  // Advanced: 7x7 grid
+    // Chapter-based sizes (active in-game)
+    1: 4,         // Chapter 1: 4x4, horizontal only
+    2: 5,         // Chapter 2: 5x5, horizontal + vertical
+    3: 6          // Chapter 3: 6x6, horizontal + vertical
 } as const;
 
 // Tile sizing (normalized 0-1) - Bigger tiles for kids
 export const TILE_SIZES = {
-    easy: 0.12,    // Legacy
-    standard: 0.10, // Legacy
-    hard: 0.085,   // Legacy
+    easy: 0.120,  // Easy
+    standard: 0.100,  // Standard
+    hard: 0.085,  // Hard
+    advanced: 0.075,  // Advanced: 7x7 grid - smaller tiles
     // Chapter-based sizes - BIGGER for kids
-    1: 0.14,       // Chapter 1: 4x4 grid - biggest tiles
-    2: 0.11,       // Chapter 2: 5x5 grid
-    3: 0.095       // Chapter 3: 6x6 grid
+    1: 0.14,          // Chapter 1: 4x4 - biggest tiles
+    2: 0.11,          // Chapter 2: 5x5
+    3: 0.095          // Chapter 3: 6x6
 } as const;
 
 // Dwell smoothing - More forgiving for kids
@@ -48,20 +50,25 @@ export const FOUND_GLOW_INTENSITY = 0.5;
 // Level 2: 5-6 words (horizontal + vertical)
 // Level 3+: gradual increase
 export const WORD_COUNTS = {
-    easy: 3,      // Legacy
-    standard: 5,  // Legacy
-    hard: 6,      // Legacy
+    easy: 3,  // Easy: 3 words
+    standard: 5,  // Standard: 5 words
+    hard: 6,  // Hard: 6 words
+    advanced: 7,  // Advanced: 7 words
     // Chapter-based word counts
-    1: 3,         // Chapter 1: 3-4 words, horizontal only, large letters
+    1: 3,         // Chapter 1: 3-4 words, horizontal only
     2: 5,         // Chapter 2: 5-6 words, horizontal + vertical
-    3: 6          // Chapter 3: 6+ words, gradual increase
+    3: 6          // Chapter 3: 6+ words
 } as const;
 
-// Word length constraints per chapter - Simple words for kids
+// Word length constraints - chapter-based for game + named tiers for difficulty selector
 export const WORD_LENGTHS = {
     1: { min: 3, max: 3 },  // Chapter 1: length 3 only (CAT, DOG, SUN)
     2: { min: 3, max: 4 },  // Chapter 2: length 3 to 4
-    3: { min: 3, max: 4 }   // Chapter 3: length 3 to 4
+    3: { min: 3, max: 4 },  // Chapter 3: length 3 to 4
+    // Named difficulty tiers (Easy 3–5, Medium 5–7, Advanced 7–10)
+    easy: { min: 3, max: 5 },
+    medium: { min: 5, max: 7 },
+    advanced: { min: 7, max: 10 },
 } as const;
 
 // Hint system constants - Gentle hints (5-7s idle)

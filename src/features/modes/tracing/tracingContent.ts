@@ -55,7 +55,7 @@ const circle = (cx: number, cy: number, r: number, segments: number = 40): PathP
 const createWarmupPack = (): TracingPath[] => {
     const paths: TracingPath[] = [];
     let level = 1;
-    
+
     // Horizontal line (centered and scaled - 25% of screen)
     paths.push({
         id: 'warmup-h1',
@@ -70,7 +70,7 @@ const createWarmupPack = (): TracingPath[] => {
         completionPercent: 0.82, // Reduced from 0.85 (softer completion)
         assistStrength: 0.65 // Slightly increased assist
     });
-    
+
     // Vertical line (centered and scaled)
     paths.push({
         id: 'warmup-v1',
@@ -85,7 +85,7 @@ const createWarmupPack = (): TracingPath[] => {
         completionPercent: 0.82, // Reduced from 0.85 (softer completion)
         assistStrength: 0.65 // Slightly increased assist
     });
-    
+
     // Diagonal left (top-left to bottom-right, centered and scaled)
     paths.push({
         id: 'warmup-dl1',
@@ -100,7 +100,7 @@ const createWarmupPack = (): TracingPath[] => {
         completionPercent: 0.82, // Reduced from 0.85 (softer completion)
         assistStrength: 0.65 // Slightly increased assist
     });
-    
+
     // Diagonal right (top-right to bottom-left, centered and scaled)
     paths.push({
         id: 'warmup-dr1',
@@ -115,7 +115,7 @@ const createWarmupPack = (): TracingPath[] => {
         completionPercent: 0.82, // Reduced from 0.85 (softer completion)
         assistStrength: 0.65 // Slightly increased assist
     });
-    
+
     // Zigzag (centered and scaled)
     paths.push({
         id: 'warmup-zigzag1',
@@ -133,7 +133,7 @@ const createWarmupPack = (): TracingPath[] => {
         completionPercent: 0.82, // Reduced from 0.85 (softer completion)
         assistStrength: 0.65 // Slightly increased assist
     });
-    
+
     // Gentle curve (centered and scaled)
     const curvePoints: PathPoint[] = [];
     for (let i = 0; i <= 20; i++) {
@@ -153,27 +153,27 @@ const createWarmupPack = (): TracingPath[] => {
         completionPercent: 0.82, // Reduced from 0.85 (softer completion)
         assistStrength: 0.65 // Slightly increased assist
     });
-    
+
     return paths;
 };
 
-// Pack 2: Shapes (6 activities)
+// Pack 2: Shapes (10 activities — includes SEO-targeted shapes)
 const createShapesPack = (): TracingPath[] => {
     const paths: TracingPath[] = [];
     let level = 1;
-    
-    // Circle (using normalized coordinates for proper centering)
+
+    // Circle
     paths.push({
         id: 'shape-circle',
         name: 'Circle',
         pack: 2,
         level: level++,
-        points: center(circle(0.5, 0.5, 0.5, 40)), // Radius 0.5 for full normalized space
-        tolerancePx: 18, // Reduced for less bold appearance // Reduced for less bold appearance while maintaining playability
-        completionPercent: 0.85, // Reduced from 0.88 (softer completion)
-        assistStrength: 0.55 // Slightly increased assist
+        points: center(circle(0.5, 0.5, 0.5, 40)),
+        tolerancePx: 18,
+        completionPercent: 0.85,
+        assistStrength: 0.55
     });
-    
+
     // Square
     paths.push({
         id: 'shape-square',
@@ -181,17 +181,13 @@ const createShapesPack = (): TracingPath[] => {
         pack: 2,
         level: level++,
         points: center([
-            { x: 0, y: 0 },
-            { x: 1, y: 0 },
-            { x: 1, y: 1 },
-            { x: 0, y: 1 },
-            { x: 0, y: 0 }
+            { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }, { x: 0, y: 0 }
         ]),
-        tolerancePx: 18, // Reduced for less bold appearance // Reduced for less bold appearance while maintaining playability
-        completionPercent: 0.85, // Reduced from 0.88 (softer completion)
-        assistStrength: 0.55 // Slightly increased assist
+        tolerancePx: 18,
+        completionPercent: 0.85,
+        assistStrength: 0.55
     });
-    
+
     // Triangle
     paths.push({
         id: 'shape-triangle',
@@ -199,16 +195,13 @@ const createShapesPack = (): TracingPath[] => {
         pack: 2,
         level: level++,
         points: center([
-            { x: 0.5, y: 0 },
-            { x: 1, y: 1 },
-            { x: 0, y: 1 },
-            { x: 0.5, y: 0 }
+            { x: 0.5, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }, { x: 0.5, y: 0 }
         ]),
-        tolerancePx: 18, // Reduced for less bold appearance // Reduced for less bold appearance while maintaining playability
-        completionPercent: 0.85, // Reduced from 0.88 (softer completion)
-        assistStrength: 0.55 // Slightly increased assist
+        tolerancePx: 18,
+        completionPercent: 0.85,
+        assistStrength: 0.55
     });
-    
+
     // Rectangle
     paths.push({
         id: 'shape-rectangle',
@@ -216,27 +209,99 @@ const createShapesPack = (): TracingPath[] => {
         pack: 2,
         level: level++,
         points: center([
-            { x: 0, y: 0 },
-            { x: 1, y: 0 },
-            { x: 1, y: 0.7 },
-            { x: 0, y: 0.7 },
-            { x: 0, y: 0 }
+            { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 0.65 }, { x: 0, y: 0.65 }, { x: 0, y: 0 }
         ]),
-        tolerancePx: 18, // Reduced for less bold appearance // Reduced for less bold appearance while maintaining playability
-        completionPercent: 0.85, // Reduced from 0.88 (softer completion)
-        assistStrength: 0.55 // Slightly increased assist
+        tolerancePx: 18,
+        completionPercent: 0.85,
+        assistStrength: 0.55
     });
-    
-    // Spiral (converted to normalized coordinates, then centered and scaled)
+
+    // Star (5-pointed, single-stroke)
+    const starPoints: PathPoint[] = [];
+    for (let i = 0; i <= 10; i++) {
+        const angle = (i / 10) * Math.PI * 2 - Math.PI / 2;
+        const r = i % 2 === 0 ? 0.5 : 0.2;
+        starPoints.push({
+            x: 0.5 + Math.cos(angle) * r,
+            y: 0.5 + Math.sin(angle) * r
+        });
+    }
+    paths.push({
+        id: 'shape-star',
+        name: 'Star',
+        pack: 2,
+        level: level++,
+        points: center(starPoints),
+        tolerancePx: 18,
+        completionPercent: 0.85,
+        assistStrength: 0.5
+    });
+
+    // Heart (two bumps + lower point, single-stroke)
+    const heartPoints: PathPoint[] = [];
+    for (let i = 0; i <= 50; i++) {
+        const t = (i / 50) * Math.PI * 2;
+        // Heart curve parametric form
+        const x = 0.5 + 0.16 * Math.pow(Math.sin(t), 3);
+        const y = 0.5 - (0.13 * Math.cos(t) - 0.05 * Math.cos(2 * t) - 0.02 * Math.cos(3 * t) - 0.01 * Math.cos(4 * t));
+        heartPoints.push({ x, y });
+    }
+    paths.push({
+        id: 'shape-heart',
+        name: 'Heart',
+        pack: 2,
+        level: level++,
+        points: center(heartPoints),
+        tolerancePx: 20,
+        completionPercent: 0.82,
+        assistStrength: 0.55
+    });
+
+    // Diamond (rotated square)
+    paths.push({
+        id: 'shape-diamond',
+        name: 'Diamond',
+        pack: 2,
+        level: level++,
+        points: center([
+            { x: 0.5, y: 0 },
+            { x: 1.0, y: 0.5 },
+            { x: 0.5, y: 1.0 },
+            { x: 0.0, y: 0.5 },
+            { x: 0.5, y: 0 }
+        ]),
+        tolerancePx: 18,
+        completionPercent: 0.85,
+        assistStrength: 0.55
+    });
+
+    // Oval (wide ellipse)
+    const ovalPoints: PathPoint[] = [];
+    for (let i = 0; i <= 40; i++) {
+        const angle = (i / 40) * Math.PI * 2;
+        ovalPoints.push({
+            x: 0.5 + Math.cos(angle) * 0.5,
+            y: 0.5 + Math.sin(angle) * 0.3
+        });
+    }
+    paths.push({
+        id: 'shape-oval',
+        name: 'Oval',
+        pack: 2,
+        level: level++,
+        points: center(ovalPoints),
+        tolerancePx: 18,
+        completionPercent: 0.85,
+        assistStrength: 0.55
+    });
+
+    // Spiral
     const spiralPoints: PathPoint[] = [];
     for (let i = 0; i <= 60; i++) {
         const t = i / 60;
         const angle = t * Math.PI * 4;
-        const radius = t * 0.4; // Normalized radius 0 to 0.4 (will be scaled by center function)
-        spiralPoints.push({
-            x: 0.5 + Math.cos(angle) * radius, // Normalized 0-1 space
-            y: 0.5 + Math.sin(angle) * radius
-        });
+        const r = t * 0.4;
+        spiralPoints.push({ x: 0.5 + Math.cos(angle) * r, y: 0.5 + Math.sin(angle) * r });
     }
     paths.push({
         id: 'shape-spiral',
@@ -244,20 +309,18 @@ const createShapesPack = (): TracingPath[] => {
         pack: 2,
         level: level++,
         points: center(spiralPoints),
-        tolerancePx: 18, // Reduced for less bold appearance
+        tolerancePx: 18,
         completionPercent: 0.90,
         assistStrength: 0.4
     });
-    
-    // Figure 8 (already normalized, just needs proper centering)
+
+    // Figure 8
     const figure8Points: PathPoint[] = [];
     for (let i = 0; i <= 40; i++) {
         const t = i / 40;
         const angle = t * Math.PI * 4;
-        const radius = 0.2 * (1 + Math.sin(angle)); // Normalized radius
-        const x = 0.5 + Math.cos(angle) * radius; // Normalized 0-1 space
-        const y = 0.5 + Math.sin(angle * 2) * radius;
-        figure8Points.push({ x, y });
+        const r = 0.2 * (1 + Math.sin(angle));
+        figure8Points.push({ x: 0.5 + Math.cos(angle) * r, y: 0.5 + Math.sin(angle * 2) * r });
     }
     paths.push({
         id: 'shape-figure8',
@@ -265,11 +328,11 @@ const createShapesPack = (): TracingPath[] => {
         pack: 2,
         level: level++,
         points: center(figure8Points),
-        tolerancePx: 18, // Reduced for less bold appearance
+        tolerancePx: 18,
         completionPercent: 0.90,
         assistStrength: 0.4
     });
-    
+
     return paths;
 };
 
@@ -277,9 +340,9 @@ const createShapesPack = (): TracingPath[] => {
 const createLettersPack = (): TracingPath[] => {
     const paths: TracingPath[] = [];
     let level = 1;
-    
+
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    
+
     // Import or create letter paths
     // For now, using simplified single-stroke approximations
     const createLetterPath = (letter: string): PathPoint[] => {
@@ -485,7 +548,7 @@ const createLettersPack = (): TracingPath[] => {
             default: return [{ x: 0.5, y: 0.5 }];
         }
     };
-    
+
     for (const letter of letters) {
         paths.push({
             id: `letter-${letter}`,
@@ -498,15 +561,15 @@ const createLettersPack = (): TracingPath[] => {
             assistStrength: level <= 10 ? 0.5 : 0.4 // Less assist for more accuracy
         });
     }
-    
+
     return paths;
 };
 
-// Pack 4: Numbers 1-9 (9 activities)
+// Pack 4: Numbers 1-10 (10 activities)
 const createNumbersPack = (): TracingPath[] => {
     const paths: TracingPath[] = [];
     let level = 1;
-    
+
     const createNumberPath = (num: number): PathPoint[] => {
         switch (num) {
             case 1: return center([
@@ -600,23 +663,41 @@ const createNumbersPack = (): TracingPath[] => {
                 { x: 0.2, y: 0.5 },
                 { x: 0.0, y: 0.2 }
             ]);
+            // Number 10: draw "1" then "0" as a single continuous stroke
+            case 10: return center([
+                // The "1" stroke (left side, top to bottom)
+                { x: 0.15, y: 0.05 },
+                { x: 0.15, y: 0.95 },
+                // Move right to start the "0"
+                { x: 0.35, y: 0.95 },
+                // The "0" oval (right side)
+                { x: 0.35, y: 0.05 },
+                { x: 0.55, y: 0.0 },
+                { x: 0.80, y: 0.05 },
+                { x: 0.95, y: 0.20 },
+                { x: 1.00, y: 0.50 },
+                { x: 0.95, y: 0.80 },
+                { x: 0.80, y: 0.95 },
+                { x: 0.55, y: 1.00 },
+                { x: 0.35, y: 0.95 }
+            ]);
             default: return [{ x: 0.5, y: 0.5 }];
         }
     };
-    
-    for (let num = 1; num <= 9; num++) {
+
+    for (let num = 1; num <= 10; num++) {
         paths.push({
             id: `number-${num}`,
             name: num.toString(),
             pack: 4,
             level: level++,
             points: createNumberPath(num),
-            tolerancePx: 18, // Reduced for less bold appearance
+            tolerancePx: 18,
             completionPercent: 0.90,
             assistStrength: 0.4
         });
     }
-    
+
     return paths;
 };
 
@@ -646,7 +727,7 @@ export const getPathById = (id: string): TracingPath | undefined => {
 // Get pack info
 export const PACK_INFO = {
     1: { name: 'Warm-up Lines', icon: '📏', description: 'Simple lines to get started' },
-    2: { name: 'Shapes', icon: '🔷', description: 'Circles, squares, and more' },
+    2: { name: 'Shapes', icon: '🔷', description: 'Circles, squares, stars, and more' },
     3: { name: 'Letters', icon: '🔤', description: 'A to Z' },
-    4: { name: 'Numbers', icon: '🔢', description: '1 to 9' }
+    4: { name: 'Numbers', icon: '🔢', description: '1 to 10' }
 };

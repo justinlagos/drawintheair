@@ -145,6 +145,34 @@ export function instantiateStage(template: StageTemplate): StageConfig {
         'trash.wrapper': '#808080',
         'trash.paper': '#F5DEB3',
         'trash.cup': '#DEB887',
+        // Colors level
+        'color.red': '#EF4444',
+        'color.blue': '#3B82F6',
+        'color.green': '#22C55E',
+        'color.yellow': '#EAB308',
+        'color.orange': '#F97316',
+        'color.purple': '#A855F7',
+        'color.pink': '#EC4899',
+        'color.white': '#F1F5F9',
+        // Shapes level
+        'shape.circle': '#6C47FF',
+        'shape.square': '#FF6B6B',
+        'shape.triangle': '#4ECDC4',
+        'shape.star': '#FFD700',
+        'shape.heart': '#F43F5E',
+        'shape.diamond': '#8B5CF6',
+        'shape.oval': '#06B6D4',
+        'shape.rectangle': '#F59E0B',
+        // Letters level
+        'letter.a': '#F43F5E', 'letter.e': '#EC4899',
+        'letter.i': '#F97316', 'letter.o': '#EAB308',
+        'letter.u': '#22C55E', 'letter.b': '#3B82F6',
+        'letter.c': '#6C47FF', 'letter.d': '#8B5CF6',
+        // Numbers level
+        'number.1': '#EF4444', 'number.2': '#F97316',
+        'number.3': '#EAB308', 'number.4': '#22C55E',
+        'number.5': '#3B82F6', 'number.6': '#6C47FF',
+        'number.7': '#A855F7', 'number.8': '#EC4899',
     };
 
     const items: StageItem[] = template.items.map((it, idx) => ({
@@ -218,11 +246,32 @@ function getItemIcon(key: string): string {
         'trash.wrapper': '🍬',
         'trash.paper': '🧻',
         'trash.cup': '🥤',
+        // Colors
+        'color.red': '🔴', 'color.blue': '🔵',
+        'color.green': '🟢', 'color.yellow': '🟡',
+        'color.orange': '🟠', 'color.purple': '🟣',
+        'color.pink': '🩷', 'color.white': '⬜',
+        // Shapes
+        'shape.circle': '⭕', 'shape.square': '⬛',
+        'shape.triangle': '🔺', 'shape.star': '⭐',
+        'shape.heart': '❤️', 'shape.diamond': '💎',
+        'shape.oval': '🥚', 'shape.rectangle': '▬',
+        // Letters (vowels vs consonants)
+        'letter.a': '🅰️', 'letter.e': '📧',
+        'letter.i': '🆔', 'letter.o': '⭕',
+        'letter.u': '☂️', 'letter.b': '🅱️',
+        'letter.c': '🌙', 'letter.d': '🦆',
+        // Numbers (odd vs even)
+        'number.1': '1️⃣', 'number.2': '2️⃣',
+        'number.3': '3️⃣', 'number.4': '4️⃣',
+        'number.5': '5️⃣', 'number.6': '6️⃣',
+        'number.7': '7️⃣', 'number.8': '8️⃣',
     };
     return iconMap[key] || '📦';
 }
 
 export const STAGE_TEMPLATES: StageTemplate[] = [
+    // ── Starter Pack (existing stages) ──────────────────────────────────────
     {
         id: 'food-vs-toys',
         title: 'Food vs Toys',
@@ -279,8 +328,130 @@ export const STAGE_TEMPLATES: StageTemplate[] = [
             { key: 'trash.paper', binId: 'trash', label: 'Used Tissue' },
             { key: 'trash.cup', binId: 'trash', label: 'Cup' }
         ]
-    }
+    },
+    // ── Level 1: Colours ────────────────────────────────────────────────────
+    {
+        id: 'colors-sort',
+        title: 'Warm Colours vs Cool Colours',
+        instruction: 'Sort the colours — warm on the left, cool on the right!',
+        bins: {
+            left: { id: 'warm', label: 'Warm', icon: '🔆', color: '#F97316' },
+            right: { id: 'cool', label: 'Cool', icon: '❄️', color: '#3B82F6' }
+        },
+        items: [
+            { key: 'color.red', binId: 'warm', label: 'Red' },
+            { key: 'color.orange', binId: 'warm', label: 'Orange' },
+            { key: 'color.yellow', binId: 'warm', label: 'Yellow' },
+            { key: 'color.pink', binId: 'warm', label: 'Pink' },
+            { key: 'color.blue', binId: 'cool', label: 'Blue' },
+            { key: 'color.green', binId: 'cool', label: 'Green' },
+            { key: 'color.purple', binId: 'cool', label: 'Purple' },
+            { key: 'color.white', binId: 'cool', label: 'White' }
+        ]
+    },
+    // ── Level 2: Shapes ─────────────────────────────────────────────────────
+    {
+        id: 'shapes-sort',
+        title: 'Curved vs Straight Shapes',
+        instruction: 'Sort shapes — curved on the left, straight edges on the right!',
+        bins: {
+            left: { id: 'curved', label: 'Curved', icon: '⭕', color: '#6C47FF' },
+            right: { id: 'straight', label: 'Straight', icon: '⬛', color: '#FF6B6B' }
+        },
+        items: [
+            { key: 'shape.circle', binId: 'curved', label: 'Circle' },
+            { key: 'shape.oval', binId: 'curved', label: 'Oval' },
+            { key: 'shape.heart', binId: 'curved', label: 'Heart' },
+            { key: 'shape.diamond', binId: 'curved', label: 'Diamond' },
+            { key: 'shape.square', binId: 'straight', label: 'Square' },
+            { key: 'shape.triangle', binId: 'straight', label: 'Triangle' },
+            { key: 'shape.star', binId: 'straight', label: 'Star' },
+            { key: 'shape.rectangle', binId: 'straight', label: 'Rectangle' }
+        ]
+    },
+    // ── Level 3: Letters ────────────────────────────────────────────────────
+    {
+        id: 'letters-sort',
+        title: 'Vowels vs Consonants',
+        instruction: 'Is it a vowel (A E I O U) or a consonant?',
+        bins: {
+            left: { id: 'vowels', label: 'Vowels', icon: '🅰️', color: '#F43F5E' },
+            right: { id: 'consonants', label: 'Consonants', icon: '🅱️', color: '#3B82F6' }
+        },
+        items: [
+            { key: 'letter.a', binId: 'vowels', label: 'A' },
+            { key: 'letter.e', binId: 'vowels', label: 'E' },
+            { key: 'letter.i', binId: 'vowels', label: 'I' },
+            { key: 'letter.o', binId: 'vowels', label: 'O' },
+            { key: 'letter.b', binId: 'consonants', label: 'B' },
+            { key: 'letter.c', binId: 'consonants', label: 'C' },
+            { key: 'letter.d', binId: 'consonants', label: 'D' },
+            { key: 'letter.u', binId: 'vowels', label: 'U' }
+        ]
+    },
+    // ── Level 4: Numbers ────────────────────────────────────────────────────
+    {
+        id: 'numbers-sort',
+        title: 'Odd vs Even Numbers',
+        instruction: 'Sort numbers — odd on the left, even on the right!',
+        bins: {
+            left: { id: 'odd', label: 'Odd', icon: '1️⃣', color: '#A855F7' },
+            right: { id: 'even', label: 'Even', icon: '2️⃣', color: '#22C55E' }
+        },
+        items: [
+            { key: 'number.1', binId: 'odd', label: '1' },
+            { key: 'number.3', binId: 'odd', label: '3' },
+            { key: 'number.5', binId: 'odd', label: '5' },
+            { key: 'number.7', binId: 'odd', label: '7' },
+            { key: 'number.2', binId: 'even', label: '2' },
+            { key: 'number.4', binId: 'even', label: '4' },
+            { key: 'number.6', binId: 'even', label: '6' },
+            { key: 'number.8', binId: 'even', label: '8' }
+        ]
+    },
 ];
+
+// ── Level Progression ────────────────────────────────────────────────────────
+// Defines the ordered sequence of stages for the level progression UI
+export const LEVEL_ORDER: string[] = [
+    'colors-sort',
+    'shapes-sort',
+    'letters-sort',
+    'numbers-sort',
+];
+
+export const LEVEL_LABELS: Record<string, string> = {
+    'colors-sort': 'Level 1 — Colours',
+    'shapes-sort': 'Level 2 — Shapes',
+    'letters-sort': 'Level 3 — Letters',
+    'numbers-sort': 'Level 4 — Numbers',
+};
+
+let _currentLevelIndex = 0; // tracks which LEVEL_ORDER stage we're on
+
+export function getCurrentLevel(): number { return _currentLevelIndex + 1; }
+export function getTotalLevels(): number { return LEVEL_ORDER.length; }
+export function getCurrentLevelLabel(): string {
+    return LEVEL_LABELS[LEVEL_ORDER[_currentLevelIndex]] ?? `Level ${_currentLevelIndex + 1}`;
+}
+
+export function startLevel(levelIndex: number) {
+    _currentLevelIndex = Math.min(Math.max(0, levelIndex), LEVEL_ORDER.length - 1);
+    const templateId = LEVEL_ORDER[_currentLevelIndex];
+    const idx = STAGE_TEMPLATES.findIndex(t => t.id === templateId);
+    if (idx !== -1) startStage(idx);
+}
+
+export function advanceLevel(): boolean {
+    if (_currentLevelIndex < LEVEL_ORDER.length - 1) {
+        _currentLevelIndex++;
+        const templateId = LEVEL_ORDER[_currentLevelIndex];
+        const idx = STAGE_TEMPLATES.findIndex(t => t.id === templateId);
+        if (idx !== -1) startStage(idx);
+        return true;
+    }
+    return false; // all levels complete
+}
 
 let currentStageIndex = 0;
 let currentStage: StageConfig | null = null;

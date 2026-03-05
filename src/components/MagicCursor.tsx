@@ -21,7 +21,7 @@ interface MagicCursorProps {
     frameRef: MutableRefObject<TrackingFrameData>;
     getPenDown?: () => boolean;
     airPaintEnabled?: boolean;
-    mode?: 'calibration' | 'free' | 'pre-writing' | 'sort-and-place' | 'word-search' | 'colour-builder';
+    mode?: 'calibration' | 'free' | 'pre-writing' | 'sort-and-place' | 'word-search' | 'colour-builder' | 'balloon-math' | 'rainbow-bridge' | 'gesture-spelling';
     style?: CursorStyle;
     state?: CursorState;
 }

@@ -14,7 +14,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { type HandLandmarkerResult } from '@mediapipe/tasks-vision';
 
-export type GameMode = 'calibration' | 'free' | 'pre-writing' | 'sort-and-place' | 'word-search' | 'colour-builder';
+export type GameMode = 'calibration' | 'free' | 'pre-writing' | 'sort-and-place' | 'word-search' | 'colour-builder' | 'balloon-math' | 'rainbow-bridge' | 'gesture-spelling';
 
 interface ModeOption {
     id: GameMode;
@@ -71,6 +71,33 @@ const MODES: ModeOption[] = [
         accentColor: '#F1C40F',
         accentGlow: 'rgba(241, 196, 15, 0.35)',
         category: 'Puzzle'
+    },
+    {
+        id: 'balloon-math',
+        title: 'Balloon Math',
+        subtitle: 'Pop the right number!',
+        icon: '🎈',
+        accentColor: '#FF6B6B',
+        accentGlow: 'rgba(255, 107, 107, 0.35)',
+        category: 'Learning'
+    },
+    {
+        id: 'rainbow-bridge',
+        title: 'Rainbow Bridge',
+        subtitle: 'Match the colours',
+        icon: '🌈',
+        accentColor: '#00BCD4',
+        accentGlow: 'rgba(0, 188, 212, 0.35)',
+        category: 'Learning'
+    },
+    {
+        id: 'gesture-spelling',
+        title: 'Spelling Stars',
+        subtitle: 'Spell the word!',
+        icon: '✍️',
+        accentColor: '#A855F7',
+        accentGlow: 'rgba(168, 85, 247, 0.35)',
+        category: 'Learning'
     }
 ];
 

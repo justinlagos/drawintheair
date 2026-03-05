@@ -4,7 +4,7 @@
  * Type definitions for the Word Search game module
  */
 
-export type Difficulty = 'easy' | 'standard';
+export type Difficulty = 'easy' | 'standard' | 'advanced';
 export type Chapter = 1 | 2 | 3;
 
 export type Theme = 'animals' | 'colours' | 'family' | 'food' | 'toys' | 'nature';

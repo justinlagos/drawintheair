@@ -3,10 +3,11 @@ import {
     getScore,
     isRoundComplete,
     getCelebrationTime,
-    nextStage,
-    resetAllStages,
     getCurrentStage,
-    STAGE_TEMPLATES
+    getCurrentLevel,
+    getTotalLevels,
+    startLevel,
+    advanceLevel,
 } from './sortAndPlaceLogic';
 import { Celebration } from '../../../components/Celebration';
 import { GameTopBar } from '../../../components/GameTopBar';
@@ -55,17 +56,22 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
     const [score, setScore] = useState(0);
     const [total, setTotal] = useState(8);
     const [showCelebration, setShowCelebration] = useState(false);
-    const [stageNumber, setStageNumber] = useState(1);
+    const [levelNumber, setLevelNumber] = useState(1);
+    const [allLevelsComplete, setAllLevelsComplete] = useState(false);
     const [currentStageKey, setCurrentStageKey] = useState(0);
     const [floatingPoints, setFloatingPoints] = useState<{ id: number; x: number; y: number }[]>([]);
+    const [dropFeedback, setDropFeedback] = useState<'correct' | 'wrong' | null>(null);
     const lastScoreRef = React.useRef(0);
+    const lastRoundCompleteRef = React.useRef(false);
 
     const layout = useResponsiveLayout();
     const { isMobile, isTabletSmall, isLandscapePhone } = layout;
     const isCompact = isMobile || isTabletSmall || isLandscapePhone;
 
     useEffect(() => {
-        resetAllStages();
+        // Start from Level 1
+        startLevel(0);
+        setLevelNumber(getCurrentLevel());
 
         const interval = setInterval(() => {
             const stage = getCurrentStage();
@@ -73,9 +79,13 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
                 setStageTitle(stage.title);
                 setTotal(stage.items.length);
             }
+
             const newScore = getScore();
             if (newScore > lastScoreRef.current) {
-                // Add a floating +1 randomly near the top center
+                // Show correct-drop feedback
+                setDropFeedback('correct');
+                setTimeout(() => setDropFeedback(null), 600);
+                // Floating +1
                 const newPoint = {
                     id: Date.now(),
                     x: window.innerWidth / 2 + (Math.random() * 100 - 50),
@@ -89,24 +99,29 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
             lastScoreRef.current = newScore;
             setScore(newScore);
 
-            if (isRoundComplete() && getCelebrationTime() > 0) {
+            if (isRoundComplete() && getCelebrationTime() > 0 && !lastRoundCompleteRef.current) {
+                lastRoundCompleteRef.current = true;
                 setShowCelebration(true);
                 showToast(getRandomMotivation(), 'success', 1500);
                 if (featureFlags.getFlag('stickerRewards')) {
                     earnSticker('sorting-complete');
                 }
                 setTimeout(() => {
+                    lastRoundCompleteRef.current = false;
                     setShowCelebration(false);
-                    if (nextStage()) {
-                        setStageNumber(prev => prev + 1);
+                    const hasMore = advanceLevel();
+                    if (hasMore) {
+                        setLevelNumber(getCurrentLevel());
                         setCurrentStageKey(prev => prev + 1);
                     } else {
-                        setStageNumber(1);
-                        resetAllStages();
-                        const newStage = getCurrentStage();
-                        if (newStage) {
-                            setStageTitle(newStage.title);
-                        }
+                        // All 4 levels complete — loop back
+                        setAllLevelsComplete(true);
+                        setTimeout(() => {
+                            setAllLevelsComplete(false);
+                            startLevel(0);
+                            setLevelNumber(getCurrentLevel());
+                            setCurrentStageKey(prev => prev + 1);
+                        }, 3000);
                     }
                 }, 2500);
             }
@@ -114,8 +129,6 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
 
         return () => clearInterval(interval);
     }, [currentStageKey]);
-
-    const stageInfo = STAGE_TEMPLATES.find(t => t.title === stageTitle) || STAGE_TEMPLATES[0];
 
     const progress = total > 0 ? score / total : 0;
 
@@ -129,7 +142,7 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
             {onExit && (
                 <GameTopBar
                     onBack={onExit}
-                    stage={`Stage ${stageNumber} of ${STAGE_TEMPLATES.length}`}
+                    stage={`Level ${levelNumber} of ${getTotalLevels()}`}
                     compact={isCompact}
                 />
             )}
@@ -218,7 +231,7 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
                         marginBottom: isCompact ? '6px' : '12px',
                         fontWeight: 500
                     }}>
-                        Stage {stageNumber}/{STAGE_TEMPLATES.length}
+                        Level {levelNumber} of {getTotalLevels()}
                     </div>
 
                     <div style={{
@@ -254,62 +267,70 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
                 </div>
             </div>
 
+            {/* Instruction chip */}
             <div style={{
-                position: 'absolute',
-                top: hudSpacing,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 20,
-                pointerEvents: 'none',
-                animation: 'float 3s ease-in-out infinite',
+                position: 'absolute', top: hudSpacing, left: '50%', transform: 'translateX(-50%)',
+                zIndex: 20, pointerEvents: 'none', animation: 'float 3s ease-in-out infinite',
                 maxWidth: isCompact ? 'calc(100% - 180px)' : 'none'
             }}>
                 <div style={{
                     background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                    border: '1.5px solid rgba(0, 245, 212, 0.3)',
-                    borderRadius: '9999px',
+                    border: '1.5px solid rgba(0, 245, 212, 0.3)', borderRadius: '9999px',
                     padding: isCompact ? '10px 20px' : '14px 28px',
-                    color: '#00f5d4',
-                    fontSize: isCompact ? '0.85rem' : '1.1rem',
-                    textAlign: 'center',
-                    fontWeight: 600,
+                    color: '#00f5d4', fontSize: isCompact ? '0.85rem' : '1.1rem',
+                    textAlign: 'center', fontWeight: 600,
                     boxShadow: '0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15)',
-
-
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
+                    display: 'flex', alignItems: 'center', gap: '8px'
                 }}>
-                    👆 {isCompact ? stageInfo.title : stageInfo.instruction}
+                    👆 {isCompact ? stageTitle : (getCurrentStage()?.instruction ?? stageTitle)}
                 </div>
             </div>
 
+            {/* Drop feedback flash */}
+            {dropFeedback && (
+                <div style={{
+                    position: 'fixed', inset: 0, zIndex: 9990, pointerEvents: 'none',
+                    background: dropFeedback === 'correct'
+                        ? 'radial-gradient(ellipse at center, rgba(0,245,100,0.22) 0%, transparent 70%)'
+                        : 'radial-gradient(ellipse at center, rgba(255,60,60,0.22) 0%, transparent 70%)',
+                    animation: 'dropFeedbackFade 0.6s ease-out forwards'
+                }} />
+            )}
+
+            {/* All-levels-complete banner */}
+            {allLevelsComplete && (
+                <div style={{
+                    position: 'fixed', inset: 0, zIndex: 9995, pointerEvents: 'none',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                    <div style={{
+                        background: 'linear-gradient(135deg, #6C47FF, #FF6B6B)',
+                        borderRadius: 24, padding: '32px 48px', textAlign: 'center',
+                        boxShadow: '0 0 60px rgba(108,71,255,0.6)'
+                    }}>
+                        <div style={{ fontSize: '3rem', marginBottom: 8 }}>🏆</div>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'white' }}>All Levels Complete!</div>
+                        <div style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.8)', marginTop: 8 }}>Starting over…</div>
+                    </div>
+                </div>
+            )}
+
             <Celebration
                 show={showCelebration}
-                message={stageNumber === STAGE_TEMPLATES.length ? "All Stages Complete!" : "Stage Complete!"}
-                subMessage={stageNumber === STAGE_TEMPLATES.length ? "🎉 Amazing work! 🎉" : "Great job!"}
+                message={allLevelsComplete ? '🏆 All Levels Done!' : `Level ${levelNumber} Complete!`}
+                subMessage={allLevelsComplete ? '🎉 You sorted everything!' : '⭐ Amazing job!'}
                 icon="🎉"
             />
 
-            {/* Simple Reward Animation for Point Scoring */}
+            {/* Floating +1 */}
             {floatingPoints.map(pt => (
-                <div
-                    key={pt.id}
-                    style={{
-                        position: 'absolute',
-                        left: pt.x,
-                        top: pt.y,
-                        fontSize: '2rem',
-                        fontWeight: 'bold',
-                        color: '#00F5D4',
-                        textShadow: '0 0 10px rgba(0, 245, 212, 0.8)',
-                        pointerEvents: 'none',
-                        zIndex: 9999,
-                        animation: 'floatUpAndFade 1s ease-out forwards'
-                    }}
-                >
-                    +1
-                </div>
+                <div key={pt.id} style={{
+                    position: 'absolute', left: pt.x, top: pt.y,
+                    fontSize: '2rem', fontWeight: 'bold', color: '#00F5D4',
+                    textShadow: '0 0 10px rgba(0, 245, 212, 0.8)',
+                    pointerEvents: 'none', zIndex: 9999,
+                    animation: 'floatUpAndFade 1s ease-out forwards'
+                }}>+1</div>
             ))}
 
             <style>{`
@@ -321,6 +342,10 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
                     0% { opacity: 0; transform: translateY(0) scale(0.5); }
                     20% { opacity: 1; transform: translateY(-20px) scale(1.2); }
                     100% { opacity: 0; transform: translateY(-60px) scale(1); }
+                }
+                @keyframes dropFeedbackFade {
+                    0% { opacity: 1; }
+                    100% { opacity: 0; }
                 }
             `}</style>
         </>
