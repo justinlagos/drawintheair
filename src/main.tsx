@@ -25,6 +25,10 @@ const EmbedPage = React.lazy(() => import('./pages/seo/EmbedPage.tsx'));
 const PressPage = React.lazy(() => import('./pages/seo/PressPage.tsx'));
 const FreeResourcesPage = React.lazy(() => import('./pages/seo/FreeResourcesPage.tsx'));
 
+const TracePage = React.lazy(() => import('./pages/seo/TracePage.tsx'));
+const LearnArticlePage = React.lazy(() => import('./pages/seo/LearnArticlePage.tsx'));
+const LearnHubPage = React.lazy(() => import('./pages/seo/LearnHubPage.tsx'));
+
 // Helper function to determine route from pathname
 function getRouteFromPath(path: string, hash: string): string {
   // Check for debug=qa in query params
@@ -55,6 +59,15 @@ function getRouteFromPath(path: string, hash: string): string {
   if (path === '/embed') return 'embed';
   if (path === '/press') return 'press';
   if (path === '/free-resources') return 'free-resources';
+
+  // Learn Articles
+  if (path.startsWith('/learn/')) return 'learn-article';
+  if (path === '/learn') return 'learn-hub';
+
+  // Tracing Pages
+  if (path.startsWith('/trace-') || path === '/letter-tracing') {
+    return 'trace';
+  }
 
   return 'landing';
 }
@@ -189,6 +202,53 @@ function Root() {
     return (
       <React.Suspense fallback={<DemoLoader />}>
         <FreeResourcesPage />
+      </React.Suspense>
+    );
+  }
+
+  if (route === 'learn-hub') {
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <LearnHubPage />
+      </React.Suspense>
+    );
+  }
+
+  if (route === 'learn-article') {
+    const slug = window.location.pathname.replace('/learn/', '');
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <LearnArticlePage slug={slug} />
+      </React.Suspense>
+    );
+  }
+
+  if (route === 'trace') {
+    const path = window.location.pathname;
+    let type: 'letter' | 'number' | 'shape' = 'letter';
+    let value = 'a';
+
+    // Default fallback page
+    if (path === '/letter-tracing' || path === '/trace-') {
+      type = 'letter';
+      value = 'a';
+    } else {
+      const slug = path.replace('/trace-', '');
+      if (slug.startsWith('number-')) {
+        type = 'number';
+        value = slug.replace('number-', '');
+      } else if (['circle', 'triangle', 'square', 'star', 'heart', 'rectangle', 'diamond', 'oval'].includes(slug)) {
+        type = 'shape';
+        value = slug;
+      } else if (slug.length === 1 && slug.match(/[a-z]/i)) {
+        type = 'letter';
+        value = slug.toLowerCase();
+      }
+    }
+
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <TracePage type={type} value={value} />
       </React.Suspense>
     );
   }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     getScore,
     isRoundComplete,
@@ -57,6 +57,8 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
     const [showCelebration, setShowCelebration] = useState(false);
     const [stageNumber, setStageNumber] = useState(1);
     const [currentStageKey, setCurrentStageKey] = useState(0);
+    const [floatingPoints, setFloatingPoints] = useState<{ id: number; x: number; y: number }[]>([]);
+    const lastScoreRef = React.useRef(0);
 
     const layout = useResponsiveLayout();
     const { isMobile, isTabletSmall, isLandscapePhone } = layout;
@@ -71,7 +73,21 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
                 setStageTitle(stage.title);
                 setTotal(stage.items.length);
             }
-            setScore(getScore());
+            const newScore = getScore();
+            if (newScore > lastScoreRef.current) {
+                // Add a floating +1 randomly near the top center
+                const newPoint = {
+                    id: Date.now(),
+                    x: window.innerWidth / 2 + (Math.random() * 100 - 50),
+                    y: window.innerHeight / 3 + (Math.random() * 50 - 25)
+                };
+                setFloatingPoints(prev => [...prev, newPoint]);
+                setTimeout(() => {
+                    setFloatingPoints(prev => prev.filter(p => p.id !== newPoint.id));
+                }, 1000);
+            }
+            lastScoreRef.current = newScore;
+            setScore(newScore);
 
             if (isRoundComplete() && getCelebrationTime() > 0) {
                 setShowCelebration(true);
@@ -128,8 +144,8 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
             }}>
                 <div style={{
                     background: 'linear-gradient(145deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 100%)',
-                    
-                    
+
+
                     borderRadius: '9999px',
                     border: '1.5px solid rgba(255, 255, 255, 0.12)',
                     padding: isCompact ? '8px 16px' : '10px 20px',
@@ -164,8 +180,8 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
             }}>
                 <div style={{
                     background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                    
-                    
+
+
                     borderRadius: hudRadius,
                     border: '1.5px solid rgba(255, 255, 255, 0.12)',
                     padding: hudPadding,
@@ -258,8 +274,8 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
                     textAlign: 'center',
                     fontWeight: 600,
                     boxShadow: '0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15)',
-                    
-                    
+
+
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px'
@@ -275,10 +291,36 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
                 icon="🎉"
             />
 
+            {/* Simple Reward Animation for Point Scoring */}
+            {floatingPoints.map(pt => (
+                <div
+                    key={pt.id}
+                    style={{
+                        position: 'absolute',
+                        left: pt.x,
+                        top: pt.y,
+                        fontSize: '2rem',
+                        fontWeight: 'bold',
+                        color: '#00F5D4',
+                        textShadow: '0 0 10px rgba(0, 245, 212, 0.8)',
+                        pointerEvents: 'none',
+                        zIndex: 9999,
+                        animation: 'floatUpAndFade 1s ease-out forwards'
+                    }}
+                >
+                    +1
+                </div>
+            ))}
+
             <style>{`
                 @keyframes float {
                     0%, 100% { transform: translateX(-50%) translateY(0px); }
                     50% { transform: translateX(-50%) translateY(-10px); }
+                }
+                @keyframes floatUpAndFade {
+                    0% { opacity: 0; transform: translateY(0) scale(0.5); }
+                    20% { opacity: 1; transform: translateY(-20px) scale(1.2); }
+                    100% { opacity: 0; transform: translateY(-60px) scale(1); }
                 }
             `}</style>
         </>

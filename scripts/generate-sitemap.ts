@@ -18,6 +18,10 @@ const routes = [
   '/for-parents',
   '/for-teachers',
   '/learn',
+  '/learn/hand-tracking-for-kids',
+  '/learn/gesture-learning',
+  '/learn/drawing-skills-for-children',
+  '/learn/early-childhood-motor-skills',
   '/embed',
   '/press',
   '/free-resources'
