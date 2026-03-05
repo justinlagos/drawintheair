@@ -100,7 +100,7 @@ export function SeoLayout({ children }: SeoLayoutProps) {
       {/* ── CTA BAND ── */}
       <section style={{ background: 'linear-gradient(135deg, #6c47ff 0%, #a855f7 50%, #22d3ee 100%)', padding: '56px 24px', textAlign: 'center' }}>
         <div style={{ maxWidth: 640, margin: '0 auto' }}>
-          <img src="/logo.png" alt="Draw in the Air" style={{ height: 72, width: 'auto', marginBottom: 12 }} />
+          <img src="/logo.png" alt="Draw in the Air" style={{ height: 72, width: 'auto', display: 'block', margin: '0 auto 12px' }} />
           <h2 style={{ color: 'white', fontSize: '2rem', fontWeight: 900, marginBottom: 12 }}>Ready to Draw in the Air?</h2>
           <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '1rem', marginBottom: 28 }}>Free, no download, no account. Just open your browser and start drawing!</p>
           <button

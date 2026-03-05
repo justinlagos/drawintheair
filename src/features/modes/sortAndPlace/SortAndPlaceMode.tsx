@@ -63,15 +63,19 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
     const [dropFeedback, setDropFeedback] = useState<'correct' | 'wrong' | null>(null);
     const lastScoreRef = React.useRef(0);
     const lastRoundCompleteRef = React.useRef(false);
+    // Track which level index to load when the effect re-runs after a stage advance
+    const nextLevelRef = React.useRef(0);
 
     const layout = useResponsiveLayout();
     const { isMobile, isTabletSmall, isLandscapePhone } = layout;
     const isCompact = isMobile || isTabletSmall || isLandscapePhone;
 
     useEffect(() => {
-        // Start from Level 1
-        startLevel(0);
+        // Start the level from the ref (0 on first mount, updated before each advance)
+        startLevel(nextLevelRef.current);
         setLevelNumber(getCurrentLevel());
+        // Reset score tracking for the new level
+        lastScoreRef.current = 0;
 
         const interval = setInterval(() => {
             const stage = getCurrentStage();
@@ -111,15 +115,18 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
                     setShowCelebration(false);
                     const hasMore = advanceLevel();
                     if (hasMore) {
+                        // advanceLevel() already incremented the internal index;
+                        // read it back so the next effect run starts at the right level.
+                        nextLevelRef.current = getCurrentLevel() - 1; // 0-based
                         setLevelNumber(getCurrentLevel());
                         setCurrentStageKey(prev => prev + 1);
                     } else {
-                        // All 4 levels complete — loop back
+                        // All 4 levels complete — loop back to level 1
                         setAllLevelsComplete(true);
                         setTimeout(() => {
                             setAllLevelsComplete(false);
-                            startLevel(0);
-                            setLevelNumber(getCurrentLevel());
+                            nextLevelRef.current = 0;
+                            setLevelNumber(1);
                             setCurrentStageKey(prev => prev + 1);
                         }, 3000);
                     }
