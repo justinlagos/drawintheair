@@ -34,14 +34,14 @@ export default function PressPage() {
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20, marginBottom: 40 }}>
             <div style={{ background: '#111629', padding: 30, borderRadius: 12, border: '1px solid rgba(108,71,255,0.2)', textAlign: 'center' }}>
-              <div style={{ fontSize: '3rem', marginBottom: 12 }}>🌀</div>
+              <img src="/logo.png" alt="Draw in the Air Primary Logo" style={{ height: 80, width: 'auto', marginBottom: 12 }} />
               <div style={{ color: 'white', fontWeight: 700 }}>Primary Logo</div>
-              <a href="#" style={{ display: 'inline-block', marginTop: 12, color: '#22d3ee', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600 }}>Download SVG</a>
+              <a href="/logo.png" download style={{ display: 'inline-block', marginTop: 12, color: '#22d3ee', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600 }}>Download PNG</a>
             </div>
             <div style={{ background: '#111629', padding: 30, borderRadius: 12, border: '1px solid rgba(108,71,255,0.2)', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'white', marginBottom: 12, background: 'linear-gradient(135deg, #6c47ff, #22d3ee)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Draw in the Air</div>
+              <img src="/logo.png" alt="Draw in the Air Wordmark" style={{ height: 80, width: 'auto', marginBottom: 12 }} />
               <div style={{ color: 'white', fontWeight: 700 }}>Wordmark</div>
-              <a href="#" style={{ display: 'inline-block', marginTop: 12, color: '#22d3ee', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600 }}>Download SVG</a>
+              <a href="/logo.png" download style={{ display: 'inline-block', marginTop: 12, color: '#22d3ee', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600 }}>Download PNG</a>
             </div>
           </div>
 

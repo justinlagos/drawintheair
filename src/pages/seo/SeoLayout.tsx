@@ -67,9 +67,8 @@ export function SeoLayout({ children }: SeoLayoutProps) {
       <header style={{ background: 'rgba(10,14,26,0.95)', borderBottom: '1px solid rgba(34,211,238,0.15)', position: 'sticky', top: 0, zIndex: 100, backdropFilter: 'blur(8px)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
           {/* Logo */}
-          <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #6c47ff, #22d3ee)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🌀</div>
-            <span style={{ fontWeight: 800, fontSize: '1.1rem', color: 'white' }}>Draw in the Air</span>
+          <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 0 }}>
+            <img src="/logo.png" alt="Draw in the Air" style={{ height: 44, width: 'auto' }} />
           </button>
 
           {/* Desktop Nav */}
@@ -101,7 +100,7 @@ export function SeoLayout({ children }: SeoLayoutProps) {
       {/* ── CTA BAND ── */}
       <section style={{ background: 'linear-gradient(135deg, #6c47ff 0%, #a855f7 50%, #22d3ee 100%)', padding: '56px 24px', textAlign: 'center' }}>
         <div style={{ maxWidth: 640, margin: '0 auto' }}>
-          <div style={{ fontSize: '2.4rem', marginBottom: 12 }}>🌀</div>
+          <img src="/logo.png" alt="Draw in the Air" style={{ height: 72, width: 'auto', marginBottom: 12 }} />
           <h2 style={{ color: 'white', fontSize: '2rem', fontWeight: 900, marginBottom: 12 }}>Ready to Draw in the Air?</h2>
           <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '1rem', marginBottom: 28 }}>Free, no download, no account. Just open your browser and start drawing!</p>
           <button
