@@ -22,8 +22,14 @@ export function SEOMeta({
   noIndex = false,
   structuredData,
 }: SEOMetaProps) {
-  const resolvedOgImage = ogImage ?? SITE.ogImage;
   const resolvedCanonical = canonical ? `${SITE.url}${canonical}` : SITE.url;
+
+  // Use explicit OG if provided, otherwise generate dynamically
+  const generatorUrl = new URL(`${SITE.url}/api/og`);
+  generatorUrl.searchParams.set('title', title);
+  generatorUrl.searchParams.set('desc', description.substring(0, 100) + '...');
+
+  const resolvedOgImage = ogImage ?? generatorUrl.toString();
 
   return (
     <Helmet>

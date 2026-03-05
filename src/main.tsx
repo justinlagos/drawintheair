@@ -28,6 +28,9 @@ const FreeResourcesPage = React.lazy(() => import('./pages/seo/FreeResourcesPage
 const TracePage = React.lazy(() => import('./pages/seo/TracePage.tsx'));
 const LearnArticlePage = React.lazy(() => import('./pages/seo/LearnArticlePage.tsx'));
 const LearnHubPage = React.lazy(() => import('./pages/seo/LearnHubPage.tsx'));
+const EducationPage = React.lazy(() => import('./pages/seo/EducationPage.tsx'));
+const ActivityPage = React.lazy(() => import('./pages/seo/ActivityPage.tsx'));
+const SpecialActivityPage = React.lazy(() => import('./pages/seo/SpecialActivityPage.tsx'));
 
 // Helper function to determine route from pathname
 function getRouteFromPath(path: string, hash: string): string {
@@ -59,6 +62,14 @@ function getRouteFromPath(path: string, hash: string): string {
   if (path === '/embed') return 'embed';
   if (path === '/press') return 'press';
   if (path === '/free-resources') return 'free-resources';
+
+  // Education Pages
+  if (path === '/for-homeschool' || path === '/for-preschool' || path === '/for-kindergarten') return 'education';
+
+  // Activity & Viral Pages
+  if (path.startsWith('/activities/')) return 'activity';
+  if (path === '/free-paint') return 'activity';
+  if (['/draw-number-in-air', '/air-drawing-challenge', '/draw-circle-in-air'].includes(path)) return 'viral';
 
   // Learn Articles
   if (path.startsWith('/learn/')) return 'learn-article';
@@ -218,7 +229,45 @@ function Root() {
     const slug = window.location.pathname.replace('/learn/', '');
     return (
       <React.Suspense fallback={<DemoLoader />}>
-        <LearnArticlePage slug={slug} />
+        <LearnArticlePage slug={slug as any} />
+      </React.Suspense>
+    );
+  }
+
+  if (route === 'education') {
+    const slug = window.location.pathname.replace('/', '');
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <EducationPage slug={slug as any} />
+      </React.Suspense>
+    );
+  }
+
+  if (route === 'activity') {
+    const path = window.location.pathname;
+    const slug = path === '/free-paint' ? 'free-paint' : path.replace('/activities/', '');
+
+    // Check if it's a standard activity or special seasonal activity
+    if (['bubble-pop', 'sort-and-place', 'free-paint', 'letter-tracing'].includes(slug)) {
+      return (
+        <React.Suspense fallback={<DemoLoader />}>
+          <ActivityPage slug={slug as any} />
+        </React.Suspense>
+      );
+    } else {
+      return (
+        <React.Suspense fallback={<DemoLoader />}>
+          <SpecialActivityPage slug={slug as any} />
+        </React.Suspense>
+      );
+    }
+  }
+
+  if (route === 'viral') {
+    const slug = window.location.pathname.replace('/', '');
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <SpecialActivityPage slug={slug as any} />
       </React.Suspense>
     );
   }

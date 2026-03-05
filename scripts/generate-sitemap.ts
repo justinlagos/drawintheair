@@ -24,7 +24,24 @@ const routes = [
   '/learn/early-childhood-motor-skills',
   '/embed',
   '/press',
-  '/free-resources'
+  '/free-resources',
+  // Education
+  '/for-homeschool',
+  '/for-preschool',
+  '/for-kindergarten',
+  // Seasonal
+  '/activities/christmas-drawing-for-kids',
+  '/activities/halloween-drawing-kids',
+  '/activities/back-to-school-activities',
+  '/activities/valentines-drawing-kids',
+  '/activities/easter-drawing-kids',
+  '/activities/summer-activities-kids',
+  '/activities/thanksgiving-kids-activities',
+  '/activities/mothers-day-drawing-kids',
+  // Viral
+  '/draw-number-in-air',
+  '/air-drawing-challenge',
+  '/draw-circle-in-air'
 ];
 
 // Add activities manually or from your config
