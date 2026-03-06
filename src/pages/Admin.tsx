@@ -94,14 +94,25 @@ export const Admin: React.FC = () => {
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [lastAttemptTime, setLastAttemptTime] = useState(0);
 
+  // Admin PIN must be set via VITE_ADMIN_PIN environment variable.
+  // There is intentionally no default fallback — if the env var is missing,
+  // the admin panel is disabled rather than exposed with a known password.
   const adminPin = (import.meta.env.VITE_ADMIN_PIN as string)
     || (import.meta.env.VITE_ADMIN_PASSWORD as string)
-    || 'admin123';
+    || '';
 
   const sheetsEndpoint = (import.meta.env.VITE_SHEETS_ENDPOINT as string) || '';
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // If no admin PIN is configured via environment variable, deny all access.
+    // This prevents the admin panel from being accessible in production builds
+    // where VITE_ADMIN_PIN was not set at build time.
+    if (!adminPin) {
+      setError('Admin panel is not configured for this deployment.');
+      return;
+    }
 
     const now = Date.now();
     if (now - lastAttemptTime < 60000 && loginAttempts >= 5) {

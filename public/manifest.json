@@ -1,29 +1,58 @@
 {
+    "id": "/",
     "name": "Draw in the Air",
     "short_name": "Draw in Air",
     "description": "A browser-based gesture drawing app for kids that uses webcam hand tracking. Draw, trace letters, and pop bubbles in the air without a mouse or touchscreen.",
     "start_url": "/",
+    "scope": "/",
     "display": "standalone",
     "background_color": "#0f172a",
     "theme_color": "#6c47ff",
     "orientation": "any",
+    "prefer_related_applications": false,
     "icons": [
         {
-            "src": "/logo.png",
-            "sizes": "512x512",
+            "src": "/icons/icon-192.png",
+            "sizes": "192x192",
             "type": "image/png",
             "purpose": "any"
         },
         {
-            "src": "/logo.png",
+            "src": "/icons/icon-192-maskable.png",
             "sizes": "192x192",
             "type": "image/png",
             "purpose": "maskable"
+        },
+        {
+            "src": "/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
         }
     ],
     "categories": [
         "education",
         "kids",
         "games"
+    ],
+    "screenshots": [
+        {
+            "src": "/icons/screenshots/screenshot-tracing-1280x800.png",
+            "sizes": "1280x800",
+            "type": "image/png",
+            "label": "Trace letters in the air using hand gestures"
+        },
+        {
+            "src": "/icons/screenshots/screenshot-bubbles-1280x800.png",
+            "sizes": "1280x800",
+            "type": "image/png",
+            "label": "Pop bubbles with finger tracking"
+        },
+        {
+            "src": "/icons/screenshots/screenshot-paint-1280x800.png",
+            "sizes": "1280x800",
+            "type": "image/png",
+            "label": "Free paint mode with particle effects"
+        }
     ]
 }

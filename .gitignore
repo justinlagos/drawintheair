@@ -12,6 +12,15 @@ dist
 dist-ssr
 *.local
 
+# Environment variables — NEVER commit .env files
+# .env.example is safe to commit (it contains no real secrets)
+.env
+.env.*
+!.env.example
+
+# Internal planning and design documents (not for production or public repo)
+internal/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

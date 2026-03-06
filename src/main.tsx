@@ -310,3 +310,15 @@ createRoot(document.getElementById('root')!).render(
     <Root />
   </StrictMode>,
 )
+
+// ---------- Service Worker Registration ----------
+// Register only in production to avoid interfering with Vite HMR in dev.
+if ('serviceWorker' in navigator && location.hostname !== 'localhost') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/service-worker.js', { scope: '/' })
+      .catch(() => {
+        // Service worker registration failed — non-critical, app still works
+      });
+  });
+}
