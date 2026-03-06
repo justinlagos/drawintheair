@@ -65,6 +65,23 @@ export const nextPath = () => {
 };
 
 /**
+ * Jump to a specific path by name (case-insensitive).
+ * Used by the SEO trace pages via deep-link URL param: ?trace=A, ?trace=5, ?trace=circle
+ * Returns true if found, false if not (stays at index 0).
+ */
+export const setInitialPathById = (name: string): boolean => {
+    const lower = name.toLowerCase();
+    const idx = ALL_PATHS.findIndex(p => p.name.toLowerCase() === lower);
+    if (idx !== -1) {
+        currentPathIndex = idx;
+        resetPath();
+        return true;
+    }
+    return false;
+};
+
+
+/**
  * Get point on path at normalized position t (0-1)
  */
 const getPointOnPath = (points: PathPoint[], t: number): PathPoint => {

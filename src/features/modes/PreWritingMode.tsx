@@ -8,7 +8,8 @@ import {
     getProgress,
     getTotalPaths,
     isCurrentLetter,
-    setCompleteCallback
+    setCompleteCallback,
+    setInitialPathById
 } from './preWriting/preWritingLogic';
 import { GameTopBar } from '../../components/GameTopBar';
 import { showMessageCard, getRandomMessageCopy } from '../../core/messageCardService';
@@ -63,6 +64,18 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
     const layout = useResponsiveLayout();
     const { isMobile, isTabletSmall, isLandscapePhone } = layout;
     const isCompact = isMobile || isTabletSmall || isLandscapePhone;
+
+    // Jump to the specific letter/number/shape requested via ?trace= URL param (SEO deep-link)
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const trace = params.get('trace');
+        if (trace) {
+            setInitialPathById(trace);
+            setPathName(getCurrentPathName());
+            setCurrentIndex(getCurrentPathIndex());
+            setIsLetter(isCurrentLetter());
+        }
+    }, []);
 
     // Set up completion callback
     useEffect(() => {
@@ -168,8 +181,8 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
             }}>
                 <div style={{
                     background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                    
-                    
+
+
                     borderRadius: hudRadius,
                     border: '1.5px solid rgba(255, 255, 255, 0.12)',
                     padding: hudPadding,
@@ -252,8 +265,8 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
             }}>
                 <div style={{
                     background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                    
-                    
+
+
                     borderRadius: isCompact ? '20px' : '9999px',
                     border: '1.5px solid rgba(255, 255, 255, 0.12)',
                     padding: isCompact ? '10px 16px' : '14px 28px',
@@ -314,8 +327,8 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
             }}>
                 <div style={{
                     background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                    
-                    
+
+
                     borderRadius: isCompact ? '18px' : '9999px',
                     border: '1.5px solid rgba(255, 255, 255, 0.12)',
                     padding: isCompact ? '10px 14px' : '14px 24px',
@@ -439,8 +452,8 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
                         color: '#00f5d4',
                         fontSize: isCompact ? '0.9rem' : '1.1rem',
                         fontWeight: 600,
-                        
-                        
+
+
                         boxShadow: '0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15)',
                         animation: 'float 3s ease-in-out infinite',
                         textAlign: 'center',
