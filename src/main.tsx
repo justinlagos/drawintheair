@@ -32,6 +32,12 @@ const EducationPage = React.lazy(() => import('./pages/seo/EducationPage.tsx'));
 const ActivityPage = React.lazy(() => import('./pages/seo/ActivityPage.tsx'));
 const SpecialActivityPage = React.lazy(() => import('./pages/seo/SpecialActivityPage.tsx'));
 
+// Growth Engine — Phase 1 Use-Case Landing Pages
+const UseCasePage = React.lazy(() => import('./pages/seo/UseCasePage.tsx'));
+
+// Growth Engine — Share Landing Page
+const ShareLandingPage = React.lazy(() => import('./pages/seo/ShareLandingPage.tsx'));
+
 // Helper function to determine route from pathname
 function getRouteFromPath(path: string, hash: string): string {
   // Check for debug=qa in query params
@@ -62,6 +68,17 @@ function getRouteFromPath(path: string, hash: string): string {
   if (path === '/embed') return 'embed';
   if (path === '/press') return 'press';
   if (path === '/free-resources') return 'free-resources';
+
+  // Phase 1 — Use-Case SEO Landing Pages
+  if (path === '/gesture-learning') return 'usecase';
+  if (path === '/classroom-movement-activities') return 'usecase';
+  if (path === '/chromebook-learning-tools') return 'usecase';
+  if (path === '/homeschool-movement-learning') return 'usecase';
+  if (path === '/hand-eye-coordination-activities') return 'usecase';
+  if (path === '/ai-learning-tools-for-kids') return 'usecase';
+
+  // Phase 3 — Teacher Share Landing
+  if (path.startsWith('/share/')) return 'share-landing';
 
   // Education Pages
   if (path === '/for-homeschool' || path === '/for-preschool' || path === '/for-kindergarten') return 'education';
@@ -239,6 +256,26 @@ function Root() {
     return (
       <React.Suspense fallback={<DemoLoader />}>
         <EducationPage slug={slug as any} />
+      </React.Suspense>
+    );
+  }
+
+  // Phase 1 — Use-Case SEO Landing Pages
+  if (route === 'usecase') {
+    const slug = window.location.pathname.replace('/', '');
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <UseCasePage slug={slug as any} />
+      </React.Suspense>
+    );
+  }
+
+  // Phase 3 — Teacher Share Landing
+  if (route === 'share-landing') {
+    const slug = window.location.pathname.replace('/share/', '');
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <ShareLandingPage slug={slug} />
       </React.Suspense>
     );
   }

@@ -151,6 +151,43 @@ export const PAGE_META = {
     keywords: ['free printable letter tracing worksheets', 'alphabet worksheets for kids', 'number tracing worksheets free', 'preschool printable activities'],
     canonical: '/free-resources',
   },
+  // ── Phase 1 Growth Engine — Use-Case Landing Pages ──
+  gestureLearning: {
+    title: 'Gesture-Based Learning Tools for Early Education — Free | Draw in the Air',
+    description: 'Gesture-controlled educational activities for children ages 3–8. Trace letters, sort objects, and play learning games using hand movements detected by webcam. No download, no accounts.',
+    keywords: ['gesture-based learning', 'gesture learning tools', 'gesture controlled educational games', 'hand gesture learning activities kids', 'embodied learning technology', 'hand tracking education'],
+    canonical: '/gesture-learning',
+  },
+  classroomMovement: {
+    title: 'Movement Learning Activities for Classrooms — Free Browser-Based | Draw in the Air',
+    description: 'Transform your classroom with gesture-controlled movement activities. Students trace letters, sort objects, and learn through physical interaction using just a webcam. Free, no download needed.',
+    keywords: ['classroom movement activities', 'movement learning for kids', 'active learning classroom activities', 'kinesthetic learning activities primary school', 'movement breaks for students', 'gesture classroom activities free'],
+    canonical: '/classroom-movement-activities',
+  },
+  chromebookTools: {
+    title: 'Chromebook Classroom Activities — Free Gesture Learning Games | Draw in the Air',
+    description: 'Free browser-based learning activities designed for Chromebooks. No app install needed. Students trace letters and play educational games using hand gestures and the built-in webcam.',
+    keywords: ['chromebook classroom activities', 'chromebook learning games free', 'educational chromebook apps', 'chromebook activities for students', 'browser-based learning games chromebook', 'free chromebook educational games'],
+    canonical: '/chromebook-learning-tools',
+  },
+  homeschoolMovement: {
+    title: 'Homeschool Movement Learning Games — Free Active Education | Draw in the Air',
+    description: 'Active, movement-based learning activities for homeschool families. Children trace letters, numbers, and shapes using hand gestures. Free, browser-based, no downloads. Ages 3–8.',
+    keywords: ['homeschool movement activities', 'homeschool learning games free', 'active homeschool activities', 'kinesthetic homeschool curriculum', 'movement learning homeschool', 'active learning games home education'],
+    canonical: '/homeschool-movement-learning',
+  },
+  handEyeCoordination: {
+    title: 'Hand-Eye Coordination Activities for Children — Free Games | Draw in the Air',
+    description: 'Fun hand-eye coordination activities for children ages 3–8. Trace letters, pop bubbles, and sort objects using hand gestures. Develops visual-motor skills through play. Free, browser-based.',
+    keywords: ['hand-eye coordination activities for kids', 'hand-eye coordination games children', 'fine motor coordination activities', 'visual motor activities for children', 'coordination games preschool', 'motor skills activities early years'],
+    canonical: '/hand-eye-coordination-activities',
+  },
+  aiLearningKids: {
+    title: 'AI Learning Tools for Kids — Computer Vision Educational Games | Draw in the Air',
+    description: 'Introduce children to AI concepts through play. Draw in the Air uses real-time computer vision to track hand gestures, letting kids interact with learning activities through movement. Free.',
+    keywords: ['AI learning tools for kids', 'computer vision educational games', 'AI games for children', 'STEM AI activities kids', 'computer vision for kids', 'artificial intelligence learning kids'],
+    canonical: '/ai-learning-tools-for-kids',
+  },
   drawHeart: {
     title: 'Draw a Heart in the Air — Free Challenge | Draw in the Air',
     description: 'Can you draw a perfect heart shape in the air using just your finger? Try this free, webcam-powered air drawing challenge! No download needed.',
