@@ -37,22 +37,34 @@
     ],
     "screenshots": [
         {
-            "src": "/icons/screenshots/screenshot-tracing-1280x800.png",
+            "src": "/icons/screenshots/screenshot-game-modes-1280x800.jpg",
             "sizes": "1280x800",
-            "type": "image/png",
-            "label": "Trace letters in the air using hand gestures"
+            "type": "image/jpeg",
+            "label": "Choose from tracing, bubble pop, free paint, and more"
         },
         {
-            "src": "/icons/screenshots/screenshot-bubbles-1280x800.png",
+            "src": "/icons/screenshots/screenshot-tracing-1280x800.jpg",
             "sizes": "1280x800",
-            "type": "image/png",
+            "type": "image/jpeg",
+            "label": "Trace letters and numbers in the air using hand gestures"
+        },
+        {
+            "src": "/icons/screenshots/screenshot-bubbles-1280x800.jpg",
+            "sizes": "1280x800",
+            "type": "image/jpeg",
             "label": "Pop bubbles with finger tracking"
         },
         {
-            "src": "/icons/screenshots/screenshot-paint-1280x800.png",
+            "src": "/icons/screenshots/screenshot-paint-1280x800.jpg",
             "sizes": "1280x800",
-            "type": "image/png",
+            "type": "image/jpeg",
             "label": "Free paint mode with particle effects"
+        },
+        {
+            "src": "/icons/screenshots/screenshot-sort-1280x800.jpg",
+            "sizes": "1280x800",
+            "type": "image/jpeg",
+            "label": "Sort and place objects using hand gestures"
         }
     ]
 }
