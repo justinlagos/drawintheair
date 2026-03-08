@@ -1,6 +1,19 @@
 import { SeoLayout, PageHero, Section } from './SeoLayout';
 import { SEOMeta } from '../../seo/SEOMeta';
 
+const CLASSROOM_GUIDES = [
+  { file: '01-teacher-quick-start-guide.pdf', emoji: '🚀', title: "Teacher's Quick Start Guide", desc: 'Get up and running in under 5 minutes. Covers all modes, the pinch gesture, and classroom setup.', audience: 'All teachers' },
+  { file: '02-five-day-movement-break-plan.pdf', emoji: '📅', title: '5-Day Movement Break Plan', desc: 'A ready-to-run weekly structure — one Draw in the Air activity per day, Monday to Friday.', audience: 'Class teachers' },
+  { file: '03-fine-motor-skills-integration.pdf', emoji: '✋', title: 'Fine Motor Skills Integration', desc: 'The science behind gesture learning and how it connects to pre-writing development.', audience: 'EYFS / Reception' },
+  { file: '04-chromebook-classroom-setup.pdf', emoji: '💻', title: 'Chromebook Classroom Setup', desc: 'Step-by-step setup for school Chromebook carts, labs, and managed devices.', audience: 'Tech coordinators' },
+  { file: '05-parent-communication-pack.pdf', emoji: '📨', title: 'Parent Communication Pack', desc: 'Ready-to-send letters, ClassDojo messages, and parent FAQ — zero writing required.', audience: 'Class teachers' },
+  { file: '06-progress-tracking-sheet.pdf', emoji: '📊', title: 'Progress & Observation Tracker', desc: 'Observation prompts and an A–Z letter mastery grid for learning journey evidence.', audience: 'All teachers' },
+  { file: '07-send-inclusion-support-guide.pdf', emoji: '💜', title: 'SEND & Inclusion Support Guide', desc: 'Specific adaptations for ASC, dyspraxia, ADHD, and EAL learners.', audience: 'SENCOs / TAs' },
+  { file: '08-eyfs-reception-activity-guide.pdf', emoji: '🎒', title: 'EYFS & Reception Activity Guide', desc: 'Development Matters mapping and a complete 15-minute session plan for Reception.', audience: 'EYFS / Reception' },
+  { file: '09-year1-2-curriculum-connections.pdf', emoji: '📚', title: 'Year 1–2 Curriculum Connections', desc: 'KS1 National Curriculum links across English, Maths, Computing, and PE.', audience: 'Year 1 & 2' },
+  { file: '10-after-school-club-guide.pdf', emoji: '🌙', title: 'After-School Club & Home Learning', desc: 'A 45-minute club session plan plus a tear-off parent guide for home use.', audience: 'Extended school / Parents' },
+];
+
 export default function FreeResourcesPage() {
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
@@ -18,6 +31,67 @@ export default function FreeResourcesPage() {
         title="Free Printables & Worksheets"
         subtitle="Bridge digital and physical learning with our free kindergarten printables. Download individual tracing sheets or full workbook PDFs for pre-K and primary grades."
       />
+
+      {/* ── Classroom Guide PDFs ── */}
+      <Section light>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+          <h2 style={{ color: 'white', fontSize: '1.8rem', fontWeight: 800, marginBottom: 8 }}>
+            📥  Free Classroom Guides
+          </h2>
+          <p style={{ color: '#94a3b8', fontSize: '1rem', marginBottom: 32, lineHeight: 1.6 }}>
+            Ten professionally designed PDF guides covering everything from EYFS curriculum links to Chromebook setup.
+            Free to download, print, and share with colleagues.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+            {CLASSROOM_GUIDES.map(guide => (
+              <a
+                key={guide.file}
+                href={`/classroom-guides/${guide.file}`}
+                download
+                style={{ textDecoration: 'none' }}
+              >
+                <div style={{
+                  background: '#111629',
+                  borderRadius: 14,
+                  border: '1px solid rgba(108,71,255,0.2)',
+                  padding: 20,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                  height: '100%',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  cursor: 'pointer',
+                }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px rgba(108,71,255,0.25)';
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{ fontSize: '2rem' }}>{guide.emoji}</div>
+                  <div style={{ color: 'white', fontWeight: 700, fontSize: '0.95rem', lineHeight: 1.4 }}>{guide.title}</div>
+                  <div style={{ color: '#94a3b8', fontSize: '0.8rem', lineHeight: 1.5, flexGrow: 1 }}>{guide.desc}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                    <span style={{ background: 'rgba(108,71,255,0.15)', color: '#a78bfa', padding: '2px 8px', borderRadius: 10, fontSize: '0.7rem', fontWeight: 600 }}>{guide.audience}</span>
+                    <span style={{ color: '#22d3ee', fontSize: '0.78rem', fontWeight: 700 }}>↓ Download PDF</span>
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+          <div style={{ marginTop: 24, textAlign: 'center' }}>
+            <a
+              href="/classroom-guides/"
+              style={{ display: 'inline-block', background: '#6c47ff', color: 'white', borderRadius: 24, padding: '12px 32px', fontWeight: 700, fontSize: '0.95rem', textDecoration: 'none', boxShadow: '0 4px 14px rgba(108,71,255,0.4)' }}
+            >
+              Download All 10 Guides
+            </a>
+          </div>
+        </div>
+      </Section>
 
       <Section>
         <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'left' }}>

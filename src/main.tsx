@@ -32,6 +32,10 @@ const EducationPage = React.lazy(() => import('./pages/seo/EducationPage.tsx'));
 const ActivityPage = React.lazy(() => import('./pages/seo/ActivityPage.tsx'));
 const SpecialActivityPage = React.lazy(() => import('./pages/seo/SpecialActivityPage.tsx'));
 
+// Education audience pages (were missing from router — critical fix)
+const ForTeachersPage = React.lazy(() => import('./pages/seo/ForTeachersPage.tsx'));
+const ForParentsPage = React.lazy(() => import('./pages/seo/ForParentsPage.tsx'));
+
 // Growth Engine — Phase 1 Use-Case Landing Pages
 const UseCasePage = React.lazy(() => import('./pages/seo/UseCasePage.tsx'));
 
@@ -80,7 +84,14 @@ function getRouteFromPath(path: string, hash: string): string {
   // Phase 3 — Teacher Share Landing
   if (path.startsWith('/share/')) return 'share-landing';
 
-  // Education Pages
+  // Education audience pages
+  if (path === '/for-teachers') return 'for-teachers';
+  if (path === '/for-parents') return 'for-parents';
+
+  // /stem-learning — redirect to ai-learning-tools-for-kids (same audience, avoids 404)
+  if (path === '/stem-learning') return 'usecase';
+
+  // Education sub-pages
   if (path === '/for-homeschool' || path === '/for-preschool' || path === '/for-kindergarten') return 'education';
 
   // Activity & Viral Pages
@@ -234,6 +245,22 @@ function Root() {
     );
   }
 
+  if (route === 'for-teachers') {
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <ForTeachersPage />
+      </React.Suspense>
+    );
+  }
+
+  if (route === 'for-parents') {
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <ForParentsPage />
+      </React.Suspense>
+    );
+  }
+
   if (route === 'learn-hub') {
     return (
       <React.Suspense fallback={<DemoLoader />}>
@@ -262,7 +289,9 @@ function Root() {
 
   // Phase 1 — Use-Case SEO Landing Pages
   if (route === 'usecase') {
-    const slug = window.location.pathname.replace('/', '');
+    const rawSlug = window.location.pathname.replace('/', '');
+    // /stem-learning is a legacy/linked path — serve ai-learning-tools-for-kids content
+    const slug = rawSlug === 'stem-learning' ? 'ai-learning-tools-for-kids' : rawSlug;
     return (
       <React.Suspense fallback={<DemoLoader />}>
         <UseCasePage slug={slug as any} />

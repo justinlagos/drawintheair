@@ -1,4 +1,4 @@
-import { SeoLayout, Breadcrumb, PageHero, Section } from './SeoLayout';
+import { SeoLayout, Breadcrumb, PageHero, Section, navigate } from './SeoLayout';
 import { SEOMeta } from '../../seo/SEOMeta';
 import { SITE } from '../../seo/seo-config';
 
@@ -219,6 +219,45 @@ export default function SpecialActivityPage({ slug }: SpecialActivityPageProps) 
                             <div style={{ color: '#94a3b8', fontSize: '0.84rem' }}>{t.desc}</div>
                         </div>
                     ))}
+                </div>
+            </Section>
+
+            {/* Internal links — every special page links into the core activity network */}
+            <Section>
+                <h2 style={{ color: 'white', fontSize: '1.3rem', fontWeight: 800, marginBottom: 20 }}>
+                    Explore More Activities
+                </h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+                    {[
+                        { label: '✏️ Letter Tracing A–Z', path: '/letter-tracing' },
+                        { label: '🔢 Number Tracing 1–10', path: '/trace-number-1' },
+                        { label: '⭕ Shape Tracing', path: '/trace-circle' },
+                        { label: '🫧 Bubble Pop', path: '/activities/bubble-pop' },
+                        { label: '🗂️ Sort & Place', path: '/activities/sort-and-place' },
+                        { label: '🎨 Free Paint', path: '/free-paint' },
+                    ].filter(a => !a.path.includes(slug ?? '')).map(a => (
+                        <button key={a.path} onClick={() => navigate(a.path)} style={{
+                            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: 10, padding: '14px 12px', cursor: 'pointer',
+                            color: 'white', fontWeight: 600, fontSize: '0.85rem',
+                        }}>
+                            {a.label}
+                        </button>
+                    ))}
+                </div>
+                <div style={{ marginTop: 24, display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                    <button onClick={() => navigate('/for-teachers')} style={{ background: 'rgba(108,71,255,0.1)', border: '1px solid rgba(108,71,255,0.25)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#a78bfa', fontWeight: 600, fontSize: '0.82rem' }}>
+                        👩‍🏫 For Teachers
+                    </button>
+                    <button onClick={() => navigate('/for-parents')} style={{ background: 'rgba(108,71,255,0.1)', border: '1px solid rgba(108,71,255,0.25)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#a78bfa', fontWeight: 600, fontSize: '0.82rem' }}>
+                        👨‍👩‍👧 For Parents
+                    </button>
+                    <button onClick={() => navigate('/learn')} style={{ background: 'rgba(108,71,255,0.1)', border: '1px solid rgba(108,71,255,0.25)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#a78bfa', fontWeight: 600, fontSize: '0.82rem' }}>
+                        📚 Learning Hub
+                    </button>
+                    <button onClick={() => navigate('/free-resources')} style={{ background: 'rgba(108,71,255,0.1)', border: '1px solid rgba(108,71,255,0.25)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#a78bfa', fontWeight: 600, fontSize: '0.82rem' }}>
+                        📥 Free Worksheets
+                    </button>
                 </div>
             </Section>
         </SeoLayout>
