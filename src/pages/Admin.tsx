@@ -88,6 +88,9 @@ export const Admin: React.FC = () => {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<'unconfigured' | 'connected' | 'error' | null>(null);
+  const [testingConnection, setTestingConnection] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'requests' | 'feedback'>('overview');
 
   // Rate limiting
@@ -147,7 +150,9 @@ export const Admin: React.FC = () => {
 
   const fetchData = useCallback(async () => {
     if (!sheetsEndpoint) {
-      // No endpoint — show empty state
+      // Endpoint not configured — show unconfigured state (distinct from "no data yet")
+      setConnectionStatus('unconfigured');
+      setFetchError(null);
       setData({
         kpi: { totalSessions: 0, totalPlaytimeMs: 0, avgSessionDurationMs: 0, avgAccuracy: 0, totalStagesCompleted: 0 },
         breakdowns: {
@@ -163,26 +168,84 @@ export const Admin: React.FC = () => {
         recentFeedback: [],
       });
       setLastUpdated(new Date());
+      console.warn('[Admin] VITE_SHEETS_ENDPOINT is not set. Dashboard will show empty data. Set this env var to connect to your Google Sheets backend.');
       return;
     }
 
     setLoading(true);
+    setFetchError(null);
     try {
       const url = `${sheetsEndpoint}?pin=${encodeURIComponent(adminPin)}`;
-      const res = await fetch(url);
+      console.debug('[Admin] Fetching from endpoint…');
+      const res = await fetch(url, { cache: 'no-store' });
       if (!res.ok) {
-        console.error('[Admin] Fetch failed:', res.status);
+        const msg = `HTTP ${res.status} ${res.statusText}`;
+        console.error('[Admin] Fetch failed:', msg);
+        setFetchError(`Server returned ${msg}. Check your Google Apps Script deployment and that the PIN is accepted.`);
+        setConnectionStatus('error');
         return;
       }
-      const json = await res.json();
+      let json: unknown;
+      try {
+        json = await res.json();
+      } catch {
+        setFetchError('Response was not valid JSON. The Apps Script may have returned an HTML error page. Check the deployment URL and CORS settings.');
+        setConnectionStatus('error');
+        return;
+      }
+      // Validate shape before setting data
+      const typed = json as Partial<SummaryData>;
+      if (!typed.kpi || !typed.breakdowns) {
+        console.warn('[Admin] Response shape unexpected:', json);
+        setFetchError(`Response shape unexpected — missing "kpi" or "breakdowns" keys. Got: ${Object.keys(typed).join(', ') || '(empty object)'}. Check the Apps Script response format.`);
+        setConnectionStatus('error');
+        return;
+      }
       setData(json as SummaryData);
+      setConnectionStatus('connected');
+      setFetchError(null);
       setLastUpdated(new Date());
+      console.debug('[Admin] Data loaded successfully.');
     } catch (err) {
-      console.error('[Admin] Fetch error:', err);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[Admin] Fetch error:', msg);
+      setFetchError(`Network error: ${msg}. The endpoint may be unreachable or blocked by CORS.`);
+      setConnectionStatus('error');
     } finally {
       setLoading(false);
     }
   }, [sheetsEndpoint, adminPin]);
+
+  const handleTestConnection = async () => {
+    if (!sheetsEndpoint) {
+      setFetchError('VITE_SHEETS_ENDPOINT is not configured. Add it to your .env file and rebuild.');
+      return;
+    }
+    setTestingConnection(true);
+    try {
+      const url = `${sheetsEndpoint}?pin=${encodeURIComponent(adminPin)}&action=health`;
+      const res = await fetch(url, { cache: 'no-store' });
+      const text = await res.text().catch(() => '(no body)');
+      if (res.ok) {
+        setFetchError(null);
+        setConnectionStatus('connected');
+        console.info('[Admin] Connection test OK. Response snippet:', text.substring(0, 200));
+        alert(`✅ Connection OK (HTTP ${res.status})\n\nResponse preview:\n${text.substring(0, 300)}`);
+      } else {
+        const errMsg = `HTTP ${res.status} — ${text.substring(0, 200)}`;
+        setFetchError(errMsg);
+        setConnectionStatus('error');
+        alert(`❌ Connection failed: ${errMsg}`);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setFetchError(`Connection test failed: ${msg}`);
+      setConnectionStatus('error');
+      alert(`❌ Network error: ${msg}`);
+    } finally {
+      setTestingConnection(false);
+    }
+  };
 
   // Session restoration
   useEffect(() => {
@@ -249,7 +312,21 @@ export const Admin: React.FC = () => {
         <div className="admin-header-right">
           <span className="admin-timestamp">
             {loading ? 'Loading…' : `Updated ${lastUpdated.toLocaleTimeString()}`}
+            {connectionStatus === 'connected' && (
+              <span style={{ marginLeft: 6, color: '#22c55e', fontSize: '0.7rem' }}>● connected</span>
+            )}
+            {connectionStatus === 'error' && (
+              <span style={{ marginLeft: 6, color: '#ef4444', fontSize: '0.7rem' }}>● error</span>
+            )}
+            {connectionStatus === 'unconfigured' && (
+              <span style={{ marginLeft: 6, color: '#f59e0b', fontSize: '0.7rem' }}>● not configured</span>
+            )}
           </span>
+          {sheetsEndpoint && (
+            <button onClick={handleTestConnection} className="admin-btn admin-btn-secondary" disabled={testingConnection} title="Test the connection to the Google Sheets endpoint">
+              {testingConnection ? 'Testing…' : 'Test'}
+            </button>
+          )}
           <button onClick={fetchData} className="admin-btn admin-btn-secondary" disabled={loading}>
             Refresh
           </button>
@@ -290,6 +367,54 @@ export const Admin: React.FC = () => {
 
         {activeTab === 'overview' && (
           <>
+            {/* ─── Diagnostic Banner ──────────────────────────────── */}
+            {connectionStatus === 'unconfigured' && (
+              <div className="admin-diagnostic admin-diagnostic-warn">
+                <div className="admin-diagnostic-icon">⚙️</div>
+                <div className="admin-diagnostic-body">
+                  <strong>Sheets endpoint not configured</strong>
+                  <p>
+                    Set <code>VITE_SHEETS_ENDPOINT</code> in your <code>.env</code> file and rebuild.
+                    Without it, the dashboard cannot fetch real session data — all metrics show zero.
+                  </p>
+                  <p style={{ marginTop: 4, color: '#94a3b8', fontSize: '0.78rem' }}>
+                    Expected value: your Google Apps Script deployment URL
+                    (e.g. <code>https://script.google.com/macros/s/ABC.../exec</code>)
+                  </p>
+                </div>
+              </div>
+            )}
+            {connectionStatus === 'error' && fetchError && (
+              <div className="admin-diagnostic admin-diagnostic-error">
+                <div className="admin-diagnostic-icon">⚠️</div>
+                <div className="admin-diagnostic-body">
+                  <strong>Data fetch failed</strong>
+                  <p>{fetchError}</p>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                    <button className="admin-btn-sm" onClick={fetchData} disabled={loading}>
+                      {loading ? 'Retrying…' : 'Retry Now'}
+                    </button>
+                    <button className="admin-btn-sm admin-btn-outline" onClick={handleTestConnection} disabled={testingConnection}>
+                      {testingConnection ? 'Testing…' : 'Test Connection'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            {connectionStatus === 'connected' && data?.kpi.totalSessions === 0 && (
+              <div className="admin-diagnostic admin-diagnostic-info">
+                <div className="admin-diagnostic-icon">ℹ️</div>
+                <div className="admin-diagnostic-body">
+                  <strong>Connected — no sessions yet</strong>
+                  <p>
+                    The endpoint is reachable and responding correctly, but no gameplay sessions
+                    have been recorded yet. Sessions are created when a user clicks "Start" in the
+                    Try Free modal and plays at least one activity.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* ─── KPI Strip ──────────────────────────────────────── */}
             <div className="admin-kpi-strip">
               <div className="admin-kpi-card">
