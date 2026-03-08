@@ -95,6 +95,8 @@ export default function ForTeachersPage() {
             { icon: '🔗', label: 'Embed on School Website', path: '/embed', desc: 'Add a Draw in the Air widget to your classroom blog or school portal' },
             { icon: '🏠', label: 'Share With Parents', path: '/for-parents', desc: 'A parent-friendly guide to setting up Draw in the Air at home' },
             { icon: '🤖', label: 'AI for Kids Guide', path: '/learn/ai-for-kids', desc: 'Explain hand tracking technology to students in simple terms' },
+            { icon: '🏃', label: 'Classroom Movement Activities', path: '/classroom-movement-activities', desc: 'Brain break and movement ideas that pair perfectly with Draw in the Air' },
+            { icon: '💻', label: 'Chromebook Learning Tools', path: '/chromebook-learning-tools', desc: 'How to use Draw in the Air on school Chromebook carts and labs' },
           ].map(r => (
             <button key={r.path} onClick={() => navigate(r.path)} style={{ background: 'rgba(108,71,255,0.08)', border: '1px solid rgba(108,71,255,0.2)', borderRadius: 12, padding: 18, cursor: 'pointer', textAlign: 'left' }}>
               <div style={{ fontSize: '1.6rem', marginBottom: 8 }}>{r.icon}</div>

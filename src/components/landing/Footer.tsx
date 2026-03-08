@@ -67,9 +67,37 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
+        {/* Educators Links */}
+        <div className="landing-footer-section">
+          <button
+            className="landing-footer-accordion-toggle"
+            onClick={() => toggleSection('educators')}
+            aria-expanded={openSection === 'educators'}
+            aria-controls="footer-educators"
+          >
+            <h4 className="landing-footer-title">Educators</h4>
+            <span className="landing-footer-accordion-icon" aria-hidden="true">
+              {openSection === 'educators' ? '−' : '+'}
+            </span>
+          </button>
+          <div
+            id="footer-educators"
+            className={`landing-footer-accordion-content ${openSection === 'educators' ? 'open' : ''}`}
+          >
+            <div className="landing-footer-links">
+              <a href="/for-teachers" className="landing-footer-link">For Teachers</a>
+              <a href="/for-parents" className="landing-footer-link">For Parents</a>
+              <a href="/classroom-movement-activities" className="landing-footer-link">Classroom Movement</a>
+              <a href="/chromebook-learning-tools" className="landing-footer-link">Chromebook Tools</a>
+              <a href="/hand-eye-coordination-activities" className="landing-footer-link">Hand-Eye Coordination</a>
+              <a href="/gesture-learning" className="landing-footer-link">Gesture Learning</a>
+            </div>
+          </div>
+        </div>
+
         {/* Legal Links */}
         <div className="landing-footer-section">
-          <button 
+          <button
             className="landing-footer-accordion-toggle"
             onClick={() => toggleSection('legal')}
             aria-expanded={openSection === 'legal'}

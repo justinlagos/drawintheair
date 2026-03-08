@@ -13,28 +13,28 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 interface ShareMeta { label: string; emoji: string; description: string }
 
 const SHARE_META: Record<string, ShareMeta> = {
-  'calibration':    { label: 'Bubble Pop',      emoji: '🫧', description: 'A 30-second hand-eye coordination brain break' },
-  'pre-writing':    { label: 'Letter Tracing',   emoji: '✏️', description: 'Air tracing for letters A–Z' },
-  'sort-and-place': { label: 'Sort & Place',     emoji: '📦', description: 'Gesture-based categorisation game' },
-  'free':           { label: 'Free Paint',       emoji: '🎨', description: 'Open-ended creative air drawing' },
-  'word-search':    { label: 'Word Search',      emoji: '🔤', description: 'Find words using hand gestures' },
-  'colour-builder': { label: 'Colour Builder',   emoji: '🌈', description: 'Mix and match colours by gesture' },
-  'balloon-math':   { label: 'Balloon Math',     emoji: '🎈', description: 'Pop the right numbers for early maths' },
-  'rainbow-bridge': { label: 'Rainbow Bridge',   emoji: '🌉', description: 'Colour matching and recognition game' },
-  'gesture-spelling':{ label: 'Spelling Stars',  emoji: '⭐', description: 'Spell words through air tracing' },
+  'calibration': { label: 'Bubble Pop', emoji: '🫧', description: 'A 30-second hand-eye coordination brain break' },
+  'pre-writing': { label: 'Letter Tracing', emoji: '✏️', description: 'Air tracing for letters A–Z' },
+  'sort-and-place': { label: 'Sort & Place', emoji: '📦', description: 'Gesture-based categorisation game' },
+  'free': { label: 'Free Paint', emoji: '🎨', description: 'Open-ended creative air drawing' },
+  'word-search': { label: 'Word Search', emoji: '🔤', description: 'Find words using hand gestures' },
+  'colour-builder': { label: 'Colour Builder', emoji: '🌈', description: 'Mix and match colours by gesture' },
+  'balloon-math': { label: 'Balloon Math', emoji: '🎈', description: 'Pop the right numbers for early maths' },
+  'rainbow-bridge': { label: 'Rainbow Bridge', emoji: '🌉', description: 'Colour matching and recognition game' },
+  'gesture-spelling': { label: 'Spelling Stars', emoji: '⭐', description: 'Spell words through air tracing' },
 };
 
 // Maps game mode → share slug (for the /share/:slug route)
 const MODE_TO_SLUG: Record<string, string> = {
-  'calibration':     'bubble-pop',
-  'pre-writing':     'letter-tracing',
-  'sort-and-place':  'sort-and-place',
-  'free':            'free-paint',
-  'word-search':     'gesture-learning',
-  'colour-builder':  'gesture-learning',
-  'balloon-math':    'gesture-learning',
-  'rainbow-bridge':  'gesture-learning',
-  'gesture-spelling':'gesture-learning',
+  'calibration': 'bubble-pop',
+  'pre-writing': 'letter-tracing',
+  'sort-and-place': 'sort-and-place',
+  'free': 'free-paint',
+  'word-search': 'gesture-learning',
+  'colour-builder': 'gesture-learning',
+  'balloon-math': 'gesture-learning',
+  'rainbow-bridge': 'gesture-learning',
+  'gesture-spelling': 'gesture-learning',
 };
 
 const BASE_URL = 'https://drawintheair.com';

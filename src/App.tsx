@@ -26,6 +26,7 @@ import { ModeBackground } from './components/ModeBackground';
 import { PerfOverlay } from './components/PerfOverlay';
 import { MessageCardOverlay } from './components/MessageCardOverlay';
 import { CountdownOverlay } from './components/CountdownOverlay';
+import { ShareButton } from './components/share/ShareButton';
 import { drawingEngine, PenState } from './core/drawingEngine';
 import { perf } from './core/perf';
 import { initToyMode } from './core/toyMode';
@@ -360,6 +361,9 @@ function App() {
                   {gameMode === 'gesture-spelling' && (
                     <GestureSpellingMode onExit={handleExitToMenu} />
                   )}
+
+                  {/* Share button — floating, always visible during a game */}
+                  <ShareButton gameMode={gameMode ?? 'calibration'} variant="floating" />
 
                 </>
               )}

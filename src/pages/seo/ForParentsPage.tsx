@@ -115,10 +115,12 @@ export default function ForParentsPage() {
         <h2 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 800, marginBottom: 20 }}>Also Useful For</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
           {[
-            { label: 'Homeschool Families', path: '/for-homeschool', icon: '🏠' },
+            { label: 'Homeschool Families', path: '/homeschool-movement-learning', icon: '🏠' },
             { label: 'Classroom Teachers', path: '/for-teachers', icon: '👩‍🏫' },
-            { label: 'STEM Learning', path: '/stem-learning', icon: '🤖' },
+            { label: 'Hand-Eye Coordination', path: '/hand-eye-coordination-activities', icon: '🎯' },
+            { label: 'AI Learning for Kids', path: '/ai-learning-tools-for-kids', icon: '🤖' },
             { label: 'Free Resources', path: '/free-resources', icon: '📥' },
+            { label: 'Gesture Learning Guide', path: '/gesture-learning', icon: '✋' },
           ].map(item => (
             <button key={item.path} onClick={() => navigate(item.path)} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 16, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', gap: 10, fontWeight: 600, fontSize: '0.88rem' }}>
               <span style={{ fontSize: '1.4rem' }}>{item.icon}</span>{item.label}
