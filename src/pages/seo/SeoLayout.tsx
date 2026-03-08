@@ -1,26 +1,9 @@
 // src/pages/seo/SeoLayout.tsx
 // Shared layout for all SEO content pages.
-// Supports dark (default) and light mode via data-seo-theme attribute + seo-theme.css.
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './seo-theme.css';
 import { SITE } from '../../seo/seo-config';
-
-// ─── Theme management ────────────────────────────────────────────────────────
-
-type SeoTheme = 'dark' | 'light';
-
-function getStoredTheme(): SeoTheme {
-  try {
-    const stored = localStorage.getItem('seo-theme');
-    if (stored === 'light' || stored === 'dark') return stored;
-  } catch { /* storage may be unavailable */ }
-  return 'dark';
-}
-
-function saveTheme(theme: SeoTheme) {
-  try { localStorage.setItem('seo-theme', theme); } catch { /* ignore */ }
-}
 
 // ─── Navigation ─────────────────────────────────────────────────────────────
 
@@ -83,19 +66,12 @@ interface SeoLayoutProps {
 }
 
 export function SeoLayout({ children }: SeoLayoutProps) {
-  const [theme, setTheme] = useState<SeoTheme>(getStoredTheme);
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  useEffect(() => {
-    saveTheme(theme);
-  }, [theme]);
-
-  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
   return (
     <div
       className="seo-root"
-      data-seo-theme={theme}
+      data-seo-theme="dark"
       aria-label="Draw in the Air"
     >
       {/* ── NAVIGATION ── */}
@@ -121,14 +97,6 @@ export function SeoLayout({ children }: SeoLayoutProps) {
 
           {/* Actions */}
           <div className="seo-nav-actions">
-            <button
-              className="seo-theme-toggle"
-              onClick={toggleTheme}
-              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            >
-              {theme === 'dark' ? '☀️' : '🌙'}
-            </button>
             <button className="seo-btn-cta" onClick={() => navigate(SITE.appPath)}>
               Try Free ✨
             </button>

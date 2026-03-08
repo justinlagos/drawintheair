@@ -1,18 +1,13 @@
 /*
  * Draw in the Air — SEO Page Theme System
- * Supports dark mode (default) and light mode via [data-theme="light"]
- *
- * Design intent:
- *   Dark mode : premium, spacey, night-time magic — consistent with the game UI
- *   Light mode : bright, warm, classroom-friendly — inviting for parents & teachers
+ * Dark mode — consistent with the game UI
  */
 
 /* ══════════════════════════════════════════════════════════
-   DARK MODE (default)
+   THEME VARIABLES
    ══════════════════════════════════════════════════════════ */
 
-[data-seo-theme],
-[data-seo-theme="dark"] {
+[data-seo-theme] {
   /* Background layers */
   --seo-bg-page:        #07091a;
   --seo-bg-surface:     #0f1124;
@@ -103,115 +98,8 @@
   --seo-chip-bg-hover:  #6c47ff;
   --seo-chip-text-hover: #ffffff;
 
-  /* Theme toggle */
-  --seo-toggle-bg:      rgba(255,255,255,0.08);
-  --seo-toggle-icon:    '☀️';
-
   /* Mobile menu */
   --seo-mobile-menu-bg: rgba(10, 14, 26, 0.98);
-}
-
-/* ══════════════════════════════════════════════════════════
-   LIGHT MODE
-   ══════════════════════════════════════════════════════════ */
-
-[data-seo-theme="light"] {
-  /* Background layers */
-  --seo-bg-page:        #fdfcff;
-  --seo-bg-surface:     #f7f5ff;
-  --seo-bg-raised:      #ffffff;
-  --seo-bg-elevated:    #f0ecff;
-  --seo-bg-input:       #f4f2ff;
-
-  /* Hero gradient — warm purple-to-lavender, bright */
-  --seo-hero-bg: linear-gradient(160deg, #ede9fe 0%, #f5f3ff 40%, #fdfcff 100%);
-  --seo-hero-overlay: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(108,71,255,0.12) 0%, transparent 70%);
-
-  /* Section tints */
-  --seo-section-light:  #f5f3ff;
-  --seo-section-dark:   #fdfcff;
-  --seo-cta-band: linear-gradient(135deg, #6c47ff 0%, #a855f7 50%, #22d3ee 100%);
-
-  /* Nav */
-  --seo-nav-bg:         rgba(253, 252, 255, 0.97);
-  --seo-nav-border:     rgba(108,71,255,0.12);
-
-  /* Text */
-  --seo-text-primary:   #1e1b2e;
-  --seo-text-secondary: #4a4565;
-  --seo-text-muted:     #7c7096;
-  --seo-text-on-accent: #ffffff;
-  --seo-text-heading:   #1e1b2e;
-  --seo-text-nav:       #4a4565;
-  --seo-text-nav-hover: #1e1b2e;
-  --seo-text-footer:    #7c7096;
-
-  /* Accent / brand */
-  --seo-accent:         #6c47ff;
-  --seo-accent-hover:   #5835ee;
-  --seo-accent-dim:     rgba(108,71,255,0.1);
-  --seo-accent-border:  rgba(108,71,255,0.25);
-  --seo-cyan:           #0891b2;
-  --seo-cyan-dim:       rgba(8,145,178,0.1);
-  --seo-cyan-border:    rgba(8,145,178,0.25);
-
-  /* Badge / chip */
-  --seo-badge-bg:       rgba(108,71,255,0.1);
-  --seo-badge-border:   rgba(108,71,255,0.25);
-  --seo-badge-text:     #6c47ff;
-  --seo-badge-audience-bg: rgba(108,71,255,0.1);
-  --seo-badge-audience-text: #6c47ff;
-
-  /* Cards */
-  --seo-card-bg:        #ffffff;
-  --seo-card-border:    rgba(108,71,255,0.12);
-  --seo-card-border-hover: rgba(108,71,255,0.4);
-  --seo-card-shadow-hover: 0 8px 24px rgba(108,71,255,0.14);
-  --seo-card-letter-bg: rgba(108,71,255,0.06);
-
-  /* Download accent */
-  --seo-download-text:  #0891b2;
-  --seo-download-bg:    rgba(8,145,178,0.06);
-
-  /* CTA button */
-  --seo-btn-primary-bg: #6c47ff;
-  --seo-btn-primary-text: #ffffff;
-  --seo-btn-primary-shadow: 0 4px 14px rgba(108,71,255,0.35);
-  --seo-btn-outline-bg: rgba(8,145,178,0.08);
-  --seo-btn-outline-text: #0891b2;
-  --seo-btn-outline-border: rgba(8,145,178,0.35);
-
-  /* FAQ */
-  --seo-faq-border:     rgba(108,71,255,0.1);
-  --seo-faq-q-text:     #1e1b2e;
-  --seo-faq-a-text:     #4a4565;
-  --seo-faq-toggle:     #6c47ff;
-
-  /* Dividers */
-  --seo-divider:        rgba(108,71,255,0.08);
-  --seo-footer-border:  rgba(108,71,255,0.12);
-  --seo-footer-bg:      #f0ecff;
-
-  /* Hero text tint */
-  --seo-hero-subtitle:  #4a4565;
-
-  /* Workbook CTA box */
-  --seo-workbook-bg: linear-gradient(135deg, rgba(108,71,255,0.08), rgba(8,145,178,0.05));
-  --seo-workbook-border: rgba(108,71,255,0.2);
-
-  /* Internal link chips */
-  --seo-chip-bg:        rgba(108,71,255,0.08);
-  --seo-chip-border:    rgba(108,71,255,0.2);
-  --seo-chip-text:      #6c47ff;
-  --seo-chip-bg-hover:  #6c47ff;
-  --seo-chip-text-hover: #ffffff;
-
-  /* Theme toggle */
-  --seo-toggle-bg:      rgba(108,71,255,0.1);
-  --seo-toggle-icon:    '🌙';
-
-  /* Mobile menu */
-  --seo-mobile-menu-bg: rgba(253, 252, 255, 0.99);
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -223,7 +111,6 @@
   background: var(--seo-bg-page);
   min-height: 100vh;
   color: var(--seo-text-primary);
-  transition: background 0.3s ease, color 0.3s ease;
 }
 
 /* ── Navigation ───────────────────────────────────────── */
@@ -236,7 +123,6 @@
   z-index: 200;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 .seo-nav-inner {
@@ -318,27 +204,6 @@
 .seo-btn-cta:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 16px rgba(108,71,255,0.45);
-}
-
-/* Theme toggle button */
-.seo-theme-toggle {
-  background: var(--seo-toggle-bg);
-  border: 1px solid var(--seo-accent-border);
-  border-radius: 20px;
-  width: 36px;
-  height: 36px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  transition: background 0.2s, border-color 0.2s;
-  flex-shrink: 0;
-}
-
-.seo-theme-toggle:hover {
-  background: var(--seo-accent-dim);
-  border-color: var(--seo-accent);
 }
 
 /* Mobile hamburger */
