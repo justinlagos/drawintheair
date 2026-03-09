@@ -19,6 +19,7 @@ import { SchoolPilot } from './pages/SchoolPilot.tsx'
 import { ParentAccess } from './pages/ParentAccess.tsx'
 import { initAnalytics } from './lib/analytics.ts'
 import { ErrorBoundary } from './components/ErrorBoundary.tsx'
+import { AuthProvider } from './context/AuthContext.tsx'
 
 // SEO Lazy Imports
 const EmbedPage = React.lazy(() => import('./pages/seo/EmbedPage.tsx'));
@@ -42,6 +43,14 @@ const UseCasePage = React.lazy(() => import('./pages/seo/UseCasePage.tsx'));
 // Growth Engine — Share Landing Page
 const ShareLandingPage = React.lazy(() => import('./pages/seo/ShareLandingPage.tsx'));
 
+// Class Mode — Teacher + Student screens
+const TeacherDashboard = React.lazy(() => import('./pages/classmode/TeacherDashboard.tsx'));
+const LobbyScreen = React.lazy(() => import('./pages/classmode/LobbyScreen.tsx'));
+const LiveRoundScreen = React.lazy(() => import('./pages/classmode/LiveRoundScreen.tsx'));
+const ResultsScreen = React.lazy(() => import('./pages/classmode/ResultsScreen.tsx'));
+const StudentJoin = React.lazy(() => import('./pages/classmode/StudentJoin.tsx'));
+const StudentGameScreen = React.lazy(() => import('./pages/classmode/StudentGameScreen.tsx'));
+
 // Helper function to determine route from pathname
 function getRouteFromPath(path: string, hash: string): string {
   // Check for debug=qa in query params
@@ -51,6 +60,14 @@ function getRouteFromPath(path: string, hash: string): string {
       return 'qa';
     }
   }
+
+  // Class Mode routes
+  if (path === '/class') return 'class-dashboard';
+  if (path === '/class/lobby') return 'class-lobby';
+  if (path === '/class/round') return 'class-round';
+  if (path === '/class/results') return 'class-results';
+  if (path === '/join') return 'student-join';
+  if (path === '/join/play') return 'student-game';
 
   if (path === '/admin') return 'admin';
   if (path === '/demo') return 'demo';
@@ -210,6 +227,57 @@ function Root() {
 
   if (route === 'qa') {
     return <QAPage />;
+  }
+
+  // ── Class Mode routes ──────────────────────────────────────────────────────
+  if (route === 'class-dashboard') {
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <TeacherDashboard />
+      </React.Suspense>
+    );
+  }
+
+  if (route === 'class-lobby') {
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <LobbyScreen />
+      </React.Suspense>
+    );
+  }
+
+  if (route === 'class-round') {
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <LiveRoundScreen />
+      </React.Suspense>
+    );
+  }
+
+  if (route === 'class-results') {
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <ResultsScreen />
+      </React.Suspense>
+    );
+  }
+
+  if (route === 'student-join') {
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <StudentJoin />
+      </React.Suspense>
+    );
+  }
+
+  if (route === 'student-game') {
+    return (
+      <ErrorBoundary>
+        <React.Suspense fallback={<DemoLoader />}>
+          <StudentGameScreen />
+        </React.Suspense>
+      </ErrorBoundary>
+    );
   }
 
   if (route === 'school') {
@@ -373,7 +441,9 @@ function Root() {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Root />
+    <AuthProvider>
+      <Root />
+    </AuthProvider>
   </StrictMode>,
 )
 
