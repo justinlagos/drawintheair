@@ -13,15 +13,18 @@ export const metadata: Metadata = {
   },
 }
 
+const gameUrl = process.env.NEXT_PUBLIC_GAME_URL ?? 'https://drawintheair.com'
+
 export default function PricingPage() {
   const plans = [
     {
       name: 'Free',
       description: 'Play activities',
-      price: '$0',
+      price: '£0',
       period: 'forever',
       cta: 'Play Free',
-      ctaHref: '/play',
+      ctaHref: `${gameUrl}/play`,
+      ctaExternal: true,
       highlighted: false,
       features: [
         'Access to all 9 activities',
@@ -34,10 +37,11 @@ export default function PricingPage() {
     {
       name: 'Teacher Pro',
       description: 'Classroom mode + analytics',
-      price: '$9',
-      period: '/month or $79/year',
+      price: '£4.99',
+      period: '/month',
       cta: 'Start 5-Day Trial',
       ctaHref: '/auth/signup?plan=teacher',
+      ctaExternal: false,
       highlighted: true,
       features: [
         'Everything in Free',
@@ -52,10 +56,11 @@ export default function PricingPage() {
     {
       name: 'School',
       description: 'Multi-teacher management',
-      price: 'From $299',
+      price: 'From £299',
       period: '/year',
       cta: 'Get Started',
       ctaHref: '/contact',
+      ctaExternal: false,
       highlighted: false,
       features: [
         'Everything in Teacher Pro',
@@ -158,7 +163,11 @@ export default function PricingPage() {
                       : 'border border-orange-500 bg-white text-orange-600 hover:bg-orange-50'
                   }`}
                 >
-                  <Link href={plan.ctaHref}>{plan.cta}</Link>
+                  {plan.ctaExternal ? (
+                    <a href={plan.ctaHref} target="_blank" rel="noopener noreferrer">{plan.cta}</a>
+                  ) : (
+                    <Link href={plan.ctaHref}>{plan.cta}</Link>
+                  )}
                 </Button>
 
                 {/* Features */}
@@ -255,7 +264,7 @@ export default function PricingPage() {
 
             <div className="pt-4 flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold">
-                <Link href="/play">Play Free</Link>
+                <a href={`${gameUrl}/play`} target="_blank" rel="noopener noreferrer">Play Free</a>
               </Button>
               <Button asChild size="lg" variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50">
                 <Link href="/contact">Contact sales</Link>

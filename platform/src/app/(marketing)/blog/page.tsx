@@ -109,39 +109,42 @@ export default function BlogPage() {
       <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {BLOG_POSTS.map((post) => (
-            <article
+            <Link
               key={post.slug}
+              href={`/blog/${post.slug}`}
               className="group rounded-xl border border-slate-200 bg-white overflow-hidden hover:border-orange-300 transition-all hover:shadow-lg shadow-sm"
             >
-              {/* Card Header with Emoji */}
-              <div className="h-32 bg-orange-50 flex items-center justify-center">
-                <span className="text-5xl">{post.emoji}</span>
-              </div>
-
-              <div className="p-6 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200">
-                    {post.category}
-                  </span>
-                  <span className="text-xs text-slate-500">{post.date}</span>
+              <article>
+                {/* Card Header with Emoji */}
+                <div className="h-32 bg-orange-50 flex items-center justify-center">
+                  <span className="text-5xl">{post.emoji}</span>
                 </div>
 
-                <h2 className="font-bold text-slate-900 text-lg leading-snug group-hover:text-orange-600 transition-colors">
-                  {post.title}
-                </h2>
+                <div className="p-6 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200">
+                      {post.category}
+                    </span>
+                    <span className="text-xs text-slate-500">{post.date}</span>
+                  </div>
 
-                <p className="text-sm text-slate-600 leading-relaxed line-clamp-3">
-                  {post.excerpt}
-                </p>
+                  <h2 className="font-bold text-slate-900 text-lg leading-snug group-hover:text-orange-600 transition-colors">
+                    {post.title}
+                  </h2>
 
-                <div className="flex items-center justify-between pt-2">
-                  <span className="text-xs text-slate-500">{post.readTime}</span>
-                  <span className="text-xs font-medium text-orange-600 group-hover:text-orange-700 transition-colors">
-                    Read article →
-                  </span>
+                  <p className="text-sm text-slate-600 leading-relaxed line-clamp-3">
+                    {post.excerpt}
+                  </p>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-xs text-slate-500">{post.readTime}</span>
+                    <span className="text-xs font-medium text-orange-600 group-hover:text-orange-700 transition-colors">
+                      Read article →
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </article>
+              </article>
+            </Link>
           ))}
         </div>
       </section>
