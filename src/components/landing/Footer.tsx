@@ -85,6 +85,7 @@ export const Footer: React.FC = () => {
             className={`landing-footer-accordion-content ${openSection === 'educators' ? 'open' : ''}`}
           >
             <div className="landing-footer-links">
+              <a href={(import.meta.env.VITE_PLATFORM_URL || 'https://app.drawintheair.com') + '/auth/login'} className="landing-footer-link">Teacher Login</a>
               <a href="/for-teachers" className="landing-footer-link">For Teachers</a>
               <a href="/for-parents" className="landing-footer-link">For Parents</a>
               <a href="/classroom-movement-activities" className="landing-footer-link">Classroom Movement</a>

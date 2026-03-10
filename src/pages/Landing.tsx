@@ -216,6 +216,13 @@ export const Landing: React.FC = () => {
               <button onClick={() => setTryFreeOpen(true)} className="nl-btn-primary text-white font-bold px-8 py-3.5 rounded-xl text-base border-none cursor-pointer">Try It Now</button>
               <a href="#how-it-works" className="nl-btn-secondary font-semibold px-8 py-3.5 rounded-xl text-base no-underline">See How It Works</a>
             </div>
+
+            <div className="mt-2 mb-8 flex justify-start">
+              <a href="https://www.producthunt.com/products/draw-in-the-air?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-draw-in-the-air" target="_blank" rel="noopener noreferrer">
+                <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1092521&theme=light&t=1773061821068" alt="Draw in the Air - Product Hunt" style={{ width: '250px', height: '54px' }} width="250" height="54" />
+              </a>
+            </div>
+
             <p className="text-sm text-gray-500 flex items-center gap-2">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-500"><path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="10" /></svg>
               Runs in your browser. No installs. No data stored.

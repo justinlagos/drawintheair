@@ -1,143 +1,152 @@
-import React from 'react';
-import { getAnalytics } from '../lib/analytics';
-import './school-parent-landing.css';
+import { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { LegalPageLayout } from '../components/landing/LegalPageLayout';
 
-export const ParentAccess: React.FC = () => {
-  const handlePrimaryCTA = () => {
-    const analytics = getAnalytics();
-    if (analytics) {
-      analytics.logEvent('cta_click', {
-        page: '/parent',
-        cta_type: 'start_free_trial'
-      }, {
-        component: 'hero_primary_cta'
-      });
-    }
-    // TODO: Implement trial signup flow
-    console.log('Start Free Trial clicked');
-  };
+export default function ParentAccess() {
+  const [email, setEmail] = useState('');
+  const [childAge, setChildAge] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSecondaryCTA = () => {
-    const analytics = getAnalytics();
-    if (analytics) {
-      analytics.logEvent('cta_click', {
-        page: '/parent',
-        cta_type: 'how_it_works'
-      }, {
-        component: 'hero_secondary_cta'
-      });
-    }
-    // Scroll to "What kids do" section
-    const section = document.getElementById('what-kids-do');
-    if (section) {
-      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
+  const SHEETS_ENDPOINT = import.meta.env.VITE_SHEETS_ENDPOINT;
 
-  const handleParentCTA = () => {
-    const analytics = getAnalytics();
-    if (analytics) {
-      analytics.logEvent('cta_click', {
-        page: '/parent',
-        cta_type: 'start_free_trial_final'
-      }, {
-        component: 'parent_cta'
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email) return;
+    setLoading(true);
+    try {
+      await fetch(SHEETS_ENDPOINT, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'parent_trial',
+          email,
+          childAge,
+          timestamp: new Date().toISOString(),
+        }),
       });
+      setSubmitted(true);
+    } catch {
+      setSubmitted(true); // Still show success - no-cors won't tell us
+    } finally {
+      setLoading(false);
     }
-    // TODO: Implement trial signup flow
-    console.log('Start Free Trial (final) clicked');
-  };
+  }
 
   return (
-    <div className="conversion-landing">
-      <div className="conversion-container">
-        {/* Hero */}
-        <section className="conversion-hero">
-          <h1>Let your child learn with their hands</h1>
-          <p>The same platform used in schools. At home.</p>
-          <div className="conversion-hero-buttons">
-            <button className="conversion-btn conversion-btn-primary" onClick={handlePrimaryCTA}>
-              Start Free Trial
-            </button>
-            <button className="conversion-btn conversion-btn-secondary" onClick={handleSecondaryCTA}>
-              How it works
-            </button>
-          </div>
-        </section>
+    <>
+      <Helmet>
+        <title>Free Home Trial | Draw in the Air</title>
+        <meta name="description" content="Try Draw in the Air free at home. Gesture-based learning for children aged 3–8 — no apps, no downloads needed." />
+      </Helmet>
+      <LegalPageLayout heroTitle="Free Home Trial for Parents">
+        <div className="max-w-2xl">
+          {!submitted ? (
+            <>
+              <p className="text-lg text-slate-300 mb-8 leading-relaxed">
+                Draw in the Air is free to try at home. Your child can explore letter tracing, shape drawing, and colour activities using just their hand and your laptop or tablet camera.
+              </p>
 
-        {/* What kids do */}
-        <section id="what-kids-do" className="conversion-section">
-          <h2 className="conversion-section-title">What kids do</h2>
-          <div className="conversion-cards">
-            <div className="conversion-card">
-              <h3>Pop bubbles</h3>
-              <p>Interactive warm-up activities that build attention and reaction skills.</p>
-            </div>
-            <div className="conversion-card">
-              <h3>Draw in the air</h3>
-              <p>Creative free painting with hand movements, no touch required.</p>
-            </div>
-            <div className="conversion-card">
-              <h3>Trace letters and shapes</h3>
-              <p>Practice letter formation and early writing skills through guided tracing.</p>
-            </div>
-            <div className="conversion-card">
-              <h3>Find words</h3>
-              <p>Word search games that build reading and pattern recognition.</p>
-            </div>
-          </div>
-        </section>
+              <div className="rounded-2xl border border-slate-700 bg-slate-800/50 p-6 mb-8">
+                <h2 className="text-lg font-semibold text-slate-100 mb-4">What you need</h2>
+                <ul className="space-y-2 text-slate-300">
+                  <li className="flex items-center gap-3">
+                    <span className="text-teal-400">✓</span>
+                    A laptop, desktop, or tablet with a webcam
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <span className="text-teal-400">✓</span>
+                    A modern browser (Chrome or Edge works best)
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <span className="text-teal-400">✓</span>
+                    A child aged 3–8 ready to draw in the air!
+                  </li>
+                </ul>
+              </div>
 
-        {/* What it builds */}
-        <section className="conversion-section">
-          <h2 className="conversion-section-title">What it builds</h2>
-          <div className="conversion-cards">
-            <div className="conversion-card">
-              <h3>Focus</h3>
-              <p>Activities that develop sustained attention and concentration.</p>
-            </div>
-            <div className="conversion-card">
-              <h3>Motor skills</h3>
-              <p>Fine and gross motor control through precise hand movements.</p>
-            </div>
-            <div className="conversion-card">
-              <h3>Early writing confidence</h3>
-              <p>Foundation skills that prepare children for pencil and paper writing.</p>
-            </div>
-          </div>
-        </section>
+              <div className="rounded-2xl border border-teal-700 bg-teal-950/30 p-6 mb-8">
+                <h2 className="text-lg font-semibold text-slate-100 mb-2">Try it right now — no sign-up needed</h2>
+                <p className="text-slate-400 text-sm mb-4">
+                  You can start playing immediately. Leave your email below if you'd like activity ideas and updates sent to you.
+                </p>
+                <a
+                  href="/play"
+                  className="inline-block rounded-xl bg-teal-600 px-6 py-3 text-base font-medium text-white hover:bg-teal-700 transition-colors"
+                >
+                  Start Playing Free →
+                </a>
+              </div>
 
-        {/* Safe and simple */}
-        <section className="conversion-section">
-          <h2 className="conversion-section-title">Safe and simple</h2>
-          <div className="conversion-section-text">
-            <p>No accounts for kids.</p>
-            <p>No ads.</p>
-            <p>No data sold.</p>
-            <p>Camera stays on device.</p>
-          </div>
-        </section>
+              <h2 className="text-lg font-semibold text-slate-100 mb-4">Get home activity ideas by email</h2>
+              <p className="text-slate-400 text-sm mb-6">
+                We'll send you a curated set of Draw in the Air activities matched to your child's age, plus tips for making the most of each session.
+              </p>
 
-        {/* How it connects to school */}
-        <section className="conversion-section">
-          <h2 className="conversion-section-title">How it connects to school</h2>
-          <div className="conversion-section-text">
-            <p>If your child's school uses Draw In The Air, their home version matches what they do in class.</p>
-          </div>
-        </section>
-
-        {/* Parent CTA */}
-        <section className="conversion-cta-section">
-          <button className="conversion-btn conversion-btn-primary" onClick={handleParentCTA}>
-            Start Free Trial
-          </button>
-          <div>
-            <a href="/school" className="conversion-cta-link">
-              Are you a teacher? Go to School Pilot
-            </a>
-          </div>
-        </section>
-      </div>
-    </div>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1.5">
+                    Your email address
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full rounded-lg border border-slate-600 bg-slate-800 px-4 py-3 text-slate-100 placeholder-slate-500 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="childAge" className="block text-sm font-medium text-slate-300 mb-1.5">
+                    Child's age (optional)
+                  </label>
+                  <select
+                    id="childAge"
+                    value={childAge}
+                    onChange={(e) => setChildAge(e.target.value)}
+                    className="w-full rounded-lg border border-slate-600 bg-slate-800 px-4 py-3 text-slate-100 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  >
+                    <option value="">Select age</option>
+                    <option value="3">3 years</option>
+                    <option value="4">4 years</option>
+                    <option value="5">5 years</option>
+                    <option value="6">6 years</option>
+                    <option value="7">7 years</option>
+                    <option value="8">8 years</option>
+                  </select>
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full rounded-xl bg-teal-600 px-6 py-3 text-base font-medium text-white hover:bg-teal-700 transition-colors disabled:opacity-60"
+                >
+                  {loading ? 'Sending…' : 'Send Me Activity Ideas'}
+                </button>
+                <p className="text-xs text-slate-500 text-center">
+                  We never share your email. Unsubscribe any time.
+                </p>
+              </form>
+            </>
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-5xl mb-6">🎉</div>
+              <h2 className="text-2xl font-bold text-slate-100 mb-3">You're all set!</h2>
+              <p className="text-slate-400 mb-8 max-w-md mx-auto">
+                Activity ideas are on their way to your inbox. In the meantime, your child can start playing right now.
+              </p>
+              <a
+                href="/play"
+                className="inline-block rounded-xl bg-teal-600 px-8 py-3 text-base font-medium text-white hover:bg-teal-700 transition-colors"
+              >
+                Start Playing Now →
+              </a>
+            </div>
+          )}
+        </div>
+      </LegalPageLayout>
+    </>
   );
-};
+}

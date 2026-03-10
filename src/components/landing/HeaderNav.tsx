@@ -76,6 +76,8 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ onTryFree }) => {
     }
   };
 
+  const platformUrl = import.meta.env.VITE_PLATFORM_URL || 'https://app.drawintheair.com';
+
   return (
     <nav className={`landing-nav ${isScrolled ? 'landing-nav-scrolled' : ''}`}>
       <div className="landing-nav-container">
@@ -123,6 +125,13 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ onTryFree }) => {
 
         {/* CTA Buttons */}
         <div className="landing-nav-actions">
+          <a
+            href={platformUrl + '/auth/login'}
+            className="nav-cta-secondary"
+            style={{ color: '#475569' }}
+          >
+            Teacher Login
+          </a>
           <LandingCTAButton
             variant="primary"
             size="sm"
@@ -166,6 +175,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ onTryFree }) => {
           <a href="#modes" onClick={(e) => handleNavClick(e, '#modes')}>Activities</a>
           <a href="#schools" onClick={(e) => handleNavClick(e, '#schools')}>For Schools</a>
           <a href="#faq" onClick={(e) => handleNavClick(e, '#faq')}>FAQ</a>
+          <a href={platformUrl + '/auth/login'} style={{ color: '#475569' }}>Teacher Login</a>
           <LandingCTAButton
             variant="secondary"
             size="md"

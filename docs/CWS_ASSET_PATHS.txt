@@ -1,0 +1,78 @@
+CHROME WEB STORE ASSETS - FILE PATHS
+Generated: 2026-03-06
+Project: Draw in the Air
+
+==============================================================================
+PWA ICONS (for manifest.json)
+==============================================================================
+
+/sessions/relaxed-focused-lovelace/mnt/drawintheair-main/public/icons/icon-512.png
+512x512 px, PNG RGBA, 132.5 KB
+
+/sessions/relaxed-focused-lovelace/mnt/drawintheair-main/public/icons/icon-192.png
+192x192 px, PNG RGBA, 28.4 KB
+
+/sessions/relaxed-focused-lovelace/mnt/drawintheair-main/public/icons/icon-192-maskable.png
+192x192 px, PNG RGBA, 20.3 KB
+
+==============================================================================
+CHROME WEB STORE ASSETS
+==============================================================================
+
+STORE ICON:
+/sessions/relaxed-focused-lovelace/mnt/drawintheair-main/docs/cws-assets/cws-store-icon-128.png
+128x128 px, PNG RGBA, 14.6 KB
+
+PROMOTIONAL TILES:
+/sessions/relaxed-focused-lovelace/mnt/drawintheair-main/docs/cws-assets/cws-promo-small-440x280.png
+440x280 px, PNG RGBA, 6.5 KB
+
+/sessions/relaxed-focused-lovelace/mnt/drawintheair-main/docs/cws-assets/cws-promo-large-920x680.png
+920x680 px, PNG RGBA, 10.4 KB
+
+STORE SCREENSHOTS:
+/sessions/relaxed-focused-lovelace/mnt/drawintheair-main/docs/cws-assets/cws-screenshot-1-tracing-1280x800.png
+1280x800 px, PNG RGBA, 776.6 KB
+
+/sessions/relaxed-focused-lovelace/mnt/drawintheair-main/docs/cws-assets/cws-screenshot-2-bubbles-1280x800.png
+1280x800 px, PNG RGBA, 1123.4 KB
+
+/sessions/relaxed-focused-lovelace/mnt/drawintheair-main/docs/cws-assets/cws-screenshot-3-paint-1280x800.png
+1280x800 px, PNG RGBA, 766.7 KB
+
+==============================================================================
+RELATIVE PATHS (for web references)
+==============================================================================
+
+/icons/icon-512.png
+/icons/icon-192.png
+/icons/icon-192-maskable.png
+
+==============================================================================
+MANIFEST.JSON ICON REFERENCES
+==============================================================================
+
+{
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
+
+==============================================================================

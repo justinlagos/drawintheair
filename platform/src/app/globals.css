@@ -1,0 +1,222 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Brand tokens ──────────────────────────────────────────────── */
+:root {
+  /* Primary: Orange */
+  --brand-50: #fff7ed;
+  --brand-100: #ffedd5;
+  --brand-200: #fed7aa;
+  --brand-300: #fdba74;
+  --brand-400: #fb923c;
+  --brand-500: #f97316;
+  --brand-600: #ea580c;
+  --brand-700: #c2410c;
+
+  /* Secondary: Magic Purple */
+  --magic-100: #f3e8ff;
+  --magic-300: #d8b4fe;
+  --magic-500: #a855f7;
+  --magic-600: #9333ea;
+  --magic-700: #7e22ce;
+
+  /* Accent: Sunshine */
+  --sun-300: #fcd34d;
+  --sun-400: #fbbf24;
+  --sun-500: #f59e0b;
+
+  /* Dashboard surfaces (dark) */
+  --surface-0: #020617;
+  --surface-1: #0f172a;
+  --surface-2: #1e293b;
+  --surface-3: #334155;
+
+  /* Marketing surfaces (light) */
+  --page-bg: #fffbf5;
+  --page-surface: #ffffff;
+  --page-subtle: #f9fafb;
+
+  /* Text */
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6b7280;
+
+  /* Border */
+  --border-light: #f3f4f6;
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+}
+
+/* ── Base ───────────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--text-primary);
+  background-color: var(--page-bg);
+}
+
+/* ── Focus ──────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--brand-400); }
+
+/* ── Scroll-reveal animations ──────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(-32px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(32px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-14px); }
+}
+
+@keyframes floatRot {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%       { transform: translateY(-10px) rotate(8deg); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes drawLine {
+  from { stroke-dashoffset: 1000; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes popIn {
+  0%   { opacity: 0; transform: scale(0.5) rotate(-10deg); }
+  70%  { transform: scale(1.1) rotate(3deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+/* ── Scroll-reveal classes ─────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-40px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal-left.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.reveal-right {
+  opacity: 0;
+  transform: translateX(40px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal-right.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.85);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal-scale.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* stagger delays */
+.delay-100 { transition-delay: 0.1s !important; }
+.delay-200 { transition-delay: 0.2s !important; }
+.delay-300 { transition-delay: 0.3s !important; }
+.delay-400 { transition-delay: 0.4s !important; }
+.delay-500 { transition-delay: 0.5s !important; }
+.delay-600 { transition-delay: 0.6s !important; }
+
+/* ── Float animations ───────────────────────────────────────────── */
+.float { animation: float 3.5s ease-in-out infinite; }
+.float-slow { animation: float 5s ease-in-out infinite; }
+.float-fast { animation: float 2.2s ease-in-out infinite; }
+.float-rot  { animation: floatRot 4s ease-in-out infinite; }
+
+/* ── Card ───────────────────────────────────────────────────────── */
+.edu-card {
+  background: #ffffff;
+  border-radius: 1.25rem;
+  border: 1px solid #f3f4f6;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.07);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+.edu-card:hover {
+  box-shadow: 0 16px 48px rgba(0,0,0,0.12);
+  transform: translateY(-4px);
+}
+
+/* ── Activity card colour themes ────────────────────────────────── */
+.act-orange { background: linear-gradient(135deg, #fff7ed, #ffedd5); border-color: #fed7aa; }
+.act-purple { background: linear-gradient(135deg, #faf5ff, #f3e8ff); border-color: #e9d5ff; }
+.act-blue   { background: linear-gradient(135deg, #eff6ff, #dbeafe); border-color: #bfdbfe; }
+.act-green  { background: linear-gradient(135deg, #f0fdf4, #dcfce7); border-color: #bbf7d0; }
+.act-pink   { background: linear-gradient(135deg, #fdf2f8, #fce7f3); border-color: #fbcfe8; }
+.act-red    { background: linear-gradient(135deg, #fff1f2, #ffe4e6); border-color: #fecdd3; }
+.act-indigo { background: linear-gradient(135deg, #eef2ff, #e0e7ff); border-color: #c7d2fe; }
+.act-yellow { background: linear-gradient(135deg, #fffbeb, #fef3c7); border-color: #fde68a; }
+
+/* ── Skeleton ───────────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 0.375rem;
+}
+
+/* ── Wave divider ───────────────────────────────────────────────── */
+.wave-divider { overflow: hidden; line-height: 0; }
+.wave-divider svg { display: block; }
+
+/* ── Marketing utilities ─────────────────────────────────────────── */
+@layer utilities {
+  .text-brand { color: var(--brand-500); }
+  .text-magic { color: var(--magic-500); }
+  .bg-brand-soft { background-color: var(--brand-50); }
+  .bg-magic-soft { background-color: var(--magic-100); }
+  .border-brand { border-color: var(--brand-300); }
+  .shadow-brand { box-shadow: 0 8px 32px rgba(249,115,22,0.25); }
+  .shadow-magic { box-shadow: 0 8px 32px rgba(168,85,247,0.25); }
+}
