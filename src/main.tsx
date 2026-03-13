@@ -7,6 +7,8 @@ import { DemoLoader } from './pages/DemoLoader.tsx'
 import { FAQ } from './pages/FAQ.tsx'
 import { Schools } from './pages/Schools.tsx'
 import { ParentsLanding } from './pages/ParentsLanding.tsx'
+import { Pricing } from './pages/Pricing.tsx'
+import Teachers from './pages/Teachers.tsx'
 import { Privacy } from './pages/Privacy.tsx'
 import { Terms } from './pages/Terms.tsx'
 import { Cookies } from './pages/Cookies.tsx'
@@ -79,6 +81,8 @@ function getRouteFromPath(path: string, hash: string): string {
   if (path === '/school') return 'school';
   if (path === '/parents') return 'parents';
   if (path === '/parent') return 'parent';
+  if (path === '/teachers') return 'teachers';
+  if (path === '/pricing') return 'pricing';
   if (path === '/privacy') return 'privacy';
   if (path === '/terms') return 'terms';
   if (path === '/cookies') return 'cookies';
@@ -195,6 +199,14 @@ function Root() {
 
   if (route === 'parents') {
     return <ParentsLanding />;
+  }
+
+  if (route === 'teachers') {
+    return <Teachers />;
+  }
+
+  if (route === 'pricing') {
+    return <Pricing />;
   }
 
   if (route === 'privacy') {

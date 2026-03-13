@@ -87,10 +87,10 @@ export const Footer: React.FC = () => {
           >
             <div className="landing-footer-links">
               <a href={platformUrl + '/auth/login'} className="landing-footer-link">Teacher Login</a>
-              <a href="/for-teachers" className="landing-footer-link">For Teachers</a>
-              <a href="/for-parents" className="landing-footer-link">For Parents</a>
-              <a href="/schools" className="landing-footer-link">Schools</a>
-              <a href={platformUrl + '/pricing'} className="landing-footer-link">Pricing</a>
+              <a href="/teachers" className="landing-footer-link">For Teachers</a>
+              <a href="/parents" className="landing-footer-link">For Parents</a>
+              <a href="/schools" className="landing-footer-link">For Schools</a>
+              <a href="/pricing" className="landing-footer-link">Pricing</a>
               <a href="/faq" className="landing-footer-link">FAQ</a>
             </div>
           </div>

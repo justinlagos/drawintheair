@@ -108,16 +108,30 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ onTryFree }) => {
             Activities
           </a>
           <a
-            href="#schools"
-            onClick={(e) => handleNavClick(e, '#schools')}
+            href="/parents"
+            onClick={(e) => handleNavClick(e, '/parents')}
+            className="landing-nav-link"
+          >
+            For Parents
+          </a>
+          <a
+            href="/teachers"
+            onClick={(e) => handleNavClick(e, '/teachers')}
+            className="landing-nav-link"
+          >
+            For Teachers
+          </a>
+          <a
+            href="/schools"
+            onClick={(e) => handleNavClick(e, '/schools')}
             className={`landing-nav-link ${activeSection === 'schools' ? 'active' : ''}`}
           >
             For Schools
           </a>
           <a
-            href="#faq"
-            onClick={(e) => handleNavClick(e, '#faq')}
-            className={`landing-nav-link ${activeSection === 'faq' ? 'active' : ''}`}
+            href="/faq"
+            onClick={(e) => handleNavClick(e, '/faq')}
+            className="landing-nav-link"
           >
             FAQ
           </a>
@@ -173,8 +187,10 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ onTryFree }) => {
         <div className="landing-nav-mobile-menu">
           <a href="#how-it-works" onClick={(e) => handleNavClick(e, '#how-it-works')}>How It Works</a>
           <a href="#modes" onClick={(e) => handleNavClick(e, '#modes')}>Activities</a>
-          <a href="#schools" onClick={(e) => handleNavClick(e, '#schools')}>For Schools</a>
-          <a href="#faq" onClick={(e) => handleNavClick(e, '#faq')}>FAQ</a>
+          <a href="/parents" onClick={(e) => handleNavClick(e, '/parents')}>For Parents</a>
+          <a href="/teachers" onClick={(e) => handleNavClick(e, '/teachers')}>For Teachers</a>
+          <a href="/schools" onClick={(e) => handleNavClick(e, '/schools')}>For Schools</a>
+          <a href="/faq" onClick={(e) => handleNavClick(e, '/faq')}>FAQ</a>
           <a href={platformUrl + '/auth/login'} style={{ color: 'inherit' }}>Teacher Login</a>
           <LandingCTAButton
             variant="secondary"

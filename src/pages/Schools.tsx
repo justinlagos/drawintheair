@@ -1,350 +1,253 @@
 import React, { useState } from 'react';
 import { HeaderNav } from '../components/landing/HeaderNav';
 import { Footer } from '../components/landing/Footer';
-import { BackToTop } from '../components/landing/BackToTop';
 import { submitLead } from '../lib/leads';
-import '../components/landing/landing.css';
+
+const platformUrl = typeof window !== 'undefined'
+  ? (import.meta as any).env?.VITE_PLATFORM_URL || 'https://app.drawintheair.com'
+  : 'https://app.drawintheair.com';
+
+// ─── Design tokens ────────────────────────────────────────────────────────────
+const c = {
+  bg: '#f8fafc', white: '#ffffff', orange: '#f97316', orangeLight: '#fff7ed',
+  orangeHover: '#ea580c', teal: '#0d9488', tealLight: '#f0fdfa',
+  text: '#0f172a', textSec: '#475569', textMuted: '#94a3b8',
+  border: '#e2e8f0', borderLight: '#f1f5f9',
+};
+
+const BENEFITS = [
+  { icon: '📷', title: 'No Hardware Needed', desc: 'Just a device with a front-facing camera. Works on school Chromebooks, iPads, and interactive whiteboards.' },
+  { icon: '🔒', title: 'GDPR Compliant', desc: 'No child data collected. No accounts. Camera processing stays entirely on the device — nothing leaves the classroom.' },
+  { icon: '📚', title: 'EYFS Aligned', desc: 'Maps directly to Physical Development, Communication & Language, and Literacy in the EYFS and Reception curriculum.' },
+  { icon: '♿', title: 'Inclusive by Design', desc: 'Gesture-based input supports children with motor differences, dyslexia, and those who struggle with pencil grip.' },
+  { icon: '⚡', title: '30-Second Setup', desc: 'Open browser, allow camera, done. No installs, no logins for students. Run your first session in under a minute.' },
+  { icon: '📊', title: 'Teacher Analytics', desc: 'Class Mode gives you live leaderboards, session scores, and performance reports for each pupil.' },
+];
+
+const HOW_IT_WORKS = [
+  { step: '01', title: 'Open in a browser', desc: 'Visit drawintheair.com/play on any school device with a webcam. No download, no install.' },
+  { step: '02', title: 'Wave to start', desc: 'Children wave their hand to wake the camera. An on-screen guide shows them how in seconds.' },
+  { step: '03', title: 'Choose an activity', desc: 'Pick from 9 EYFS-aligned activities: letter tracing, number formation, shapes, bubble pop, and more.' },
+  { step: '04', title: 'Run your class session', desc: 'Teachers open Class Mode on the platform, students join with a 4-digit code, and the whole class plays together.' },
+];
+
+const TRUST = [
+  '✓ No child accounts', '✓ No video stored', '✓ No ads', '✓ GDPR safe', '✓ Free to try',
+];
+
+const FAQS = [
+  { q: 'How much does it cost for schools?', a: 'The basic activities are free forever. Classroom Mode and analytics are part of Teacher Pro (£4.99/month) or the School Licence from £299/year for unlimited teachers.' },
+  { q: 'Do we need to download anything?', a: 'No. Draw in the Air runs entirely in the browser. Nothing to install on school devices or student Chromebooks.' },
+  { q: 'Is it approved for use with under-13s?', a: 'Yes. We collect zero child data. There are no student accounts, no persistent data, and no camera footage stored. Fully safe for EYFS and KS1 pupils.' },
+  { q: 'Can SEND pupils use it?', a: 'Absolutely. Gesture-based input is often easier for children with motor or literacy challenges. The activities have adjustable difficulty and encouraging feedback loops.' },
+  { q: 'Is there training support for staff?', a: 'Yes. We offer onboarding calls, a teacher guide PDF, and a movement break session plan. School Licence customers get dedicated onboarding.' },
+];
 
 export const Schools: React.FC = () => {
-  const [formData, setFormData] = useState({
-    schoolName: '',
-    contactName: '',
-    role: '',
-    email: '',
-    yearGroup: '',
-    deviceType: '',
-    sendConsiderations: ''
-  });
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [form, setForm] = useState({ schoolName: '', contactName: '', role: '', email: '', yearGroup: '', deviceType: '', sendConsiderations: '' });
   const [submitted, setSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleDownload = () => {
-    const link = document.createElement('a');
-    link.href = '/pilot-pack.pdf';
-    link.download = 'Draw-In-The-Air-Pilot-Pack.pdf';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const a = document.createElement('a');
+    a.href = '/pilot-pack.pdf';
+    a.download = 'Draw-In-The-Air-Pilot-Pack.pdf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    
+    setSubmitting(true);
     try {
-      await submitLead({
-        type: 'school_pack_request',
-        ...formData
-      });
+      await submitLead({ type: 'school_pack_request', ...form });
       setSubmitted(true);
-      setFormData({
-        schoolName: '',
-        contactName: '',
-        role: '',
-        email: '',
-        yearGroup: '',
-        deviceType: '',
-        sendConsiderations: ''
-      });
-      setTimeout(() => setSubmitted(false), 5000);
-    } catch (error) {
-      console.error('Failed to submit:', error);
-      alert('There was an error submitting your request. Please try again or contact us directly.');
+    } catch {
+      alert('There was an error. Please email us at partnership@drawintheair.com');
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
+  const pg: React.CSSProperties = { background: c.bg, minHeight: '100vh', fontFamily: "'Inter', system-ui, sans-serif" };
+  const container: React.CSSProperties = { maxWidth: 1120, margin: '0 auto', padding: '0 1.5rem' };
+  const sectionPad: React.CSSProperties = { padding: '5rem 0' };
+  const sectionPadSm: React.CSSProperties = { padding: '3.5rem 0' };
+
+  const badge: React.CSSProperties = {
+    display: 'inline-block', background: c.orangeLight, color: c.orange, borderRadius: 50,
+    padding: '5px 16px', fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.06em',
+    textTransform: 'uppercase', marginBottom: 16,
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', borderRadius: 10, border: `1.5px solid ${c.border}`, background: '#f8fafc',
+    padding: '12px 14px', fontSize: '0.93rem', color: c.text, boxSizing: 'border-box',
+    outline: 'none', transition: 'border-color 0.2s',
+  };
+
   return (
-    <div className="landing-page">
+    <div style={pg}>
       <HeaderNav />
-      <div className="landing-content-page">
-        {/* Hero */}
-        <section className="landing-section">
-          <h1 className="landing-page-title">For Schools</h1>
-          <p className="landing-hero-subhead" style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto 2rem' }}>
-            A camera based learning playground designed for early years classrooms. EYFS aligned, inclusive, and safe.
+
+      {/* ── HERO ─────────────────────────────────────────────────────────── */}
+      <section style={{ background: '#fff', borderBottom: `1px solid ${c.border}` }}>
+        <div style={{ ...container, ...sectionPad, textAlign: 'center' }}>
+          <span style={badge}>For Schools</span>
+          <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.4rem)', fontWeight: 900, color: c.text, margin: '0 0 1.2rem', lineHeight: 1.15, letterSpacing: '-0.02em' }}>
+            Bring Movement Learning<br />
+            <span style={{ color: c.orange }}>Into Every Classroom</span>
+          </h1>
+          <p style={{ fontSize: '1.15rem', color: c.textSec, maxWidth: 640, margin: '0 auto 2rem', lineHeight: 1.65 }}>
+            A browser-based learning platform where children practise letters, numbers, and shapes by drawing in the air with their hands. EYFS aligned. Zero setup. Completely safe.
           </p>
-          <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-            <button 
-              className="landing-btn landing-btn-primary landing-btn-large"
-              onClick={handleDownload}
-            >
-              Download the pilot pack
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: '2rem' }}>
+            <button onClick={handleDownload} style={{ background: c.orange, color: '#fff', border: 'none', borderRadius: 10, padding: '15px 32px', fontSize: '1rem', fontWeight: 700, cursor: 'pointer' }}>
+              Download School Pack (PDF)
             </button>
+            <a href={`${platformUrl}/auth/login`} target="_blank" rel="noopener noreferrer" style={{ background: c.white, color: c.text, border: `1.5px solid ${c.border}`, borderRadius: 10, padding: '15px 32px', fontSize: '1rem', fontWeight: 600, textDecoration: 'none' }}>
+              Start Free Trial →
+            </a>
           </div>
-        </section>
-
-        {/* What it is */}
-        <section className="landing-section">
-          <h2 className="landing-section-title">What it is</h2>
-          <div className="landing-content-text">
-            <p>Draw In The Air is a browser based learning platform that uses hand tracking to let children draw, trace, and play without touching a screen. It works with any device that has a camera and runs in a web browser.</p>
-            <p>Children use simple hand gestures to interact: wave to start, pinch to draw and select, open hand to pause. No touch screens, no controllers, just natural movement.</p>
+          <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {TRUST.map((t) => <span key={t} style={{ fontSize: '0.85rem', color: c.textSec, fontWeight: 600 }}>{t}</span>)}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Who it's for */}
-        <section className="landing-section">
-          <h2 className="landing-section-title">Who it is for</h2>
-          <div className="landing-content-text">
-            <p>Designed for early years settings, particularly Reception and Year 1, but can be adapted for younger or older children. The activities support:</p>
-            <ul className="landing-content-list">
-              <li>Physical Development: Gross and fine motor skills through gesture control</li>
-              <li>Literacy: Letter formation and early writing through tracing activities</li>
-              <li>Communication and Language: Following instructions and understanding gestures</li>
-              <li>PSED: Building confidence and social interaction through play</li>
-            </ul>
+      {/* ── BENEFITS GRID ────────────────────────────────────────────────── */}
+      <section style={{ ...sectionPad, background: c.bg }}>
+        <div style={container}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <span style={badge}>Why Schools Choose It</span>
+            <h2 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', fontWeight: 800, color: c.text, margin: '0.5rem 0 0' }}>Built for the classroom, safe for every child</h2>
           </div>
-        </section>
-
-        {/* Gesture Controls */}
-        <section className="landing-section">
-          <h2 className="landing-section-title">Gesture controls</h2>
-          <div className="landing-content-text">
-            <div className="landing-gesture-grid">
-              <div className="landing-gesture-item">
-                <h3>Wave to start</h3>
-                <p>Move hand side to side to begin</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
+            {BENEFITS.map((b) => (
+              <div key={b.title} style={{ background: c.white, borderRadius: 14, border: `1px solid ${c.border}`, padding: '1.75rem', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+                <div style={{ fontSize: '2rem', marginBottom: 12 }}>{b.icon}</div>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: c.text, margin: '0 0 8px' }}>{b.title}</h3>
+                <p style={{ fontSize: '0.9rem', color: c.textSec, lineHeight: 1.65, margin: 0 }}>{b.desc}</p>
               </div>
-              <div className="landing-gesture-item">
-                <h3>Pinch to draw and select</h3>
-                <p>Bring thumb and index finger together to activate</p>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ─────────────────────────────────────────────────── */}
+      <section style={{ ...sectionPadSm, background: c.white, borderTop: `1px solid ${c.border}`, borderBottom: `1px solid ${c.border}` }}>
+        <div style={container}>
+          <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+            <span style={badge}>Getting Started</span>
+            <h2 style={{ fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', fontWeight: 800, color: c.text, margin: '0.5rem 0 0' }}>Ready in 4 steps</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24 }}>
+            {HOW_IT_WORKS.map((step) => (
+              <div key={step.step} style={{ textAlign: 'center', padding: '1.5rem 1rem' }}>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: c.orangeLight, color: c.orange, fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>{step.step}</div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: c.text, marginBottom: 8 }}>{step.title}</h3>
+                <p style={{ fontSize: '0.88rem', color: c.textSec, lineHeight: 1.6, margin: 0 }}>{step.desc}</p>
               </div>
-              <div className="landing-gesture-item">
-                <h3>Open hand to pause</h3>
-                <p>Spread fingers wide to pause the activity</p>
-              </div>
-            </div>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Modes Overview */}
-        <section className="landing-section">
-          <h2 className="landing-section-title">Modes overview</h2>
-          <div className="landing-modes-overview">
-            <div className="landing-mode-overview-item">
-              <img 
-                src="https://i.postimg.cc/90Yn6Z21/Free_Paint.png" 
-                srcSet="https://i.postimg.cc/90Yn6Z21/Free_Paint.png 1x, https://i.postimg.cc/90Yn6Z21/Free_Paint.png 2x"
-                alt="Free Paint" 
-                className="landing-mode-overview-img"
-                decoding="async"
-              />
-              <h3>Free Paint</h3>
-              <p>Creative drawing, control, confidence</p>
-            </div>
-            <div className="landing-mode-overview-item">
-              <img 
-                src="https://i.postimg.cc/rsNPBxT9/Tracing.png" 
-                srcSet="https://i.postimg.cc/rsNPBxT9/Tracing.png 1x, https://i.postimg.cc/rsNPBxT9/Tracing.png 2x"
-                alt="Tracing" 
-                className="landing-mode-overview-img"
-                decoding="async"
-              />
-              <h3>Tracing A to Z</h3>
-              <p>Letter formation, fine motor, early writing</p>
-            </div>
-            <div className="landing-mode-overview-item">
-              <img 
-                src="https://i.postimg.cc/RhBYpGkh/Balloons.png" 
-                srcSet="https://i.postimg.cc/RhBYpGkh/Balloons.png 1x, https://i.postimg.cc/RhBYpGkh/Balloons.png 2x"
-                alt="Bubble Pop" 
-                className="landing-mode-overview-img"
-                decoding="async"
-              />
-              <h3>Bubble Pop</h3>
-              <p>Attention, reaction, hand control</p>
-            </div>
-            <div className="landing-mode-overview-item">
-              <img 
-                src="https://i.postimg.cc/ZnSQsjGV/sort_and_place.png" 
-                srcSet="https://i.postimg.cc/ZnSQsjGV/sort_and_place.png 1x, https://i.postimg.cc/ZnSQsjGV/sort_and_place.png 2x"
-                alt="Sort and Place" 
-                className="landing-mode-overview-img"
-                decoding="async"
-              />
-              <h3>Sort and Place</h3>
-              <p>Maths foundations, categorising, spatial awareness</p>
-            </div>
-            <div className="landing-mode-overview-item">
-              <img 
-                src="https://i.postimg.cc/WzwHBgVn/wordsearch.png" 
-                srcSet="https://i.postimg.cc/WzwHBgVn/wordsearch.png 1x, https://i.postimg.cc/WzwHBgVn/wordsearch.png 2x"
-                alt="Word Search" 
-                className="landing-mode-overview-img"
-                decoding="async"
-              />
-              <h3>Word Search</h3>
-              <p>Early reading and pattern spotting (In development)</p>
-            </div>
-          </div>
-        </section>
-
-        {/* EYFS Alignment */}
-        <section id="eyfs-mapping" className="landing-section">
-          <h2 className="landing-section-title">EYFS alignment</h2>
-          <div className="landing-content-text">
-            <p>Draw In The Air is built around Early Years Foundation Stage outcomes, with a focus on Physical Development and early Literacy.</p>
-            <div className="landing-eyfs-tiles" style={{ marginTop: '2rem' }}>
-              <div className="landing-eyfs-tile">Physical Development</div>
-              <div className="landing-eyfs-tile">Literacy</div>
-              <div className="landing-eyfs-tile">Communication and Language</div>
-              <div className="landing-eyfs-tile">PSED</div>
-            </div>
-          </div>
-        </section>
-
-        {/* Classroom Routines */}
-        <section className="landing-section">
-          <h2 className="landing-section-title">Classroom routines</h2>
-          <div className="landing-content-text">
-            <p>Draw In The Air works best when integrated into your existing classroom routines:</p>
-            <ul className="landing-content-list">
-              <li>Use during focused activity time, with small groups or individual children</li>
-              <li>Can be used as a reward or transition activity</li>
-              <li>Works well for children who need movement breaks</li>
-              <li>Adult supervision recommended, especially for first sessions</li>
-            </ul>
-          </div>
-        </section>
-
-        {/* Setup Requirements */}
-        <section className="landing-section">
-          <h2 className="landing-section-title">Setup requirements</h2>
-          <div className="landing-content-text">
-            <ul className="landing-content-list">
-              <li>Device with a camera (laptop, tablet, or desktop with webcam)</li>
-              <li>Modern web browser (Chrome, Edge, Safari, or Firefox)</li>
-              <li>Camera permission granted in browser</li>
-              <li>Good lighting so the camera can see hand movements clearly</li>
-              <li>Space for children to stand 1-2 meters from the camera</li>
-            </ul>
-          </div>
-        </section>
-
-        {/* Safety and Privacy */}
-        <section className="landing-section">
-          <h2 className="landing-section-title">Safety and privacy</h2>
-          <div className="landing-content-text">
-            <ul className="landing-content-list">
-              <li>Camera is used only for hand tracking</li>
-              <li>No video is saved</li>
-              <li>No child accounts</li>
-              <li>No ads</li>
-              <li>Adult gate for settings and exit</li>
-              <li>Camera processing happens locally in the browser</li>
-            </ul>
-            <p style={{ marginTop: '1.5rem' }}>
-              <a href="/privacy" className="landing-link-btn">Read our full privacy policy</a>
+      {/* ── PILOT FORM ───────────────────────────────────────────────────── */}
+      <section style={{ ...sectionPad, background: 'linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%)' }}>
+        <div style={{ ...container, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 48, alignItems: 'center' }}>
+          <div>
+            <span style={badge}>Pilot Programme</span>
+            <h2 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.3rem)', fontWeight: 800, color: c.text, margin: '0.5rem 0 1rem', lineHeight: 1.25 }}>Apply for a guided school pilot</h2>
+            <p style={{ fontSize: '1rem', color: c.textSec, lineHeight: 1.7, marginBottom: '1.5rem' }}>
+              Join our pilot programme and get 8 weeks of supported classroom use, a dedicated teacher guide, and direct access to our team for feedback and support.
             </p>
-          </div>
-        </section>
-
-        {/* Partnership */}
-        <section className="landing-section">
-          <h2 className="landing-section-title">Partnership</h2>
-          <div className="landing-content-text">
-            <p>We are looking for 3 to 5 schools to trial the platform and help shape the next release. As a pilot partner, you will:</p>
-            <ul className="landing-content-list">
-              <li>Get early access to new features</li>
-              <li>Have direct input into development priorities</li>
-              <li>Receive dedicated support</li>
-              <li>Help us understand what works best in real classrooms</li>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              {['Full 8-week pilot pack', 'Staff training session', 'Weekly check-in with our team', 'Free school licence during pilot', 'Case study write-up (optional)'].map((item) => (
+                <li key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, fontSize: '0.93rem', color: c.text }}>
+                  <span style={{ color: '#22c55e', fontSize: '1rem', fontWeight: 700 }}>✓</span>{item}
+                </li>
+              ))}
             </ul>
           </div>
-        </section>
 
-        {/* Timeline */}
-        <section className="landing-section">
-          <h2 className="landing-section-title">Timeline</h2>
-          <div className="landing-content-text">
-            <p>The pilot program runs for 6-8 weeks, with regular check-ins and feedback sessions. We will work with you to understand how Draw In The Air fits into your setting and what improvements would be most valuable.</p>
-          </div>
-        </section>
-
-        {/* Pilot CTA */}
-        <section className="landing-section">
-          <h2 className="landing-section-title">Request a pilot</h2>
-          <div className="landing-pilot-form-container">
+          <div style={{ background: c.white, borderRadius: 16, padding: '2rem', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', border: `1px solid ${c.border}` }}>
             {submitted ? (
-              <div className="landing-pilot-success">
-                <svg className="landing-success-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Thank you! We'll be in touch soon.</span>
+              <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎉</div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: c.text, marginBottom: 8 }}>Application received!</h3>
+                <p style={{ color: c.textSec, fontSize: '0.93rem' }}>We'll be in touch within 2 working days. Check your inbox at {form.email}.</p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="landing-pilot-form-full">
-                <input
-                  type="text"
-                  className="landing-pilot-input"
-                  placeholder="School name *"
-                  value={formData.schoolName}
-                  onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
-                  required
-                />
-                <input
-                  type="text"
-                  className="landing-pilot-input"
-                  placeholder="Contact name *"
-                  value={formData.contactName}
-                  onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-                  required
-                />
-                <input
-                  type="text"
-                  className="landing-pilot-input"
-                  placeholder="Role *"
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  required
-                />
-                <input
-                  type="email"
-                  className="landing-pilot-input"
-                  placeholder="Email *"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                />
-                <input
-                  type="text"
-                  className="landing-pilot-input"
-                  placeholder="Year group"
-                  value={formData.yearGroup}
-                  onChange={(e) => setFormData({ ...formData, yearGroup: e.target.value })}
-                />
-                <input
-                  type="text"
-                  className="landing-pilot-input"
-                  placeholder="Device type"
-                  value={formData.deviceType}
-                  onChange={(e) => setFormData({ ...formData, deviceType: e.target.value })}
-                />
-                <textarea
-                  className="landing-pilot-input"
-                  placeholder="SEND considerations (optional)"
-                  value={formData.sendConsiderations}
-                  onChange={(e) => setFormData({ ...formData, sendConsiderations: e.target.value })}
-                  rows={3}
-                />
-                <button 
-                  type="submit" 
-                  className="landing-btn landing-btn-primary landing-btn-large"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Submitting...' : 'Request school pilot pack'}
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: c.text, margin: '0 0 4px' }}>Apply for the pilot</h3>
+                {[
+                  { name: 'schoolName', label: 'School name', placeholder: 'e.g. Greenfield Primary School' },
+                  { name: 'contactName', label: 'Your name', placeholder: 'e.g. Mrs Johnson' },
+                  { name: 'role', label: 'Your role', placeholder: 'e.g. Reception Teacher, SENCo, Head' },
+                  { name: 'email', label: 'School email', placeholder: 'you@school.sch.uk', type: 'email' },
+                ].map((field) => (
+                  <div key={field.name}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: c.textSec, marginBottom: 5 }}>{field.label}</label>
+                    <input
+                      type={field.type || 'text'}
+                      required
+                      placeholder={field.placeholder}
+                      value={(form as any)[field.name]}
+                      onChange={(e) => setForm({ ...form, [field.name]: e.target.value })}
+                      style={inputStyle}
+                    />
+                  </div>
+                ))}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: c.textSec, marginBottom: 5 }}>Year group(s)</label>
+                  <input value={form.yearGroup} onChange={(e) => setForm({ ...form, yearGroup: e.target.value })} placeholder="e.g. Reception, Year 1" style={inputStyle} />
+                </div>
+                <button type="submit" disabled={submitting} style={{ background: c.orange, color: '#fff', border: 'none', borderRadius: 10, padding: '14px', fontSize: '0.97rem', fontWeight: 700, cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1 }}>
+                  {submitting ? 'Sending…' : 'Apply for Pilot Programme →'}
                 </button>
+                <p style={{ fontSize: '0.78rem', color: c.textMuted, textAlign: 'center', margin: 0 }}>We'll respond within 2 working days. No spam.</p>
               </form>
             )}
-            <p className="landing-pilot-privacy">We only use this to contact you about pilots</p>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ──────────────────────────────────────────────────────────── */}
+      <section style={{ ...sectionPadSm, background: c.white, borderTop: `1px solid ${c.border}` }}>
+        <div style={{ ...container, maxWidth: 720 }}>
+          <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: c.text, textAlign: 'center', marginBottom: '2rem' }}>Questions from schools</h2>
+          {FAQS.map((item, i) => (
+            <div key={i} style={{ borderRadius: 10, border: `1px solid ${openFaq === i ? c.orange : c.border}`, background: c.white, marginBottom: 8, overflow: 'hidden' }}>
+              <button onClick={() => setOpenFaq(openFaq === i ? null : i)} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.97rem', fontWeight: 600, color: c.text, textAlign: 'left', gap: 12 }}>
+                <span>{item.q}</span>
+                <span style={{ color: openFaq === i ? c.orange : c.textMuted, fontSize: '1.3rem', fontWeight: 700, flexShrink: 0 }}>{openFaq === i ? '−' : '+'}</span>
+              </button>
+              {openFaq === i && <div style={{ padding: '0 20px 18px', fontSize: '0.93rem', color: c.textSec, lineHeight: 1.7 }}>{item.a}</div>}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── FINAL CTA ────────────────────────────────────────────────────── */}
+      <section style={{ ...sectionPadSm, background: c.bg, borderTop: `1px solid ${c.border}` }}>
+        <div style={{ ...container, textAlign: 'center' }}>
+          <h2 style={{ fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', fontWeight: 800, color: c.text, marginBottom: 12 }}>Ready to try it with your class?</h2>
+          <p style={{ fontSize: '1rem', color: c.textSec, marginBottom: 28 }}>Download the school pack or start a free trial today.</p>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button onClick={handleDownload} style={{ background: c.orange, color: '#fff', border: 'none', borderRadius: 10, padding: '14px 28px', fontSize: '1rem', fontWeight: 700, cursor: 'pointer' }}>
+              Download School Pack
+            </button>
+            <a href="mailto:partnership@drawintheair.com" style={{ background: c.white, color: c.text, border: `1.5px solid ${c.border}`, borderRadius: 10, padding: '14px 28px', fontSize: '1rem', fontWeight: 600, textDecoration: 'none' }}>
+              Email Us
+            </a>
+          </div>
+        </div>
+      </section>
+
       <Footer />
-      <BackToTop />
     </div>
   );
 };
-
