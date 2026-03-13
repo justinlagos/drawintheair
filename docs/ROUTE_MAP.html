@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Draw in the Air — Complete Route Map</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.6; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+  h1 { font-size: 2rem; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
+  .subtitle { color: #64748b; font-size: 1rem; margin-bottom: 40px; }
+  .stats-bar { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 40px; }
+  .stat { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 20px; flex: 1; min-width: 140px; }
+  .stat-value { font-size: 1.5rem; font-weight: 700; color: #0f172a; }
+  .stat-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  .domain-section { margin-bottom: 48px; }
+  .domain-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 3px solid #f97316; }
+  .domain-header h2 { font-size: 1.4rem; font-weight: 700; color: #0f172a; }
+  .domain-badge { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 10px; border-radius: 6px; }
+  .badge-main { background: #dbeafe; color: #1d4ed8; }
+  .badge-platform { background: #fef3c7; color: #92400e; }
+  .group-section { margin-bottom: 32px; }
+  .group-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .group-header h3 { font-size: 1.05rem; font-weight: 700; color: #334155; }
+  .group-count { font-size: 0.7rem; font-weight: 600; background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; margin-bottom: 16px; font-size: 0.875rem; }
+  thead { background: #f8fafc; }
+  th { text-align: left; padding: 10px 14px; font-weight: 600; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid #e2e8f0; }
+  td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover { background: #fefce8; }
+  .route-path { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.8rem; font-weight: 600; color: #0f172a; white-space: nowrap; }
+  .tag { display: inline-block; font-size: 0.65rem; font-weight: 700; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; }
+  .tag-public { background: #dcfce7; color: #166534; }
+  .tag-auth { background: #fef9c3; color: #854d0e; }
+  .tag-trial { background: #e0e7ff; color: #3730a3; }
+  .tag-pro { background: #fce7f3; color: #9d174d; }
+  .tag-school { background: #ede9fe; color: #5b21b6; }
+  .tag-admin { background: #fee2e2; color: #991b1b; }
+  .tag-api { background: #f0f9ff; color: #075985; }
+  .tag-page { background: #f1f5f9; color: #475569; }
+  .tag-seo { background: #ecfdf5; color: #065f46; }
+  .flow-section { margin-top: 48px; margin-bottom: 48px; }
+  .flow-section h2 { font-size: 1.4rem; font-weight: 700; color: #0f172a; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 3px solid #3b82f6; }
+  .flow-box { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+  .flow-box h4 { font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-bottom: 12px; }
+  .flow-steps { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .flow-step { background: #f1f5f9; border-radius: 8px; padding: 6px 12px; font-size: 0.8rem; font-weight: 500; color: #334155; font-family: monospace; }
+  .flow-arrow { color: #94a3b8; font-weight: 700; }
+  .cross-domain { border-left: 3px solid #f97316; padding-left: 10px; }
+  .note { font-size: 0.8rem; color: #64748b; margin-top: 8px; font-style: italic; }
+  @media (max-width: 768px) {
+    table { font-size: 0.78rem; }
+    td, th { padding: 8px 10px; }
+    .stats-bar { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Draw in the Air — Complete Route Map</h1>
+<p class="subtitle">Every route, page, API endpoint, and user flow across both domains. Generated 13 March 2026.</p>
+
+<div class="stats-bar">
+  <div class="stat"><div class="stat-value">~200</div><div class="stat-label">Total Routes</div></div>
+  <div class="stat"><div class="stat-value">~150</div><div class="stat-label">Main Site</div></div>
+  <div class="stat"><div class="stat-value">~51</div><div class="stat-label">Platform</div></div>
+  <div class="stat"><div class="stat-value">7</div><div class="stat-label">API Endpoints</div></div>
+  <div class="stat"><div class="stat-value">2</div><div class="stat-label">Domains</div></div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- MAIN SITE -->
+<!-- ════════════════════════════════════════════ -->
+<div class="domain-section">
+<div class="domain-header">
+  <h2>drawintheair.com</h2>
+  <span class="domain-badge badge-main">Vite SPA</span>
+</div>
+
+<div class="group-section">
+<div class="group-header"><h3>Core App</h3><span class="group-count">6 routes</span></div>
+<table>
+<thead><tr><th>Route</th><th>Component</th><th>Auth</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td class="route-path">/play</td><td>App</td><td><span class="tag tag-public">Public</span></td><td>Main game launcher — onboarding → activity menu → gameplay</td></tr>
+<tr><td class="route-path">/onboarding</td><td>App</td><td><span class="tag tag-public">Public</span></td><td>Alias for /play — WaveToWake hand detection onboarding</td></tr>
+<tr><td class="route-path">/demo</td><td>DemoLoader</td><td><span class="tag tag-public">Public</span></td><td>Legacy demo entry point (redirects internally to play flow)</td></tr>
+<tr><td class="route-path">/app</td><td>App</td><td><span class="tag tag-public">Public</span></td><td>Legacy hash-based route for backwards compatibility</td></tr>
+<tr><td class="route-path">/admin</td><td>Admin</td><td><span class="tag tag-admin">PIN</span></td><td>Internal analytics dashboard (VITE_ADMIN_PIN protected)</td></tr>
+<tr><td class="route-path">?debug=qa</td><td>QAPage</td><td><span class="tag tag-admin">Debug</span></td><td>QA testing page (query param on any route)</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="group-section">
+<div class="group-header"><h3>Class Mode (Teacher + Student)</h3><span class="group-count">6 routes</span></div>
+<table>
+<thead><tr><th>Route</th><th>Component</th><th>Auth</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td class="route-path">/class</td><td>TeacherDashboard</td><td><span class="tag tag-auth">Google OAuth</span></td><td>Teacher dashboard — sign in, pick activity, create session</td></tr>
+<tr><td class="route-path">/class/lobby</td><td>LobbyScreen</td><td><span class="tag tag-auth">Session</span></td><td>Pre-game lobby — display join code, wait for students</td></tr>
+<tr><td class="route-path">/class/round</td><td>LiveRoundScreen</td><td><span class="tag tag-auth">Session</span></td><td>Live round — activity running, real-time leaderboard</td></tr>
+<tr><td class="route-path">/class/results</td><td>ResultsScreen</td><td><span class="tag tag-auth">Session</span></td><td>Round results — scores, rankings, next round controls</td></tr>
+<tr><td class="route-path">/join</td><td>StudentJoin</td><td><span class="tag tag-public">Public</span></td><td>Student join — enter 4-digit code + first name</td></tr>
+<tr><td class="route-path">/join/play</td><td>StudentGameScreen</td><td><span class="tag tag-public">Public</span></td><td>Student gameplay — hand tracking game in class session</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="group-section">
+<div class="group-header"><h3>Landing & Marketing</h3><span class="group-count">5 routes</span></div>
+<table>
+<thead><tr><th>Route</th><th>Component</th><th>Auth</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td class="route-path">/</td><td>Landing</td><td><span class="tag tag-public">Public</span></td><td>Homepage — hero, how it works, activities, testimonials, CTA</td></tr>
+<tr><td class="route-path">/faq</td><td>FAQ</td><td><span class="tag tag-public">Public</span></td><td>Frequently asked questions (parents, teachers, safety)</td></tr>
+<tr><td class="route-path">/schools</td><td>Schools</td><td><span class="tag tag-public">Public</span></td><td>School pilot pack page with PDF download</td></tr>
+<tr><td class="route-path">/parents</td><td>ParentsLanding</td><td><span class="tag tag-public">Public</span></td><td>Landing page for parents — safety, benefits</td></tr>
+<tr><td class="route-path">/parent</td><td>ParentAccess</td><td><span class="tag tag-public">Public</span></td><td>Parent access/controls page</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="group-section">
+<div class="group-header"><h3>Legal & Policy Pages</h3><span class="group-count">5 routes</span></div>
+<table>
+<thead><tr><th>Route</th><th>Component</th><th>Auth</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td class="route-path">/privacy</td><td>Privacy</td><td><span class="tag tag-public">Public</span></td><td>Privacy policy — camera, data, COPPA/GDPR compliance</td></tr>
+<tr><td class="route-path">/terms</td><td>Terms</td><td><span class="tag tag-public">Public</span></td><td>Terms of service</td></tr>
+<tr><td class="route-path">/cookies</td><td>Cookies</td><td><span class="tag tag-public">Public</span></td><td>Cookie policy (essential only, no tracking)</td></tr>
+<tr><td class="route-path">/safeguarding</td><td>Safeguarding</td><td><span class="tag tag-public">Public</span></td><td>Child safeguarding policy</td></tr>
+<tr><td class="route-path">/accessibility</td><td>Accessibility</td><td><span class="tag tag-public">Public</span></td><td>Accessibility statement</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="group-section">
+<div class="group-header"><h3>SEO Audience Pages</h3><span class="group-count">6 routes</span></div>
+<table>
+<thead><tr><th>Route</th><th>Component</th><th>Auth</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td class="route-path">/for-teachers</td><td>ForTeachersPage</td><td><span class="tag tag-seo">SEO</span></td><td>Teacher-focused landing — classroom features, use cases</td></tr>
+<tr><td class="route-path">/for-parents</td><td>ForParentsPage</td><td><span class="tag tag-seo">SEO</span></td><td>Parent-focused landing — safety, family benefits</td></tr>
+<tr><td class="route-path">/for-homeschool</td><td>EducationPage</td><td><span class="tag tag-seo">SEO</span></td><td>Homeschool families landing page</td></tr>
+<tr><td class="route-path">/for-preschool</td><td>EducationPage</td><td><span class="tag tag-seo">SEO</span></td><td>Preschool settings landing page</td></tr>
+<tr><td class="route-path">/for-kindergarten</td><td>EducationPage</td><td><span class="tag tag-seo">SEO</span></td><td>Kindergarten settings landing page</td></tr>
+<tr><td class="route-path">/schools/training</td><td>Training</td><td><span class="tag tag-public">Public</span></td><td>Training resources for school staff</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="group-section">
+<div class="group-header"><h3>SEO Use-Case Landing Pages</h3><span class="group-count">7 routes</span></div>
+<table>
+<thead><tr><th>Route</th><th>Component</th><th>Auth</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td class="route-path">/gesture-learning</td><td>UseCasePage</td><td><span class="tag tag-seo">SEO</span></td><td>Gesture-based learning introduction</td></tr>
+<tr><td class="route-path">/classroom-movement-activities</td><td>UseCasePage</td><td><span class="tag tag-seo">SEO</span></td><td>Movement activities for classrooms</td></tr>
+<tr><td class="route-path">/chromebook-learning-tools</td><td>UseCasePage</td><td><span class="tag tag-seo">SEO</span></td><td>Chromebook-specific learning tools</td></tr>
+<tr><td class="route-path">/homeschool-movement-learning</td><td>UseCasePage</td><td><span class="tag tag-seo">SEO</span></td><td>Movement learning for homeschool</td></tr>
+<tr><td class="route-path">/hand-eye-coordination-activities</td><td>UseCasePage</td><td><span class="tag tag-seo">SEO</span></td><td>Hand-eye coordination building</td></tr>
+<tr><td class="route-path">/ai-learning-tools-for-kids</td><td>UseCasePage</td><td><span class="tag tag-seo">SEO</span></td><td>AI/computer vision learning for kids</td></tr>
+<tr><td class="route-path">/stem-learning</td><td>UseCasePage</td><td><span class="tag tag-seo">SEO</span></td><td>STEM learning (alias for AI learning tools)</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="group-section">
+<div class="group-header"><h3>Learn Hub (Articles)</h3><span class="group-count">7 routes</span></div>
+<table>
+<thead><tr><th>Route</th><th>Component</th><th>Auth</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td class="route-path">/learn</td><td>LearnHubPage</td><td><span class="tag tag-seo">SEO</span></td><td>Learn hub index — lists all educational articles</td></tr>
+<tr><td class="route-path">/learn/hand-tracking-for-kids</td><td>LearnArticlePage</td><td><span class="tag tag-seo">SEO</span></td><td>Article: hand tracking technology explained</td></tr>
+<tr><td class="route-path">/learn/gesture-learning</td><td>LearnArticlePage</td><td><span class="tag tag-seo">SEO</span></td><td>Article: gesture-based learning pedagogy</td></tr>
+<tr><td class="route-path">/learn/drawing-skills-for-children</td><td>LearnArticlePage</td><td><span class="tag tag-seo">SEO</span></td><td>Article: how drawing develops motor skills</td></tr>
+<tr><td class="route-path">/learn/early-childhood-motor-skills</td><td>LearnArticlePage</td><td><span class="tag tag-seo">SEO</span></td><td>Article: motor skill development guide</td></tr>
+<tr><td class="route-path">/learn/ai-for-kids</td><td>LearnArticlePage</td><td><span class="tag tag-seo">SEO</span></td><td>Article: AI explained for kids</td></tr>
+<tr><td class="route-path">/learn/screen-time-alternatives</td><td>LearnArticlePage</td><td><span class="tag tag-seo">SEO</span></td><td>Article: screen time alternatives</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="group-section">
+<div class="group-header"><h3>Activity Pages</h3><span class="group-count">4 standard + 11 seasonal</span></div>
+<table>
+<thead><tr><th>Route</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td class="route-path">/activities/bubble-pop</td><td><span class="tag tag-page">Activity</span></td><td>Bubble Pop — pop bubbles with hand gestures</td></tr>
+<tr><td class="route-path">/activities/sort-and-place</td><td><span class="tag tag-page">Activity</span></td><td>Sort & Place — categorize objects by dragging</td></tr>
+<tr><td class="route-path">/activities/letter-tracing</td><td><span class="tag tag-page">Activity</span></td><td>Letter Tracing — trace letters with finger</td></tr>
+<tr><td class="route-path">/free-paint</td><td><span class="tag tag-page">Activity</span></td><td>Free Paint — creative drawing mode</td></tr>
+<tr><td class="route-path">/draw-number-in-air</td><td><span class="tag tag-seo">Viral</span></td><td>Viral challenge: draw a number in the air</td></tr>
+<tr><td class="route-path">/air-drawing-challenge</td><td><span class="tag tag-seo">Viral</span></td><td>Viral challenge: air drawing challenge</td></tr>
+<tr><td class="route-path">/draw-circle-in-air</td><td><span class="tag tag-seo">Viral</span></td><td>Viral challenge: draw a circle in the air</td></tr>
+<tr><td class="route-path">/activities/christmas-drawing-for-kids</td><td><span class="tag tag-seo">Seasonal</span></td><td>Christmas drawing activity</td></tr>
+<tr><td class="route-path">/activities/halloween-drawing-kids</td><td><span class="tag tag-seo">Seasonal</span></td><td>Halloween drawing activity</td></tr>
+<tr><td class="route-path">/activities/back-to-school-activities</td><td><span class="tag tag-seo">Seasonal</span></td><td>Back to school activities</td></tr>
+<tr><td class="route-path">/activities/valentines-drawing-kids</td><td><span class="tag tag-seo">Seasonal</span></td><td>Valentine's Day drawing</td></tr>
+<tr><td class="route-path">/activities/easter-drawing-kids</td><td><span class="tag tag-seo">Seasonal</span></td><td>Easter drawing activity</td></tr>
+<tr><td class="route-path">/activities/summer-activities-kids</td><td><span class="tag tag-seo">Seasonal</span></td><td>Summer activities for kids</td></tr>
+<tr><td class="route-path">/activities/thanksgiving-kids-activities</td><td><span class="tag tag-seo">Seasonal</span></td><td>Thanksgiving activities</td></tr>
+<tr><td class="route-path">/activities/mothers-day-drawing-kids</td><td><span class="tag tag-seo">Seasonal</span></td><td>Mother's Day drawing</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="group-section">
+<div class="group-header"><h3>Tracing Pages</h3><span class="group-count">26 letters + 10 numbers + 8 shapes</span></div>
+<table>
+<thead><tr><th>Route Pattern</th><th>Count</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td class="route-path">/letter-tracing</td><td>1</td><td>Tracing hub page (defaults to letter A)</td></tr>
+<tr><td class="route-path">/trace-a … /trace-z</td><td>26</td><td>Individual letter tracing pages with phonics (A–Z)</td></tr>
+<tr><td class="route-path">/trace-number-1 … /trace-number-10</td><td>10</td><td>Number tracing pages with fun facts (1–10)</td></tr>
+<tr><td class="route-path">/trace-circle, /trace-triangle, /trace-square, /trace-star, /trace-heart, /trace-rectangle, /trace-diamond, /trace-oval</td><td>8</td><td>Shape tracing pages</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="group-section">
+<div class="group-header"><h3>Growth Engine & Share Pages</h3><span class="group-count">13 routes</span></div>
+<table>
+<thead><tr><th>Route</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td class="route-path">/share/bubble-pop</td><td>Share landing: Bubble Pop</td></tr>
+<tr><td class="route-path">/share/letter-tracing</td><td>Share landing: Letter Tracing</td></tr>
+<tr><td class="route-path">/share/sort-and-place</td><td>Share landing: Sort & Place</td></tr>
+<tr><td class="route-path">/share/free-paint</td><td>Share landing: Free Paint</td></tr>
+<tr><td class="route-path">/share/word-search</td><td>Share landing: Word Search</td></tr>
+<tr><td class="route-path">/share/gesture-spelling</td><td>Share landing: Gesture Spelling</td></tr>
+<tr><td class="route-path">/share/colour-builder</td><td>Share landing: Colour Builder</td></tr>
+<tr><td class="route-path">/share/balloon-math</td><td>Share landing: Balloon Math</td></tr>
+<tr><td class="route-path">/share/rainbow-bridge</td><td>Share landing: Rainbow Bridge</td></tr>
+<tr><td class="route-path">/share/calibration</td><td>Share landing: Calibration</td></tr>
+<tr><td class="route-path">/embed</td><td>Widget embed page with copy-paste code</td></tr>
+<tr><td class="route-path">/press</td><td>Press kit / media assets</td></tr>
+<tr><td class="route-path">/free-resources</td><td>Free printable worksheets & resources</td></tr>
+</tbody>
+</table>
+</div>
+
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PLATFORM -->
+<!-- ════════════════════════════════════════════ -->
+<div class="domain-section">
+<div class="domain-header">
+  <h2>app.drawintheair.com</h2>
+  <span class="domain-badge badge-platform">Next.js 14</span>
+</div>
+
+<div class="group-section">
+<div class="group-header"><h3>Marketing Pages</h3><span class="group-count">11 routes</span></div>
+<table>
+<thead><tr><th>Route</th><th>Auth</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td class="route-path">/</td><td><span class="tag tag-public">Public</span></td><td>Platform homepage — hero, activities showcase, testimonials</td></tr>
+<tr><td class="route-path">/pricing</td><td><span class="tag tag-public">Public</span></td><td>Pricing page — Free / Teacher Pro / School plans</td></tr>
+<tr><td class="route-path">/for-teachers</td><td><span class="tag tag-public">Public</span></td><td>Teacher-focused marketing with trial CTA</td></tr>
+<tr><td class="route-path">/for-schools</td><td><span class="tag tag-public">Public</span></td><td>School licensing info with contact CTA</td></tr>
+<tr><td class="route-path">/about</td><td><span class="tag tag-public">Public</span></td><td>About the company</td></tr>
+<tr><td class="route-path">/contact</td><td><span class="tag tag-public">Public</span></td><td>Contact form for schools and partnerships</td></tr>
+<tr><td class="route-path">/blog</td><td><span class="tag tag-public">Public</span></td><td>Blog listing page</td></tr>
+<tr><td class="route-path">/blog/[slug]</td><td><span class="tag tag-public">Public</span></td><td>Individual blog post (dynamic)</td></tr>
+<tr><td class="route-path">/activities</td><td><span class="tag tag-public">Public</span></td><td>Activities showcase page</td></tr>
+<tr><td class="route-path">/privacy</td><td><span class="tag tag-public">Public</span></td><td>Privacy policy</td></tr>
+<tr><td class="route-path">/terms</td><td><span class="tag tag-public">Public</span></td><td>Terms of service</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="group-section">
+<div class="group-header"><h3>Authentication</h3><span class="group-count">3 routes</span></div>
+<table>
+<thead><tr><th>Route</th><th>Type</th><th>Auth</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td class="route-path">/auth/login</td><td><span class="tag tag-page">Page</span></td><td><span class="tag tag-public">Public</span></td><td>Google OAuth login — auto-redirects to /dashboard if authenticated</td></tr>
+<tr><td class="route-path">/auth/callback</td><td><span class="tag tag-api">API</span></td><td><span class="tag tag-public">Public</span></td><td>OAuth callback — exchanges code, creates teacher, sets trial tier</td></tr>
+<tr><td class="route-path">/auth/logout</td><td><span class="tag tag-api">API</span></td><td><span class="tag tag-auth">Auth</span></td><td>Sign out — clears session, redirects to /auth/login</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="group-section">
+<div class="group-header"><h3>Teacher Dashboard</h3><span class="group-count">8 routes — all require auth</span></div>
+<table>
+<thead><tr><th>Route</th><th>Tier</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td class="route-path">/dashboard</td><td><span class="tag tag-auth">Free+</span></td><td>Overview — stats, recent sessions, quick actions</td></tr>
+<tr><td class="route-path">/dashboard/sessions</td><td><span class="tag tag-auth">Free+</span></td><td>Session history list</td></tr>
+<tr><td class="route-path">/dashboard/sessions/[id]</td><td><span class="tag tag-auth">Free+</span></td><td>Individual session detail with student scores</td></tr>
+<tr><td class="route-path">/dashboard/analytics</td><td><span class="tag tag-pro">Pro+</span></td><td>Session analytics and performance data</td></tr>
+<tr><td class="route-path">/dashboard/insights</td><td><span class="tag tag-pro">Pro+</span></td><td>AI-generated teaching insights (Claude Haiku)</td></tr>
+<tr><td class="route-path">/dashboard/playlists</td><td><span class="tag tag-pro">Pro+</span></td><td>Saved activity playlists</td></tr>
+<tr><td class="route-path">/dashboard/settings</td><td><span class="tag tag-auth">Free+</span></td><td>Account settings — name, avatar, preferences</td></tr>
+<tr><td class="route-path">/dashboard/upgrade</td><td><span class="tag tag-auth">Free+</span></td><td>Upgrade to Pro page with Stripe checkout CTA</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="group-section">
+<div class="group-header"><h3>Classroom (Platform)</h3><span class="group-count">7 routes</span></div>
+<table>
+<thead><tr><th>Route</th><th>Auth</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td class="route-path">/classroom/start</td><td><span class="tag tag-trial">Trial+</span></td><td>Teacher setup — select activity, configure session</td></tr>
+<tr><td class="route-path">/classroom/[id]/lobby</td><td><span class="tag tag-trial">Trial+</span></td><td>Lobby — display join code, student wait list</td></tr>
+<tr><td class="route-path">/classroom/[id]/round</td><td><span class="tag tag-trial">Trial+</span></td><td>Live round — activity running, real-time scores</td></tr>
+<tr><td class="route-path">/classroom/[id]/results</td><td><span class="tag tag-trial">Trial+</span></td><td>Round results — leaderboard, export (Pro only)</td></tr>
+<tr><td class="route-path">/join</td><td><span class="tag tag-public">Public</span></td><td>Student join — 4-digit code + name entry</td></tr>
+<tr><td class="route-path">/join/play</td><td><span class="tag tag-public">Public</span></td><td>Student gameplay — real-time via Supabase</td></tr>
+<tr><td class="route-path">/join/results</td><td><span class="tag tag-public">Public</span></td><td>Student results screen</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="group-section">
+<div class="group-header"><h3>School Management</h3><span class="group-count">6 routes — require school_id</span></div>
+<table>
+<thead><tr><th>Route</th><th>Auth</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td class="route-path">/school</td><td><span class="tag tag-school">School</span></td><td>School dashboard overview</td></tr>
+<tr><td class="route-path">/school/teachers</td><td><span class="tag tag-school">School</span></td><td>Teacher roster management</td></tr>
+<tr><td class="route-path">/school/teachers/invite</td><td><span class="tag tag-school">School</span></td><td>Invite new teachers via email</td></tr>
+<tr><td class="route-path">/school/analytics</td><td><span class="tag tag-school">School</span></td><td>School-wide aggregated analytics</td></tr>
+<tr><td class="route-path">/school/billing</td><td><span class="tag tag-school">School</span></td><td>School subscription and billing</td></tr>
+<tr><td class="route-path">/school/settings</td><td><span class="tag tag-school">School</span></td><td>School name, logo, configuration</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="group-section">
+<div class="group-header"><h3>Platform Admin</h3><span class="group-count">11 routes — require is_admin</span></div>
+<table>
+<thead><tr><th>Route</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td class="route-path">/admin</td><td>Command Center — live metrics, alerts, active sessions</td></tr>
+<tr><td class="route-path">/admin/users</td><td>User browser — search, filter, manage teachers</td></tr>
+<tr><td class="route-path">/admin/users/[id]</td><td>Individual teacher detail and management</td></tr>
+<tr><td class="route-path">/admin/sessions</td><td>Browse all platform sessions</td></tr>
+<tr><td class="route-path">/admin/schools</td><td>School management — create, edit schools</td></tr>
+<tr><td class="route-path">/admin/billing</td><td>Revenue, subscriptions, payment management</td></tr>
+<tr><td class="route-path">/admin/growth</td><td>Growth metrics — signups, tier distribution, retention</td></tr>
+<tr><td class="route-path">/admin/intelligence</td><td>Activity intelligence — usage data, performance</td></tr>
+<tr><td class="route-path">/admin/operations</td><td>System health, errors, uptime monitoring</td></tr>
+<tr><td class="route-path">/admin/content</td><td>Content management — activities, resources</td></tr>
+<tr><td class="route-path">/admin/system</td><td>System settings, configuration, API keys</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="group-section">
+<div class="group-header"><h3>API Endpoints</h3><span class="group-count">7 endpoints</span></div>
+<table>
+<thead><tr><th>Route</th><th>Method</th><th>Auth</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td class="route-path">/api/stripe/checkout</td><td>POST</td><td><span class="tag tag-auth">Bearer</span></td><td>Create Stripe checkout session for Pro upgrade</td></tr>
+<tr><td class="route-path">/api/stripe/webhook</td><td>POST</td><td><span class="tag tag-api">Signature</span></td><td>Stripe webhook — subscription lifecycle events</td></tr>
+<tr><td class="route-path">/api/insights/generate</td><td>POST</td><td><span class="tag tag-pro">Pro+</span></td><td>Generate AI teaching insights (Claude Haiku)</td></tr>
+<tr><td class="route-path">/api/school/invite</td><td>POST</td><td><span class="tag tag-school">School Admin</span></td><td>Create teacher invite tokens (batch up to 50)</td></tr>
+<tr><td class="route-path">/api/auth/join-school</td><td>POST</td><td><span class="tag tag-auth">Bearer</span></td><td>Accept school invite via token</td></tr>
+<tr><td class="route-path">/api/auth/signout</td><td>POST/GET</td><td><span class="tag tag-auth">Bearer</span></td><td>Alternative sign out endpoint</td></tr>
+<tr><td class="route-path">/api/errors/report</td><td>POST</td><td><span class="tag tag-public">Public</span></td><td>Client-side error reporting (rate limited 10/min)</td></tr>
+</tbody>
+</table>
+</div>
+
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- USER FLOWS -->
+<!-- ════════════════════════════════════════════ -->
+<div class="flow-section">
+<h2>Key User Flows</h2>
+
+<div class="flow-box">
+<h4>Parent/Child — Free Play</h4>
+<div class="flow-steps">
+  <span class="flow-step">drawintheair.com/</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">/play</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">WaveToWake onboarding</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Activity menu</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Gameplay</span>
+</div>
+<div class="note">No auth required. No account needed. Camera stays local.</div>
+</div>
+
+<div class="flow-box">
+<h4>Teacher — Sign Up & First Session</h4>
+<div class="flow-steps cross-domain">
+  <span class="flow-step">drawintheair.com/for-teachers</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">app.drawintheair.com/auth/login</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Google OAuth</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">/auth/callback</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">/dashboard</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">/classroom/start</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">/classroom/[id]/lobby</span>
+</div>
+<div class="note">Auto-creates teacher record with 5-day trial. No credit card required.</div>
+</div>
+
+<div class="flow-box">
+<h4>Teacher — Class Mode (Main Site)</h4>
+<div class="flow-steps">
+  <span class="flow-step">drawintheair.com/class</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Google OAuth (implicit)</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">/class (dashboard)</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Pick activity</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">/class/lobby</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">/class/round</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">/class/results</span>
+</div>
+<div class="note">Lightweight class mode on main site. Students join via drawintheair.com/join.</div>
+</div>
+
+<div class="flow-box">
+<h4>Student — Join Class Session</h4>
+<div class="flow-steps">
+  <span class="flow-step">drawintheair.com/join</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Enter 4-digit code</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Enter first name</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">/join/play</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Gameplay (real-time)</span>
+</div>
+<div class="note">No account, no email, no login. Just code + name.</div>
+</div>
+
+<div class="flow-box">
+<h4>Teacher — Upgrade to Pro</h4>
+<div class="flow-steps cross-domain">
+  <span class="flow-step">/dashboard/upgrade</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">POST /api/stripe/checkout</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Stripe Checkout</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">/dashboard?upgraded=true</span>
+</div>
+<div class="note">Webhook updates tier to 'pro'. Cancel returns to /dashboard/upgrade.</div>
+</div>
+
+<div class="flow-box">
+<h4>School — Onboard Teachers</h4>
+<div class="flow-steps cross-domain">
+  <span class="flow-step">/school/teachers/invite</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">POST /api/school/invite</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Teacher receives invite link</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">POST /api/auth/join-school</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Teacher gets Pro via school</span>
+</div>
+<div class="note">Token-based invite. Email must match. Auto-grants Pro tier via school membership.</div>
+</div>
+
+<div class="flow-box">
+<h4>SEO Discovery → Conversion</h4>
+<div class="flow-steps cross-domain">
+  <span class="flow-step">Google search</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">drawintheair.com/trace-a</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">/play (try activity)</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">app.drawintheair.com/auth/login</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">/dashboard</span>
+</div>
+<div class="note">~80+ SEO landing pages feed organic traffic into the play → signup funnel.</div>
+</div>
+
+</div>
+
+</div>
+</body>
+</html>
