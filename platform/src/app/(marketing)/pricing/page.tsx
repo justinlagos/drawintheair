@@ -40,7 +40,7 @@ export default function PricingPage() {
       price: '£4.99',
       period: '/month',
       cta: 'Start 5-Day Trial',
-      ctaHref: '/auth/signup?plan=teacher',
+      ctaHref: '/auth/login',
       ctaExternal: false,
       highlighted: true,
       features: [

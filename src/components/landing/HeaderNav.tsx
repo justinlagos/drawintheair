@@ -128,21 +128,21 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ onTryFree }) => {
           <a
             href={platformUrl + '/auth/login'}
             className="nav-cta-secondary"
-            style={{ color: '#475569' }}
+            style={{ color: 'inherit' }}
           >
             Teacher Login
           </a>
           <LandingCTAButton
             variant="primary"
             size="sm"
-            href="/demo"
+            href="/play"
             label="Try Free"
             onClick={(e) => {
               e.preventDefault();
               if (onTryFree) {
                 onTryFree();
               } else {
-                window.location.pathname = '/demo';
+                window.location.pathname = '/play';
               }
             }}
           />
@@ -175,7 +175,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ onTryFree }) => {
           <a href="#modes" onClick={(e) => handleNavClick(e, '#modes')}>Activities</a>
           <a href="#schools" onClick={(e) => handleNavClick(e, '#schools')}>For Schools</a>
           <a href="#faq" onClick={(e) => handleNavClick(e, '#faq')}>FAQ</a>
-          <a href={platformUrl + '/auth/login'} style={{ color: '#475569' }}>Teacher Login</a>
+          <a href={platformUrl + '/auth/login'} style={{ color: 'inherit' }}>Teacher Login</a>
           <LandingCTAButton
             variant="secondary"
             size="md"

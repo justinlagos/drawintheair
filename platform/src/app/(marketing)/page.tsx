@@ -235,7 +235,7 @@ export default function HomePage() {
   useScrollReveal();
 
   return (
-    <div className="bg-white overflow-x-hidden">
+    <div className="bg-slate-50 overflow-x-hidden">
 
       {/* ════════════════════════════════════════════════
           HERO
@@ -352,7 +352,7 @@ export default function HomePage() {
 
       {/* Wave divider */}
       <div className="-mt-1 overflow-hidden leading-none">
-        <svg viewBox="0 0 1200 60" preserveAspectRatio="none" className="h-10 w-full fill-gray-50">
+        <svg viewBox="0 0 1200 60" preserveAspectRatio="none" className="h-10 w-full fill-slate-50">
           <path d="M0 0 C200 60 400 0 600 30 S1000 0 1200 40 L1200 60 L0 60 Z"/>
         </svg>
       </div>
@@ -360,13 +360,13 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════
           STATS BAR
       ════════════════════════════════════════════════ */}
-      <section className="bg-gray-50 py-10">
+      <section className="bg-slate-50 py-10">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
             {stats.map(({ value, label }, i) => (
               <div key={label} className={`reveal delay-${i * 100} text-center`}>
                 <p className="text-3xl font-black text-orange-500">{value}</p>
-                <p className="mt-1 text-sm font-medium text-gray-500">{label}</p>
+                <p className="mt-1 text-sm font-medium text-slate-600">{label}</p>
               </div>
             ))}
           </div>
@@ -376,15 +376,15 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════
           HOW IT WORKS
       ════════════════════════════════════════════════ */}
-      <section className="bg-white py-20 sm:py-28">
+      <section className="bg-slate-50 py-20 sm:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="reveal text-center mb-16">
             <span className="inline-block rounded-full bg-orange-100 px-4 py-1 text-sm font-semibold text-orange-600 mb-3">Simple to start</span>
-            <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+            <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl">
               Up and running in{' '}
               <span className="text-purple-600">30 seconds</span>
             </h2>
-            <p className="mt-3 text-gray-500 max-w-xl mx-auto">No IT setup. No app installs. Just open, allow camera, and go.</p>
+            <p className="mt-3 text-slate-600 max-w-xl mx-auto">No IT setup. No app installs. Just open, allow camera, and go.</p>
           </div>
 
           <div className="space-y-16 lg:space-y-24">
@@ -400,8 +400,8 @@ export default function HomePage() {
                   <div className={`inline-flex h-14 w-14 items-center justify-center rounded-2xl ${color} shadow-lg mb-5`}>
                     <span className="text-2xl font-black text-white">{n}</span>
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 sm:text-3xl">{title}</h3>
-                  <p className="mt-3 text-lg text-gray-500 leading-relaxed">{desc}</p>
+                  <h3 className="text-2xl font-bold text-slate-900 sm:text-3xl">{title}</h3>
+                  <p className="mt-3 text-lg text-slate-600 leading-relaxed">{desc}</p>
                 </div>
               </div>
             ))}
@@ -411,7 +411,7 @@ export default function HomePage() {
 
       {/* Wave into activities */}
       <div className="overflow-hidden leading-none">
-        <svg viewBox="0 0 1200 50" preserveAspectRatio="none" className="h-8 w-full fill-orange-50">
+        <svg viewBox="0 0 1200 50" preserveAspectRatio="none" className="h-8 w-full fill-slate-50">
           <path d="M0 50 C300 0 700 50 1200 10 L1200 50 Z"/>
         </svg>
       </div>
@@ -419,12 +419,12 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════
           ACTIVITY CARDS
       ════════════════════════════════════════════════ */}
-      <section className="bg-orange-50 py-20 sm:py-28">
+      <section className="bg-slate-50 py-20 sm:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="reveal text-center mb-14">
-            <span className="inline-block rounded-full bg-orange-200 px-4 py-1 text-sm font-semibold text-orange-700 mb-3">8 activities</span>
-            <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">Explore the learning activities</h2>
-            <p className="mt-3 text-gray-500">Every activity is EYFS-aligned and designed for ages 3–8.</p>
+            <span className="inline-block rounded-full bg-orange-100 px-4 py-1 text-sm font-semibold text-orange-700 mb-3">8 activities</span>
+            <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl">Explore the learning activities</h2>
+            <p className="mt-3 text-slate-600">Every activity is EYFS-aligned and designed for ages 3–8.</p>
           </div>
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -442,9 +442,9 @@ export default function HomePage() {
                 <div className="p-5">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-2xl">{act.emoji}</span>
-                    <h3 className="font-bold text-gray-900">{act.name}</h3>
+                    <h3 className="font-bold text-slate-900">{act.name}</h3>
                   </div>
-                  <p className="text-sm text-gray-500 leading-relaxed">{act.desc}</p>
+                  <p className="text-sm text-slate-600 leading-relaxed">{act.desc}</p>
                   <div className={`mt-3 inline-flex items-center gap-1 text-xs font-bold ${act.accent}`}>Try activity →</div>
                 </div>
               </a>
@@ -462,7 +462,7 @@ export default function HomePage() {
 
       {/* Wave */}
       <div className="overflow-hidden leading-none">
-        <svg viewBox="0 0 1200 50" preserveAspectRatio="none" className="h-8 w-full fill-white">
+        <svg viewBox="0 0 1200 50" preserveAspectRatio="none" className="h-8 w-full fill-slate-50">
           <path d="M0 0 C400 50 800 0 1200 30 L1200 50 L0 50 Z"/>
         </svg>
       </div>
@@ -470,7 +470,7 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════
           CLASSROOM MODE
       ════════════════════════════════════════════════ */}
-      <section className="bg-white py-20 sm:py-28">
+      <section className="bg-slate-50 py-20 sm:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 shadow-2xl">
             <div className="grid lg:grid-cols-2">
@@ -530,7 +530,7 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════
           PARENT PHOTO SECTION
       ════════════════════════════════════════════════ */}
-      <section className="bg-amber-50 py-20 sm:py-24">
+      <section className="bg-slate-50 py-20 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div className="reveal-left">
@@ -540,15 +540,15 @@ export default function HomePage() {
               </div>
             </div>
             <div className="reveal-right">
-              <span className="inline-block rounded-full bg-amber-100 px-4 py-1 text-sm font-semibold text-amber-700 mb-4">🏠 For Home</span>
-              <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">Screen time that actually means something</h2>
-              <p className="mt-4 text-lg text-gray-600 leading-relaxed">
+              <span className="inline-block rounded-full bg-orange-100 px-4 py-1 text-sm font-semibold text-orange-700 mb-4">🏠 For Home</span>
+              <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl">Screen time that actually means something</h2>
+              <p className="mt-4 text-lg text-slate-600 leading-relaxed">
                 Draw in the Air turns any webcam session into an active, physical learning moment. Children get up, move, and practise real skills — parents get peace of mind.
               </p>
               <ul className="mt-5 space-y-2.5">
                 {['EYFS and early literacy aligned', 'No registration needed for free activities', 'Works on any laptop or tablet with a camera', 'Children stay safe — no data collected'].map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-gray-700">
-                    <svg className="h-4 w-4 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <li key={f} className="flex items-center gap-2 text-slate-700">
+                    <svg className="h-4 w-4 text-orange-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/>
                     </svg>
                     <span className="text-sm">{f}</span>
@@ -557,7 +557,7 @@ export default function HomePage() {
               </ul>
               <div className="mt-7">
                 <a href={`${gameUrl}/play`}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-amber-500 px-6 py-3 text-sm font-bold text-white hover:bg-amber-600 transition-colors shadow-md">
+                  className="inline-flex items-center gap-2 rounded-2xl bg-orange-500 px-6 py-3 text-sm font-bold text-white hover:bg-orange-600 transition-colors shadow-md">
                   Try with your child — free
                 </a>
               </div>
@@ -569,11 +569,11 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════
           TESTIMONIALS
       ════════════════════════════════════════════════ */}
-      <section className="bg-white py-20 sm:py-28">
+      <section className="bg-slate-50 py-20 sm:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="reveal text-center mb-12">
             <span className="inline-block rounded-full bg-purple-100 px-4 py-1 text-sm font-semibold text-purple-600 mb-3">Teacher voices</span>
-            <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">What educators say</h2>
+            <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl">What educators say</h2>
           </div>
           <div className="grid gap-6 sm:grid-cols-3">
             {testimonials.map(({ quote, name, role, school, avatar, stars }, i) => (
@@ -585,12 +585,12 @@ export default function HomePage() {
                     </svg>
                   ))}
                 </div>
-                <p className="text-gray-700 leading-relaxed text-sm">"{quote}"</p>
+                <p className="text-slate-700 leading-relaxed text-sm">"{quote}"</p>
                 <footer className="mt-5 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-xl">{avatar}</div>
                   <div>
-                    <p className="text-sm font-bold text-gray-900">{name}</p>
-                    <p className="text-xs text-gray-500">{role} · {school}</p>
+                    <p className="text-sm font-bold text-slate-900">{name}</p>
+                    <p className="text-xs text-slate-600">{role} · {school}</p>
                   </div>
                 </footer>
               </blockquote>
@@ -602,20 +602,20 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════
           SCHOOL / TEACHER PLANS
       ════════════════════════════════════════════════ */}
-      <section className="bg-gray-50 py-20 sm:py-28">
+      <section className="bg-slate-50 py-20 sm:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="reveal text-center mb-12">
-            <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">Flexible plans for every setting</h2>
-            <p className="mt-3 text-gray-500">From individual teachers to whole schools.</p>
+            <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl">Flexible plans for every setting</h2>
+            <p className="mt-3 text-slate-600">From individual teachers to whole schools.</p>
           </div>
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="reveal-left edu-card p-8">
               <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-100 text-3xl shadow-sm">👩‍🏫</div>
-              <h3 className="text-xl font-extrabold text-gray-900">Teacher Pro</h3>
-              <p className="mt-2 text-gray-500 text-sm leading-relaxed">For individual teachers who want classroom mode, session analytics, and the full feature set.</p>
+              <h3 className="text-xl font-extrabold text-slate-900">Teacher Pro</h3>
+              <p className="mt-2 text-slate-600 text-sm leading-relaxed">For individual teachers who want classroom mode, session analytics, and the full feature set.</p>
               <ul className="mt-5 space-y-2">
                 {['Live classroom mode', 'Session history & analytics', 'Student progress tracking', 'AI insights after sessions', 'Playlist builder'].map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
+                  <li key={f} className="flex items-center gap-2 text-sm text-slate-700">
                     <svg className="h-4 w-4 text-orange-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/>
                     </svg>
@@ -629,14 +629,14 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="reveal-right edu-card p-8 border-2 border-purple-200">
-              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-100 text-3xl shadow-sm">🏫</div>
-              <h3 className="text-xl font-extrabold text-gray-900">School Licence</h3>
-              <p className="mt-2 text-gray-500 text-sm leading-relaxed">One licence for your whole school. Every teacher gets Pro access plus a school admin dashboard.</p>
+            <div className="reveal-right edu-card p-8 border-2 border-slate-300">
+              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-100 text-3xl shadow-sm">🏫</div>
+              <h3 className="text-xl font-extrabold text-slate-900">School Licence</h3>
+              <p className="mt-2 text-slate-600 text-sm leading-relaxed">One licence for your whole school. Every teacher gets Pro access plus a school admin dashboard.</p>
               <ul className="mt-5 space-y-2">
                 {['All teachers included', 'School-wide analytics', 'Admin dashboard & reporting', 'Bulk student management', 'Priority support'].map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
-                    <svg className="h-4 w-4 text-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <li key={f} className="flex items-center gap-2 text-sm text-slate-700">
+                    <svg className="h-4 w-4 text-orange-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/>
                     </svg>
                     {f}
@@ -644,7 +644,7 @@ export default function HomePage() {
                 ))}
               </ul>
               <div className="mt-6">
-                <Link href="/for-schools" className="inline-block rounded-xl bg-purple-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-purple-700 transition-colors shadow-sm">View School Plans →</Link>
+                <Link href="/for-schools" className="inline-block rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-600 transition-colors shadow-sm">View School Plans →</Link>
               </div>
             </div>
           </div>
@@ -654,9 +654,9 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════
           PRIVACY / SAFETY
       ════════════════════════════════════════════════ */}
-      <section className="bg-white py-16">
+      <section className="bg-slate-50 py-16">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <div className="reveal overflow-hidden rounded-3xl border border-green-200 bg-green-50">
+          <div className="reveal overflow-hidden rounded-3xl border border-slate-200 bg-white">
             <div className="grid items-center gap-6 p-8 sm:grid-cols-3">
               <div className="relative overflow-hidden rounded-2xl sm:col-span-1 h-40">
                 <Image src="/privacy-camera.jpg" alt="Privacy and safety" fill className="object-cover opacity-80"/>
@@ -664,15 +664,15 @@ export default function HomePage() {
               <div className="sm:col-span-2">
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-2xl">🔒</span>
-                  <h3 className="text-xl font-extrabold text-gray-900">Safe by design</h3>
+                  <h3 className="text-xl font-extrabold text-slate-900">Safe by design</h3>
                 </div>
-                <p className="text-gray-600 text-sm leading-relaxed">
+                <p className="text-slate-600 text-sm leading-relaxed">
                   Your camera sees hand position only. No images, video, or biometric data are ever stored, transmitted, or shared.
                   Fully compliant with UK child privacy standards and school data protection requirements.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {['No data stored', 'No images sent', 'GDPR compliant', 'UK schools ready'].map((b) => (
-                    <span key={b} className="rounded-full bg-green-100 border border-green-200 px-3 py-1 text-xs font-semibold text-green-700">✓ {b}</span>
+                    <span key={b} className="rounded-full bg-orange-100 border border-orange-200 px-3 py-1 text-xs font-semibold text-orange-700">✓ {b}</span>
                   ))}
                 </div>
               </div>

@@ -21,10 +21,10 @@ interface ButtonProps {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary: 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm',
-  secondary: 'bg-slate-700 hover:bg-slate-600 text-slate-100',
-  ghost: 'bg-transparent hover:bg-slate-800 text-slate-100 border border-slate-700',
+  secondary: 'bg-slate-100 hover:bg-slate-200 text-slate-900',
+  ghost: 'bg-transparent hover:bg-slate-100 text-slate-700 border border-slate-300',
   danger: 'bg-red-500 hover:bg-red-600 text-white',
-  outline: 'bg-transparent hover:bg-slate-50 text-slate-700 border border-slate-300 hover:border-slate-400',
+  outline: 'bg-transparent hover:bg-slate-100 text-slate-700 border border-slate-300 hover:border-slate-400',
 }
 
 const sizeStyles: Record<ButtonSize, string> = {

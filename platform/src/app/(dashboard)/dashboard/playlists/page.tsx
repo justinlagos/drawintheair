@@ -37,8 +37,8 @@ export default async function PlaylistsPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100">Playlists</h1>
-          <p className="mt-1 text-slate-400">Create and manage custom activity playlists for your classes</p>
+          <h1 className="text-3xl font-bold text-slate-900">Playlists</h1>
+          <p className="mt-1 text-slate-600">Create and manage custom activity playlists for your classes</p>
         </div>
         {isProUser && (
           <Button variant="primary" href="/dashboard/playlists/new">
@@ -87,24 +87,24 @@ export default async function PlaylistsPage() {
                 <CardContent className="flex flex-1 flex-col justify-between">
                   <div>
                     {playlist.description && (
-                      <p className="text-sm text-slate-400 mb-4">{playlist.description}</p>
+                      <p className="text-sm text-slate-600 mb-4">{playlist.description}</p>
                     )}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-400">Activities</span>
-                        <span className="font-medium text-slate-100">{activityCount}</span>
+                        <span className="text-slate-600">Activities</span>
+                        <span className="font-medium text-slate-900">{activityCount}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-400">Duration</span>
-                        <span className="font-medium text-slate-100">{playlist.duration_minutes}m</span>
+                        <span className="text-slate-600">Duration</span>
+                        <span className="font-medium text-slate-900">{playlist.duration_minutes}m</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-400">Difficulty</span>
-                        <span className="font-medium text-slate-100 capitalize">{playlist.difficulty}</span>
+                        <span className="text-slate-600">Difficulty</span>
+                        <span className="font-medium text-slate-900 capitalize">{playlist.difficulty}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-400">Created</span>
-                        <span className="text-slate-300">{dateStr}</span>
+                        <span className="text-slate-600">Created</span>
+                        <span className="text-slate-700">{dateStr}</span>
                       </div>
                     </div>
                   </div>

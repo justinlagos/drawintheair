@@ -80,8 +80,8 @@ export default async function InsightsPage() {
     <div className="space-y-8">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100">AI Insights</h1>
-          <p className="mt-1 text-slate-400">Personalized recommendations to improve your classroom</p>
+          <h1 className="text-3xl font-bold text-slate-900">AI Insights</h1>
+          <p className="mt-1 text-slate-600">Personalized recommendations to improve your classroom</p>
         </div>
         {isProUser && (
           <Button variant="primary" href="/api/insights/generate">
@@ -108,7 +108,7 @@ export default async function InsightsPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle>{currentInsight.title}</CardTitle>
-                    <p className="mt-2 text-slate-400">{currentInsight.description}</p>
+                    <p className="mt-2 text-slate-600">{currentInsight.description}</p>
                   </div>
                   <Badge
                     variant={
@@ -124,7 +124,7 @@ export default async function InsightsPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-600">
                   Generated {new Date(fullInsight.created_at).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -143,8 +143,8 @@ export default async function InsightsPage() {
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <p className="font-semibold text-slate-300">Locked Insight</p>
-                        <p className="mt-1 text-sm text-slate-400">
+                        <p className="font-semibold text-slate-700">Locked Insight</p>
+                        <p className="mt-1 text-sm text-slate-600">
                           Upgrade to Pro to see this and other insights
                         </p>
                       </div>
@@ -163,11 +163,11 @@ export default async function InsightsPage() {
                 <CardTitle className="text-base">Insights Summary</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-slate-600">
                   Showing {isTrialUser ? 1 : displayedInsights.length} of {displayedInsights.length} insight{displayedInsights.length !== 1 ? 's' : ''}
                 </p>
                 {isTrialUser && displayedInsights.length > 1 && (
-                  <p className="mt-2 text-sm text-violet-400">
+                  <p className="mt-2 text-sm text-orange-500">
                     <Button
                       variant="secondary"
                       size="sm"

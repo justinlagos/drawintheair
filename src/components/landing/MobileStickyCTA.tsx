@@ -32,11 +32,11 @@ export const MobileStickyCTA: React.FC<MobileStickyCTAProps> = ({ onGetSchoolPac
           if (onTryFree) {
             onTryFree();
           } else {
-            window.location.pathname = '/demo';
+            window.location.pathname = '/play';
           }
         }}
       >
-        Try the demo
+        Try Free
       </button>
       <button
         className="landing-mobile-sticky-btn landing-mobile-sticky-secondary"

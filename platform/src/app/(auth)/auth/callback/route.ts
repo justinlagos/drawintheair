@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const code = searchParams.get('code')
+  const next = searchParams.get('next')
 
   if (!code) {
     return NextResponse.redirect(
@@ -65,9 +66,18 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Redirect to dashboard
+    // Determine redirect destination
+    let redirectUrl = '/dashboard'
+    if (next) {
+      // Validate that next is a safe relative path (starts with / and contains no protocol)
+      if (next.startsWith('/') && !next.includes('://')) {
+        redirectUrl = next
+      }
+    }
+
+    // Redirect to dashboard or custom next parameter
     return NextResponse.redirect(
-      new URL('/dashboard', request.nextUrl.origin)
+      new URL(redirectUrl, request.nextUrl.origin)
     )
   } catch (error) {
     console.error('Callback error:', error)

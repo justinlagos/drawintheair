@@ -84,8 +84,8 @@ export default async function SessionsPage() {
   const content = (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-100">Session History</h1>
-        <p className="mt-1 text-slate-400">Review all your classroom sessions and student performance</p>
+        <h1 className="text-3xl font-bold text-slate-900">Session History</h1>
+        <p className="mt-1 text-slate-600">Review all your classroom sessions and student performance</p>
       </div>
 
       <DataTable
@@ -95,8 +95,8 @@ export default async function SessionsPage() {
       />
 
       {hiddenSessionCount > 0 && (
-        <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-          <p className="text-sm text-slate-400">
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <p className="text-sm text-slate-600">
             Showing 5 of {displayedSessions.length + hiddenSessionCount} sessions
           </p>
         </div>

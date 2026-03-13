@@ -78,10 +78,10 @@ export default async function DashboardPage() {
       {/* Welcome Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100">
+          <h1 className="text-3xl font-bold text-slate-900">
             Welcome back, {teacher.name || 'Teacher'}
           </h1>
-          <p className="mt-1 text-slate-400">Here's what's been happening with your classroom sessions.</p>
+          <p className="mt-1 text-slate-600">Here's what's been happening with your classroom sessions.</p>
         </div>
         <Badge variant={isProTier ? 'pro' : 'trial'}>
           {getTierDescription(teacher)}
@@ -171,11 +171,11 @@ export default async function DashboardPage() {
                 return (
                   <div
                     key={session.id}
-                    className="flex items-center justify-between rounded-lg border border-slate-800 p-4 hover:bg-slate-800/50 transition-colors"
+                    className="flex items-center justify-between rounded-lg border border-slate-200 p-4 hover:bg-slate-50 transition-colors"
                   >
                     <div className="flex-1">
-                      <p className="font-medium text-slate-100">Session #{session.id.slice(0, 8)}</p>
-                      <p className="text-sm text-slate-400">
+                      <p className="font-medium text-slate-900">Session #{session.id.slice(0, 8)}</p>
+                      <p className="text-sm text-slate-600">
                         {dateStr} • {studentCount} student{studentCount !== 1 ? 's' : ''}
                       </p>
                     </div>

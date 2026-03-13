@@ -39,10 +39,10 @@ export const KidsImageSection: React.FC<KidsImageSectionProps> = ({ onGetSchoolP
                     source: 'kids_image_section'
                   });
                 }
-                window.location.pathname = '/demo';
+                window.location.pathname = '/play';
               }}
             >
-              Try the demo
+              Try Free
             </button>
             <button 
               className="landing-btn landing-btn-secondary landing-btn-large" 

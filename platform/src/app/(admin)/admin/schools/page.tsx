@@ -40,8 +40,8 @@ export default async function AdminSchoolsPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-100">Schools</h1>
-        <p className="text-slate-400 mt-1">Manage school accounts and subscriptions</p>
+        <h1 className="text-3xl font-bold text-slate-900">Schools</h1>
+        <p className="text-slate-600 mt-1">Manage school accounts and subscriptions</p>
       </div>
 
       {/* Stats */}
@@ -59,18 +59,18 @@ export default async function AdminSchoolsPage() {
         </CardHeader>
         <CardContent>
           {!schools || schools.length === 0 ? (
-            <p className="text-slate-400 text-sm">No schools registered yet</p>
+            <p className="text-slate-600 text-sm">No schools registered yet</p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-slate-800">
+            <div className="overflow-x-auto rounded-lg border border-slate-200">
               <table className="w-full text-left text-sm">
-                <thead className="border-b border-slate-800 bg-slate-900/50">
+                <thead className="border-b border-slate-200 bg-slate-100">
                   <tr>
-                    <th className="px-6 py-3 font-semibold text-slate-100">School Name</th>
-                    <th className="px-6 py-3 font-semibold text-slate-100">Domain</th>
-                    <th className="px-6 py-3 font-semibold text-slate-100">Tier</th>
-                    <th className="px-6 py-3 font-semibold text-slate-100">Teachers</th>
-                    <th className="px-6 py-3 font-semibold text-slate-100">Created</th>
-                    <th className="px-6 py-3 font-semibold text-slate-100">Action</th>
+                    <th className="px-6 py-3 font-semibold text-slate-900">School Name</th>
+                    <th className="px-6 py-3 font-semibold text-slate-900">Domain</th>
+                    <th className="px-6 py-3 font-semibold text-slate-900">Tier</th>
+                    <th className="px-6 py-3 font-semibold text-slate-900">Teachers</th>
+                    <th className="px-6 py-3 font-semibold text-slate-900">Created</th>
+                    <th className="px-6 py-3 font-semibold text-slate-900">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -79,10 +79,10 @@ export default async function AdminSchoolsPage() {
                     return (
                       <tr
                         key={school.id}
-                        className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors"
+                        className="border-b border-slate-200 hover:bg-slate-100 transition-colors"
                       >
-                        <td className="px-6 py-3 font-medium text-slate-100">{school.name}</td>
-                        <td className="px-6 py-3 text-slate-400 text-sm">{school.domain || '—'}</td>
+                        <td className="px-6 py-3 font-medium text-slate-900">{school.name}</td>
+                        <td className="px-6 py-3 text-slate-600 text-sm">{school.domain || '—'}</td>
                         <td className="px-6 py-3">
                           <Badge
                             variant={
@@ -96,13 +96,13 @@ export default async function AdminSchoolsPage() {
                             {school.subscription_tier || 'free'}
                           </Badge>
                         </td>
-                        <td className="px-6 py-3 text-slate-400 text-sm">{teacherCount}</td>
-                        <td className="px-6 py-3 text-slate-400 text-sm">
+                        <td className="px-6 py-3 text-slate-600 text-sm">{teacherCount}</td>
+                        <td className="px-6 py-3 text-slate-600 text-sm">
                           {new Date(school.created_at).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-3">
                           <Link href={`/admin/users?school=${school.id}`}>
-                            <button className="text-violet-400 hover:text-violet-300 text-sm font-medium">
+                            <button className="text-orange-500 hover:text-orange-600 text-sm font-medium">
                               View Teachers
                             </button>
                           </Link>

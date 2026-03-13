@@ -194,8 +194,8 @@ export default function ClassroomRoundPage() {
 
   if (isLoading || !session) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-950">
-        <Loader2 className="h-8 w-8 text-indigo-500 animate-spin" />
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
       </div>
     )
   }
@@ -213,11 +213,11 @@ export default function ClassroomRoundPage() {
           {scores.map((student, idx) => (
             <div
               key={student.student_id}
-              className="flex items-center gap-4 p-4 bg-slate-800 rounded-lg border border-slate-700"
+              className="flex items-center gap-4 p-4 bg-slate-100 rounded-lg border border-slate-300"
             >
-              <div className="text-2xl font-bold text-indigo-400 w-8 text-center">{idx + 1}</div>
+              <div className="text-2xl font-bold text-orange-500 w-8 text-center">{idx + 1}</div>
               <div className="flex-1">
-                <p className="font-medium text-white">{student.student_name}</p>
+                <p className="font-medium text-slate-900">{student.student_name}</p>
               </div>
               <div className="text-xl">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -238,11 +238,11 @@ export default function ClassroomRoundPage() {
           {scores.slice(0, 3).map((student, idx) => (
             <div
               key={student.student_id}
-              className="flex items-center gap-4 p-4 bg-slate-800 rounded-lg border border-slate-700"
+              className="flex items-center gap-4 p-4 bg-slate-100 rounded-lg border border-slate-300"
             >
               <div className="text-3xl w-8 text-center">{medals[idx]}</div>
               <div className="flex-1">
-                <p className="font-medium text-white">{student.student_name}</p>
+                <p className="font-medium text-slate-900">{student.student_name}</p>
               </div>
               <div className="text-xl">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -259,9 +259,9 @@ export default function ClassroomRoundPage() {
       // Show only personal scores, no ranking
       return (
         <div className="text-center">
-          <div className="inline-block bg-slate-800 border border-slate-700 rounded-lg p-8">
-            <p className="text-slate-400 text-lg mb-4">Round in progress...</p>
-            <p className="text-white text-2xl font-semibold">{scores.length} Student{scores.length !== 1 ? 's' : ''} Playing</p>
+          <div className="inline-block bg-slate-100 border border-slate-300 rounded-lg p-8">
+            <p className="text-slate-600 text-lg mb-4">Round in progress...</p>
+            <p className="text-slate-900 text-2xl font-semibold">{scores.length} Student{scores.length !== 1 ? 's' : ''} Playing</p>
           </div>
         </div>
       )
@@ -270,16 +270,16 @@ export default function ClassroomRoundPage() {
       const totalStars = scores.reduce((sum, s) => sum + s.total_stars, 0)
       return (
         <div className="text-center">
-          <div className="inline-block bg-slate-800 border border-slate-700 rounded-lg p-8">
-            <p className="text-slate-400 text-lg mb-4">Class Total</p>
-            <p className="text-5xl font-bold text-indigo-400 mb-4">
+          <div className="inline-block bg-slate-100 border border-slate-300 rounded-lg p-8">
+            <p className="text-slate-600 text-lg mb-4">Class Total</p>
+            <p className="text-5xl font-bold text-orange-500 mb-4">
               {Array.from({ length: 5 }).map((_, i) => (
                 <span key={i} className={i < Math.min(totalStars, 5) ? '⭐' : '☆'}>
                   {' '}
                 </span>
               ))}
             </p>
-            <p className="text-white text-xl">{totalStars} Total Stars</p>
+            <p className="text-slate-900 text-xl">{totalStars} Total Stars</p>
           </div>
         </div>
       )
@@ -287,28 +287,28 @@ export default function ClassroomRoundPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 p-6">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header with Timer */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">{activityEmoji} {activityName}</h1>
-            <p className="text-slate-400 mt-1">Round in progress</p>
+            <h1 className="text-3xl font-bold text-slate-900">{activityEmoji} {activityName}</h1>
+            <p className="text-slate-600 mt-1">Round in progress</p>
           </div>
 
           {/* Timer */}
           <div className="text-right">
             <p className={`text-5xl font-bold font-mono ${getTimerColor()}`}>{formatTime(timeLeft)}</p>
-            <p className="text-slate-400 text-sm mt-1">
+            <p className="text-slate-600 text-sm mt-1">
               {timeLeft <= 10 ? '⏰ Time running out!' : 'Time remaining'}
             </p>
           </div>
         </div>
 
         {/* Scoreboard */}
-        <Card className="bg-slate-900 border-slate-700 mb-8">
+        <Card className="bg-white border-slate-200 mb-8">
           <CardHeader>
-            <CardTitle className="text-white">Live Scores</CardTitle>
+            <CardTitle className="text-slate-900">Live Scores</CardTitle>
           </CardHeader>
           <CardContent>{renderScoreboard()}</CardContent>
         </Card>

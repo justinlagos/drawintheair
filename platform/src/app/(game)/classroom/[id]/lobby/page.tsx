@@ -160,8 +160,8 @@ export default function ClassroomLobbyPage() {
 
   if (isLoading || !session) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-950">
-        <Loader2 className="h-8 w-8 text-indigo-500 animate-spin" />
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
       </div>
     )
   }
@@ -171,41 +171,41 @@ export default function ClassroomLobbyPage() {
   const roundNumber = session.metadata?.round_number || 1
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 p-6">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Classroom Session</h1>
-          <p className="text-slate-400">{activityEmoji} {activityName} - Round {roundNumber}</p>
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">Classroom Session</h1>
+          <p className="text-slate-600">{activityEmoji} {activityName} - Round {roundNumber}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           {/* Session Code */}
-          <Card className="lg:col-span-2 bg-slate-900 border-slate-700">
+          <Card className="lg:col-span-2 bg-white border-slate-200">
             <CardHeader>
-              <CardTitle className="text-white">Session Code</CardTitle>
+              <CardTitle className="text-slate-900">Session Code</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="text-center py-8 bg-slate-800 rounded-lg border border-slate-700">
-                <p className="text-sm text-slate-400 mb-2">Students can join with</p>
-                <p className="text-6xl font-bold text-indigo-400 font-mono">{session.session_code}</p>
+              <div className="text-center py-8 bg-slate-100 rounded-lg border border-slate-200">
+                <p className="text-sm text-slate-600 mb-2">Students can join with</p>
+                <p className="text-6xl font-bold text-orange-500 font-mono">{session.session_code}</p>
               </div>
 
               {/* Join URL */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-white">Join URL</label>
+                <label className="block text-sm font-medium text-slate-900">Join URL</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     readOnly
                     value={`drawintheair.com/join/${session.session_code}`}
-                    className="flex-1 px-4 py-2 bg-slate-800 border border-slate-600 rounded text-slate-300 text-sm"
+                    className="flex-1 px-4 py-2 bg-slate-50 border border-slate-300 rounded text-slate-700 text-sm"
                   />
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={copyJoinUrl}
-                    className="border-slate-600 text-white hover:bg-slate-800"
+                    className="border-slate-300 text-slate-900 hover:bg-slate-100"
                   >
                     {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </Button>
@@ -216,9 +216,9 @@ export default function ClassroomLobbyPage() {
 
           {/* QR Code */}
           {qrCode && (
-            <Card className="bg-slate-900 border-slate-700 flex flex-col items-center">
+            <Card className="bg-white border-slate-200 flex flex-col items-center">
               <CardHeader className="w-full">
-                <CardTitle className="text-white text-center">QR Code</CardTitle>
+                <CardTitle className="text-slate-900 text-center">QR Code</CardTitle>
               </CardHeader>
               <CardContent className="flex justify-center p-6">
                 <img
@@ -234,24 +234,24 @@ export default function ClassroomLobbyPage() {
         </div>
 
         {/* Students Grid */}
-        <Card className="bg-slate-900 border-slate-700 mb-8">
+        <Card className="bg-white border-slate-200 mb-8">
           <CardHeader>
-            <CardTitle className="text-white">{students.length} Student{students.length !== 1 ? 's' : ''} Joined</CardTitle>
+            <CardTitle className="text-slate-900">{students.length} Student{students.length !== 1 ? 's' : ''} Joined</CardTitle>
           </CardHeader>
           <CardContent>
             {students.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-slate-400 text-lg">Waiting for students to join...</p>
+                <p className="text-slate-600 text-lg">Waiting for students to join...</p>
                 <p className="text-slate-500 text-sm mt-2">Share the code or QR code above</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {students.map((student) => (
-                  <div key={student.id} className="text-center p-3 bg-slate-800 rounded-lg border border-slate-700">
+                  <div key={student.id} className="text-center p-3 bg-slate-100 rounded-lg border border-slate-200">
                     <div className="text-2xl mb-1">
                       {student.student_avatar || '👤'}
                     </div>
-                    <p className="text-sm font-medium text-white truncate">{student.student_name}</p>
+                    <p className="text-sm font-medium text-slate-900 truncate">{student.student_name}</p>
                   </div>
                 ))}
               </div>

@@ -83,11 +83,11 @@ async function TeacherManagement() {
       : 'Never';
 
     return [
-      <span key="name" className="font-medium text-slate-100">{st.teachers?.name || 'Unknown'}</span>,
-      <span key="email" className="text-slate-400 text-sm">{st.teachers?.email || '-'}</span>,
+      <span key="name" className="font-medium text-slate-900">{st.teachers?.name || 'Unknown'}</span>,
+      <span key="email" className="text-slate-600 text-sm">{st.teachers?.email || '-'}</span>,
       <Badge key="status" variant="success">Active</Badge>,
-      <span key="sessions" className="text-slate-400 text-sm">{stats?.count || 0}</span>,
-      <span key="lastActive" className="text-slate-400 text-sm">{lastActive}</span>,
+      <span key="sessions" className="text-slate-600 text-sm">{stats?.count || 0}</span>,
+      <span key="lastActive" className="text-slate-600 text-sm">{lastActive}</span>,
       <div key="actions" className="flex gap-2">
         <button
           className="p-1 hover:bg-slate-700 rounded transition"
@@ -104,8 +104,8 @@ async function TeacherManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100">Teacher Management</h1>
-          <p className="text-slate-400 mt-1">Manage teacher seats and invitations</p>
+          <h1 className="text-3xl font-bold text-slate-900">Teacher Management</h1>
+          <p className="text-slate-600 mt-1">Manage teacher seats and invitations</p>
         </div>
         <Link href="/school/teachers/invite">
           <Button variant="primary">
@@ -123,21 +123,21 @@ async function TeacherManagement() {
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-slate-300 font-medium">
+              <span className="text-slate-700 font-medium">
                 {seatsUsed} of {maxSeats} seats used
               </span>
-              <span className="text-sm text-slate-400">
+              <span className="text-sm text-slate-600">
                 {seatsAvailable} available
               </span>
             </div>
-            <div className="w-full bg-slate-800 rounded-full h-3 overflow-hidden">
+            <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-cyan-400 to-violet-500 h-full transition-all"
+                className="bg-gradient-to-r from-orange-500 to-orange-600 h-full transition-all"
                 style={{ width: `${(seatsUsed / maxSeats) * 100}%` }}
               />
             </div>
             {seatsAvailable === 0 && (
-              <p className="text-sm text-amber-400">
+              <p className="text-sm text-amber-600">
                 All seats are in use. Upgrade or remove a teacher to add more.
               </p>
             )}
@@ -170,21 +170,21 @@ async function TeacherManagement() {
               {pendingInvites.map((invite) => (
                 <div
                   key={invite.id}
-                  className="flex items-center justify-between p-4 rounded-lg bg-slate-800/30 hover:bg-slate-800/50 transition"
+                  className="flex items-center justify-between p-4 rounded-lg bg-slate-100/50 hover:bg-slate-100 transition"
                 >
                   <div className="flex-1">
-                    <p className="font-medium text-slate-100">{invite.email}</p>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="font-medium text-slate-900">{invite.email}</p>
+                    <p className="text-xs text-slate-600 mt-1">
                       Invited {new Date(invite.created_at).toLocaleDateString()} • Expires{' '}
                       {new Date(invite.expires_at).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <button className="px-3 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-sm font-medium text-slate-100 transition flex items-center gap-1">
+                    <button className="px-3 py-1 rounded-lg bg-slate-200 hover:bg-slate-300 text-sm font-medium text-slate-900 transition flex items-center gap-1">
                       <RotateCw className="w-3 h-3" />
                       Resend
                     </button>
-                    <button className="px-3 py-1 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-sm font-medium text-red-300 transition flex items-center gap-1">
+                    <button className="px-3 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-sm font-medium text-red-700 transition flex items-center gap-1">
                       <X className="w-3 h-3" />
                       Cancel
                     </button>

@@ -181,19 +181,19 @@ export default function ClassroomStartPage() {
 
   if (isChecking || !session.user) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-950">
-        <Loader2 className="h-8 w-8 text-indigo-500 animate-spin" />
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 p-6">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold text-white mb-2">Start a Classroom Session</h1>
-          <p className="text-slate-400">Select an activity and configure your session</p>
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">Start a Classroom Session</h1>
+          <p className="text-slate-600">Select an activity and configure your session</p>
         </div>
 
         {/* Activity Grid */}
@@ -202,13 +202,13 @@ export default function ClassroomStartPage() {
             {ACTIVITIES.map((activity) => (
               <Card
                 key={activity.id}
-                className="cursor-pointer hover:border-indigo-500 hover:shadow-lg hover:shadow-indigo-500/50 transition-all bg-slate-900 border-slate-700"
+                className="cursor-pointer hover:border-orange-500 hover:shadow-lg hover:shadow-orange-500/50 transition-all bg-white border-slate-200"
                 onClick={() => setSelectedActivity(activity.id)}
               >
                 <CardContent className="p-6 text-center">
                   <div className="text-5xl mb-3">{activity.emoji}</div>
-                  <h3 className="text-lg font-semibold text-white mb-1">{activity.name}</h3>
-                  <p className="text-sm text-slate-400">{activity.description}</p>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-1">{activity.name}</h3>
+                  <p className="text-sm text-slate-600">{activity.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -216,14 +216,14 @@ export default function ClassroomStartPage() {
         ) : (
           <>
             {/* Configuration Panel */}
-            <Card className="bg-slate-900 border-slate-700 mb-8">
+            <Card className="bg-white border-slate-200 mb-8">
               <CardHeader>
                 <div className="flex items-center gap-4">
                   <div className="text-4xl">{ACTIVITIES.find((a) => a.id === selectedActivity)?.emoji}</div>
                   <div>
-                    <CardTitle className="text-white">{ACTIVITIES.find((a) => a.id === selectedActivity)?.name}</CardTitle>
+                    <CardTitle className="text-slate-900">{ACTIVITIES.find((a) => a.id === selectedActivity)?.name}</CardTitle>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedActivity(null)} className="ml-auto text-slate-400">
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedActivity(null)} className="ml-auto text-slate-600">
                     Choose Different Activity
                   </Button>
                 </div>
@@ -232,13 +232,13 @@ export default function ClassroomStartPage() {
               <CardContent className="space-y-6">
                 {/* Timer Configuration */}
                 <div>
-                  <label className="block text-sm font-medium text-white mb-3">Session Duration</label>
+                  <label className="block text-sm font-medium text-slate-900 mb-3">Session Duration</label>
                   <div className="flex gap-3">
                     {[60, 90, 120].map((seconds) => (
                       <Button
                         key={seconds}
                         variant={timerSeconds === seconds ? 'default' : 'outline'}
-                        className={timerSeconds === seconds ? 'bg-indigo-600 hover:bg-indigo-700' : 'text-white border-slate-600'}
+                        className={timerSeconds === seconds ? 'bg-orange-600 hover:bg-orange-700' : 'text-slate-900 border-slate-300'}
                         onClick={() => setTimerSeconds(seconds)}
                       >
                         {seconds}s
@@ -249,20 +249,20 @@ export default function ClassroomStartPage() {
 
                 {/* Max Students */}
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">Maximum Students</label>
+                  <label className="block text-sm font-medium text-slate-900 mb-2">Maximum Students</label>
                   <input
                     type="number"
                     min="1"
                     max="100"
                     value={maxStudents}
                     onChange={(e) => setMaxStudents(Math.max(1, parseInt(e.target.value) || 30))}
-                    className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded text-white focus:border-indigo-500 focus:outline-none"
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded text-slate-900 focus:border-orange-500 focus:outline-none"
                   />
                 </div>
 
                 {/* Scoreboard Mode */}
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">Scoreboard Mode</label>
+                  <label className="block text-sm font-medium text-slate-900 mb-2">Scoreboard Mode</label>
                   <select
                     value={scoreboardMode}
                     onChange={(e) =>
@@ -270,7 +270,7 @@ export default function ClassroomStartPage() {
                         e.target.value as 'full leaderboard' | 'top 3 only' | 'personal stars only' | 'class score'
                       )
                     }
-                    className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded text-white focus:border-indigo-500 focus:outline-none"
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded text-slate-900 focus:border-orange-500 focus:outline-none"
                   >
                     <option value="full leaderboard">Full Leaderboard</option>
                     <option value="top 3 only">Top 3 Only</option>
@@ -286,7 +286,7 @@ export default function ClassroomStartPage() {
               <Button
                 onClick={handleStartSession}
                 disabled={isLoading}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3"
+                className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3"
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Start Session

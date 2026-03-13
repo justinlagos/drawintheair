@@ -11,7 +11,7 @@ export function Card({ children, className, accentBorder }: CardProps) {
   return (
     <div
       className={cn(
-        'rounded-lg border border-slate-800 bg-slate-900 text-slate-100',
+        'rounded-lg border border-slate-200 bg-white text-slate-900',
         accentBorder && 'border-l-2 border-l-orange-500',
         className,
       )}
@@ -29,7 +29,7 @@ interface CardHeaderProps {
 export function CardHeader({ children, className }: CardHeaderProps) {
   return (
     <div
-      className={cn('flex flex-col space-y-1.5 border-b border-slate-800 p-6', className)}
+      className={cn('flex flex-col space-y-1.5 border-b border-slate-200 p-6', className)}
     >
       {children}
     </div>
@@ -56,7 +56,7 @@ interface CardDescriptionProps {
 
 export function CardDescription({ children, className }: CardDescriptionProps) {
   return (
-    <p className={cn('text-sm text-slate-400', className)}>
+    <p className={cn('text-sm text-slate-600', className)}>
       {children}
     </p>
   )
@@ -82,7 +82,7 @@ interface CardFooterProps {
 
 export function CardFooter({ children, className }: CardFooterProps) {
   return (
-    <div className={cn('flex items-center border-t border-slate-800 p-6', className)}>
+    <div className={cn('flex items-center border-t border-slate-200 p-6', className)}>
       {children}
     </div>
   )

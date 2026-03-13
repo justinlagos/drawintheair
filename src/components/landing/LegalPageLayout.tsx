@@ -69,7 +69,6 @@ export const LegalPageLayout: React.FC<LegalPageLayoutProps> = ({ children, hero
                             <h4 className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-4">Product</h4>
                             <div className="space-y-2.5">
                                 <a href="/play" className="block text-sm text-gray-500 hover:text-cyan-400 transition-colors no-underline">Try Free</a>
-                                <a href="/demo" className="block text-sm text-gray-500 hover:text-cyan-400 transition-colors no-underline">Demo</a>
                                 <a href="/schools" className="block text-sm text-gray-500 hover:text-cyan-400 transition-colors no-underline">School Pilot Pack</a>
                                 <a href="/faq" className="block text-sm text-gray-500 hover:text-cyan-400 transition-colors no-underline">FAQ</a>
                             </div>

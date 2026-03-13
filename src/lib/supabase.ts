@@ -107,7 +107,7 @@ export function onAuthStateChange(callback: (user: SupabaseUser | null) => void)
 
 export function signInWithGoogle() {
   const redirectTo = `${window.location.origin}/class`;
-  const url = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
+  const url = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}&flow_type=implicit`;
   window.location.href = url;
 }
 

@@ -149,8 +149,8 @@ export default function JoinResultsPage() {
 
   if (isLoading || !session) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-950">
-        <Loader2 className="h-8 w-8 text-indigo-500 animate-spin" />
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
       </div>
     )
   }
@@ -161,13 +161,13 @@ export default function JoinResultsPage() {
   const renderResults = () => {
     if (scoreboardMode === 'full leaderboard') {
       return (
-        <Card className="bg-slate-900 border-slate-700">
+        <Card className="bg-white border-slate-200">
           <CardHeader>
-            <CardTitle className="text-white">Your Rank</CardTitle>
+            <CardTitle className="text-slate-900">Your Rank</CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <div className="text-5xl font-bold text-indigo-400">#{myRank}</div>
-            <p className="text-slate-400">Out of {totalStudents} students</p>
+            <div className="text-5xl font-bold text-orange-500">#{myRank}</div>
+            <p className="text-slate-600">Out of {totalStudents} students</p>
           </CardContent>
         </Card>
       )
@@ -176,15 +176,15 @@ export default function JoinResultsPage() {
       const inTopThree = myRank > 0 && myRank <= 3
 
       return (
-        <Card className="bg-slate-900 border-slate-700">
+        <Card className="bg-white border-slate-200">
           <CardHeader>
-            <CardTitle className="text-white">{inTopThree ? 'You Made Top 3! 🎉' : 'Top 3'}</CardTitle>
+            <CardTitle className="text-slate-900">{inTopThree ? 'You Made Top 3! 🎉' : 'Top 3'}</CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             {inTopThree && (
               <div className="text-5xl mb-4">{medals[myRank - 1]}</div>
             )}
-            <p className="text-slate-400">
+            <p className="text-slate-600">
               {inTopThree ? `You're #${myRank}!` : 'Keep trying to reach the top 3!'}
             </p>
           </CardContent>
@@ -192,13 +192,13 @@ export default function JoinResultsPage() {
       )
     } else if (scoreboardMode === 'class score') {
       return (
-        <Card className="bg-slate-900 border-slate-700">
+        <Card className="bg-white border-slate-200">
           <CardHeader>
-            <CardTitle className="text-white">Class Contribution</CardTitle>
+            <CardTitle className="text-slate-900">Class Contribution</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="text-center">
-              <p className="text-slate-400 mb-2">Class Total</p>
+              <p className="text-slate-600 mb-2">Class Total</p>
               <div className="text-2xl mb-4">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <span key={i} className={i < Math.min(classTotal, 5) ? '⭐' : '☆'}>
@@ -206,11 +206,11 @@ export default function JoinResultsPage() {
                   </span>
                 ))}
               </div>
-              <p className="text-white font-semibold">{classTotal} Stars</p>
+              <p className="text-slate-900 font-semibold">{classTotal} Stars</p>
             </div>
 
-            <div className="pt-4 border-t border-slate-700">
-              <p className="text-slate-400 mb-2">Your Contribution</p>
+            <div className="pt-4 border-t border-slate-300">
+              <p className="text-slate-600 mb-2">Your Contribution</p>
               <div className="text-2xl">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <span key={i} className={i < Math.min(myStars, 5) ? '⭐' : '☆'}>
@@ -229,18 +229,18 @@ export default function JoinResultsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 p-6">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 p-6">
       <div className="max-w-2xl mx-auto">
         {/* Main Result */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-white mb-2">Awesome Work, {studentName}! 🎉</h1>
-          <p className="text-slate-400">Here's how you did</p>
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">Awesome Work, {studentName}! 🎉</h1>
+          <p className="text-slate-600">Here's how you did</p>
         </div>
 
         {/* Large Star Display */}
-        <Card className="bg-slate-900 border-slate-700 mb-8">
+        <Card className="bg-white border-slate-200 mb-8">
           <CardContent className="text-center py-16">
-            <p className="text-slate-400 text-lg mb-4">You earned</p>
+            <p className="text-slate-600 text-lg mb-4">You earned</p>
             <div className="text-7xl mb-6">
               {Array.from({ length: 5 }).map((_, i) => (
                 <span key={i} className={i < Math.min(myStars, 5) ? '⭐' : '☆'}>
@@ -248,7 +248,7 @@ export default function JoinResultsPage() {
                 </span>
               ))}
             </div>
-            <p className="text-white text-3xl font-bold">{myStars} Stars</p>
+            <p className="text-slate-900 text-3xl font-bold">{myStars} Stars</p>
           </CardContent>
         </Card>
 
@@ -260,15 +260,15 @@ export default function JoinResultsPage() {
         )}
 
         {/* Waiting Message */}
-        <Card className="bg-slate-900 border-slate-700 mb-8">
+        <Card className="bg-white border-slate-200 mb-8">
           <CardContent className="text-center py-8">
-            <p className="text-slate-400 text-lg">⏳ Waiting for the next round...</p>
+            <p className="text-slate-600 text-lg">⏳ Waiting for the next round...</p>
             <p className="text-slate-500 text-sm mt-2">Your teacher will start a new round when everyone is ready</p>
 
             <div className="flex justify-center gap-1 mt-6">
-              <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-              <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-              <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+              <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+              <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+              <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
             </div>
           </CardContent>
         </Card>
@@ -278,7 +278,7 @@ export default function JoinResultsPage() {
           <Button
             onClick={() => router.push('/join')}
             variant="outline"
-            className="border-slate-600 text-white hover:bg-slate-800"
+            className="border-slate-300 text-slate-900 hover:bg-slate-100"
           >
             Return to Lobby
           </Button>

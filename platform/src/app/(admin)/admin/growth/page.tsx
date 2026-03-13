@@ -85,11 +85,11 @@ async function Growth() {
   const signupTableRows = Array.from(dailySignups.entries())
     .slice(0, 30)
     .map(([date, count]) => [
-      <span key="date" className="text-slate-400 text-sm">{date}</span>,
-      <span key="count" className="text-slate-400 text-sm">{count}</span>,
-      <div key="chart" className="w-24 bg-slate-800 rounded-full h-2 overflow-hidden">
+      <span key="date" className="text-slate-600 text-sm">{date}</span>,
+      <span key="count" className="text-slate-600 text-sm">{count}</span>,
+      <div key="chart" className="w-24 bg-slate-200 rounded-full h-2 overflow-hidden">
         <div
-          className="bg-gradient-to-r from-cyan-400 to-violet-500 h-full"
+          className="bg-gradient-to-r from-cyan-400 to-orange-500 h-full"
           style={{ width: `${Math.min((count / 10) * 100, 100)}%` }}
         />
       </div>,
@@ -123,8 +123,8 @@ async function Growth() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-100">Layer 2: Growth</h1>
-        <p className="text-slate-400 mt-1">User acquisition, retention, and expansion metrics</p>
+        <h1 className="text-3xl font-bold text-slate-900">Layer 2: Growth</h1>
+        <p className="text-slate-600 mt-1">User acquisition, retention, and expansion metrics</p>
       </div>
 
       {/* Key Metrics */}
@@ -132,9 +132,9 @@ async function Growth() {
         <Card>
           <CardContent className="pt-6">
             <div>
-              <p className="text-sm font-medium text-slate-400">Total Teachers</p>
-              <p className="text-2xl font-bold text-slate-100 mt-1">{totalTeachers}</p>
-              <p className="text-xs text-slate-400 mt-2">
+              <p className="text-sm font-medium text-slate-600">Total Teachers</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">{totalTeachers}</p>
+              <p className="text-xs text-slate-600 mt-2">
                 +{recentSignups?.length || 0} this month
               </p>
             </div>
@@ -143,9 +143,9 @@ async function Growth() {
         <Card>
           <CardContent className="pt-6">
             <div>
-              <p className="text-sm font-medium text-slate-400">Active Schools</p>
-              <p className="text-2xl font-bold text-slate-100 mt-1">{totalSchools}</p>
-              <p className="text-xs text-slate-400 mt-2">
+              <p className="text-sm font-medium text-slate-600">Active Schools</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">{totalSchools}</p>
+              <p className="text-xs text-slate-600 mt-2">
                 {proSchools} pro schools
               </p>
             </div>
@@ -154,11 +154,11 @@ async function Growth() {
         <Card>
           <CardContent className="pt-6">
             <div>
-              <p className="text-sm font-medium text-slate-400">Trial Conversions</p>
-              <p className="text-2xl font-bold text-slate-100 mt-1">
+              <p className="text-sm font-medium text-slate-600">Trial Conversions</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">
                 {trialConversions}
               </p>
-              <p className="text-xs text-slate-400 mt-2">
+              <p className="text-xs text-slate-600 mt-2">
                 {totalTeachers > 0
                   ? ((trialConversions / totalTeachers) * 100).toFixed(1)
                   : 0}
@@ -170,11 +170,11 @@ async function Growth() {
         <Card>
           <CardContent className="pt-6">
             <div>
-              <p className="text-sm font-medium text-slate-400">Avg Seats/School</p>
-              <p className="text-2xl font-bold text-slate-100 mt-1">
+              <p className="text-sm font-medium text-slate-600">Avg Seats/School</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">
                 {avgSeats.toFixed(1)}
               </p>
-              <p className="text-xs text-slate-400 mt-2">
+              <p className="text-xs text-slate-600 mt-2">
                 {totalSchools > 0 ? Math.round(avgSeats * totalSchools) : 0} total seats
               </p>
             </div>
@@ -189,40 +189,40 @@ async function Growth() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 rounded-lg bg-slate-800/50">
-              <p className="text-2xl font-bold text-slate-100">{freeTeachers}</p>
-              <p className="text-xs text-slate-400 mt-2">Free</p>
-              <p className="text-xs text-slate-500 mt-1">
+            <div className="text-center p-4 rounded-lg bg-slate-100">
+              <p className="text-2xl font-bold text-slate-900">{freeTeachers}</p>
+              <p className="text-xs text-slate-600 mt-2">Free</p>
+              <p className="text-xs text-slate-600 mt-1">
                 {totalTeachers > 0
                   ? ((freeTeachers / totalTeachers) * 100).toFixed(0)
                   : 0}
                 %
               </p>
             </div>
-            <div className="text-center p-4 rounded-lg bg-slate-800/50">
-              <p className="text-2xl font-bold text-slate-100">{trialTeachers}</p>
-              <p className="text-xs text-slate-400 mt-2">Trial</p>
-              <p className="text-xs text-slate-500 mt-1">
+            <div className="text-center p-4 rounded-lg bg-slate-100">
+              <p className="text-2xl font-bold text-slate-900">{trialTeachers}</p>
+              <p className="text-xs text-slate-600 mt-2">Trial</p>
+              <p className="text-xs text-slate-600 mt-1">
                 {totalTeachers > 0
                   ? ((trialTeachers / totalTeachers) * 100).toFixed(0)
                   : 0}
                 %
               </p>
             </div>
-            <div className="text-center p-4 rounded-lg bg-slate-800/50">
-              <p className="text-2xl font-bold text-slate-100">{proTeachers}</p>
-              <p className="text-xs text-slate-400 mt-2">Pro</p>
-              <p className="text-xs text-slate-500 mt-1">
+            <div className="text-center p-4 rounded-lg bg-slate-100">
+              <p className="text-2xl font-bold text-slate-900">{proTeachers}</p>
+              <p className="text-xs text-slate-600 mt-2">Pro</p>
+              <p className="text-xs text-slate-600 mt-1">
                 {totalTeachers > 0
                   ? ((proTeachers / totalTeachers) * 100).toFixed(0)
                   : 0}
                 %
               </p>
             </div>
-            <div className="text-center p-4 rounded-lg bg-slate-800/50">
-              <p className="text-2xl font-bold text-slate-100">{schoolTeachers}</p>
-              <p className="text-xs text-slate-400 mt-2">School</p>
-              <p className="text-xs text-slate-500 mt-1">
+            <div className="text-center p-4 rounded-lg bg-slate-100">
+              <p className="text-2xl font-bold text-slate-900">{schoolTeachers}</p>
+              <p className="text-xs text-slate-600 mt-2">School</p>
+              <p className="text-xs text-slate-600 mt-1">
                 {totalTeachers > 0
                   ? ((schoolTeachers / totalTeachers) * 100).toFixed(0)
                   : 0}
@@ -254,30 +254,30 @@ async function Growth() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-4">
-            <div className="p-4 rounded-lg bg-slate-800/50 text-center">
-              <p className="text-2xl font-bold text-slate-100">{active7Day}</p>
-              <p className="text-xs text-slate-400 mt-2">Active (7 days)</p>
-              <p className="text-xs text-slate-500 mt-1">
+            <div className="p-4 rounded-lg bg-slate-100 text-center">
+              <p className="text-2xl font-bold text-slate-900">{active7Day}</p>
+              <p className="text-xs text-slate-600 mt-2">Active (7 days)</p>
+              <p className="text-xs text-slate-600 mt-1">
                 {totalTeachers > 0
                   ? ((active7Day / totalTeachers) * 100).toFixed(1)
                   : 0}
                 % DAU
               </p>
             </div>
-            <div className="p-4 rounded-lg bg-slate-800/50 text-center">
-              <p className="text-2xl font-bold text-slate-100">{active30Day}</p>
-              <p className="text-xs text-slate-400 mt-2">Active (30 days)</p>
-              <p className="text-xs text-slate-500 mt-1">
+            <div className="p-4 rounded-lg bg-slate-100 text-center">
+              <p className="text-2xl font-bold text-slate-900">{active30Day}</p>
+              <p className="text-xs text-slate-600 mt-2">Active (30 days)</p>
+              <p className="text-xs text-slate-600 mt-1">
                 {totalTeachers > 0
                   ? ((active30Day / totalTeachers) * 100).toFixed(1)
                   : 0}
                 % MAU
               </p>
             </div>
-            <div className="p-4 rounded-lg bg-slate-800/50 text-center">
-              <p className="text-2xl font-bold text-slate-100">{active90Day}</p>
-              <p className="text-xs text-slate-400 mt-2">Active (90 days)</p>
-              <p className="text-xs text-slate-500 mt-1">
+            <div className="p-4 rounded-lg bg-slate-100 text-center">
+              <p className="text-2xl font-bold text-slate-900">{active90Day}</p>
+              <p className="text-xs text-slate-600 mt-2">Active (90 days)</p>
+              <p className="text-xs text-slate-600 mt-1">
                 {totalTeachers > 0
                   ? ((active90Day / totalTeachers) * 100).toFixed(1)
                   : 0}

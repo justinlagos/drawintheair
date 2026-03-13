@@ -3,6 +3,7 @@ import './landing.css';
 
 export const Footer: React.FC = () => {
   const [openSection, setOpenSection] = useState<string | null>(null);
+  const platformUrl = import.meta.env.VITE_PLATFORM_URL || 'https://app.drawintheair.com';
 
   const handleSchoolPackClick = () => {
     if (window.location.pathname === '/') {
@@ -85,13 +86,12 @@ export const Footer: React.FC = () => {
             className={`landing-footer-accordion-content ${openSection === 'educators' ? 'open' : ''}`}
           >
             <div className="landing-footer-links">
-              <a href={(import.meta.env.VITE_PLATFORM_URL || 'https://app.drawintheair.com') + '/auth/login'} className="landing-footer-link">Teacher Login</a>
+              <a href={platformUrl + '/auth/login'} className="landing-footer-link">Teacher Login</a>
               <a href="/for-teachers" className="landing-footer-link">For Teachers</a>
               <a href="/for-parents" className="landing-footer-link">For Parents</a>
-              <a href="/classroom-movement-activities" className="landing-footer-link">Classroom Movement</a>
-              <a href="/chromebook-learning-tools" className="landing-footer-link">Chromebook Tools</a>
-              <a href="/hand-eye-coordination-activities" className="landing-footer-link">Hand-Eye Coordination</a>
-              <a href="/gesture-learning" className="landing-footer-link">Gesture Learning</a>
+              <a href="/schools" className="landing-footer-link">Schools</a>
+              <a href={platformUrl + '/pricing'} className="landing-footer-link">Pricing</a>
+              <a href="/faq" className="landing-footer-link">FAQ</a>
             </div>
           </div>
         </div>
@@ -116,7 +116,9 @@ export const Footer: React.FC = () => {
             <div className="landing-footer-links">
               <a href="/privacy" className="landing-footer-link">Privacy</a>
               <a href="/terms" className="landing-footer-link">Terms</a>
+              <a href="/cookies" className="landing-footer-link">Cookies</a>
               <a href="/safeguarding" className="landing-footer-link">Safeguarding</a>
+              <a href="/accessibility" className="landing-footer-link">Accessibility</a>
             </div>
           </div>
         </div>

@@ -38,7 +38,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGetSchoolPack, onTry
             <LandingCTAButton
               variant="primary"
               size="lg"
-              href="/demo"
+              href="/play"
               label="Try Free Now"
               iconLeft={<span>▶</span>}
               onClick={(e) => {
@@ -46,7 +46,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGetSchoolPack, onTry
                 if (onTryFree) {
                   onTryFree();
                 } else {
-                  window.location.pathname = '/demo';
+                  window.location.pathname = '/play';
                 }
               }}
             />

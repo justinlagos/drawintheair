@@ -120,8 +120,8 @@ async function SchoolDashboard() {
       {/* Header with Action */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100">{school?.name}</h1>
-          <p className="text-slate-400 mt-1">School Dashboard Overview</p>
+          <h1 className="text-3xl font-bold text-slate-900">{school?.name}</h1>
+          <p className="text-slate-600 mt-1">School Dashboard Overview</p>
         </div>
         <Link href="/school/teachers/invite">
           <Button variant="primary">
@@ -169,27 +169,27 @@ async function SchoolDashboard() {
           </CardHeader>
           <CardContent>
             {topTeachers.length === 0 ? (
-              <p className="text-slate-400 text-sm">No teachers added yet</p>
+              <p className="text-slate-600 text-sm">No teachers added yet</p>
             ) : (
               <div className="space-y-3">
                 {topTeachers.map((teacher) => (
                   <div
                     key={teacher.email}
-                    className="flex items-center justify-between p-3 rounded-lg bg-slate-800/30 hover:bg-slate-800/50 transition"
+                    className="flex items-center justify-between p-3 rounded-lg bg-slate-100/50 hover:bg-slate-100 transition"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-slate-100 text-sm">
+                      <p className="font-medium text-slate-900 text-sm">
                         {teacher.name}
                       </p>
-                      <p className="text-xs text-slate-400 truncate">
+                      <p className="text-xs text-slate-600 truncate">
                         {teacher.email}
                       </p>
                     </div>
                     <div className="text-right ml-4">
-                      <p className="font-semibold text-slate-100 text-sm">
+                      <p className="font-semibold text-slate-900 text-sm">
                         {teacher.sessionCount}
                       </p>
-                      <p className="text-xs text-slate-400">sessions</p>
+                      <p className="text-xs text-slate-600">sessions</p>
                     </div>
                   </div>
                 ))}
@@ -205,18 +205,18 @@ async function SchoolDashboard() {
           </CardHeader>
           <CardContent>
             {topActivities.length === 0 ? (
-              <p className="text-slate-400 text-sm">No activity data yet</p>
+              <p className="text-slate-600 text-sm">No activity data yet</p>
             ) : (
               <div className="space-y-3">
                 {topActivities.map((activity, idx) => (
                   <div key={idx} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-300">{activity.name}</span>
-                      <span className="text-slate-400">{activity.count}</span>
+                      <span className="text-slate-700">{activity.name}</span>
+                      <span className="text-slate-600">{activity.count}</span>
                     </div>
-                    <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                    <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
                       <div
-                        className="bg-gradient-to-r from-cyan-400 to-violet-500 h-full"
+                        className="bg-gradient-to-r from-orange-500 to-orange-600 h-full"
                         style={{
                           width: `${(activity.count / (topActivities[0]?.count || 1)) * 100}%`,
                         }}
@@ -238,62 +238,62 @@ async function SchoolDashboard() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Link href="/school/teachers/invite" className="block">
-              <button className="w-full p-4 rounded-lg border border-slate-700 hover:border-slate-600 hover:bg-slate-800/50 transition text-left group">
+              <button className="w-full p-4 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-100/50 transition text-left group">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-slate-100 text-sm">
+                    <p className="font-medium text-slate-900 text-sm">
                       Add Teachers
                     </p>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-slate-600 mt-1">
                       Invite more teachers to your school
                     </p>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-slate-300 transition" />
+                  <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-slate-700 transition" />
                 </div>
               </button>
             </Link>
             <Link href="/school/analytics" className="block">
-              <button className="w-full p-4 rounded-lg border border-slate-700 hover:border-slate-600 hover:bg-slate-800/50 transition text-left group">
+              <button className="w-full p-4 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-100/50 transition text-left group">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-slate-100 text-sm">
+                    <p className="font-medium text-slate-900 text-sm">
                       View Analytics
                     </p>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-slate-600 mt-1">
                       Detailed usage and performance metrics
                     </p>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-slate-300 transition" />
+                  <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-slate-700 transition" />
                 </div>
               </button>
             </Link>
             <Link href="/school/teachers" className="block">
-              <button className="w-full p-4 rounded-lg border border-slate-700 hover:border-slate-600 hover:bg-slate-800/50 transition text-left group">
+              <button className="w-full p-4 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-100/50 transition text-left group">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-slate-100 text-sm">
+                    <p className="font-medium text-slate-900 text-sm">
                       Manage Teachers
                     </p>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-slate-600 mt-1">
                       View and manage teacher seats
                     </p>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-slate-300 transition" />
+                  <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-slate-700 transition" />
                 </div>
               </button>
             </Link>
             <Link href="/school/settings" className="block">
-              <button className="w-full p-4 rounded-lg border border-slate-700 hover:border-slate-600 hover:bg-slate-800/50 transition text-left group">
+              <button className="w-full p-4 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-100/50 transition text-left group">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-slate-100 text-sm">
+                    <p className="font-medium text-slate-900 text-sm">
                       Settings
                     </p>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-slate-600 mt-1">
                       Configure school preferences
                     </p>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-slate-300 transition" />
+                  <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-slate-700 transition" />
                 </div>
               </button>
             </Link>

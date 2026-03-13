@@ -74,16 +74,16 @@ export default async function AdminSystemPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100">System</h1>
-          <p className="text-slate-400 mt-1">Platform health and configuration status</p>
+          <h1 className="text-3xl font-bold text-slate-900">System</h1>
+          <p className="text-slate-600 mt-1">Platform health and configuration status</p>
         </div>
         <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
           allOperational
-            ? 'bg-emerald-500/10 border-emerald-600'
-            : 'bg-amber-500/10 border-amber-600'
+            ? 'bg-emerald-100 border-emerald-400'
+            : 'bg-amber-100 border-amber-400'
         }`}>
           <div className={`w-2 h-2 rounded-full animate-pulse ${allOperational ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-          <span className={`text-sm font-medium ${allOperational ? 'text-emerald-300' : 'text-amber-300'}`}>
+          <span className={`text-sm font-medium ${allOperational ? 'text-emerald-700' : 'text-amber-700'}`}>
             {allOperational ? 'All Systems Operational' : 'Degraded Performance'}
           </span>
         </div>
@@ -109,14 +109,14 @@ export default async function AdminSystemPage() {
             return (
               <div
                 key={service.name}
-                className="flex items-center justify-between rounded-lg border border-slate-800 p-4"
+                className="flex items-center justify-between rounded-lg border border-slate-300 p-4"
               >
                 <div className="flex items-center gap-3">
-                  <Icon className="w-4 h-4 text-slate-400" />
-                  <span className="text-sm font-medium text-slate-100">{service.name}</span>
+                  <Icon className="w-4 h-4 text-slate-600" />
+                  <span className="text-sm font-medium text-slate-900">{service.name}</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="text-xs text-slate-500">{service.latency}</span>
+                  <span className="text-xs text-slate-600">{service.latency}</span>
                   <div className="flex items-center gap-1.5">
                     {isOperational ? (
                       <CheckCircle className="w-4 h-4 text-emerald-400" />
@@ -148,9 +148,9 @@ export default async function AdminSystemPage() {
           {envChecks.map((env) => (
             <div
               key={env.key}
-              className="flex items-center justify-between rounded-lg border border-slate-800 p-3"
+              className="flex items-center justify-between rounded-lg border border-slate-300 p-3"
             >
-              <span className="text-sm font-mono text-slate-300">{env.key}</span>
+              <span className="text-sm font-mono text-slate-700">{env.key}</span>
               <div className="flex items-center gap-1.5">
                 {env.present ? (
                   <>
@@ -177,20 +177,20 @@ export default async function AdminSystemPage() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div>
-              <p className="text-xs text-slate-400">Framework</p>
-              <p className="mt-1 font-semibold text-slate-100">Next.js 14</p>
+              <p className="text-xs text-slate-600">Framework</p>
+              <p className="mt-1 font-semibold text-slate-900">Next.js 14</p>
             </div>
             <div>
-              <p className="text-xs text-slate-400">Database</p>
-              <p className="mt-1 font-semibold text-slate-100">Supabase</p>
+              <p className="text-xs text-slate-600">Database</p>
+              <p className="mt-1 font-semibold text-slate-900">Supabase</p>
             </div>
             <div>
-              <p className="text-xs text-slate-400">Deployment</p>
-              <p className="mt-1 font-semibold text-slate-100">Vercel</p>
+              <p className="text-xs text-slate-600">Deployment</p>
+              <p className="mt-1 font-semibold text-slate-900">Vercel</p>
             </div>
             <div>
-              <p className="text-xs text-slate-400">Build Date</p>
-              <p className="mt-1 font-semibold text-slate-100">
+              <p className="text-xs text-slate-600">Build Date</p>
+              <p className="mt-1 font-semibold text-slate-900">
                 {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
               </p>
             </div>

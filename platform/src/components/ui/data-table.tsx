@@ -20,20 +20,20 @@ export function DataTable({
   if (rows.length === 0) {
     return (
       <Card className={cn('p-8 text-center', className)}>
-        <p className="text-slate-400">{emptyMessage}</p>
+        <p className="text-slate-600">{emptyMessage}</p>
       </Card>
     )
   }
 
   return (
-    <div className={cn('overflow-x-auto rounded-lg border border-slate-800', className)}>
+    <div className={cn('overflow-x-auto rounded-lg border border-slate-200', className)}>
       <table className="w-full text-left text-sm">
-        <thead className="border-b border-slate-800 bg-slate-900/50">
+        <thead className="border-b border-slate-200 bg-slate-100/50">
           <tr>
             {headers.map((header, idx) => (
               <th
                 key={idx}
-                className="px-6 py-3 font-semibold text-slate-100"
+                className="px-6 py-3 font-semibold text-slate-900"
               >
                 {header}
               </th>
@@ -44,12 +44,12 @@ export function DataTable({
           {rows.map((row, rowIdx) => (
             <tr
               key={rowIdx}
-              className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors"
+              className="border-b border-slate-200 hover:bg-slate-100/50 transition-colors"
             >
               {row.map((cell, cellIdx) => (
                 <td
                   key={cellIdx}
-                  className="px-6 py-4 text-slate-100"
+                  className="px-6 py-4 text-slate-900"
                 >
                   {cell}
                 </td>

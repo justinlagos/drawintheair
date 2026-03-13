@@ -87,39 +87,39 @@ export default async function AnalyticsPage() {
   const analyticsContent = (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-slate-100">Analytics</h1>
-        <p className="mt-1 text-slate-400">Track your classroom performance and student engagement</p>
+        <h1 className="text-3xl font-bold text-slate-900">Analytics</h1>
+        <p className="mt-1 text-slate-600">Track your classroom performance and student engagement</p>
       </div>
 
       {/* Top Metrics */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-slate-400">Total Sessions</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600">Total Sessions</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-slate-100">{totalSessions}</p>
-            <p className="mt-2 text-sm text-slate-400">{thisMonthSessions} this month</p>
+            <p className="text-3xl font-bold text-slate-900">{totalSessions}</p>
+            <p className="mt-2 text-sm text-slate-600">{thisMonthSessions} this month</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-slate-400">Total Students</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600">Total Students</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-slate-100">{totalStudents}</p>
-            <p className="mt-2 text-sm text-slate-400">Across all sessions</p>
+            <p className="text-3xl font-bold text-slate-900">{totalStudents}</p>
+            <p className="mt-2 text-sm text-slate-600">Across all sessions</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-slate-400">Avg Duration</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600">Avg Duration</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-slate-100">{avgDuration}m</p>
-            <p className="mt-2 text-sm text-slate-400">Per session</p>
+            <p className="text-3xl font-bold text-slate-900">{avgDuration}m</p>
+            <p className="mt-2 text-sm text-slate-600">Per session</p>
           </CardContent>
         </Card>
       </div>
@@ -135,17 +135,17 @@ export default async function AnalyticsPage() {
             .slice(0, 8)
             .map(([week, count]) => (
               <div key={week} className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">{week}</span>
+                <span className="text-sm text-slate-600">{week}</span>
                 <div className="flex items-center gap-2">
-                  <div className="h-6 w-16 bg-slate-800 rounded flex items-center justify-center">
+                  <div className="h-6 w-16 bg-slate-200 rounded flex items-center justify-center">
                     <div
-                      className="h-full bg-violet-500 rounded transition-all"
+                      className="h-full bg-orange-500 rounded transition-all"
                       style={{
                         width: `${Math.min((count / Math.max(...Object.values(weeklyData))) * 100, 100)}%`,
                       }}
                     />
                   </div>
-                  <span className="text-sm font-medium text-slate-100">{count}</span>
+                  <span className="text-sm font-medium text-slate-900">{count}</span>
                 </div>
               </div>
             ))}
@@ -160,22 +160,22 @@ export default async function AnalyticsPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <h3 className="font-semibold text-slate-100 mb-3">This Month vs Last Month</h3>
+            <h3 className="font-semibold text-slate-900 mb-3">This Month vs Last Month</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-lg bg-slate-800/50 p-4">
-                <p className="text-sm text-slate-400">This Month</p>
-                <p className="mt-1 text-2xl font-bold text-slate-100">{thisMonthSessions}</p>
+              <div className="rounded-lg bg-slate-100/50 p-4">
+                <p className="text-sm text-slate-600">This Month</p>
+                <p className="mt-1 text-2xl font-bold text-slate-900">{thisMonthSessions}</p>
               </div>
-              <div className="rounded-lg bg-slate-800/50 p-4">
-                <p className="text-sm text-slate-400">Last Month</p>
-                <p className="mt-1 text-2xl font-bold text-slate-100">{lastMonthSessions}</p>
+              <div className="rounded-lg bg-slate-100/50 p-4">
+                <p className="text-sm text-slate-600">Last Month</p>
+                <p className="mt-1 text-2xl font-bold text-slate-900">{lastMonthSessions}</p>
               </div>
             </div>
           </div>
 
           {thisMonthSessions > 0 && (
             <div>
-              <p className="text-sm text-emerald-400">
+              <p className="text-sm text-green-600">
                 +{Math.round(((thisMonthSessions - lastMonthSessions) / Math.max(lastMonthSessions, 1)) * 100)}% growth from last month
               </p>
             </div>

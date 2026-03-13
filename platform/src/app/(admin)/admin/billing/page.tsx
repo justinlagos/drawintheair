@@ -50,8 +50,8 @@ export default async function AdminBillingPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-100">Billing</h1>
-        <p className="text-slate-400 mt-1">Revenue overview and subscription metrics</p>
+        <h1 className="text-3xl font-bold text-slate-900">Billing</h1>
+        <p className="text-slate-600 mt-1">Revenue overview and subscription metrics</p>
       </div>
 
       {/* Revenue Stats */}
@@ -81,7 +81,7 @@ export default async function AdminBillingPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {[
-              { label: 'Pro', count: proTeachers.length, total: teachers?.length || 1, color: 'bg-violet-500' },
+              { label: 'Pro', count: proTeachers.length, total: teachers?.length || 1, color: 'bg-orange-500' },
               { label: 'Trial', count: trialTeachers.length, total: teachers?.length || 1, color: 'bg-cyan-500' },
               { label: 'Free', count: freeTeachers.length, total: teachers?.length || 1, color: 'bg-slate-500' },
             ].map(({ label, count, total, color }) => {
@@ -89,10 +89,10 @@ export default async function AdminBillingPage() {
               return (
                 <div key={label} className="space-y-1">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-300">{label}</span>
-                    <span className="text-slate-400">{count} ({pct}%)</span>
+                    <span className="text-slate-700">{label}</span>
+                    <span className="text-slate-600">{count} ({pct}%)</span>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-slate-800">
+                  <div className="h-2 w-full rounded-full bg-slate-200">
                     <div
                       className={`h-2 rounded-full ${color} transition-all`}
                       style={{ width: `${pct}%` }}
@@ -110,21 +110,21 @@ export default async function AdminBillingPage() {
             <CardDescription>Trials and upgrades in the last 30 days</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-lg bg-slate-800/50 p-4">
-              <p className="text-sm text-slate-400">New trials (30d)</p>
-              <p className="text-2xl font-bold text-slate-100 mt-1">{recentTrials}</p>
+            <div className="rounded-lg bg-slate-100 p-4">
+              <p className="text-sm text-slate-600">New trials (30d)</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">{recentTrials}</p>
             </div>
-            <div className="rounded-lg bg-slate-800/50 p-4">
-              <p className="text-sm text-slate-400">Conversion rate (est.)</p>
-              <p className="text-2xl font-bold text-slate-100 mt-1">
+            <div className="rounded-lg bg-slate-100 p-4">
+              <p className="text-sm text-slate-600">Conversion rate (est.)</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">
                 {trialTeachers.length > 0
                   ? `${Math.round((proTeachers.length / (proTeachers.length + trialTeachers.length)) * 100)}%`
                   : '—'}
               </p>
             </div>
-            <div className="rounded-lg bg-slate-800/50 p-4">
-              <p className="text-sm text-slate-400">Avg revenue per user</p>
-              <p className="text-2xl font-bold text-slate-100 mt-1">
+            <div className="rounded-lg bg-slate-100 p-4">
+              <p className="text-sm text-slate-600">Avg revenue per user</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">
                 {teachers && teachers.length > 0
                   ? `$${(monthlyRevenue / teachers.length).toFixed(2)}`
                   : '$0.00'}
@@ -141,26 +141,26 @@ export default async function AdminBillingPage() {
         </CardHeader>
         <CardContent>
           {proTeachers.length === 0 ? (
-            <p className="text-slate-400 text-sm">No pro subscribers yet</p>
+            <p className="text-slate-600 text-sm">No pro subscribers yet</p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-slate-800">
+            <div className="overflow-x-auto rounded-lg border border-slate-200">
               <table className="w-full text-left text-sm">
-                <thead className="border-b border-slate-800 bg-slate-900/50">
+                <thead className="border-b border-slate-200 bg-slate-100">
                   <tr>
-                    <th className="px-6 py-3 font-semibold text-slate-100">Name</th>
-                    <th className="px-6 py-3 font-semibold text-slate-100">Email</th>
-                    <th className="px-6 py-3 font-semibold text-slate-100">Tier</th>
-                    <th className="px-6 py-3 font-semibold text-slate-100">Joined</th>
+                    <th className="px-6 py-3 font-semibold text-slate-900">Name</th>
+                    <th className="px-6 py-3 font-semibold text-slate-900">Email</th>
+                    <th className="px-6 py-3 font-semibold text-slate-900">Tier</th>
+                    <th className="px-6 py-3 font-semibold text-slate-900">Joined</th>
                   </tr>
                 </thead>
                 <tbody>
                   {proTeachers.slice(0, 20).map((teacher) => (
                     <tr
                       key={teacher.id}
-                      className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors"
+                      className="border-b border-slate-200 hover:bg-slate-100 transition-colors"
                     >
-                      <td className="px-6 py-3 font-medium text-slate-100">{teacher.name || '—'}</td>
-                      <td className="px-6 py-3 text-slate-400 text-sm">{teacher.email}</td>
+                      <td className="px-6 py-3 font-medium text-slate-900">{teacher.name || '—'}</td>
+                      <td className="px-6 py-3 text-slate-600 text-sm">{teacher.email}</td>
                       <td className="px-6 py-3">
                         <Badge variant="success">Pro</Badge>
                       </td>

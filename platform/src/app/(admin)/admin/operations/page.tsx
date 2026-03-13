@@ -81,14 +81,14 @@ async function Operations() {
     .sort((a, b) => b[1].count - a[1].count)
     .slice(0, 10)
     .map(([type, stats]) => [
-      <span key="type" className="font-medium text-slate-100 text-sm max-w-xs truncate">
+      <span key="type" className="font-medium text-slate-900 text-sm max-w-xs truncate">
         {type}
       </span>,
-      <span key="count" className="text-slate-400 text-sm">{stats.count}</span>,
-      <span key="lastSeen" className="text-slate-400 text-sm">
+      <span key="count" className="text-slate-600 text-sm">{stats.count}</span>,
+      <span key="lastSeen" className="text-slate-600 text-sm">
         {new Date(stats.lastSeen).toLocaleTimeString()}
       </span>,
-      <span key="sample" className="text-slate-500 text-xs max-w-xs truncate">
+      <span key="sample" className="text-slate-600 text-xs max-w-xs truncate">
         {stats.sample.substring(0, 50)}...
       </span>,
     ]);
@@ -104,8 +104,8 @@ async function Operations() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-100">Layer 1: Operations</h1>
-        <p className="text-slate-400 mt-1">System health, error tracking, and alerts</p>
+        <h1 className="text-3xl font-bold text-slate-900">Layer 1: Operations</h1>
+        <p className="text-slate-600 mt-1">System health, error tracking, and alerts</p>
       </div>
 
       {/* Health Metrics */}
@@ -114,8 +114,8 @@ async function Operations() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-400">Active Sessions</p>
-                <p className="text-2xl font-bold text-slate-100 mt-1">
+                <p className="text-sm font-medium text-slate-600">Active Sessions</p>
+                <p className="text-2xl font-bold text-slate-900 mt-1">
                   {activeSessionCount}
                 </p>
               </div>
@@ -127,8 +127,8 @@ async function Operations() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-400">Errors (24h)</p>
-                <p className="text-2xl font-bold text-slate-100 mt-1">
+                <p className="text-sm font-medium text-slate-600">Errors (24h)</p>
+                <p className="text-2xl font-bold text-slate-900 mt-1">
                   {errorCount}
                 </p>
               </div>
@@ -140,8 +140,8 @@ async function Operations() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-400">Error Rate</p>
-                <p className="text-2xl font-bold text-slate-100 mt-1">
+                <p className="text-sm font-medium text-slate-600">Error Rate</p>
+                <p className="text-2xl font-bold text-slate-900 mt-1">
                   {errorRate}%
                 </p>
               </div>
@@ -166,8 +166,8 @@ async function Operations() {
               .slice(0, 12)
               .map(([hour, count]) => (
                 <div key={hour} className="flex items-center justify-between">
-                  <span className="text-slate-400 text-sm w-16">{hour}</span>
-                  <div className="flex-1 mx-4 h-6 bg-slate-800 rounded-full overflow-hidden">
+                  <span className="text-slate-600 text-sm w-16">{hour}</span>
+                  <div className="flex-1 mx-4 h-6 bg-slate-200 rounded-full overflow-hidden">
                     <div
                       className={`h-full ${
                         count > 5
@@ -179,7 +179,7 @@ async function Operations() {
                       style={{ width: `${Math.min((count / 20) * 100, 100)}%` }}
                     />
                   </div>
-                  <span className="text-slate-100 text-sm w-8 text-right">{count}</span>
+                  <span className="text-slate-900 text-sm w-8 text-right">{count}</span>
                 </div>
               ))}
           </div>
@@ -209,7 +209,7 @@ async function Operations() {
           {!alerts || alerts.length === 0 ? (
             <div className="p-8 text-center">
               <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-              <p className="text-slate-400">All systems operational</p>
+              <p className="text-slate-600">All systems operational</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -229,7 +229,7 @@ async function Operations() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold text-slate-100">
+                        <p className="font-semibold text-slate-900">
                           {alert.alert_type}
                         </p>
                         <Badge
@@ -245,8 +245,8 @@ async function Operations() {
                           {alert.severity}
                         </Badge>
                       </div>
-                      <p className="text-sm text-slate-300 mt-2">{alert.message}</p>
-                      <p className="text-xs text-slate-400 mt-2">
+                      <p className="text-sm text-slate-700 mt-2">{alert.message}</p>
+                      <p className="text-xs text-slate-600 mt-2">
                         {new Date(alert.created_at).toLocaleString()}
                       </p>
                     </div>

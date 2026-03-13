@@ -36,8 +36,8 @@ async function SchoolSettings() {
     <div className="space-y-8 max-w-2xl">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-100">School Settings</h1>
-        <p className="text-slate-400 mt-1">Configure your school preferences and account</p>
+        <h1 className="text-3xl font-bold text-slate-900">School Settings</h1>
+        <p className="text-slate-600 mt-1">Configure your school preferences and account</p>
       </div>
 
       {/* Profile Section */}
@@ -48,7 +48,7 @@ async function SchoolSettings() {
         <CardContent>
           <form className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 School Name
               </label>
               <Input
@@ -57,13 +57,13 @@ async function SchoolSettings() {
                 placeholder="Your School Name"
                 className="w-full"
               />
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-600 mt-1">
                 This name appears in teacher invitations and school reports
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Admin Email
               </label>
               <Input
@@ -72,7 +72,7 @@ async function SchoolSettings() {
                 disabled
                 className="w-full opacity-50"
               />
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-600 mt-1">
                 Read-only. This is the account that created the school.
               </p>
             </div>
@@ -92,36 +92,36 @@ async function SchoolSettings() {
         <CardContent>
           <form className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Default Scoreboard Mode
               </label>
-              <select className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 focus:border-violet-500 focus:outline-none">
+              <select className="w-full px-4 py-2 rounded-lg bg-slate-100 border border-slate-300 text-slate-900 focus:border-orange-500 focus:outline-none">
                 <option value="individual">Individual Scores</option>
                 <option value="team">Team Scores</option>
                 <option value="hidden">Hidden (Teacher Only)</option>
               </select>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-600 mt-1">
                 Default setting for new sessions created by teachers
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Default Timer Duration
               </label>
-              <select className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 focus:border-violet-500 focus:outline-none">
+              <select className="w-full px-4 py-2 rounded-lg bg-slate-100 border border-slate-300 text-slate-900 focus:border-orange-500 focus:outline-none">
                 <option value="30">30 seconds</option>
                 <option value="45">45 seconds</option>
                 <option value="60">60 seconds</option>
                 <option value="90">90 seconds</option>
               </select>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-600 mt-1">
                 Default gesture recognition time per round
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Academic Year End Date
               </label>
               <Input
@@ -129,7 +129,7 @@ async function SchoolSettings() {
                 defaultValue={academicYearEnd}
                 className="w-full"
               />
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-600 mt-1">
                 Used for reports and license term calculations
               </p>
             </div>
@@ -148,22 +148,22 @@ async function SchoolSettings() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-slate-100/50">
               <div>
-                <p className="font-medium text-slate-100 text-sm">Subscription Tier</p>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="font-medium text-slate-900 text-sm">Subscription Tier</p>
+                <p className="text-xs text-slate-600 mt-1">
                   {subscriptionTier === 'pro' ? 'Pro School License' : 'Free Plan'}
                 </p>
               </div>
-              <span className="text-sm font-semibold text-violet-400 uppercase">
+              <span className="text-sm font-semibold text-orange-500 uppercase">
                 {subscriptionTier === 'pro' ? 'Pro' : 'Free'}
               </span>
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-slate-100/50">
               <div>
-                <p className="font-medium text-slate-100 text-sm">Account Status</p>
-                <p className="text-xs text-slate-400 mt-1">Active and in good standing</p>
+                <p className="font-medium text-slate-900 text-sm">Account Status</p>
+                <p className="text-xs text-slate-600 mt-1">Active and in good standing</p>
               </div>
               <span className="text-xs font-semibold px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-300">
                 Active

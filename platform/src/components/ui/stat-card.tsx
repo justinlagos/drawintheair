@@ -31,9 +31,9 @@ export function StatCard({
       <CardContent className="pt-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <p className="text-sm font-medium text-slate-400">{title}</p>
+            <p className="text-sm font-medium text-slate-600">{title}</p>
             <div className="mt-2 flex items-end gap-2">
-              <p className="text-3xl font-bold text-slate-100">{value}</p>
+              <p className="text-3xl font-bold text-slate-900">{value}</p>
               {change !== undefined && (
                 <Badge variant={changeColor} size="sm">
                   {isPositive ? (

@@ -12,6 +12,8 @@ import { MODE_LABELS, SCOREABLE_MODES } from '../../features/classmode/scoreMapp
 import type { GameModeId } from '../../features/classmode/scoreMapping';
 import './classmode.css';
 
+const platformUrl = import.meta.env.VITE_PLATFORM_URL || 'https://app.drawintheair.com';
+
 interface SessionRow {
   id: string;
   activity: string;
@@ -26,6 +28,8 @@ export default function TeacherDashboard() {
   const [selectedActivity, setSelectedActivity] = useState<GameModeId | null>(null);
   const [creating, setCreating] = useState(false);
   const [history, setHistory] = useState<SessionRow[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Load session history
   useEffect(() => {
@@ -39,9 +43,10 @@ export default function TeacherDashboard() {
   const handleCreateSession = async () => {
     if (!selectedActivity || !user) return;
     setCreating(true);
+    setError(null);
 
     const code = generateSessionCode();
-    const { data, error } = await dbInsert<SessionRow>('sessions', {
+    const { data, err } = await dbInsert<SessionRow>('sessions', {
       teacher_id: user.id,
       code,
       activity: selectedActivity,
@@ -50,8 +55,13 @@ export default function TeacherDashboard() {
       timer_seconds: 90,
     }, { single: true });
 
-    if (error) {
-      alert(`Failed to create session: ${error.message}`);
+    if (err) {
+      // Provide user-friendly error messages
+      let userMessage = 'Failed to create session. Please try again.';
+      if (err.message.includes('recursion') || err.message.includes('policy')) {
+        userMessage = 'Session creation is temporarily unavailable. Please try again in a moment.';
+      }
+      setError(userMessage);
       setCreating(false);
       return;
     }
@@ -61,6 +71,13 @@ export default function TeacherDashboard() {
       window.dispatchEvent(new PopStateEvent('popstate'));
     }
     setCreating(false);
+  };
+
+  // Retry creating a session
+  const handleRetry = () => {
+    setError(null);
+    setRetryCount(retryCount + 1);
+    handleCreateSession();
   };
 
   if (loading) {
@@ -104,6 +121,9 @@ export default function TeacherDashboard() {
       <div className="cm-topbar">
         <div className="cm-topbar-left">
           <span className="cm-topbar-title">Class Mode</span>
+          <a href={`${platformUrl}/dashboard`} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '16px', fontSize: '0.85rem', color: '#8b5cf6', textDecoration: 'none' }}>
+            → Full Dashboard
+          </a>
         </div>
         <div className="cm-topbar-right">
           {avatarUrl && <img className="cm-avatar" src={avatarUrl} alt="" />}
@@ -119,6 +139,36 @@ export default function TeacherDashboard() {
           <h1>Start a Session</h1>
           <p>Pick an activity, then share the code with your class</p>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div style={{
+            marginBottom: '24px',
+            padding: '12px 16px',
+            backgroundColor: '#fee2e2',
+            border: '1px solid #fca5a5',
+            borderRadius: '6px',
+            color: '#7f1d1d'
+          }}>
+            <div style={{ marginBottom: '8px' }}>
+              <strong>Error:</strong> {error}
+            </div>
+            <button
+              onClick={handleRetry}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#dc2626',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.85rem'
+              }}
+            >
+              Try Again
+            </button>
+          </div>
+        )}
 
         {/* Activity picker */}
         <div className="cm-activity-grid">

@@ -95,19 +95,19 @@ async function AdminLayout({
   ];
 
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="flex min-h-screen bg-slate-50">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-slate-800 bg-slate-900">
+      <aside className="w-64 border-r border-slate-200 bg-white">
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="border-b border-slate-800 px-6 py-6">
+          <div className="border-b border-slate-200 px-6 py-6">
             <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
               <Logo size="sm" showIcon={true} />
             </Link>
           </div>
 
           {/* Admin Status Banner */}
-          <div className="border-b border-slate-800 px-4 py-4">
+          <div className="border-b border-slate-200 px-4 py-4">
             <div className="rounded-lg bg-teal-950/50 border border-teal-700 p-3">
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
@@ -126,7 +126,7 @@ async function AdminLayout({
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="flex items-center gap-3 rounded-lg px-4 py-2 text-sm text-slate-300 transition hover:bg-teal-950/50 hover:text-teal-400"
+                    className="flex items-center gap-3 rounded-lg px-4 py-2 text-sm text-slate-700 transition hover:bg-teal-950/50 hover:text-teal-400"
                   >
                     {item.icon}
                     <span>{item.label}</span>
@@ -137,20 +137,20 @@ async function AdminLayout({
           </nav>
 
           {/* Admin Info */}
-          <div className="border-t border-slate-800 px-4 py-4">
-            <div className="rounded-lg bg-slate-800/50 p-3">
-              <p className="text-xs font-semibold text-slate-300">
+          <div className="border-t border-slate-200 px-4 py-4">
+            <div className="rounded-lg bg-slate-100/50 p-3">
+              <p className="text-xs font-semibold text-slate-700">
                 {admin.email?.split('@')[0] || 'Admin'}
               </p>
-              <p className="text-xs text-slate-400 mt-1">Administrator</p>
+              <p className="text-xs text-slate-600 mt-1">Administrator</p>
             </div>
           </div>
 
           {/* Back to Game Link */}
-          <div className="border-t border-slate-800 px-4 py-3">
+          <div className="border-t border-slate-200 px-4 py-3">
             <a
               href={gameUrl}
-              className="flex items-center gap-2 text-xs text-slate-400 hover:text-teal-400 transition"
+              className="flex items-center gap-2 text-xs text-slate-600 hover:text-teal-400 transition"
             >
               <ArrowLeft className="w-3 h-3" />
               Back to game
@@ -162,10 +162,10 @@ async function AdminLayout({
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {/* Header */}
-        <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/80 backdrop-blur">
+        <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur">
           <div className="flex h-16 items-center justify-between px-8">
             <div className="flex items-center gap-3">
-              <h1 className="text-lg font-semibold text-slate-100">
+              <h1 className="text-lg font-semibold text-slate-900">
                 Command Center
               </h1>
               <div className="h-2 w-2 rounded-full bg-teal-500 animate-pulse" />

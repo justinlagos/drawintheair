@@ -606,7 +606,7 @@ export const Landing: React.FC = () => {
               <h4 className="text-xs font-bold text-slate-600 tracking-widest uppercase mb-4">Product</h4>
               <div className="space-y-2.5">
                 <button onClick={() => setTryFreeOpen(true)} className="block text-sm text-slate-500 hover:text-orange-500 transition-colors text-left" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>Try Free</button>
-                <a href="/demo" className="block text-sm text-slate-500 hover:text-orange-500 transition-colors no-underline">Demo</a>
+                <a href="/play" className="block text-sm text-slate-500 hover:text-orange-500 transition-colors no-underline">Try Free</a>
                 <a href="/schools" className="block text-sm text-slate-500 hover:text-orange-500 transition-colors no-underline">School Pilot Pack</a>
                 <a href="/faq" className="block text-sm text-slate-500 hover:text-orange-500 transition-colors no-underline">FAQ</a>
               </div>

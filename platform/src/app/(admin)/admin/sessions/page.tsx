@@ -75,8 +75,8 @@ async function SessionBrowser({
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-100">Session Browser</h1>
-        <p className="text-slate-400 mt-1">Browse and monitor all platform sessions</p>
+        <h1 className="text-3xl font-bold text-slate-900">Session Browser</h1>
+        <p className="text-slate-600 mt-1">Browse and monitor all platform sessions</p>
       </div>
 
       {/* Filters */}
@@ -86,7 +86,7 @@ async function SessionBrowser({
             <select
               name="status"
               defaultValue={searchParams.status || 'all'}
-              className="px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 focus:border-violet-500 focus:outline-none"
+              className="px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 focus:border-orange-500 focus:outline-none"
             >
               <option value="all">All Statuses</option>
               <option value="active">Active</option>
@@ -95,7 +95,7 @@ async function SessionBrowser({
             </select>
             <button
               type="submit"
-              className="px-6 py-2 rounded-lg bg-violet-500 hover:bg-violet-600 text-white font-medium transition"
+              className="px-6 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium transition"
             >
               Filter
             </button>
@@ -110,31 +110,31 @@ async function SessionBrowser({
         </CardHeader>
         <CardContent>
           {!sessions || sessions.length === 0 ? (
-            <p className="text-slate-400 text-sm">No sessions found</p>
+            <p className="text-slate-600 text-sm">No sessions found</p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-slate-800">
+            <div className="overflow-x-auto rounded-lg border border-slate-200">
               <table className="w-full text-left text-sm">
-                <thead className="border-b border-slate-800 bg-slate-900/50">
+                <thead className="border-b border-slate-200 bg-slate-100">
                   <tr>
-                    <th className="px-6 py-3 font-semibold text-slate-100">
+                    <th className="px-6 py-3 font-semibold text-slate-900">
                       Session ID
                     </th>
-                    <th className="px-6 py-3 font-semibold text-slate-100">
+                    <th className="px-6 py-3 font-semibold text-slate-900">
                       Teacher
                     </th>
-                    <th className="px-6 py-3 font-semibold text-slate-100">
+                    <th className="px-6 py-3 font-semibold text-slate-900">
                       Activity
                     </th>
-                    <th className="px-6 py-3 font-semibold text-slate-100">
+                    <th className="px-6 py-3 font-semibold text-slate-900">
                       Status
                     </th>
-                    <th className="px-6 py-3 font-semibold text-slate-100">
+                    <th className="px-6 py-3 font-semibold text-slate-900">
                       Students
                     </th>
-                    <th className="px-6 py-3 font-semibold text-slate-100">
+                    <th className="px-6 py-3 font-semibold text-slate-900">
                       Duration
                     </th>
-                    <th className="px-6 py-3 font-semibold text-slate-100">
+                    <th className="px-6 py-3 font-semibold text-slate-900">
                       Created
                     </th>
                   </tr>
@@ -150,22 +150,22 @@ async function SessionBrowser({
                     return (
                       <tr
                         key={session.id}
-                        className={`border-b border-slate-800 hover:bg-slate-800/50 transition-colors ${
-                          isLive ? 'bg-cyan-950/20' : ''
+                        className={`border-b border-slate-200 hover:bg-slate-100 transition-colors ${
+                          isLive ? 'bg-cyan-100' : ''
                         }`}
                       >
-                        <td className="px-6 py-3 font-mono text-slate-300 text-xs">
+                        <td className="px-6 py-3 font-mono text-slate-700 text-xs">
                           {session.id.substring(0, 8)}...
                         </td>
-                        <td className="px-6 py-3 text-slate-300 text-sm">
+                        <td className="px-6 py-3 text-slate-700 text-sm">
                           <div>
                             <p className="font-medium">{session.teachers?.name}</p>
-                            <p className="text-xs text-slate-400">
+                            <p className="text-xs text-slate-600">
                               {session.teachers?.email}
                             </p>
                           </div>
                         </td>
-                        <td className="px-6 py-3 text-slate-400 text-sm">
+                        <td className="px-6 py-3 text-slate-600 text-sm">
                           {session.playlists?.name || 'Custom'}
                         </td>
                         <td className="px-6 py-3">
@@ -187,13 +187,13 @@ async function SessionBrowser({
                             </Badge>
                           </div>
                         </td>
-                        <td className="px-6 py-3 text-slate-400 text-sm">
+                        <td className="px-6 py-3 text-slate-600 text-sm">
                           {session.session_students?.length || 0}
                         </td>
-                        <td className="px-6 py-3 text-slate-400 text-sm">
+                        <td className="px-6 py-3 text-slate-600 text-sm">
                           {duration}
                         </td>
-                        <td className="px-6 py-3 text-slate-400 text-sm">
+                        <td className="px-6 py-3 text-slate-600 text-sm">
                           {new Date(session.created_at).toLocaleString()}
                         </td>
                       </tr>
@@ -206,8 +206,8 @@ async function SessionBrowser({
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-6 pt-6 border-t border-slate-800">
-              <p className="text-sm text-slate-400">
+            <div className="flex items-center justify-between mt-6 pt-6 border-t border-slate-200">
+              <p className="text-sm text-slate-600">
                 Page {page} of {totalPages}
               </p>
               <div className="flex gap-2">
@@ -215,7 +215,7 @@ async function SessionBrowser({
                   <Link
                     href={`/admin/sessions?status=${searchParams.status || 'all'}&page=${page - 1}`}
                   >
-                    <button className="px-3 py-1 rounded-lg border border-slate-700 hover:bg-slate-800 text-slate-300 text-sm">
+                    <button className="px-3 py-1 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-700 text-sm">
                       Previous
                     </button>
                   </Link>
@@ -224,7 +224,7 @@ async function SessionBrowser({
                   <Link
                     href={`/admin/sessions?status=${searchParams.status || 'all'}&page=${page + 1}`}
                   >
-                    <button className="px-3 py-1 rounded-lg border border-slate-700 hover:bg-slate-800 text-slate-300 text-sm">
+                    <button className="px-3 py-1 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-700 text-sm">
                       Next
                     </button>
                   </Link>
@@ -236,13 +236,13 @@ async function SessionBrowser({
       </Card>
 
       {/* Info Section */}
-      <Card className="bg-slate-800/30">
+      <Card className="bg-slate-100">
         <CardContent className="pt-6">
           <div className="flex items-start gap-3">
             <Radio className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
             <div>
-              <h4 className="font-medium text-slate-100 text-sm">Live Sessions</h4>
-              <p className="text-sm text-slate-400 mt-1">
+              <h4 className="font-medium text-slate-900 text-sm">Live Sessions</h4>
+              <p className="text-sm text-slate-600 mt-1">
                 Sessions with active status show a live indicator. Click a session
                 to view detailed metrics and participant info.
               </p>

@@ -49,8 +49,8 @@ export const TryFreeModal: React.FC<TryFreeModalProps> = ({ open, onClose }) => 
             });
         }
 
-        // Navigate to demo loader
-        window.location.pathname = '/demo';
+        // Navigate to play
+        window.location.pathname = '/play';
     }, [ageBand, schoolCode, classCode]);
 
     const handleOverlayClick = useCallback(

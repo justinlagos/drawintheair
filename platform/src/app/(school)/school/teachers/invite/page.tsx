@@ -96,8 +96,8 @@ export default function InviteTeacher() {
     <div className="space-y-8 max-w-2xl">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-100">Invite Teachers</h1>
-        <p className="text-slate-400 mt-1">Add new teachers to your school</p>
+        <h1 className="text-3xl font-bold text-slate-900">Invite Teachers</h1>
+        <p className="text-slate-600 mt-1">Add new teachers to your school</p>
       </div>
 
       {/* Seats Status */}
@@ -140,13 +140,13 @@ export default function InviteTeacher() {
       )}
 
       {/* Toggle Tabs */}
-      <div className="flex gap-2 bg-slate-800/50 rounded-lg p-1 w-fit">
+      <div className="flex gap-2 bg-slate-100/50 rounded-lg p-1 w-fit">
         <button
           onClick={() => setUseBulk(false)}
           className={`px-4 py-2 rounded-md text-sm font-medium transition ${
             !useBulk
-              ? 'bg-slate-700 text-slate-100'
-              : 'text-slate-400 hover:text-slate-300'
+              ? 'bg-slate-200 text-slate-900'
+              : 'text-slate-600 hover:text-slate-700'
           }`}
         >
           Single Invite
@@ -155,8 +155,8 @@ export default function InviteTeacher() {
           onClick={() => setUseBulk(true)}
           className={`px-4 py-2 rounded-md text-sm font-medium transition ${
             useBulk
-              ? 'bg-slate-700 text-slate-100'
-              : 'text-slate-400 hover:text-slate-300'
+              ? 'bg-slate-200 text-slate-900'
+              : 'text-slate-600 hover:text-slate-700'
           }`}
         >
           Bulk Invite
@@ -172,7 +172,7 @@ export default function InviteTeacher() {
           <CardContent>
             <form onSubmit={handleSingleInvite} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   Email Address
                 </label>
                 <Input
@@ -205,7 +205,7 @@ export default function InviteTeacher() {
           <CardContent>
             <form onSubmit={handleBulkInvite} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   Email Addresses (one per line)
                 </label>
                 <textarea
@@ -213,10 +213,10 @@ export default function InviteTeacher() {
                   value={bulkEmails}
                   onChange={(e) => setBulkEmails(e.target.value)}
                   disabled={loading}
-                  className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-500 focus:border-violet-500 focus:outline-none resize-none"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-100 border border-slate-300 text-slate-900 placeholder-slate-500 focus:border-orange-500 focus:outline-none resize-none"
                   rows={8}
                 />
-                <p className="text-xs text-slate-400 mt-2">
+                <p className="text-xs text-slate-600 mt-2">
                   You can invite up to {seatsRemaining} teachers
                 </p>
               </div>
@@ -233,22 +233,22 @@ export default function InviteTeacher() {
       )}
 
       {/* Info Card */}
-      <Card className="bg-slate-800/30">
+      <Card className="bg-slate-100/30">
         <CardContent className="pt-6">
-          <h4 className="font-medium text-slate-100 text-sm mb-3">
+          <h4 className="font-medium text-slate-900 text-sm mb-3">
             What happens next?
           </h4>
-          <ul className="space-y-2 text-sm text-slate-400">
+          <ul className="space-y-2 text-sm text-slate-600">
             <li className="flex gap-3">
-              <Mail className="w-4 h-4 flex-shrink-0 text-violet-400 mt-0.5" />
+              <Mail className="w-4 h-4 flex-shrink-0 text-orange-500 mt-0.5" />
               <span>Invited teachers receive an email with a setup link</span>
             </li>
             <li className="flex gap-3">
-              <Mail className="w-4 h-4 flex-shrink-0 text-violet-400 mt-0.5" />
+              <Mail className="w-4 h-4 flex-shrink-0 text-orange-500 mt-0.5" />
               <span>They create an account and join your school automatically</span>
             </li>
             <li className="flex gap-3">
-              <Mail className="w-4 h-4 flex-shrink-0 text-violet-400 mt-0.5" />
+              <Mail className="w-4 h-4 flex-shrink-0 text-orange-500 mt-0.5" />
               <span>Invitation expires after 30 days if not accepted</span>
             </li>
           </ul>

@@ -33,8 +33,8 @@ export function BlurOverlay({
               <Lock className="h-6 w-6 text-red-400" />
             </div>
             <div className="text-center">
-              <p className="text-slate-100 font-medium">{upgradeMessage}</p>
-              <p className="mt-1 text-sm text-slate-400">
+              <p className="text-slate-900 font-medium">{upgradeMessage}</p>
+              <p className="mt-1 text-sm text-slate-600">
                 Unlock full access with a Pro subscription
               </p>
             </div>

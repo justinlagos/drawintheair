@@ -41,8 +41,8 @@ export default async function AdminContentPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-100">Content</h1>
-        <p className="text-slate-400 mt-1">Manage activities and learning content across the platform</p>
+        <h1 className="text-3xl font-bold text-slate-900">Content</h1>
+        <p className="text-slate-600 mt-1">Manage activities and learning content across the platform</p>
       </div>
 
       {/* Stats */}
@@ -60,30 +60,30 @@ export default async function AdminContentPage() {
           <CardDescription>All activities available on the platform</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto rounded-lg border border-slate-800">
+          <div className="overflow-x-auto rounded-lg border border-slate-200">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-800 bg-slate-900/50">
+              <thead className="border-b border-slate-200 bg-slate-100">
                 <tr>
-                  <th className="px-6 py-3 font-semibold text-slate-100">Activity</th>
-                  <th className="px-6 py-3 font-semibold text-slate-100">Type</th>
-                  <th className="px-6 py-3 font-semibold text-slate-100">Status</th>
-                  <th className="px-6 py-3 font-semibold text-slate-100">Popularity</th>
-                  <th className="px-6 py-3 font-semibold text-slate-100">ID</th>
+                  <th className="px-6 py-3 font-semibold text-slate-900">Activity</th>
+                  <th className="px-6 py-3 font-semibold text-slate-900">Type</th>
+                  <th className="px-6 py-3 font-semibold text-slate-900">Status</th>
+                  <th className="px-6 py-3 font-semibold text-slate-900">Popularity</th>
+                  <th className="px-6 py-3 font-semibold text-slate-900">ID</th>
                 </tr>
               </thead>
               <tbody>
                 {ACTIVITIES.map((activity) => (
                   <tr
                     key={activity.id}
-                    className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors"
+                    className="border-b border-slate-200 hover:bg-slate-100 transition-colors"
                   >
                     <td className="px-6 py-3">
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">{activity.emoji}</span>
-                        <span className="font-medium text-slate-100">{activity.name}</span>
+                        <span className="font-medium text-slate-900">{activity.name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-3 text-slate-400 text-sm capitalize">{activity.type.replace('-', ' ')}</td>
+                    <td className="px-6 py-3 text-slate-600 text-sm capitalize">{activity.type.replace('-', ' ')}</td>
                     <td className="px-6 py-3">
                       <Badge variant={activity.status === 'live' ? 'success' : 'warning'}>
                         {activity.status}
@@ -102,7 +102,7 @@ export default async function AdminContentPage() {
                         {activity.popularity}
                       </Badge>
                     </td>
-                    <td className="px-6 py-3 text-slate-500 font-mono text-xs">{activity.id}</td>
+                    <td className="px-6 py-3 text-slate-600 font-mono text-xs">{activity.id}</td>
                   </tr>
                 ))}
               </tbody>
@@ -130,9 +130,9 @@ export default async function AdminContentPage() {
               </div>
             </div>
           </div>
-          <div className="rounded-lg bg-slate-800/50 border border-slate-700 p-4">
-            <p className="text-sm font-semibold text-slate-200">Game Engine</p>
-            <p className="text-sm text-slate-400 mt-1">
+          <div className="rounded-lg bg-slate-100 border border-slate-300 p-4">
+            <p className="text-sm font-semibold text-slate-800">Game Engine</p>
+            <p className="text-sm text-slate-600 mt-1">
               Activities are powered by MediaPipe hand tracking. The Vite SPA handles all game logic.
               The platform (Next.js) handles session orchestration, analytics, and user management.
             </p>

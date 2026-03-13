@@ -180,17 +180,17 @@ export default function JoinPage() {
 
   if (step === 'code') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 flex items-center justify-center p-4">
-        <Card className="bg-slate-900 border-slate-700 w-full max-w-md">
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4">
+        <Card className="bg-white border-slate-200 w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-white">Join a Session</CardTitle>
-            <p className="text-slate-400 text-sm mt-2">Ask your teacher for the 4-digit code</p>
+            <CardTitle className="text-2xl text-slate-900">Join a Session</CardTitle>
+            <p className="text-slate-600 text-sm mt-2">Ask your teacher for the 4-digit code</p>
           </CardHeader>
 
           <CardContent className="space-y-6">
             {/* Code Display */}
-            <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 text-center">
-              <div className="text-5xl font-bold text-indigo-400 font-mono tracking-widest">
+            <div className="bg-slate-100 p-6 rounded-lg border border-slate-200 text-center">
+              <div className="text-5xl font-bold text-orange-500 font-mono tracking-widest">
                 {code.padEnd(4, '•')}
               </div>
             </div>
@@ -202,7 +202,7 @@ export default function JoinPage() {
                   key={digit}
                   onClick={() => handleCodeInput(digit)}
                   disabled={code.length >= 4 || isValidating}
-                  className="h-16 text-2xl font-bold bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50"
+                  className="h-16 text-2xl font-bold bg-orange-600 hover:bg-orange-700 text-white disabled:opacity-50"
                 >
                   {digit}
                 </Button>
@@ -211,7 +211,7 @@ export default function JoinPage() {
               <Button
                 onClick={() => handleCodeInput('0')}
                 disabled={code.length >= 4 || isValidating}
-                className="col-span-2 h-16 text-2xl font-bold bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50"
+                className="col-span-2 h-16 text-2xl font-bold bg-orange-600 hover:bg-orange-700 text-white disabled:opacity-50"
               >
                 0
               </Button>
@@ -220,18 +220,18 @@ export default function JoinPage() {
                 onClick={handleCodeBackspace}
                 disabled={code.length === 0 || isValidating}
                 variant="outline"
-                className="h-16 text-xl font-bold border-slate-600 text-white hover:bg-slate-800 disabled:opacity-50"
+                className="h-16 text-xl font-bold border-slate-300 text-slate-900 hover:bg-slate-100 disabled:opacity-50"
               >
                 ⌫
               </Button>
             </div>
 
             {/* Error Message */}
-            {error && <div className="p-3 bg-red-900/20 border border-red-700 rounded text-red-400 text-sm">{error}</div>}
+            {error && <div className="p-3 bg-red-100 border border-red-300 rounded text-red-700 text-sm">{error}</div>}
 
             {/* Validation Status */}
             {isValidating && code.length === 4 && (
-              <div className="flex items-center justify-center gap-2 text-slate-400">
+              <div className="flex items-center justify-center gap-2 text-slate-600">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span className="text-sm">Checking code...</span>
               </div>
@@ -244,11 +244,11 @@ export default function JoinPage() {
 
   if (step === 'name') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 flex items-center justify-center p-4">
-        <Card className="bg-slate-900 border-slate-700 w-full max-w-md">
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4">
+        <Card className="bg-white border-slate-200 w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-white">What's your name?</CardTitle>
-            <p className="text-slate-400 text-sm mt-2">Tell us so we can track your score!</p>
+            <CardTitle className="text-2xl text-slate-900">What's your name?</CardTitle>
+            <p className="text-slate-600 text-sm mt-2">Tell us so we can track your score!</p>
           </CardHeader>
 
           <CardContent className="space-y-6">
@@ -267,15 +267,15 @@ export default function JoinPage() {
                 }
               }}
               autoFocus
-              className="w-full px-4 py-4 bg-slate-800 border border-slate-600 rounded text-white text-lg focus:border-indigo-500 focus:outline-none placeholder-slate-500"
+              className="w-full px-4 py-4 bg-slate-50 border border-slate-300 rounded text-slate-900 text-lg focus:border-orange-500 focus:outline-none placeholder-slate-500"
             />
 
-            {error && <div className="p-3 bg-red-900/20 border border-red-700 rounded text-red-400 text-sm">{error}</div>}
+            {error && <div className="p-3 bg-red-100 border border-red-300 rounded text-red-700 text-sm">{error}</div>}
 
             <Button
               onClick={handleNameSubmit}
               disabled={!name.trim() || isValidating}
-              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg disabled:opacity-50"
+              className="w-full py-4 bg-orange-600 hover:bg-orange-700 text-white font-semibold text-lg disabled:opacity-50"
             >
               {isValidating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Let's Go!
@@ -288,10 +288,10 @@ export default function JoinPage() {
 
   if (step === 'waiting') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 flex items-center justify-center p-4">
-        <Card className="bg-slate-900 border-slate-700 w-full max-w-md text-center">
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4">
+        <Card className="bg-white border-slate-200 w-full max-w-md text-center">
           <CardHeader>
-            <CardTitle className="text-2xl text-white">{name}!</CardTitle>
+            <CardTitle className="text-2xl text-slate-900">{name}!</CardTitle>
           </CardHeader>
 
           <CardContent className="space-y-8">
@@ -303,22 +303,22 @@ export default function JoinPage() {
                 </span>
               </div>
 
-              <div className="text-xl font-semibold text-white">Waiting for your teacher...</div>
+              <div className="text-xl font-semibold text-slate-900">Waiting for your teacher...</div>
 
               <div className="flex justify-center gap-1">
-                <div className="w-3 h-3 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-                <div className="w-3 h-3 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                <div className="w-3 h-3 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
               </div>
             </div>
 
             {/* Student Count */}
-            <div className="bg-slate-800 p-6 rounded-lg border border-slate-700">
-              <p className="text-slate-400 text-sm mb-2">Students ready</p>
-              <p className="text-4xl font-bold text-indigo-400">{studentCount}</p>
+            <div className="bg-slate-100 p-6 rounded-lg border border-slate-200">
+              <p className="text-slate-600 text-sm mb-2">Students ready</p>
+              <p className="text-4xl font-bold text-orange-500">{studentCount}</p>
             </div>
 
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-600">
               Once everyone is ready, your teacher will start the activity. Get ready!
             </p>
           </CardContent>

@@ -33,8 +33,8 @@ export function SettingsForm({ teacher, tierDesc, isProTier, isTrialActive, tria
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-slate-100">Settings</h1>
-        <p className="mt-1 text-slate-400">Manage your profile and account preferences</p>
+        <h1 className="text-3xl font-bold text-slate-900">Settings</h1>
+        <p className="mt-1 text-slate-600">Manage your profile and account preferences</p>
       </div>
 
       {/* Profile Section */}
@@ -47,8 +47,8 @@ export function SettingsForm({ teacher, tierDesc, isProTier, isTrialActive, tria
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 rounded-full bg-gradient-to-br from-cyan-400 to-purple-600" />
             <div className="flex-1">
-              <p className="font-semibold text-slate-100">{teacher.name}</p>
-              <p className="text-sm text-slate-400">{teacher.email}</p>
+              <p className="font-semibold text-slate-900">{teacher.name}</p>
+              <p className="text-sm text-slate-600">{teacher.email}</p>
               <div className="mt-2">
                 <Badge variant={isProTier ? 'pro' : isTrialActive ? 'trial' : 'default'}>
                   {tierDesc}
@@ -67,13 +67,13 @@ export function SettingsForm({ teacher, tierDesc, isProTier, isTrialActive, tria
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-slate-100 mb-2">
+            <label className="block text-sm font-medium text-slate-900 mb-2">
               Default Timer (seconds)
             </label>
             <select
               value={defaultTimer}
               onChange={(e) => setDefaultTimer(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-slate-100 transition focus:border-violet-500 focus:outline-none"
+              className="w-full rounded-lg border border-slate-300 bg-slate-100 px-4 py-2 text-slate-900 transition focus:border-orange-500 focus:outline-none"
             >
               <option value="60">60 seconds</option>
               <option value="90">90 seconds</option>
@@ -82,13 +82,13 @@ export function SettingsForm({ teacher, tierDesc, isProTier, isTrialActive, tria
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-100 mb-2">
+            <label className="block text-sm font-medium text-slate-900 mb-2">
               Default Scoreboard Mode
             </label>
             <select
               value={scoreboardMode}
               onChange={(e) => setScoreboardMode(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-slate-100 transition focus:border-violet-500 focus:outline-none"
+              className="w-full rounded-lg border border-slate-300 bg-slate-100 px-4 py-2 text-slate-900 transition focus:border-orange-500 focus:outline-none"
             >
               <option value="full">Full Scoreboard</option>
               <option value="top3">Top 3 Only</option>
@@ -98,7 +98,7 @@ export function SettingsForm({ teacher, tierDesc, isProTier, isTrialActive, tria
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-100 mb-2">
+            <label className="block text-sm font-medium text-slate-900 mb-2">
               Max Students per Session
             </label>
             <Input
@@ -109,7 +109,7 @@ export function SettingsForm({ teacher, tierDesc, isProTier, isTrialActive, tria
               onChange={(e) => setMaxStudents(e.target.value)}
               className="w-full"
             />
-            <p className="mt-1 text-xs text-slate-400">Limit must be between 10-50</p>
+            <p className="mt-1 text-xs text-slate-600">Limit must be between 10-50</p>
           </div>
 
           <Button variant="secondary" className="w-full">
@@ -136,9 +136,9 @@ export function SettingsForm({ teacher, tierDesc, isProTier, isTrialActive, tria
               </Button>
             </div>
           ) : isProTier ? (
-            <div className="rounded-lg bg-violet-950/50 border border-violet-800 p-4">
-              <p className="text-sm font-semibold text-violet-200">Pro Subscription Active</p>
-              <p className="text-sm text-violet-300 mt-1">
+            <div className="rounded-lg bg-orange-950/50 border border-orange-800 p-4">
+              <p className="text-sm font-semibold text-orange-200">Pro Subscription Active</p>
+              <p className="text-sm text-orange-300 mt-1">
                 You have access to all Pro features
               </p>
               <Button variant="secondary" href="/pricing" className="mt-4">
@@ -146,9 +146,9 @@ export function SettingsForm({ teacher, tierDesc, isProTier, isTrialActive, tria
               </Button>
             </div>
           ) : (
-            <div className="rounded-lg bg-slate-800/50 border border-slate-700 p-4">
-              <p className="text-sm font-semibold text-slate-100">Free Plan</p>
-              <p className="text-sm text-slate-400 mt-1">
+            <div className="rounded-lg bg-slate-100/50 border border-slate-300 p-4">
+              <p className="text-sm font-semibold text-slate-900">Free Plan</p>
+              <p className="text-sm text-slate-600 mt-1">
                 Limited features available
               </p>
               <Button variant="primary" href="/dashboard/upgrade" className="mt-4">

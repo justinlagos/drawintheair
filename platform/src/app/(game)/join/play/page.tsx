@@ -112,8 +112,8 @@ export default function JoinPlayPage() {
 
   if (isLoading || !session) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-950">
-        <Loader2 className="h-8 w-8 text-indigo-500 animate-spin" />
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
       </div>
     )
   }
@@ -122,24 +122,24 @@ export default function JoinPlayPage() {
   const activityEmoji = session.metadata?.activity_emoji || '🎮'
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 p-6">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header with Timer and Score */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <p className="text-sm text-slate-400">Playing as</p>
-            <h1 className="text-2xl font-bold text-white">{studentName}</h1>
+            <p className="text-sm text-slate-600">Playing as</p>
+            <h1 className="text-2xl font-bold text-slate-900">{studentName}</h1>
           </div>
 
           {/* Timer */}
           <div className="text-right">
-            <p className="text-4xl font-bold font-mono text-indigo-400">{formatTime(timeLeft)}</p>
-            <p className="text-slate-400 text-sm mt-1">Time remaining</p>
+            <p className="text-4xl font-bold font-mono text-orange-500">{formatTime(timeLeft)}</p>
+            <p className="text-slate-600 text-sm mt-1">Time remaining</p>
           </div>
 
           {/* Score */}
           <div className="text-right">
-            <p className="text-sm text-slate-400">Your Score</p>
+            <p className="text-sm text-slate-600">Your Score</p>
             <div className="text-2xl mt-1">
               {Array.from({ length: 5 }).map((_, i) => (
                 <span key={i} className={i < Math.min(stars, 5) ? '⭐' : '☆'}>
@@ -151,20 +151,20 @@ export default function JoinPlayPage() {
         </div>
 
         {/* Game Area */}
-        <Card className="bg-slate-900 border-slate-700 min-h-96 flex flex-col items-center justify-center">
+        <Card className="bg-white border-slate-200 min-h-96 flex flex-col items-center justify-center">
           <CardContent className="text-center space-y-6 py-20">
             <div className="text-7xl">{activityEmoji}</div>
             <div>
-              <h2 className="text-3xl font-bold text-white mb-2">{activityName}</h2>
-              <p className="text-slate-400">
+              <h2 className="text-3xl font-bold text-slate-900 mb-2">{activityName}</h2>
+              <p className="text-slate-600">
                 The game engine will be integrated here with MediaPipe gesture detection
               </p>
             </div>
 
             {/* Placeholder for Game Canvas */}
-            <div className="w-full h-64 bg-slate-800 border-2 border-dashed border-slate-600 rounded-lg flex items-center justify-center mt-8">
+            <div className="w-full h-64 bg-slate-200 border-2 border-dashed border-slate-400 rounded-lg flex items-center justify-center mt-8">
               <div className="text-center">
-                <p className="text-slate-400 text-lg">Game Canvas Placeholder</p>
+                <p className="text-slate-600 text-lg">Game Canvas Placeholder</p>
                 <p className="text-slate-500 text-sm mt-2">Camera feed and gesture detection will appear here</p>
               </div>
             </div>
@@ -172,26 +172,26 @@ export default function JoinPlayPage() {
         </Card>
 
         {/* Game Instructions */}
-        <Card className="bg-slate-900 border-slate-700 mt-8">
+        <Card className="bg-white border-slate-200 mt-8">
           <CardHeader>
-            <CardTitle className="text-white">Instructions</CardTitle>
+            <CardTitle className="text-slate-900">Instructions</CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2 text-slate-300">
+            <ul className="space-y-2 text-slate-700">
               <li className="flex gap-3">
-                <span className="text-indigo-400">•</span>
+                <span className="text-orange-500">•</span>
                 <span>Watch the timer - you have {session.metadata?.timer_seconds || 90} seconds</span>
               </li>
               <li className="flex gap-3">
-                <span className="text-indigo-400">•</span>
+                <span className="text-orange-500">•</span>
                 <span>Follow the prompts and use your hand gestures</span>
               </li>
               <li className="flex gap-3">
-                <span className="text-indigo-400">•</span>
+                <span className="text-orange-500">•</span>
                 <span>Try to earn as many stars as possible</span>
               </li>
               <li className="flex gap-3">
-                <span className="text-indigo-400">•</span>
+                <span className="text-orange-500">•</span>
                 <span>When the timer ends, you'll see your results</span>
               </li>
             </ul>

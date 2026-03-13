@@ -128,12 +128,12 @@ async function DashboardLayout({
   const gameUrl = process.env.NEXT_PUBLIC_GAME_URL || 'https://drawintheair.com';
 
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="flex min-h-screen bg-slate-50">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-slate-800 bg-slate-900">
+      <aside className="w-64 border-r border-slate-200 bg-white">
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="border-b border-slate-800 px-6 py-6">
+          <div className="border-b border-slate-200 px-6 py-6">
             <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
               <Logo size="sm" showIcon={true} />
             </Link>
@@ -141,20 +141,20 @@ async function DashboardLayout({
 
           {/* Trial Banner */}
           {(trialActive || trialExpired) && (
-            <div className="border-b border-slate-800 px-4 py-4">
+            <div className="border-b border-slate-200 px-4 py-4">
               {trialExpired ? (
-                <div className="rounded-lg bg-red-950/50 border border-red-800 p-3">
-                  <p className="text-xs font-semibold text-red-200">Trial Expired</p>
-                  <p className="text-xs text-red-300 mt-1">
+                <div className="rounded-lg bg-red-50 border border-red-200 p-3">
+                  <p className="text-xs font-semibold text-red-900">Trial Expired</p>
+                  <p className="text-xs text-red-700 mt-1">
                     Upgrade to Pro to continue.
                   </p>
                 </div>
               ) : (
-                <div className="rounded-lg bg-teal-950/50 border border-teal-700 p-3">
-                  <p className="text-xs font-semibold text-teal-200">
+                <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3">
+                  <p className="text-xs font-semibold text-emerald-900">
                     Trial Active
                   </p>
-                  <p className="text-xs text-teal-300 mt-1">
+                  <p className="text-xs text-emerald-700 mt-1">
                     {trialDaysRemaining} days remaining
                   </p>
                 </div>
@@ -187,7 +187,7 @@ async function DashboardLayout({
                   ) : (
                     <Link
                       href={item.href}
-                      className="flex items-center gap-3 rounded-lg px-4 py-2 text-sm text-slate-300 transition hover:bg-teal-950/50 hover:text-teal-400"
+                      className="flex items-center gap-3 rounded-lg px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-100 hover:text-orange-600"
                     >
                       {item.icon}
                       <span>{item.label}</span>
@@ -199,20 +199,20 @@ async function DashboardLayout({
           </nav>
 
           {/* Teacher Info */}
-          <div className="border-t border-slate-800 px-4 py-4">
-            <div className="rounded-lg bg-slate-800/50 p-3">
-              <p className="text-xs font-semibold text-slate-300">
+          <div className="border-t border-slate-200 px-4 py-4">
+            <div className="rounded-lg bg-slate-100 p-3">
+              <p className="text-xs font-semibold text-slate-900">
                 {teacher.email?.split('@')[0] || 'Teacher'}
               </p>
-              <p className="text-xs text-slate-400 mt-1">{tierBadge}</p>
+              <p className="text-xs text-slate-600 mt-1">{tierBadge}</p>
             </div>
           </div>
 
           {/* Back to Game Link */}
-          <div className="border-t border-slate-800 px-4 py-3">
+          <div className="border-t border-slate-200 px-4 py-3">
             <a
               href={gameUrl}
-              className="flex items-center gap-2 text-xs text-slate-400 hover:text-teal-400 transition"
+              className="flex items-center gap-2 text-xs text-slate-600 hover:text-orange-600 transition"
             >
               <ArrowLeft className="w-3 h-3" />
               Back to game
@@ -224,13 +224,13 @@ async function DashboardLayout({
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {/* Header */}
-        <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/80 backdrop-blur">
+        <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur">
           <div className="flex h-16 items-center justify-between px-8">
-            <h1 className="text-lg font-semibold text-slate-100">
+            <h1 className="text-lg font-semibold text-slate-900">
               Welcome back, {teacher.email?.split('@')[0] || 'Teacher'}
             </h1>
             {/* Avatar */}
-            <div className="h-10 w-10 rounded-full bg-teal-600 text-white flex items-center justify-center text-sm font-bold">
+            <div className="h-10 w-10 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold">
               {teacher.email?.charAt(0).toUpperCase() || 'T'}
             </div>
           </div>

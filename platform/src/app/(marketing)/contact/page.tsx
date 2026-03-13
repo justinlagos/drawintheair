@@ -111,7 +111,7 @@ export default function ContactPage() {
           </p>
           <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild className="bg-orange-500 hover:bg-orange-600 text-white font-semibold">
-              <Link href="/play">Try it Free</Link>
+              <a href="https://drawintheair.com/play">Try it Free</a>
             </Button>
             <Button asChild variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50">
               <Link href="/pricing">View Pricing</Link>

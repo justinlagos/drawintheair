@@ -86,10 +86,10 @@ async function AdminCommandCenter() {
       {/* Header with Status */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100">
+          <h1 className="text-3xl font-bold text-slate-900">
             Command Center
           </h1>
-          <p className="text-slate-400 mt-1">Platform overview and key metrics</p>
+          <p className="text-slate-600 mt-1">Platform overview and key metrics</p>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 border border-emerald-600">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -147,41 +147,41 @@ async function AdminCommandCenter() {
           <CardContent>
             <div className="space-y-2">
               <Link href="/admin/operations" className="block">
-                <button className="w-full p-3 rounded-lg hover:bg-slate-800 transition text-left">
-                  <p className="font-medium text-slate-100 text-sm">Operations</p>
-                  <p className="text-xs text-slate-400 mt-1">
+                <button className="w-full p-3 rounded-lg hover:bg-slate-100 transition text-left">
+                  <p className="font-medium text-slate-900 text-sm">Operations</p>
+                  <p className="text-xs text-slate-600 mt-1">
                     Health, errors, and alerts
                   </p>
                 </button>
               </Link>
               <Link href="/admin/growth" className="block">
-                <button className="w-full p-3 rounded-lg hover:bg-slate-800 transition text-left">
-                  <p className="font-medium text-slate-100 text-sm">Growth</p>
-                  <p className="text-xs text-slate-400 mt-1">
+                <button className="w-full p-3 rounded-lg hover:bg-slate-100 transition text-left">
+                  <p className="font-medium text-slate-900 text-sm">Growth</p>
+                  <p className="text-xs text-slate-600 mt-1">
                     Signups and tier distribution
                   </p>
                 </button>
               </Link>
               <Link href="/admin/intelligence" className="block">
-                <button className="w-full p-3 rounded-lg hover:bg-slate-800 transition text-left">
-                  <p className="font-medium text-slate-100 text-sm">Intelligence</p>
-                  <p className="text-xs text-slate-400 mt-1">
+                <button className="w-full p-3 rounded-lg hover:bg-slate-100 transition text-left">
+                  <p className="font-medium text-slate-900 text-sm">Intelligence</p>
+                  <p className="text-xs text-slate-600 mt-1">
                     Activity performance and insights
                   </p>
                 </button>
               </Link>
               <Link href="/admin/users" className="block">
-                <button className="w-full p-3 rounded-lg hover:bg-slate-800 transition text-left">
-                  <p className="font-medium text-slate-100 text-sm">User Browser</p>
-                  <p className="text-xs text-slate-400 mt-1">
+                <button className="w-full p-3 rounded-lg hover:bg-slate-100 transition text-left">
+                  <p className="font-medium text-slate-900 text-sm">User Browser</p>
+                  <p className="text-xs text-slate-600 mt-1">
                     Search and manage teachers
                   </p>
                 </button>
               </Link>
               <Link href="/admin/sessions" className="block">
-                <button className="w-full p-3 rounded-lg hover:bg-slate-800 transition text-left">
-                  <p className="font-medium text-slate-100 text-sm">Sessions</p>
-                  <p className="text-xs text-slate-400 mt-1">
+                <button className="w-full p-3 rounded-lg hover:bg-slate-100 transition text-left">
+                  <p className="font-medium text-slate-900 text-sm">Sessions</p>
+                  <p className="text-xs text-slate-600 mt-1">
                     Browse all platform sessions
                   </p>
                 </button>
@@ -197,7 +197,7 @@ async function AdminCommandCenter() {
           </CardHeader>
           <CardContent>
             {!recentAlerts || recentAlerts.length === 0 ? (
-              <p className="text-slate-400 text-sm">All systems operational</p>
+              <p className="text-slate-600 text-sm">All systems operational</p>
             ) : (
               <div className="space-y-3">
                 {recentAlerts.map((alert) => (
@@ -208,7 +208,7 @@ async function AdminCommandCenter() {
                         ? 'border-red-700/50 bg-red-950/20'
                         : alert.severity === 'warning'
                           ? 'border-amber-700/50 bg-amber-950/20'
-                          : 'border-slate-700 bg-slate-800/30'
+                          : 'border-slate-300 bg-slate-100/30'
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -218,14 +218,14 @@ async function AdminCommandCenter() {
                             ? 'text-red-400'
                             : alert.severity === 'warning'
                               ? 'text-amber-400'
-                              : 'text-slate-400'
+                              : 'text-slate-600'
                         }`}
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-100">
+                        <p className="text-sm font-medium text-slate-900">
                           {alert.alert_type}
                         </p>
-                        <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+                        <p className="text-xs text-slate-600 mt-1 line-clamp-2">
                           {alert.message}
                         </p>
                         <p className="text-xs text-slate-500 mt-2">
@@ -250,17 +250,17 @@ async function AdminCommandCenter() {
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-emerald-400">99.9%</div>
-              <p className="text-xs text-slate-400 mt-2">Uptime</p>
+              <p className="text-xs text-slate-600 mt-2">Uptime</p>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-slate-100">
+              <div className="text-2xl font-bold text-slate-900">
                 {activeSessionCount}
               </div>
-              <p className="text-xs text-slate-400 mt-2">Live Sessions</p>
+              <p className="text-xs text-slate-600 mt-2">Live Sessions</p>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-slate-100">2ms</div>
-              <p className="text-xs text-slate-400 mt-2">Avg Response</p>
+              <div className="text-2xl font-bold text-slate-900">2ms</div>
+              <p className="text-xs text-slate-600 mt-2">Avg Response</p>
             </div>
           </div>
         </CardContent>

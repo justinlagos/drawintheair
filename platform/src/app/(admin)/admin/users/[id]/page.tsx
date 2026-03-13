@@ -55,10 +55,10 @@ async function UserDetail({ params }: { params: { id: string } }) {
 
   // Build session table rows
   const sessionTableRows = (sessions || []).map((session) => [
-    <span key="id" className="font-mono text-slate-400 text-xs">
+    <span key="id" className="font-mono text-slate-600 text-xs">
       {session.id.substring(0, 8)}...
     </span>,
-    <span key="playlist" className="text-slate-300 text-sm">
+    <span key="playlist" className="text-slate-700 text-sm">
       {session.playlists?.name || 'Custom'}
     </span>,
     <Badge
@@ -68,10 +68,10 @@ async function UserDetail({ params }: { params: { id: string } }) {
     >
       {session.status}
     </Badge>,
-    <span key="students" className="text-slate-400 text-sm">
+    <span key="students" className="text-slate-600 text-sm">
       {session.session_students?.length || 0}
     </span>,
-    <span key="date" className="text-slate-400 text-sm">
+    <span key="date" className="text-slate-600 text-sm">
       {new Date(session.created_at).toLocaleDateString()}
     </span>,
   ]);
@@ -87,7 +87,7 @@ async function UserDetail({ params }: { params: { id: string } }) {
     <div className="space-y-8">
       {/* Header */}
       <Link href="/admin/users">
-        <button className="flex items-center gap-2 text-slate-400 hover:text-slate-300 mb-4">
+        <button className="flex items-center gap-2 text-slate-600 hover:text-slate-700 mb-4">
           <ArrowLeft className="w-4 h-4" />
           Back to Users
         </button>
@@ -99,7 +99,7 @@ async function UserDetail({ params }: { params: { id: string } }) {
           <div className="flex items-start justify-between">
             <div>
               <CardTitle className="text-2xl">{teacher.name}</CardTitle>
-              <p className="text-slate-400 mt-1">User ID: {teacher.id}</p>
+              <p className="text-slate-600 mt-1">User ID: {teacher.id}</p>
             </div>
             <div className="flex items-center gap-2">
               <Badge
@@ -121,27 +121,27 @@ async function UserDetail({ params }: { params: { id: string } }) {
             {/* Contact Info */}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <Mail className="w-4 h-4 text-slate-500" />
+                <Mail className="w-4 h-4 text-slate-600" />
                 <div>
-                  <p className="text-xs text-slate-400">Email</p>
-                  <p className="text-sm text-slate-100">{teacher.email}</p>
+                  <p className="text-xs text-slate-600">Email</p>
+                  <p className="text-sm text-slate-900">{teacher.email}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Calendar className="w-4 h-4 text-slate-500" />
+                <Calendar className="w-4 h-4 text-slate-600" />
                 <div>
-                  <p className="text-xs text-slate-400">Joined</p>
-                  <p className="text-sm text-slate-100">
+                  <p className="text-xs text-slate-600">Joined</p>
+                  <p className="text-sm text-slate-900">
                     {new Date(teacher.created_at).toLocaleDateString()}
                   </p>
                 </div>
               </div>
               {teacher.school_id && (
                 <div className="flex items-center gap-3">
-                  <Shield className="w-4 h-4 text-slate-500" />
+                  <Shield className="w-4 h-4 text-slate-600" />
                   <div>
-                    <p className="text-xs text-slate-400">School</p>
-                    <p className="text-sm text-slate-100">{teacher.school_id}</p>
+                    <p className="text-xs text-slate-600">School</p>
+                    <p className="text-sm text-slate-900">{teacher.school_id}</p>
                   </div>
                 </div>
               )}
@@ -150,9 +150,9 @@ async function UserDetail({ params }: { params: { id: string } }) {
             {/* Subscription Info */}
             <div className="space-y-3">
               <div>
-                <p className="text-xs text-slate-400 mb-2">Subscription Status</p>
+                <p className="text-xs text-slate-600 mb-2">Subscription Status</p>
                 <div className="space-y-2">
-                  <p className="text-sm text-slate-100 font-medium">
+                  <p className="text-sm text-slate-900 font-medium">
                     Tier: {teacher.tier}
                   </p>
                   {teacher.tier === 'trial' && trialStatus && (
@@ -162,7 +162,7 @@ async function UserDetail({ params }: { params: { id: string } }) {
                       >
                         Trial {trialStatus}
                       </Badge>
-                      <p className="text-slate-400 mt-1">
+                      <p className="text-slate-600 mt-1">
                         Expires:{' '}
                         {teacher.trial_expires_at
                           ? new Date(
@@ -173,7 +173,7 @@ async function UserDetail({ params }: { params: { id: string } }) {
                     </div>
                   )}
                   {teacher.stripe_customer_id && (
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-600">
                       Stripe ID: {teacher.stripe_customer_id}
                     </p>
                   )}
@@ -193,29 +193,29 @@ async function UserDetail({ params }: { params: { id: string } }) {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <p className="text-sm text-slate-400">Total Sessions</p>
-                <p className="text-2xl font-bold text-slate-100 mt-2">
+                <p className="text-sm text-slate-600">Total Sessions</p>
+                <p className="text-2xl font-bold text-slate-900 mt-2">
                   {teacherStats.total_sessions}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-slate-400">Students Engaged</p>
-                <p className="text-2xl font-bold text-slate-100 mt-2">
+                <p className="text-sm text-slate-600">Students Engaged</p>
+                <p className="text-2xl font-bold text-slate-900 mt-2">
                   {teacherStats.total_students}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-slate-400">Avg Duration</p>
-                <p className="text-2xl font-bold text-slate-100 mt-2">
+                <p className="text-sm text-slate-600">Avg Duration</p>
+                <p className="text-2xl font-bold text-slate-900 mt-2">
                   {teacherStats.avg_session_duration
                     ? `${Math.round(teacherStats.avg_session_duration)}m`
                     : 'N/A'}
                 </p>
               </div>
             </div>
-            <div className="mt-6 pt-6 border-t border-slate-800">
-              <p className="text-sm text-slate-400">Last Session</p>
-              <p className="text-sm text-slate-100 mt-1">
+            <div className="mt-6 pt-6 border-t border-slate-300">
+              <p className="text-sm text-slate-600">Last Session</p>
+              <p className="text-sm text-slate-900 mt-1">
                 {teacherStats.last_session_at
                   ? new Date(teacherStats.last_session_at).toLocaleString()
                   : 'Never'}
@@ -246,16 +246,16 @@ async function UserDetail({ params }: { params: { id: string } }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            <button className="w-full px-4 py-2 rounded-lg border border-slate-700 hover:bg-slate-800 text-left text-sm font-medium text-slate-300 transition">
+            <button className="w-full px-4 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 text-left text-sm font-medium text-slate-700 transition">
               Set as Platform Admin
             </button>
-            <button className="w-full px-4 py-2 rounded-lg border border-slate-700 hover:bg-slate-800 text-left text-sm font-medium text-slate-300 transition">
+            <button className="w-full px-4 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 text-left text-sm font-medium text-slate-700 transition">
               Force Tier Change
             </button>
-            <button className="w-full px-4 py-2 rounded-lg border border-slate-700 hover:bg-slate-800 text-left text-sm font-medium text-slate-300 transition">
+            <button className="w-full px-4 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 text-left text-sm font-medium text-slate-700 transition">
               Impersonate User
             </button>
-            <button className="w-full px-4 py-2 rounded-lg border border-red-700/50 hover:bg-red-950/20 text-left text-sm font-medium text-red-300 transition">
+            <button className="w-full px-4 py-2 rounded-lg border border-red-200 hover:bg-red-50 text-left text-sm font-medium text-red-600 transition">
               Disable Account
             </button>
           </div>

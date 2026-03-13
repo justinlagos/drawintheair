@@ -128,10 +128,10 @@ async function SchoolAnalytics() {
   const teacherTableRows = Array.from(teacherStats.values())
     .sort((a, b) => b.sessionCount - a.sessionCount)
     .map((stats) => [
-      <span key="name" className="font-medium text-slate-100">{stats.name}</span>,
-      <span key="sessions" className="text-slate-400 text-sm">{stats.sessionCount}</span>,
-      <span key="students" className="text-slate-400 text-sm">{stats.studentCount}</span>,
-      <span key="avg" className="text-slate-400 text-sm">
+      <span key="name" className="font-medium text-slate-900">{stats.name}</span>,
+      <span key="sessions" className="text-slate-600 text-sm">{stats.sessionCount}</span>,
+      <span key="students" className="text-slate-600 text-sm">{stats.studentCount}</span>,
+      <span key="avg" className="text-slate-600 text-sm">
         {stats.avgStars.toFixed(1)} ★
       </span>,
     ]);
@@ -140,9 +140,9 @@ async function SchoolAnalytics() {
   const activityTableRows = Array.from(activityStats.entries())
     .sort((a, b) => b[1].count - a[1].count)
     .map(([name, stats]) => [
-      <span key="name" className="font-medium text-slate-100">{name}</span>,
-      <span key="count" className="text-slate-400 text-sm">{stats.count}</span>,
-      <span key="avg" className="text-slate-400 text-sm">
+      <span key="name" className="font-medium text-slate-900">{name}</span>,
+      <span key="count" className="text-slate-600 text-sm">{stats.count}</span>,
+      <span key="avg" className="text-slate-600 text-sm">
         {(stats.totalAccuracy / stats.count).toFixed(1)}%
       </span>,
     ]);
@@ -151,8 +151,8 @@ async function SchoolAnalytics() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-100">School Analytics</h1>
-        <p className="text-slate-400 mt-1">Usage and performance insights (Last 90 days)</p>
+        <h1 className="text-3xl font-bold text-slate-900">School Analytics</h1>
+        <p className="text-slate-600 mt-1">Usage and performance insights (Last 90 days)</p>
       </div>
 
       {/* Summary Cards */}
@@ -161,12 +161,12 @@ async function SchoolAnalytics() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-400">Total Sessions</p>
-                <p className="text-2xl font-bold text-slate-100 mt-1">
+                <p className="text-sm font-medium text-slate-600">Total Sessions</p>
+                <p className="text-2xl font-bold text-slate-900 mt-1">
                   {overview?.total_sessions || 0}
                 </p>
               </div>
-              <Activity className="w-8 h-8 text-violet-400" />
+              <Activity className="w-8 h-8 text-orange-500" />
             </div>
           </CardContent>
         </Card>
@@ -174,8 +174,8 @@ async function SchoolAnalytics() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-400">Students Engaged</p>
-                <p className="text-2xl font-bold text-slate-100 mt-1">
+                <p className="text-sm font-medium text-slate-600">Students Engaged</p>
+                <p className="text-2xl font-bold text-slate-900 mt-1">
                   {overview?.total_students || 0}
                 </p>
               </div>
@@ -187,8 +187,8 @@ async function SchoolAnalytics() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-400">Active Teachers</p>
-                <p className="text-2xl font-bold text-slate-100 mt-1">
+                <p className="text-sm font-medium text-slate-600">Active Teachers</p>
+                <p className="text-2xl font-bold text-slate-900 mt-1">
                   {teacherStats.size}
                 </p>
               </div>
@@ -209,15 +209,15 @@ async function SchoolAnalytics() {
               .slice(0, 12)
               .map(([week, count]) => (
                 <div key={week} className="flex items-center justify-between">
-                  <span className="text-slate-400">{week}</span>
+                  <span className="text-slate-600">{week}</span>
                   <div className="flex items-center gap-3">
-                    <div className="w-32 bg-slate-800 rounded-full h-2 overflow-hidden">
+                    <div className="w-32 bg-slate-200 rounded-full h-2 overflow-hidden">
                       <div
-                        className="bg-gradient-to-r from-cyan-400 to-violet-500 h-full"
+                        className="bg-gradient-to-r from-cyan-400 to-orange-500 h-full"
                         style={{ width: `${Math.min((count / 50) * 100, 100)}%` }}
                       />
                     </div>
-                    <span className="text-slate-100 font-medium w-12 text-right">{count}</span>
+                    <span className="text-slate-900 font-medium w-12 text-right">{count}</span>
                   </div>
                 </div>
               ))}
@@ -257,10 +257,10 @@ async function SchoolAnalytics() {
       </div>
 
       {/* Info Section */}
-      <Card className="bg-slate-800/30">
+      <Card className="bg-slate-100/30">
         <CardContent className="pt-6">
-          <h3 className="font-medium text-slate-100 mb-2">About This Data</h3>
-          <p className="text-sm text-slate-400">
+          <h3 className="font-medium text-slate-900 mb-2">About This Data</h3>
+          <p className="text-sm text-slate-600">
             Analytics shown above include all sessions run by teachers in your school
             over the last 90 days. No individual student data is displayed to protect
             privacy. Metrics are updated in real-time as sessions complete.

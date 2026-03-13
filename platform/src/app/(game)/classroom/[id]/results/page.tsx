@@ -227,8 +227,8 @@ export default function ClassroomResultsPage() {
 
   if (isLoading || !session) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-950">
-        <Loader2 className="h-8 w-8 text-indigo-500 animate-spin" />
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
       </div>
     )
   }
@@ -249,12 +249,12 @@ export default function ClassroomResultsPage() {
   })
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 p-6">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Round Complete! 🎉</h1>
-          <p className="text-slate-400">{activityEmoji} {activityName}</p>
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">Round Complete! 🎉</h1>
+          <p className="text-slate-600">{activityEmoji} {activityName}</p>
         </div>
 
         {/* Podium */}
@@ -262,10 +262,10 @@ export default function ClassroomResultsPage() {
           <div className="mb-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               {topThree.map((result, idx) => (
-                <Card key={result.student_id} className="bg-slate-900 border-slate-700">
+                <Card key={result.student_id} className="bg-white border-slate-200">
                   <CardContent className="p-6 text-center">
                     <div className="text-5xl mb-3">{medals[idx]}</div>
-                    <p className="text-lg font-semibold text-white mb-2">{result.student_name}</p>
+                    <p className="text-lg font-semibold text-slate-900 mb-2">{result.student_name}</p>
                     <div className="text-2xl mb-3">
                       {Array.from({ length: 5 }).map((_, i) => (
                         <span key={i} className={i < Math.min(result.total_stars, 5) ? '⭐' : '☆'}>
@@ -273,7 +273,7 @@ export default function ClassroomResultsPage() {
                         </span>
                       ))}
                     </div>
-                    <p className="text-sm text-slate-400">{result.total_stars} Stars</p>
+                    <p className="text-sm text-slate-600">{result.total_stars} Stars</p>
                   </CardContent>
                 </Card>
               ))}
@@ -282,27 +282,27 @@ export default function ClassroomResultsPage() {
         )}
 
         {/* Stats */}
-        <Card className="bg-slate-900 border-slate-700 mb-8">
+        <Card className="bg-white border-slate-200 mb-8">
           <CardHeader>
-            <CardTitle className="text-white">Round Statistics</CardTitle>
+            <CardTitle className="text-slate-900">Round Statistics</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-slate-800 p-4 rounded-lg text-center">
-                <p className="text-slate-400 text-sm">Participants</p>
-                <p className="text-2xl font-bold text-white mt-1">{results.length}</p>
+              <div className="bg-slate-100 p-4 rounded-lg text-center">
+                <p className="text-slate-600 text-sm">Participants</p>
+                <p className="text-2xl font-bold text-slate-900 mt-1">{results.length}</p>
               </div>
-              <div className="bg-slate-800 p-4 rounded-lg text-center">
-                <p className="text-slate-400 text-sm">Completed</p>
-                <p className="text-2xl font-bold text-white mt-1">{totalCompleted}</p>
+              <div className="bg-slate-100 p-4 rounded-lg text-center">
+                <p className="text-slate-600 text-sm">Completed</p>
+                <p className="text-2xl font-bold text-slate-900 mt-1">{totalCompleted}</p>
               </div>
-              <div className="bg-slate-800 p-4 rounded-lg text-center">
-                <p className="text-slate-400 text-sm">Avg Accuracy</p>
-                <p className="text-2xl font-bold text-white mt-1">{avgAccuracy}%</p>
+              <div className="bg-slate-100 p-4 rounded-lg text-center">
+                <p className="text-slate-600 text-sm">Avg Accuracy</p>
+                <p className="text-2xl font-bold text-slate-900 mt-1">{avgAccuracy}%</p>
               </div>
-              <div className="bg-slate-800 p-4 rounded-lg text-center">
-                <p className="text-slate-400 text-sm">Completion Rate</p>
-                <p className="text-2xl font-bold text-white mt-1">
+              <div className="bg-slate-100 p-4 rounded-lg text-center">
+                <p className="text-slate-600 text-sm">Completion Rate</p>
+                <p className="text-2xl font-bold text-slate-900 mt-1">
                   {Math.round((totalCompleted / (results.length || 1)) * 100)}%
                 </p>
               </div>
@@ -310,17 +310,17 @@ export default function ClassroomResultsPage() {
 
             {/* Star Distribution */}
             <div className="space-y-2">
-              <p className="text-sm font-medium text-white mb-3">Star Distribution</p>
+              <p className="text-sm font-medium text-slate-900 mb-3">Star Distribution</p>
               {starDistribution.map((count, stars) => (
                 <div key={stars} className="flex items-center gap-3">
-                  <span className="text-sm text-slate-400 w-12">{stars} Stars:</span>
-                  <div className="flex-1 h-6 bg-slate-800 rounded-lg overflow-hidden">
+                  <span className="text-sm text-slate-600 w-12">{stars} Stars:</span>
+                  <div className="flex-1 h-6 bg-slate-200 rounded-lg overflow-hidden">
                     <div
-                      className="h-full bg-indigo-600 transition-all"
+                      className="h-full bg-orange-500 transition-all"
                       style={{ width: `${Math.max(5, (count / results.length) * 100)}%` }}
                     />
                   </div>
-                  <span className="text-sm text-slate-400 w-8 text-right">{count}</span>
+                  <span className="text-sm text-slate-600 w-8 text-right">{count}</span>
                 </div>
               ))}
             </div>
@@ -329,20 +329,20 @@ export default function ClassroomResultsPage() {
 
         {/* Full Results Table */}
         {results.length > 3 && (
-          <Card className="bg-slate-900 border-slate-700 mb-8">
+          <Card className="bg-white border-slate-200 mb-8">
             <CardHeader>
-              <CardTitle className="text-white">All Results</CardTitle>
+              <CardTitle className="text-slate-900">All Results</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 {results.map((result, idx) => (
                   <div
                     key={result.student_id}
-                    className="flex items-center gap-4 p-3 bg-slate-800 rounded-lg"
+                    className="flex items-center gap-4 p-3 bg-slate-100 rounded-lg"
                   >
-                    <div className="text-sm font-bold text-indigo-400 w-6">{idx + 1}</div>
+                    <div className="text-sm font-bold text-orange-500 w-6">{idx + 1}</div>
                     <div className="flex-1">
-                      <p className="font-medium text-white">{result.student_name}</p>
+                      <p className="font-medium text-slate-900">{result.student_name}</p>
                     </div>
                     <div className="text-lg">
                       {Array.from({ length: 5 }).map((_, i) => (
@@ -373,7 +373,7 @@ export default function ClassroomResultsPage() {
             onClick={() => setShowActivityModal(true)}
             disabled={isProcessing}
             variant="outline"
-            className="px-6 py-3 border-slate-600 text-white hover:bg-slate-800 disabled:opacity-50"
+            className="px-6 py-3 border-slate-300 text-slate-900 hover:bg-slate-200 disabled:opacity-50"
           >
             Change Activity
           </Button>
@@ -391,9 +391,9 @@ export default function ClassroomResultsPage() {
       {/* Activity Modal */}
       {showActivityModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-          <Card className="bg-slate-900 border-slate-700 max-w-3xl w-full">
+          <Card className="bg-white border-slate-200 max-w-3xl w-full">
             <CardHeader>
-              <CardTitle className="text-white">Choose New Activity</CardTitle>
+              <CardTitle className="text-slate-900">Choose New Activity</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-4 mb-6">
@@ -402,10 +402,10 @@ export default function ClassroomResultsPage() {
                     key={activity.id}
                     onClick={() => handleChangeActivity(activity.id)}
                     disabled={isProcessing}
-                    className="p-4 bg-slate-800 border border-slate-700 rounded-lg hover:border-indigo-500 hover:shadow-lg hover:shadow-indigo-500/50 transition-all text-center disabled:opacity-50"
+                    className="p-4 bg-slate-100 border border-slate-300 rounded-lg hover:border-orange-500 hover:shadow-lg hover:shadow-orange-500/50 transition-all text-center disabled:opacity-50"
                   >
                     <div className="text-4xl mb-2">{activity.emoji}</div>
-                    <p className="font-semibold text-white text-sm">{activity.name}</p>
+                    <p className="font-semibold text-slate-900 text-sm">{activity.name}</p>
                   </button>
                 ))}
               </div>
@@ -413,7 +413,7 @@ export default function ClassroomResultsPage() {
               <Button
                 onClick={() => setShowActivityModal(false)}
                 variant="outline"
-                className="w-full border-slate-600 text-white hover:bg-slate-800"
+                className="w-full border-slate-300 text-slate-900 hover:bg-slate-100"
               >
                 Cancel
               </Button>

@@ -88,7 +88,7 @@ export default function ForTeachersPage() {
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
           <Button asChild size="lg" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold">
-            <Link href="/auth/signup?plan=teacher">Start 5-Day Trial</Link>
+            <Link href="/auth/login">Start 5-Day Trial</Link>
           </Button>
           <Button asChild size="lg" variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-100">
             <Link href="/pricing">View pricing</Link>
@@ -262,7 +262,7 @@ export default function ForTeachersPage() {
 
             <div className="pt-4">
               <Button asChild size="lg" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold">
-                <Link href="/auth/signup?plan=teacher">Start Your Trial</Link>
+                <Link href="/auth/login">Start Your Trial</Link>
               </Button>
             </div>
           </div>

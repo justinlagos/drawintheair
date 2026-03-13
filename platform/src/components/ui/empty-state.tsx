@@ -23,13 +23,13 @@ export function EmptyState({
     <div className="flex items-center justify-center min-h-[400px]">
       <Card className="w-full max-w-md">
         <CardContent className="flex flex-col items-center gap-4 pt-8 pb-8">
-          <div className="rounded-full bg-violet-500/10 p-4">
-            <Icon className="h-8 w-8 text-violet-400" />
+          <div className="rounded-full bg-orange-500/10 p-4">
+            <Icon className="h-8 w-8 text-orange-500" />
           </div>
 
           <div className="text-center">
-            <h3 className="text-lg font-semibold text-slate-100">{title}</h3>
-            <p className="mt-1 text-sm text-slate-400">{description}</p>
+            <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
+            <p className="mt-1 text-sm text-slate-600">{description}</p>
           </div>
 
           {actionLabel && actionHref && (

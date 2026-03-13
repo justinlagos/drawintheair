@@ -41,30 +41,30 @@ export default async function UpgradePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-slate-100">Upgrade Your Plan</h1>
-        <p className="mt-1 text-slate-400">Choose the perfect plan for your teaching needs</p>
+        <h1 className="text-3xl font-bold text-slate-900">Upgrade Your Plan</h1>
+        <p className="mt-1 text-slate-600">Choose the perfect plan for your teaching needs</p>
       </div>
 
       {/* Trial Status Messages */}
       {isTrialActive && !trialExpired && (
-        <div className="rounded-lg bg-cyan-950/50 border border-cyan-800 p-4">
-          <p className="text-sm text-cyan-200">
+        <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-4">
+          <p className="text-sm text-emerald-800">
             Your trial data will be preserved when you upgrade. You have {trialDaysRemaining} day{trialDaysRemaining !== 1 ? 's' : ''} left.
           </p>
         </div>
       )}
 
       {trialExpired && !isProUser && (
-        <div className="rounded-lg bg-red-950/50 border border-red-800 p-4">
-          <p className="text-sm text-red-200">
+        <div className="rounded-lg bg-red-50 border border-red-200 p-4">
+          <p className="text-sm text-red-800">
             Your trial has expired. Upgrade now to continue using classroom features. Your data will be deleted in 30 days.
           </p>
         </div>
       )}
 
       {isProUser && (
-        <div className="rounded-lg bg-violet-950/50 border border-violet-800 p-4">
-          <p className="text-sm text-violet-200">
+        <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
+          <p className="text-sm text-blue-800">
             You're currently on the Pro plan. Enjoy all features!
           </p>
         </div>
@@ -76,8 +76,8 @@ export default async function UpgradePage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-xl">Free</CardTitle>
-            <p className="mt-2 text-3xl font-bold text-slate-100">$0</p>
-            <p className="mt-1 text-sm text-slate-400">Forever</p>
+            <p className="mt-2 text-3xl font-bold text-slate-900">$0</p>
+            <p className="mt-1 text-sm text-slate-600">Forever</p>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-3">
@@ -86,9 +86,9 @@ export default async function UpgradePage() {
                   {feature.free ? (
                     <Check className="h-5 w-5 text-emerald-400" />
                   ) : (
-                    <X className="h-5 w-5 text-slate-500" />
+                    <X className="h-5 w-5 text-slate-600" />
                   )}
-                  <span className={feature.free ? 'text-slate-100' : 'text-slate-500'}>
+                  <span className={feature.free ? 'text-slate-900' : 'text-slate-600'}>
                     {feature.name}
                   </span>
                 </div>
@@ -106,15 +106,15 @@ export default async function UpgradePage() {
         </Card>
 
         {/* Pro Plan (Recommended) */}
-        <Card className="ring-2 ring-violet-500 ring-offset-slate-950">
+        <Card className="ring-2 ring-orange-500 ring-offset-slate-50">
           <CardHeader>
             <div className="flex items-start justify-between">
               <div>
                 <CardTitle className="text-xl">Pro</CardTitle>
-                <p className="mt-2 text-3xl font-bold text-slate-100">
-                  $9<span className="text-base text-slate-400">/month</span>
+                <p className="mt-2 text-3xl font-bold text-slate-900">
+                  $9<span className="text-base text-slate-600">/month</span>
                 </p>
-                <p className="mt-1 text-sm text-slate-400">or $99/year</p>
+                <p className="mt-1 text-sm text-slate-600">or $99/year</p>
               </div>
               <Badge variant="pro">Recommended</Badge>
             </div>
@@ -126,9 +126,9 @@ export default async function UpgradePage() {
                   {feature.pro ? (
                     <Check className="h-5 w-5 text-emerald-400" />
                   ) : (
-                    <X className="h-5 w-5 text-slate-500" />
+                    <X className="h-5 w-5 text-slate-600" />
                   )}
-                  <span className={feature.pro ? 'text-slate-100' : 'text-slate-500'}>
+                  <span className={feature.pro ? 'text-slate-900' : 'text-slate-600'}>
                     {feature.name}
                   </span>
                 </div>
@@ -150,8 +150,8 @@ export default async function UpgradePage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-xl">School</CardTitle>
-            <p className="mt-2 text-3xl font-bold text-slate-100">Custom</p>
-            <p className="mt-1 text-sm text-slate-400">Contact for pricing</p>
+            <p className="mt-2 text-3xl font-bold text-slate-900">Custom</p>
+            <p className="mt-1 text-sm text-slate-600">Contact for pricing</p>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-3">
@@ -160,9 +160,9 @@ export default async function UpgradePage() {
                   {feature.school ? (
                     <Check className="h-5 w-5 text-emerald-400" />
                   ) : (
-                    <X className="h-5 w-5 text-slate-500" />
+                    <X className="h-5 w-5 text-slate-600" />
                   )}
-                  <span className={feature.school ? 'text-slate-100' : 'text-slate-500'}>
+                  <span className={feature.school ? 'text-slate-900' : 'text-slate-600'}>
                     {feature.name}
                   </span>
                 </div>
@@ -188,18 +188,18 @@ export default async function UpgradePage() {
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-800">
+              <thead className="border-b border-slate-200">
                 <tr>
-                  <th className="px-4 py-3 font-semibold text-slate-100">Feature</th>
-                  <th className="px-4 py-3 text-center font-semibold text-slate-100">Free</th>
-                  <th className="px-4 py-3 text-center font-semibold text-slate-100">Pro</th>
-                  <th className="px-4 py-3 text-center font-semibold text-slate-100">School</th>
+                  <th className="px-4 py-3 font-semibold text-slate-900">Feature</th>
+                  <th className="px-4 py-3 text-center font-semibold text-slate-900">Free</th>
+                  <th className="px-4 py-3 text-center font-semibold text-slate-900">Pro</th>
+                  <th className="px-4 py-3 text-center font-semibold text-slate-900">School</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-slate-200">
                 {features.map((feature) => (
-                  <tr key={feature.name} className="hover:bg-slate-800/50">
-                    <td className="px-4 py-3 text-slate-100">{feature.name}</td>
+                  <tr key={feature.name} className="hover:bg-slate-50 border-b border-slate-200">
+                    <td className="px-4 py-3 text-slate-900">{feature.name}</td>
                     <td className="px-4 py-3 text-center">
                       {feature.free ? (
                         <Check className="mx-auto h-5 w-5 text-emerald-400" />
@@ -236,29 +236,29 @@ export default async function UpgradePage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <h3 className="font-semibold text-slate-100">Can I change plans anytime?</h3>
-            <p className="mt-1 text-sm text-slate-400">
+            <h3 className="font-semibold text-slate-900">Can I change plans anytime?</h3>
+            <p className="mt-1 text-sm text-slate-600">
               Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.
             </p>
           </div>
 
           <div>
-            <h3 className="font-semibold text-slate-100">What payment methods do you accept?</h3>
-            <p className="mt-1 text-sm text-slate-400">
+            <h3 className="font-semibold text-slate-900">What payment methods do you accept?</h3>
+            <p className="mt-1 text-sm text-slate-600">
               We accept all major credit cards via Stripe. Your payment information is secure and encrypted.
             </p>
           </div>
 
           <div>
-            <h3 className="font-semibold text-slate-100">Do you offer refunds?</h3>
-            <p className="mt-1 text-sm text-slate-400">
+            <h3 className="font-semibold text-slate-900">Do you offer refunds?</h3>
+            <p className="mt-1 text-sm text-slate-600">
               We offer a 14-day money-back guarantee on all subscriptions. No questions asked.
             </p>
           </div>
 
           <div>
-            <h3 className="font-semibold text-slate-100">What happens to my data if I downgrade?</h3>
-            <p className="mt-1 text-sm text-slate-400">
+            <h3 className="font-semibold text-slate-900">What happens to my data if I downgrade?</h3>
+            <p className="mt-1 text-sm text-slate-600">
               Your data is preserved when you downgrade. However, some features may become unavailable.
             </p>
           </div>

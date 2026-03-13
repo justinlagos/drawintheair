@@ -36,8 +36,8 @@ export const CTASection: React.FC<CTASectionProps> = ({ onGetSchoolPack }) => {
           </p>
           
           <div className="cta-buttons">
-            <a 
-              href="/demo"
+            <a
+              href="/play"
               className="landing-btn landing-btn-primary landing-btn-large"
               onClick={(e) => {
                 e.preventDefault();
@@ -47,7 +47,7 @@ export const CTASection: React.FC<CTASectionProps> = ({ onGetSchoolPack }) => {
                     source: 'final_cta'
                   });
                 }
-                window.location.pathname = '/demo';
+                window.location.pathname = '/play';
               }}
             >
               Start Free — No Signup

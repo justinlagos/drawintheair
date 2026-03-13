@@ -70,18 +70,18 @@ export default function LoginPage() {
     <div className="w-full space-y-6">
       {/* Heading */}
       <div className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold text-slate-100">
+        <h1 className="text-3xl font-bold text-slate-900">
           Sign in to your classroom
         </h1>
-        <p className="text-slate-400">
+        <p className="text-slate-600">
           Get started with a free 5-day trial of Teacher Pro
         </p>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4">
-          <p className="text-sm text-red-400">{error}</p>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+          <p className="text-sm text-red-700">{error}</p>
         </div>
       )}
 
@@ -121,7 +121,7 @@ export default function LoginPage() {
 
       {/* Features Preview */}
       <div className="space-y-3 pt-4">
-        <h3 className="text-sm font-semibold text-slate-300">
+        <h3 className="text-sm font-semibold text-slate-700">
           What you'll get:
         </h3>
         <ul className="space-y-2">
@@ -129,7 +129,7 @@ export default function LoginPage() {
             <li key={feature.title} className="flex items-start gap-3">
               <div className="mt-1 flex-shrink-0">
                 <svg
-                  className="h-4 w-4 text-violet-400"
+                  className="h-4 w-4 text-emerald-500"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -141,10 +141,10 @@ export default function LoginPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-100">
+                <p className="text-sm font-medium text-slate-900">
                   {feature.title}
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-600">
                   {feature.description}
                 </p>
               </div>
@@ -154,26 +154,26 @@ export default function LoginPage() {
       </div>
 
       {/* Terms and Privacy */}
-      <div className="border-t border-slate-800 pt-6">
-        <p className="text-center text-xs text-slate-500">
+      <div className="border-t border-slate-200 pt-6">
+        <p className="text-center text-xs text-slate-600">
           By signing in, you agree to our{' '}
-          <Link href="/terms" className="text-violet-400 hover:text-violet-300">
+          <Link href="/terms" className="text-orange-600 hover:text-orange-700 font-medium">
             Terms
           </Link>
           {' '}and{' '}
-          <Link href="/privacy" className="text-violet-400 hover:text-violet-300">
+          <Link href="/privacy" className="text-orange-600 hover:text-orange-700 font-medium">
             Privacy Policy
           </Link>
         </p>
       </div>
 
       {/* Play Link */}
-      <div className="border-t border-slate-800 pt-6">
-        <p className="text-center text-sm text-slate-400">
+      <div className="border-t border-slate-200 pt-6">
+        <p className="text-center text-sm text-slate-600">
           Just want to play?{' '}
           <Link
             href="/play"
-            className="text-violet-400 hover:text-violet-300 font-medium transition-colors"
+            className="text-orange-600 hover:text-orange-700 font-medium transition-colors"
           >
             Go to free activities
           </Link>

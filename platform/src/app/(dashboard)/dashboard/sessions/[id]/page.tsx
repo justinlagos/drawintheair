@@ -127,7 +127,7 @@ export default async function SessionDetailPage({ params }: PageProps) {
   return (
     <div className="space-y-8">
       {/* Back Button */}
-      <Link href="/dashboard/sessions" className="flex items-center gap-2 text-violet-400 hover:text-violet-300">
+      <Link href="/dashboard/sessions" className="flex items-center gap-2 text-orange-500 hover:text-orange-600">
         <ArrowLeft className="h-4 w-4" />
         Back to Sessions
       </Link>
@@ -135,10 +135,10 @@ export default async function SessionDetailPage({ params }: PageProps) {
       {/* Session Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100">
+          <h1 className="text-3xl font-bold text-slate-900">
             Session #{params.id.slice(0, 8)}
           </h1>
-          <p className="mt-1 text-slate-400">
+          <p className="mt-1 text-slate-600">
             {startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
             {' at '}
             {startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
@@ -153,26 +153,26 @@ export default async function SessionDetailPage({ params }: PageProps) {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm font-medium text-slate-400">Total Students</p>
-            <p className="mt-2 text-2xl font-bold text-slate-100">{studentCount}</p>
+            <p className="text-sm font-medium text-slate-600">Total Students</p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">{studentCount}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm font-medium text-slate-400">Total Rounds</p>
-            <p className="mt-2 text-2xl font-bold text-slate-100">{totalRounds}</p>
+            <p className="text-sm font-medium text-slate-600">Total Rounds</p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">{totalRounds}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm font-medium text-slate-400">Avg Rating</p>
-            <p className="mt-2 text-2xl font-bold text-slate-100">{avgStars.toFixed(1)}/5</p>
+            <p className="text-sm font-medium text-slate-600">Avg Rating</p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">{avgStars.toFixed(1)}/5</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm font-medium text-slate-400">Duration</p>
-            <p className="mt-2 text-2xl font-bold text-slate-100">{durationMinutes}m</p>
+            <p className="text-sm font-medium text-slate-600">Duration</p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">{durationMinutes}m</p>
           </CardContent>
         </Card>
       </div>
@@ -187,20 +187,20 @@ export default async function SessionDetailPage({ params }: PageProps) {
           {Object.entries(roundsByNumber)
             .sort(([a], [b]) => Number(a) - Number(b))
             .map(([roundNum, scores]) => (
-              <div key={roundNum} className="rounded-lg border border-slate-800 p-4">
+              <div key={roundNum} className="rounded-lg border border-slate-200 p-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-slate-100">Round {roundNum}</h3>
-                  <span className="text-sm text-slate-400">
+                  <h3 className="font-semibold text-slate-900">Round {roundNum}</h3>
+                  <span className="text-sm text-slate-600">
                     {scores.length} student{scores.length !== 1 ? 's' : ''}
                   </span>
                 </div>
                 <div className="mt-3 space-y-2">
                   {scores.map((score) => (
                     <div key={score.id} className="flex items-center justify-between text-sm">
-                      <span className="text-slate-300">
+                      <span className="text-slate-700">
                         {(score.session_students as any)?.student_name || 'Unknown'} - {score.gesture_name}
                       </span>
-                      <span className="font-medium text-slate-100">
+                      <span className="font-medium text-slate-900">
                         {Math.round(score.accuracy * 100)}%
                       </span>
                     </div>
