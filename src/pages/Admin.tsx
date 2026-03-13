@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { getStoredSubmissions } from '../lib/formSubmission';
 import './admin.css';
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -79,6 +80,86 @@ function getMaxValue(obj: Record<string, number>): number {
   return vals.length > 0 ? Math.max(...vals) : 1;
 }
 
+// ─── Local Data Helpers ─────────────────────────────────────────
+
+function getLocalSchoolPacks(): SchoolPackRequest[] {
+  try {
+    const submissions = getStoredSubmissions();
+    const schoolPacks = submissions.filter(
+      (s) => s.type === 'school_pack_request' || s.type === 'school_pilot' || s.type === 'school_pack'
+    );
+    return schoolPacks.map((s) => ({
+      timestamp: (s.timestamp as string) || new Date().toISOString(),
+      contactName: (s.name as string) || (s.contact_name as string) || '',
+      email: (s.email as string) || '',
+      schoolName: (s.school as string) || (s.school_name as string) || '',
+      role: (s.role as string) || '',
+      yearGroup: (s.yearGroup as string) || (s.year_group as string) || '',
+      deviceType: (s.deviceType as string) || (s.device_type as string) || '',
+      sendNotes: (s.sendNotes as string) || (s.send_notes as string) || (s.message as string) || '',
+    }));
+  } catch { return []; }
+}
+
+function getLocalFeedback(): FeedbackRequest[] {
+  try {
+    const submissions = getStoredSubmissions();
+    const feedback = submissions.filter((s) => s.type === 'feedback');
+    return feedback.map((s) => ({
+      timestamp: (s.timestamp as string) || new Date().toISOString(),
+      feedback: (s.message as string) || (s.feedback as string) || '',
+      email: (s.email as string) || '',
+      url: (s.url as string) || '',
+    }));
+  } catch { return []; }
+}
+
+function exportToCSV(rows: Record<string, unknown>[], filename: string) {
+  if (rows.length === 0) return;
+  const headers = Object.keys(rows[0]);
+  const csv = [
+    headers.join(','),
+    ...rows.map((r) =>
+      headers.map((h) => `"${String(r[h] ?? '').replace(/"/g, '""')}"`).join(',')
+    ),
+  ].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── Demo Data ──────────────────────────────────────────────────
+
+function generateDemoData(): SummaryData {
+  return {
+    kpi: { totalSessions: 47, totalPlaytimeMs: 2820000, avgSessionDurationMs: 60000, avgAccuracy: 72, totalStagesCompleted: 189 },
+    breakdowns: {
+      sessionsByAgeBand: { '3-4': 12, '4-5': 18, '5-6': 11, '6-7': 6 },
+      sessionsByGame: { 'Letter Tracing': 15, 'Number Formation': 10, 'Shape Drawing': 8, 'Bubble Pop': 7, 'Free Paint': 4, 'Sort & Place': 3 },
+      accuracyByStage: { 'Stage 1': 85, 'Stage 2': 74, 'Stage 3': 68, 'Stage 4': 61 },
+      avgTimeByStage: { 'Stage 1': 25000, 'Stage 2': 35000, 'Stage 3': 42000, 'Stage 4': 55000 },
+      mostFailedItems: [{ item: 'Letter R', count: 8 }, { item: 'Number 8', count: 6 }, { item: 'Letter S', count: 5 }, { item: 'Star shape', count: 4 }],
+      dropOutcomes: { correct: 312, wrong: 87 },
+    },
+    recentSessions: [
+      { startedAt: new Date(Date.now() - 3600000).toISOString(), ageBand: '4-5', gamesPlayed: 3, durationMs: 720000, accuracy: 78, stagesCompleted: 6 },
+      { startedAt: new Date(Date.now() - 7200000).toISOString(), ageBand: '5-6', gamesPlayed: 2, durationMs: 540000, accuracy: 65, stagesCompleted: 4 },
+      { startedAt: new Date(Date.now() - 14400000).toISOString(), ageBand: '3-4', gamesPlayed: 1, durationMs: 300000, accuracy: 82, stagesCompleted: 3 },
+    ],
+    recentSchoolPacks: [
+      { timestamp: new Date(Date.now() - 86400000).toISOString(), contactName: 'Sarah Thompson', email: 'sthompson@oakfield.sch.uk', schoolName: 'Oakfield Primary', role: 'EYFS Lead', yearGroup: 'Reception', deviceType: 'Chromebooks', sendNotes: 'Interested in pilot for 2 classes' },
+      { timestamp: new Date(Date.now() - 172800000).toISOString(), contactName: 'James Chen', email: 'j.chen@parkview.academy', schoolName: 'Parkview Academy', role: 'IT Coordinator', yearGroup: 'Year 1', deviceType: 'iPads', sendNotes: '' },
+    ],
+    recentFeedback: [
+      { timestamp: new Date(Date.now() - 43200000).toISOString(), feedback: 'My daughter loved the letter tracing! She asked to play again the next day.', email: 'parent@example.com', url: '/play' },
+    ],
+  };
+}
+
 // ─── Component ──────────────────────────────────────────────────
 
 export const Admin: React.FC = () => {
@@ -149,26 +230,21 @@ export const Admin: React.FC = () => {
   };
 
   const fetchData = useCallback(async () => {
+    // Always merge localStorage data
+    const localPacks = getLocalSchoolPacks();
+    const localFeedback = getLocalFeedback();
+
     if (!sheetsEndpoint) {
-      // Endpoint not configured — show unconfigured state (distinct from "no data yet")
+      // Endpoint not configured — show demo data + any local submissions
       setConnectionStatus('unconfigured');
       setFetchError(null);
-      setData({
-        kpi: { totalSessions: 0, totalPlaytimeMs: 0, avgSessionDurationMs: 0, avgAccuracy: 0, totalStagesCompleted: 0 },
-        breakdowns: {
-          sessionsByAgeBand: {},
-          sessionsByGame: {},
-          accuracyByStage: {},
-          avgTimeByStage: {},
-          mostFailedItems: [],
-          dropOutcomes: { correct: 0, wrong: 0 },
-        },
-        recentSessions: [],
-        recentSchoolPacks: [],
-        recentFeedback: [],
-      });
+      const demo = generateDemoData();
+      // Merge local form submissions with demo data
+      demo.recentSchoolPacks = [...localPacks, ...(demo.recentSchoolPacks || [])];
+      demo.recentFeedback = [...localFeedback, ...(demo.recentFeedback || [])];
+      setData(demo);
       setLastUpdated(new Date());
-      console.warn('[Admin] VITE_SHEETS_ENDPOINT is not set. Dashboard will show empty data. Set this env var to connect to your Google Sheets backend.');
+      console.warn('[Admin] VITE_SHEETS_ENDPOINT is not set. Showing demo data + local submissions.');
       return;
     }
 
@@ -201,7 +277,11 @@ export const Admin: React.FC = () => {
         setConnectionStatus('error');
         return;
       }
-      setData(json as SummaryData);
+      const summaryData = json as SummaryData;
+      // Merge localStorage submissions with remote data
+      summaryData.recentSchoolPacks = [...localPacks, ...(summaryData.recentSchoolPacks || [])];
+      summaryData.recentFeedback = [...localFeedback, ...(summaryData.recentFeedback || [])];
+      setData(summaryData);
       setConnectionStatus('connected');
       setFetchError(null);
       setLastUpdated(new Date());
@@ -370,16 +450,15 @@ export const Admin: React.FC = () => {
             {/* ─── Diagnostic Banner ──────────────────────────────── */}
             {connectionStatus === 'unconfigured' && (
               <div className="admin-diagnostic admin-diagnostic-warn">
-                <div className="admin-diagnostic-icon">⚙️</div>
+                <div className="admin-diagnostic-icon">📊</div>
                 <div className="admin-diagnostic-body">
-                  <strong>Sheets endpoint not configured</strong>
+                  <strong>Demo Mode — Sample data shown</strong>
                   <p>
-                    Set <code>VITE_SHEETS_ENDPOINT</code> in your <code>.env</code> file and rebuild.
-                    Without it, the dashboard cannot fetch real session data — all metrics show zero.
+                    <code>VITE_SHEETS_ENDPOINT</code> is not configured. The charts below show sample data
+                    so you can preview the dashboard layout. Any real form submissions stored locally are also displayed in the Pilot Requests and Feedback tabs.
                   </p>
                   <p style={{ marginTop: 4, color: '#94a3b8', fontSize: '0.78rem' }}>
-                    Expected value: your Google Apps Script deployment URL
-                    (e.g. <code>https://script.google.com/macros/s/ABC.../exec</code>)
+                    To connect live data: set your Google Apps Script deployment URL in <code>.env</code> and rebuild.
                   </p>
                 </div>
               </div>
@@ -648,7 +727,30 @@ export const Admin: React.FC = () => {
           <div className="admin-section">
             <h2 className="admin-section-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span>School Pilot Requests</span>
-              <span className="admin-tab-count">{data?.recentSchoolPacks?.length || 0} Total</span>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span className="admin-tab-count">{data?.recentSchoolPacks?.length || 0} Total</span>
+                {(data?.recentSchoolPacks?.length || 0) > 0 && (
+                  <button
+                    className="admin-btn admin-btn-secondary"
+                    style={{ fontSize: '0.75rem', padding: '4px 10px' }}
+                    onClick={() => exportToCSV(
+                      (data?.recentSchoolPacks || []).map((p) => ({
+                        Date: p.timestamp ? new Date(p.timestamp).toLocaleString() : '',
+                        Name: p.contactName,
+                        Email: p.email,
+                        School: p.schoolName,
+                        Role: p.role,
+                        'Year Group': p.yearGroup,
+                        Device: p.deviceType,
+                        Notes: p.sendNotes,
+                      })),
+                      `pilot-requests-${new Date().toISOString().split('T')[0]}.csv`
+                    )}
+                  >
+                    Export CSV
+                  </button>
+                )}
+              </div>
             </h2>
             <div className="admin-table-container">
               <table className="admin-table">

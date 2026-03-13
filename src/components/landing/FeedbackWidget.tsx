@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { submitFormData } from '../../lib/formSubmission';
 import './landing.css';
 
 export const FeedbackWidget: React.FC = () => {
@@ -14,24 +15,11 @@ export const FeedbackWidget: React.FC = () => {
 
         setIsSubmitting(true);
         try {
-            const endpoint = import.meta.env.VITE_SHEETS_ENDPOINT;
-            if (!endpoint) {
-                throw new Error('Endpoint not configured');
-            }
-
-            const payloadData = {
-                feedback: feedback.trim(),
+            await submitFormData({
+                type: 'feedback',
                 email: email.trim() || undefined,
-                url: window.location.href,
-                userAgent: navigator.userAgent
-            };
-
-            const data = JSON.stringify({ type: 'feedback', payload: payloadData });
-            const url = `${endpoint}?data=${encodeURIComponent(data)}`;
-
-            const response = await fetch(url, { redirect: 'follow' });
-            if (!response.ok) throw new Error('Failed to submit');
-
+                message: feedback.trim(),
+            });
             setSubmitted(true);
             setTimeout(() => {
                 setIsOpen(false);
@@ -41,7 +29,6 @@ export const FeedbackWidget: React.FC = () => {
             }, 3000);
         } catch (err) {
             console.error('Error submitting feedback:', err);
-            // Fallback or error handled silently for simple widget
             setSubmitted(true);
             setTimeout(() => {
                 setIsOpen(false);

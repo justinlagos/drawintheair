@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
+import { submitFormData } from '../../lib/formSubmission';
 import './landing.css';
 
 export const PilotCallout: React.FC = () => {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (email) {
-      const emails = JSON.parse(localStorage.getItem('pilotEmails') || '[]');
-      emails.push({ email, timestamp: new Date().toISOString() });
-      localStorage.setItem('pilotEmails', JSON.stringify(emails));
+      await submitFormData({ type: 'pilot_list', email: email.trim() });
       setSubmitted(true);
       setEmail('');
       setTimeout(() => setSubmitted(false), 5000);

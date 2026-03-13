@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { submitFormData } from '../../lib/formSubmission';
 import './landing.css';
 
 interface ForSchoolsProps {
@@ -76,30 +77,17 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
         });
       }
 
-      // Submit to Google Sheets endpoint using tracking logic
-      const endpoint = import.meta.env.VITE_SHEETS_ENDPOINT;
-      if (!endpoint) {
-        throw new Error('Endpoint not configured');
-      }
-
-      const payloadData = {
-        school_name: sanitizedData.schoolName,
-        contact_name: sanitizedData.contactName,
-        role: sanitizedData.role,
+      // Submit through unified form system
+      await submitFormData({
+        type: 'school_pack_request',
+        name: sanitizedData.contactName,
         email: sanitizedData.email,
-        year_group: sanitizedData.yearGroup || null,
-        device_type: sanitizedData.deviceType || null,
-        send_notes: sanitizedData.sendNotes || null,
-      };
-
-      const data = JSON.stringify({ type: 'school_pack', payload: payloadData });
-      const url = `${endpoint}?data=${encodeURIComponent(data)}`;
-
-      const response = await fetch(url, { redirect: 'follow' });
-
-      if (!response.ok) {
-        throw new Error('Failed to submit');
-      }
+        school: sanitizedData.schoolName,
+        role: sanitizedData.role,
+        yearGroup: sanitizedData.yearGroup || undefined,
+        deviceType: sanitizedData.deviceType || undefined,
+        sendNotes: sanitizedData.sendNotes || undefined,
+      });
 
       setSubmitted(true);
       setFormData({
@@ -117,20 +105,7 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
       }, 3000);
     } catch (error) {
       console.error('Error submitting form:', error);
-      // Fallback to localStorage if API fails (with sanitized data)
-      try {
-        const forms = JSON.parse(localStorage.getItem('schoolPackForms') || '[]');
-        forms.push({ ...sanitizedData, timestamp: new Date().toISOString() });
-        localStorage.setItem('schoolPackForms', JSON.stringify(forms));
-        setSubmitted(true);
-        setTimeout(() => {
-          setShowForm(false);
-          setSubmitted(false);
-        }, 3000);
-      } catch (storageError) {
-        setError('Failed to save form. Please try again.');
-        setIsSubmitting(false);
-      }
+      setError('Failed to save form. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

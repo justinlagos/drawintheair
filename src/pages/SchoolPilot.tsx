@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { LegalPageLayout } from '../components/landing/LegalPageLayout';
+import { submitFormData } from '../lib/formSubmission';
 
 interface FormData {
   name: string;
@@ -53,8 +54,6 @@ export default function SchoolPilot() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const SHEETS_ENDPOINT = import.meta.env.VITE_SHEETS_ENDPOINT;
-
   function update(field: keyof FormData) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -69,11 +68,14 @@ export default function SchoolPilot() {
     setError('');
     setLoading(true);
     try {
-      await fetch(SHEETS_ENDPOINT, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'school_pilot', ...form, timestamp: new Date().toISOString() }),
+      await submitFormData({
+        type: 'school_pilot',
+        name: form.name,
+        email: form.email,
+        school: form.school,
+        role: form.role,
+        pupils: form.pupils,
+        message: form.message,
       });
       setSubmitted(true);
     } catch {

@@ -121,7 +121,7 @@ export default function TeacherDashboard() {
       <div className="cm-topbar">
         <div className="cm-topbar-left">
           <span className="cm-topbar-title">Class Mode</span>
-          <a href={`${platformUrl}/dashboard`} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '16px', fontSize: '0.85rem', color: '#8b5cf6', textDecoration: 'none' }}>
+          <a href={`${platformUrl}/auth/login?redirect=/dashboard`} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '16px', fontSize: '0.85rem', color: '#8b5cf6', textDecoration: 'none' }}>
             → Full Dashboard
           </a>
         </div>

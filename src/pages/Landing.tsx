@@ -1,21 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { TryFreeModal } from '../components/TryFreeModal';
+import { submitFormData } from '../lib/formSubmission';
 import '../components/landing/new-landing.css';
-
-const SHEETS_ENDPOINT = import.meta.env.VITE_SHEETS_ENDPOINT || '';
-
-async function sendToSheets(data: Record<string, unknown>) {
-  const encoded = encodeURIComponent(JSON.stringify(data));
-  const url = SHEETS_ENDPOINT + '?data=' + encoded;
-  try {
-    const res = await fetch(url, { redirect: 'follow' });
-    const json = await res.json();
-    if (json.error) throw new Error(json.error);
-    return json;
-  } catch (err: any) {
-    throw new Error(err.message || 'Submission failed');
-  }
-}
 
 export const Landing: React.FC = () => {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -78,14 +64,10 @@ export const Landing: React.FC = () => {
   const submitFeedback = useCallback(() => {
     if (!feedbackText.trim()) return;
     setFeedbackSending(true);
-    sendToSheets({
+    submitFormData({
       type: 'feedback',
-      payload: {
-        feedback: feedbackText.trim(),
-        email: feedbackEmail.trim(),
-        url: window.location.href,
-        userAgent: navigator.userAgent,
-      },
+      email: feedbackEmail.trim() || undefined,
+      message: feedbackText.trim(),
     }).then(() => {
       setFeedbackSent(true);
       setFeedbackText('');
@@ -120,23 +102,21 @@ export const Landing: React.FC = () => {
     }
     setPilotSubmitError('');
     setPilotSending(true);
-    sendToSheets({
-      type: 'school_pack',
-      payload: {
-        contact_name: pilotName.trim(),
-        email: pilotEmail.trim(),
-        school_name: pilotSchool.trim(),
-        role: pilotRole,
-        year_group: pilotYear,
-        device_type: pilotDevice,
-        send_notes: pilotNotes.trim(),
-      },
+    submitFormData({
+      type: 'school_pack_request',
+      name: pilotName.trim(),
+      email: pilotEmail.trim(),
+      school: pilotSchool.trim(),
+      role: pilotRole,
+      yearGroup: pilotYear,
+      deviceType: pilotDevice,
+      sendNotes: pilotNotes.trim(),
     }).then(() => {
       setPilotSent(true);
       setPilotSending(false);
       setPilotName(''); setPilotEmail(''); setPilotSchool('');
       setPilotRole(''); setPilotYear(''); setPilotDevice(''); setPilotNotes('');
-    }).catch((err) => {
+    }).catch((err: any) => {
       setPilotSubmitError(err.message);
       setPilotSending(false);
     });

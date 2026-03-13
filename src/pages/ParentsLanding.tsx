@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { HeaderNav } from '../components/landing/HeaderNav';
 import { Footer } from '../components/landing/Footer';
+import { submitFormData } from '../lib/formSubmission';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const c = {
@@ -48,8 +49,9 @@ export const ParentsLanding: React.FC = () => {
   const [age, setAge] = useState('');
   const [sent, setSent] = useState(false);
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    await submitFormData({ type: 'parent_trial', email: email.trim(), childAge: age });
     setSent(true);
   };
 

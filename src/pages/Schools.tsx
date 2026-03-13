@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { HeaderNav } from '../components/landing/HeaderNav';
 import { Footer } from '../components/landing/Footer';
-import { submitLead } from '../lib/leads';
+import { submitFormData } from '../lib/formSubmission';
 
 const platformUrl = typeof window !== 'undefined'
   ? (import.meta as any).env?.VITE_PLATFORM_URL || 'https://app.drawintheair.com'
@@ -62,7 +62,7 @@ export const Schools: React.FC = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await submitLead({ type: 'school_pack_request', ...form });
+      await submitFormData({ type: 'school_pack_request', ...form });
       setSubmitted(true);
     } catch {
       alert('There was an error. Please email us at partnership@drawintheair.com');

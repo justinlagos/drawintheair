@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { LegalPageLayout } from '../components/landing/LegalPageLayout';
+import { submitFormData } from '../lib/formSubmission';
 
 export default function ParentAccess() {
   const [email, setEmail] = useState('');
@@ -8,27 +9,15 @@ export default function ParentAccess() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const SHEETS_ENDPOINT = import.meta.env.VITE_SHEETS_ENDPOINT;
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email) return;
     setLoading(true);
     try {
-      await fetch(SHEETS_ENDPOINT, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'parent_trial',
-          email,
-          childAge,
-          timestamp: new Date().toISOString(),
-        }),
-      });
+      await submitFormData({ type: 'parent_trial', email: email.trim(), childAge });
       setSubmitted(true);
     } catch {
-      setSubmitted(true); // Still show success - no-cors won't tell us
+      setSubmitted(true);
     } finally {
       setLoading(false);
     }
