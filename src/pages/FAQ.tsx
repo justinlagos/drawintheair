@@ -176,7 +176,7 @@ export const FAQ: React.FC = () => {
   };
 
   return (
-    <LegalPageLayout title="Frequently Asked Questions">
+    <LegalPageLayout heroTitle="Frequently Asked Questions">
       {faqSections.map((section) => (
         <div key={section.title}>
           <div style={s.sectionTitle}>{section.title}</div>

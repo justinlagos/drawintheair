@@ -158,7 +158,7 @@ export const Pricing: React.FC = () => {
   };
 
   return (
-    <LegalPageLayout title="Pricing">
+    <LegalPageLayout heroTitle="Pricing">
       {/* Hero */}
       <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
         <span style={s.badge}>Transparent pricing</span>
