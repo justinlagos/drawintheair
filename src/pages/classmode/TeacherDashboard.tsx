@@ -46,7 +46,7 @@ export default function TeacherDashboard() {
     setError(null);
 
     const code = generateSessionCode();
-    const { data, err } = await dbInsert<SessionRow>('sessions', {
+    const { data, error: insertError } = await dbInsert<SessionRow>('sessions', {
       teacher_id: user.id,
       code,
       activity: selectedActivity,
@@ -55,10 +55,10 @@ export default function TeacherDashboard() {
       timer_seconds: 90,
     }, { single: true });
 
-    if (err) {
+    if (insertError) {
       // Provide user-friendly error messages
       let userMessage = 'Failed to create session. Please try again.';
-      if (err.message.includes('recursion') || err.message.includes('policy')) {
+      if (insertError.message.includes('recursion') || insertError.message.includes('policy')) {
         userMessage = 'Session creation is temporarily unavailable. Please try again in a moment.';
       }
       setError(userMessage);
