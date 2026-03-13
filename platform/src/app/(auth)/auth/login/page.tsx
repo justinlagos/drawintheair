@@ -171,12 +171,12 @@ export default function LoginPage() {
       <div className="border-t border-slate-200 pt-6">
         <p className="text-center text-sm text-slate-600">
           Just want to play?{' '}
-          <Link
-            href="/play"
+          <a
+            href={`${process.env.NEXT_PUBLIC_GAME_URL ?? 'https://drawintheair.com'}/play`}
             className="text-orange-600 hover:text-orange-700 font-medium transition-colors"
           >
             Go to free activities
-          </Link>
+          </a>
         </p>
       </div>
     </div>

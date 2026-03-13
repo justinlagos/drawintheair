@@ -11,6 +11,42 @@ interface FormData {
   message: string;
 }
 
+// Light-theme input styles that match the white LegalPageLayout card
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  borderRadius: 12,
+  border: '2px solid #e2e8f0',
+  background: '#f8fafc',
+  padding: '14px 16px',
+  fontSize: '0.95rem',
+  color: '#1e293b',
+  fontFamily: 'inherit',
+  transition: 'all 0.2s ease',
+  outline: 'none',
+  boxSizing: 'border-box' as const,
+};
+
+const inputFocusProps = {
+  onFocus: (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    e.currentTarget.style.borderColor = '#f97316';
+    e.currentTarget.style.background = '#ffffff';
+    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.12)';
+  },
+  onBlur: (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    e.currentTarget.style.borderColor = '#e2e8f0';
+    e.currentTarget.style.background = '#f8fafc';
+    e.currentTarget.style.boxShadow = 'none';
+  },
+};
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontSize: '0.85rem',
+  fontWeight: 600,
+  color: '#334155',
+  marginBottom: 8,
+};
+
 export default function SchoolPilot() {
   const [form, setForm] = useState<FormData>({ name: '', role: '', school: '', email: '', pupils: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
@@ -54,52 +90,72 @@ export default function SchoolPilot() {
         <meta name="description" content="Apply for a Draw in the Air school pilot. Free for qualifying schools during our early access period." />
       </Helmet>
       <LegalPageLayout heroTitle="Apply for a School Pilot">
-        <div className="max-w-2xl">
+        <div style={{ maxWidth: 600, margin: '0 auto' }}>
           {!submitted ? (
             <>
-              <p className="text-lg text-slate-300 mb-6 leading-relaxed">
+              <p style={{ fontSize: '1.05rem', color: '#475569', marginBottom: 28, lineHeight: 1.75 }}>
                 We're inviting a small number of schools to join our pilot programme. Pilot schools get full platform access free during the pilot period, plus dedicated onboarding support.
               </p>
 
-              <div className="grid grid-cols-1 gap-4 rounded-2xl border border-teal-800 bg-teal-950/20 p-6 mb-8 sm:grid-cols-3">
+              {/* Benefits strip */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: 12,
+                borderRadius: 16,
+                background: 'linear-gradient(135deg, #fff7ed, #fef3c7)',
+                border: '1px solid #fed7aa',
+                padding: 20,
+                marginBottom: 32,
+              }}>
                 {[
-                  { icon: '🎓', title: 'Full Access', desc: 'All activities and classroom tools' },
-                  { icon: '🤝', title: 'Onboarding', desc: 'Dedicated support to get started' },
-                  { icon: '💬', title: 'Direct Feedback', desc: 'Shape the product roadmap' },
+                  { icon: '🎓', title: 'Full Access', desc: 'All activities and tools' },
+                  { icon: '🤝', title: 'Onboarding', desc: 'Dedicated setup support' },
+                  { icon: '💬', title: 'Direct Input', desc: 'Shape the product roadmap' },
                 ].map(({ icon, title, desc }) => (
-                  <div key={title} className="text-center">
-                    <div className="text-3xl mb-2">{icon}</div>
-                    <p className="text-sm font-semibold text-teal-300">{title}</p>
-                    <p className="text-xs text-slate-400 mt-1">{desc}</p>
+                  <div key={title} style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.6rem', marginBottom: 6 }}>{icon}</div>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 700, color: '#c2410c', marginBottom: 2 }}>{title}</p>
+                    <p style={{ fontSize: '0.72rem', color: '#92400e' }}>{desc}</p>
                   </div>
                 ))}
               </div>
 
               {error && (
-                <div className="mb-4 rounded-lg border border-red-800 bg-red-950/50 p-3 text-sm text-red-300">
+                <div style={{
+                  marginBottom: 20,
+                  borderRadius: 12,
+                  border: '1px solid #fecaca',
+                  background: '#fef2f2',
+                  padding: '12px 16px',
+                  fontSize: '0.9rem',
+                  color: '#dc2626',
+                }}>
                   {error}
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Your name *</label>
+                    <label style={labelStyle}>Your name *</label>
                     <input
                       type="text"
                       required
                       value={form.name}
                       onChange={update('name')}
-                      className="w-full rounded-lg border border-slate-600 bg-slate-800 px-4 py-3 text-slate-100 placeholder-slate-500 focus:border-teal-500 focus:outline-none"
+                      style={inputStyle}
                       placeholder="Jane Smith"
+                      {...inputFocusProps}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Your role</label>
+                    <label style={labelStyle}>Your role</label>
                     <select
                       value={form.role}
                       onChange={update('role')}
-                      className="w-full rounded-lg border border-slate-600 bg-slate-800 px-4 py-3 text-slate-100 focus:border-teal-500 focus:outline-none"
+                      style={{ ...inputStyle, appearance: 'none' as const, cursor: 'pointer', color: form.role ? '#1e293b' : '#94a3b8' }}
+                      {...inputFocusProps}
                     >
                       <option value="">Select role</option>
                       <option value="teacher">Class Teacher</option>
@@ -113,83 +169,118 @@ export default function SchoolPilot() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1.5">School name *</label>
+                  <label style={labelStyle}>School name *</label>
                   <input
                     type="text"
                     required
                     value={form.school}
                     onChange={update('school')}
-                    className="w-full rounded-lg border border-slate-600 bg-slate-800 px-4 py-3 text-slate-100 placeholder-slate-500 focus:border-teal-500 focus:outline-none"
+                    style={inputStyle}
                     placeholder="Sunshine Primary School"
+                    {...inputFocusProps}
                   />
                 </div>
 
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">School email *</label>
+                    <label style={labelStyle}>School email *</label>
                     <input
                       type="email"
                       required
                       value={form.email}
                       onChange={update('email')}
-                      className="w-full rounded-lg border border-slate-600 bg-slate-800 px-4 py-3 text-slate-100 placeholder-slate-500 focus:border-teal-500 focus:outline-none"
+                      style={inputStyle}
                       placeholder="j.smith@yourschool.ac.uk"
+                      {...inputFocusProps}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Number of pupils</label>
+                    <label style={labelStyle}>Number of pupils</label>
                     <select
                       value={form.pupils}
                       onChange={update('pupils')}
-                      className="w-full rounded-lg border border-slate-600 bg-slate-800 px-4 py-3 text-slate-100 focus:border-teal-500 focus:outline-none"
+                      style={{ ...inputStyle, appearance: 'none' as const, cursor: 'pointer', color: form.pupils ? '#1e293b' : '#94a3b8' }}
+                      {...inputFocusProps}
                     >
                       <option value="">Select range</option>
-                      <option value="1-30">1–30 (single class)</option>
-                      <option value="31-100">31–100</option>
-                      <option value="101-300">101–300</option>
+                      <option value="1-30">1-30 (single class)</option>
+                      <option value="31-100">31-100</option>
+                      <option value="101-300">101-300</option>
                       <option value="300+">300+</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1.5">Anything you'd like us to know? (optional)</label>
+                  <label style={labelStyle}>Anything you'd like us to know? (optional)</label>
                   <textarea
                     value={form.message}
                     onChange={update('message')}
                     rows={3}
-                    className="w-full rounded-lg border border-slate-600 bg-slate-800 px-4 py-3 text-slate-100 placeholder-slate-500 focus:border-teal-500 focus:outline-none resize-none"
-                    placeholder="Tell us about your school, year groups, or any specific needs…"
+                    style={{ ...inputStyle, resize: 'none' as const, lineHeight: 1.6 }}
+                    placeholder="Tell us about your school, year groups, or any specific needs..."
+                    {...inputFocusProps}
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-xl bg-teal-600 px-6 py-3 text-base font-medium text-white hover:bg-teal-700 transition-colors disabled:opacity-60"
+                  style={{
+                    width: '100%',
+                    borderRadius: 14,
+                    border: 'none',
+                    background: loading ? '#94a3b8' : '#f97316',
+                    padding: '16px 24px',
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    color: 'white',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s',
+                    boxShadow: loading ? 'none' : '0 4px 16px rgba(249,115,22,0.3)',
+                  }}
+                  onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = '#ea580c'; }}
+                  onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = '#f97316'; }}
                 >
-                  {loading ? 'Submitting…' : 'Apply for School Pilot'}
+                  {loading ? 'Submitting...' : 'Apply for School Pilot'}
                 </button>
-                <p className="text-xs text-slate-500 text-center">
+                <p style={{ fontSize: '0.78rem', color: '#94a3b8', textAlign: 'center', marginTop: -8 }}>
                   We respond to all applications within 2 business days.
                 </p>
               </form>
             </>
           ) : (
-            <div className="text-center py-12">
-              <div className="text-5xl mb-6">🏫</div>
-              <h2 className="text-2xl font-bold text-slate-100 mb-3">Application received!</h2>
-              <p className="text-slate-400 mb-6 max-w-md mx-auto">
+            <div style={{ textAlign: 'center', padding: '48px 0' }}>
+              <div style={{
+                width: 80, height: 80, borderRadius: '50%',
+                background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 24px', fontSize: '2.5rem',
+              }}>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
+              </div>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginBottom: 12 }}>Application received!</h2>
+              <p style={{ color: '#64748b', marginBottom: 8, maxWidth: 400, margin: '0 auto 8px', lineHeight: 1.7 }}>
                 Thank you for applying. We'll review your application and be in touch within 2 business days.
               </p>
-              <p className="text-sm text-slate-500 mb-8">
+              <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: 32 }}>
                 While you wait, feel free to explore Draw in the Air yourself.
               </p>
               <a
                 href="/play"
-                className="inline-block rounded-xl bg-teal-600 px-8 py-3 text-base font-medium text-white hover:bg-teal-700 transition-colors"
+                style={{
+                  display: 'inline-block',
+                  borderRadius: 14,
+                  background: '#f97316',
+                  padding: '14px 32px',
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  color: 'white',
+                  textDecoration: 'none',
+                  boxShadow: '0 4px 16px rgba(249,115,22,0.3)',
+                }}
               >
-                Explore the Activities →
+                Explore the Activities
               </a>
             </div>
           )}

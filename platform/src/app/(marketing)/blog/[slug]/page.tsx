@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Clock, Calendar } from 'lucide-react'
 
+const gameUrl = process.env.NEXT_PUBLIC_GAME_URL ?? 'https://drawintheair.com'
+
 const BLOG_POSTS = [
   {
     slug: 'gesture-learning-benefits',
@@ -276,7 +278,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
           <p className="text-slate-600">Free for all 9 activities. No download, no account required for students.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button asChild className="bg-orange-500 hover:bg-orange-600 text-white font-semibold">
-              <a href="https://drawintheair.com/play" target="_blank" rel="noopener noreferrer">
+              <a href={`${gameUrl}/play`} target="_blank" rel="noopener noreferrer">
                 Try Free Activity
               </a>
             </Button>

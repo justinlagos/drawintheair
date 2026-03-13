@@ -237,7 +237,7 @@ export default function ForSchoolsPage() {
           <div>
             <h2 className="text-3xl font-bold text-slate-900 mb-4">School Plan Pricing</h2>
             <p className="text-xl text-slate-700">
-              <span className="font-bold">From $299/year</span>
+              <span className="font-bold">From £299/year</span>
               <span className="text-slate-600 text-lg"> for unlimited teachers and students</span>
             </p>
           </div>
@@ -247,8 +247,8 @@ export default function ForSchoolsPage() {
               Pricing varies based on school size. We offer flexible annual plans and can work with your budget.
             </p>
             <div className="space-y-2 text-slate-600 text-sm">
-              <p>• Small school (1-20 teachers): From $299/year</p>
-              <p>• Medium school (20-50 teachers): From $499/year</p>
+              <p>• Small school (1-20 teachers): From £299/year</p>
+              <p>• Medium school (20-50 teachers): From £499/year</p>
               <p>• Large school (50+ teachers): Custom pricing</p>
             </div>
           </div>
