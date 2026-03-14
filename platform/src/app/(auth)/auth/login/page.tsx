@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 const features = [
   {
@@ -27,6 +27,8 @@ const features = [
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect') || '/dashboard'
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -36,11 +38,11 @@ export default function LoginPage() {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
-        router.push('/dashboard')
+        router.push(redirectTo)
       }
     }
     checkAuth()
-  }, [router])
+  }, [router, redirectTo])
 
   const handleGoogleSignIn = async () => {
     try {
@@ -51,7 +53,7 @@ export default function LoginPage() {
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
+          redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
         },
       })
 
@@ -171,12 +173,12 @@ export default function LoginPage() {
       <div className="border-t border-slate-200 pt-6">
         <p className="text-center text-sm text-slate-600">
           Just want to play?{' '}
-          <Link
-            href="/play"
+          <a
+            href={`${process.env.NEXT_PUBLIC_GAME_URL ?? 'https://drawintheair.com'}/play`}
             className="text-orange-600 hover:text-orange-700 font-medium transition-colors"
           >
             Go to free activities
-          </Link>
+          </a>
         </p>
       </div>
     </div>

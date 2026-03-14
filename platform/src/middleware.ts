@@ -70,7 +70,9 @@ export async function middleware(request: NextRequest) {
     // Redirect unauthenticated users to login
     const user = request.headers.get('x-user-id')
     if (!user) {
-      return NextResponse.redirect(new URL('/auth/login', request.url))
+      const loginUrl = new URL('/auth/login', request.url)
+      loginUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(loginUrl)
     }
   }
 
