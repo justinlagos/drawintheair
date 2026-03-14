@@ -68,7 +68,7 @@ export async function middleware(request: NextRequest) {
   // Protected routes: check authentication via server component or page component
   if (protectedRoutes.some(route => pathname.startsWith(route))) {
     // Redirect unauthenticated users to login
-    const user = request.headers.get('x-user-id')
+    const user = response.headers.get('x-user-id')
     if (!user) {
       const loginUrl = new URL('/auth/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
