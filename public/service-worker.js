@@ -2,17 +2,26 @@
  * Service Worker for Draw in the Air
  *
  * Strategy:
- * - Cache-first for static assets (JS, CSS, images, fonts)
- * - Network-first for navigation requests (HTML pages)
- * - Graceful offline fallback when network is unavailable
+ * - Network-first for navigation requests (HTML pages) — always get the
+ *   latest deploy when online; cache as fallback for offline.
+ * - Network-first with cache fallback for JS/CSS assets — Vite already
+ *   gives them content-hashed URLs, but stale caches were a real-world
+ *   problem (returning visitors saw old layout post-deploy until they
+ *   manually cleared cache). Network-first guarantees fresh code.
+ * - Cache-first for images/fonts (rarely change, big bandwidth wins).
+ * - Graceful offline fallback when network is unavailable.
  *
  * Note: This app requires a camera and loads the MediaPipe hand-tracking
  * model at runtime, so full offline support is not feasible. This SW
  * satisfies Chrome's PWA installability requirement and provides a
  * friendly offline fallback instead of a browser error page.
+ *
+ * IMPORTANT: Bump CACHE_VERSION on every deploy that ships meaningful UI
+ * changes so the activate-handler cache-cleanup nukes stale caches.
  */
 
-const CACHE_NAME = 'draw-in-the-air-v1';
+const CACHE_VERSION = 'v3-kid-ui-2026-05-01';
+const CACHE_NAME = `draw-in-the-air-${CACHE_VERSION}`;
 
 /** Assets to pre-cache on install for fastest first load */
 const PRECACHE_ASSETS = [
@@ -21,10 +30,11 @@ const PRECACHE_ASSETS = [
     '/manifest.json'
 ];
 
-/** File extensions that should use cache-first strategy */
-const CACHEABLE_EXTENSIONS = [
-    '.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.woff', '.woff2', '.webp'
-];
+/** Extensions for which we use a CACHE-FIRST strategy (rarely change) */
+const CACHE_FIRST_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.svg', '.webp', '.woff', '.woff2'];
+
+/** Extensions for which we use NETWORK-FIRST strategy (deploy-sensitive) */
+const NETWORK_FIRST_EXTENSIONS = ['.js', '.css', '.html'];
 
 /**
  * Minimal offline fallback page.
@@ -35,13 +45,13 @@ const OFFLINE_FALLBACK_HTML = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Draw in the Air — Offline</title>
+  <title>Draw in the Air - Offline</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Nunito', system-ui, sans-serif;
-      background: #0f172a;
-      color: #e2e8f0;
+      background: linear-gradient(180deg, #BEEBFF 0%, #DEF5FF 35%, #FFF6E5 75%, #FFFAEB 100%);
+      color: #3F4052;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -49,26 +59,35 @@ const OFFLINE_FALLBACK_HTML = `<!DOCTYPE html>
       text-align: center;
       padding: 2rem;
     }
-    .container { max-width: 420px; }
-    h1 { font-size: 1.75rem; margin-bottom: 1rem; color: #6c47ff; }
-    p { font-size: 1.1rem; line-height: 1.6; margin-bottom: 1.5rem; color: #94a3b8; }
-    button {
-      background: #6c47ff;
-      color: white;
-      border: none;
-      padding: 0.75rem 2rem;
-      border-radius: 0.5rem;
-      font-size: 1rem;
-      cursor: pointer;
-      font-family: inherit;
+    .container {
+      max-width: 460px;
+      background: #FFFFFF;
+      border: 3px solid rgba(108, 63, 164, 0.18);
+      border-radius: 36px;
+      padding: 3rem 2rem;
+      box-shadow: 0 24px 60px rgba(108, 63, 164, 0.18);
     }
-    button:hover { background: #5a38e0; }
+    h1 { font-family: 'Fredoka', system-ui, sans-serif; font-size: 1.85rem; margin-bottom: 1rem; color: #6C3FA4; }
+    p { font-size: 1.1rem; line-height: 1.6; margin-bottom: 1.5rem; color: #3F4052; opacity: 0.85; }
+    button {
+      background: linear-gradient(180deg, #7E4FB8 0%, #6C3FA4 100%);
+      color: white;
+      border: 3px solid #FFFFFF;
+      padding: 0.85rem 2rem;
+      border-radius: 9999px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Fredoka', system-ui, sans-serif;
+      box-shadow: 0 8px 18px rgba(108, 63, 164, 0.35);
+    }
+    button:hover { transform: translateY(-2px); }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>You're Offline</h1>
-    <p>Draw in the Air needs an internet connection to load hand-tracking models and start the camera. Please check your connection and try again.</p>
+    <h1>You're offline</h1>
+    <p>Draw in the Air needs an internet connection to load the hand-tracking model and start your camera. Please check your connection and try again.</p>
     <button onclick="window.location.reload()">Try Again</button>
   </div>
 </body>
@@ -87,7 +106,8 @@ self.addEventListener('install', (event) => {
 // ---------- Activate ----------
 
 self.addEventListener('activate', (event) => {
-    // Clean up old caches from previous versions
+    // Delete every cache that doesn't match the current version. This is
+    // what actually invalidates stale .js/.css from previous deploys.
     event.waitUntil(
         caches.keys()
             .then((keys) =>
@@ -112,47 +132,80 @@ self.addEventListener('fetch', (event) => {
     // Skip cross-origin requests (CDN scripts, analytics, etc.)
     if (!request.url.startsWith(self.location.origin)) return;
 
-    // Navigation requests → network-first with offline fallback
+    const url = new URL(request.url);
+
+    // ── Navigation (HTML pages) → network-first ────────────────────────
     if (request.mode === 'navigate') {
-        event.respondWith(
-            fetch(request)
-                .then((response) => {
-                    // Cache successful navigation responses
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-                    return response;
-                })
-                .catch(() =>
-                    caches.match(request).then((cached) =>
-                        cached || new Response(OFFLINE_FALLBACK_HTML, {
-                            status: 200,
-                            headers: { 'Content-Type': 'text/html; charset=utf-8' }
-                        })
-                    )
-                )
-        );
+        event.respondWith(networkFirst(request));
         return;
     }
 
-    // Static assets → cache-first if cacheable extension
-    const url = new URL(request.url);
-    const isCacheable = CACHEABLE_EXTENSIONS.some((ext) => url.pathname.endsWith(ext));
+    // ── JS/CSS → network-first (deploy-sensitive) ──────────────────────
+    if (NETWORK_FIRST_EXTENSIONS.some((ext) => url.pathname.endsWith(ext))) {
+        event.respondWith(networkFirst(request));
+        return;
+    }
 
-    if (isCacheable) {
-        event.respondWith(
+    // ── Images/fonts → cache-first ─────────────────────────────────────
+    if (CACHE_FIRST_EXTENSIONS.some((ext) => url.pathname.endsWith(ext))) {
+        event.respondWith(cacheFirst(request));
+        return;
+    }
+
+    // Anything else → network only (API calls, etc.)
+});
+
+// ─── Strategies ────────────────────────────────────────────────────────
+
+/**
+ * Network-first: try network, fall back to cache, fall back to offline page
+ * for navigation requests.
+ */
+function networkFirst(request) {
+    return fetch(request)
+        .then((response) => {
+            // Cache successful responses for offline fallback
+            if (response.ok) {
+                const clone = response.clone();
+                caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+            }
+            return response;
+        })
+        .catch(() =>
             caches.match(request).then((cached) => {
                 if (cached) return cached;
-                return fetch(request).then((response) => {
-                    if (response.ok) {
-                        const clone = response.clone();
-                        caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-                    }
-                    return response;
-                });
+                if (request.mode === 'navigate') {
+                    return new Response(OFFLINE_FALLBACK_HTML, {
+                        status: 200,
+                        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+                    });
+                }
+                // Re-throw so the browser can show its native error
+                return Response.error();
             })
         );
-        return;
-    }
+}
 
-    // All other requests → network only (API calls, etc.)
+/**
+ * Cache-first: serve from cache, fall back to network, populate cache on miss.
+ */
+function cacheFirst(request) {
+    return caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((response) => {
+            if (response.ok) {
+                const clone = response.clone();
+                caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+            }
+            return response;
+        });
+    });
+}
+
+// ---------- Update notification (optional client hook) ----------
+
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
