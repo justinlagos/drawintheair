@@ -8,41 +8,42 @@ find .git/refs -name "*.lock" -delete 2>/dev/null || true
 
 git add -A
 
-git commit -m "fix(landing): replace Tailwind layout classes with bespoke CSS
+git commit -m "fix(landing): inline critical CSS via <style> tag
 
-The production build at drawintheair.com was rendering the new Kid-UI
-Landing page as a single-column stack. Tailwind responsive grid/flex
-utilities ('grid lg:grid-cols-2', 'hidden md:flex', etc.) were not
-present in the compiled CSS — the JIT scanner didn't pick up the new
-class strings, so layout broke entirely. Inline styles still rendered,
-which is why SVG illustrations, KidButton CTAs, and gradients all
-showed up correctly while the section grids collapsed.
+Production deploy still rendered Landing single-column even after
+converting Tailwind classes to bespoke .dl-* CSS. Root cause: Vite's
+CSS code-splitting on Vercel was apparently dropping the
+landing-kid.css chunk (or browser was loading a stale cached version),
+so none of the .dl-* layout rules applied — including .dl-desktop-only
+which made the nav default to display:block, leaving the inline
+gap:28 inert and links smushed together with no whitespace (JSX strips
+inter-sibling whitespace).
 
-Solution: convert every layout-critical Tailwind class to a bespoke
-.dl-* class in src/components/landing/landing-kid.css with proper
-@media queries for sm/md/lg breakpoints. The page is now self-contained
-and renders identically in dev and prod regardless of Tailwind config.
+Bulletproof fix: ship the critical CSS as a JS string constant and
+inject it into a <style dangerouslySetInnerHTML> at the top of the
+Landing component. The CSS is now part of the same JS chunk as the
+component itself; if the JS loads, the CSS loads — period. No more
+chunk-loading flakiness, no more cache-staleness, no more bundler
+tree-shaking surprises.
 
 CHANGES
-- landing-kid.css: added 80+ lines of layout utilities
-  (.dl-container, .dl-grid-2, .dl-grid-3, .dl-grid-4, .dl-grid-features,
-   .dl-grid-skills, .dl-grid-2-hero, .dl-grid-2-3, .dl-grid-3-2,
-   .dl-flex, .dl-flex-col, .dl-flex-wrap, .dl-items-center,
-   .dl-justify-center, .dl-justify-between, .dl-gap-2/3/4/5,
-   .dl-text-center, .dl-desktop-only, .dl-mobile-only,
-   .dl-mobile-only-block, .dl-mobile-nav-link, .dl-nav-link,
-   .dl-nav-fixed, .dl-brand-name, .dl-order-1/2 + lg variants)
-- Landing.tsx: every 'grid lg:grid-cols-*', 'flex *', 'max-w-*',
-  'order-*', 'hidden md:*' replaced with the bespoke equivalents.
-  Inline-style spacing where appropriate.
+- Added src/components/landing/landingInlineStyles.ts exporting
+  LANDING_INLINE_CSS (full layout + decorative + animation rules).
+- Landing.tsx renders <style>{LANDING_INLINE_CSS}</style> as the
+  first child of .dl-page so styles are present before any layout
+  paints.
+- Kept the external landing-kid.css import for dev fast-refresh and
+  browser caching benefits — but it's no longer load-bearing.
 
 VERIFICATION
 - tsc --noEmit clean
 - ESLint clean
-- All section grids respect their original 1/2/3/4-col breakpoints
-- Mobile menu drawer toggles correctly via .dl-desktop-only / .dl-mobile-only"
+- CSS includes all layout breakpoints (sm/md/lg) and decorative
+  animations (sun pulse, cloud drift, sparkle float, rainbow trail,
+  CTA glow, scroll reveal, hero fade-up)."
 
 git push origin master
 
 echo ""
-echo "✅ Landing layout fix pushed. Vercel/your CI should redeploy in ~1 min."
+echo "✅ Inline-CSS Landing fix pushed. After Vercel redeploys (~1 min),"
+echo "   hard-refresh drawintheair.com (Cmd+Shift+R) to bust browser cache."

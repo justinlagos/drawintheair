@@ -18,6 +18,11 @@ import { TryFreeModal } from '../components/TryFreeModal';
 import { submitFormData } from '../lib/formSubmission';
 import { KidButton } from '../components/kid-ui';
 import { tokens } from '../styles/tokens';
+import { LANDING_INLINE_CSS } from '../components/landing/landingInlineStyles';
+// External CSS kept as a fallback (dev fast-refresh, browser cache benefits).
+// LANDING_INLINE_CSS is the resilient source of truth — it ships in the JS
+// bundle and renders via <style> below, so the page is never broken even if
+// the external chunk fails to load on Vercel.
 import '../components/landing/landing-kid.css';
 
 // ─── Mode showcase data ────────────────────────────────────────────────
@@ -480,6 +485,10 @@ export const Landing: React.FC = () => {
   // ─── Render ──────────────────────────────────────────────────────────
   return (
     <div className="dl-page">
+      {/* Inline CSS — guarantees layout works even if the external CSS chunk
+          fails to load in production (Vite/Vercel CSS code-splitting can
+          silently drop chunks; this <style> ships with the JS bundle). */}
+      <style dangerouslySetInnerHTML={{ __html: LANDING_INLINE_CSS }} />
 
       {/* ═══════ STATIC SKY BACKGROUND ═══════ */}
       <div className="dl-sky-scene" aria-hidden>
