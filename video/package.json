@@ -1,0 +1,29 @@
+{
+  "name": "draw-in-the-air-video",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "start": "remotion studio",
+    "preview": "remotion preview",
+    "render": "remotion render DrawInTheAir out/draw-in-the-air.mp4 --codec h264 --crf 18",
+    "render:landscape": "remotion render DrawInTheAirLandscape out/draw-in-the-air-16x9.mp4 --codec h264 --crf 18",
+    "render:gif": "remotion render DrawInTheAir out/draw-in-the-air.gif --image-format png",
+    "still": "remotion still DrawInTheAir out/thumbnail.png --frame 150"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.242",
+    "@remotion/player": "4.0.242",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "4.0.242"
+  },
+  "overrides": {
+    "esbuild": "0.24.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "esbuild": "0.24.0",
+    "typescript": "^5.5.0"
+  }
+}

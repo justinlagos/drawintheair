@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { perf, type PerformanceOverride } from '../../core/perf';
+import { KidPanel, KidButton } from '../../components/kid-ui';
+import { tokens } from '../../styles/tokens';
 
 // Responsive hook
 const useResponsiveLayout = () => {
@@ -152,6 +154,7 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                     onMouseLeave={endHold}
                     onTouchStart={startHold}
                     onTouchEnd={endHold}
+                    aria-label="Hold to unlock parent menu"
                     style={{
                         position: 'relative',
                         width: `${buttonSize}px`,
@@ -159,8 +162,8 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                         minWidth: '44px',
                         minHeight: '44px',
                         borderRadius: '50%',
-                        background: 'rgba(15, 12, 41, 0.75)',
-                        border: '2px solid rgba(255, 255, 255, 0.2)',
+                        background: tokens.semantic.bgPanel,
+                        border: `2px solid ${isHolding ? tokens.semantic.primary : tokens.semantic.borderPanel}`,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -168,9 +171,9 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                         padding: 0,
                         transition: 'transform 0.2s ease, border-color 0.2s ease',
                         transform: isHolding ? 'scale(0.95)' : 'scale(1)',
-                        borderColor: isHolding ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)',
+                        boxShadow: tokens.shadow.float,
                         overflow: 'hidden',
-                        touchAction: 'manipulation'
+                        touchAction: 'manipulation',
                     }}
                 >
                     {/* Progress ring */}
@@ -182,7 +185,7 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                             width: `${svgSize}px`,
                             height: `${svgSize}px`,
                             transform: 'rotate(-90deg)',
-                            pointerEvents: 'none'
+                            pointerEvents: 'none',
                         }}
                     >
                         <circle
@@ -190,7 +193,7 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                             cy={circleCenter}
                             r={circleRadius}
                             fill="none"
-                            stroke="rgba(255,255,255,0.1)"
+                            stroke="rgba(108, 63, 164, 0.15)"
                             strokeWidth="3"
                         />
                         <circle
@@ -198,13 +201,13 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                             cy={circleCenter}
                             r={circleRadius}
                             fill="none"
-                            stroke="#00FFFF"
+                            stroke={tokens.colors.deepPlum}
                             strokeWidth="3"
                             strokeLinecap="round"
                             strokeDasharray={`${holdProgress * circumference} ${circumference}`}
                             style={{
-                                filter: holdProgress > 0 ? 'drop-shadow(0 0 8px #00FFFF)' : 'none',
-                                transition: isHolding ? 'none' : 'stroke-dasharray 0.2s ease'
+                                filter: holdProgress > 0 ? `drop-shadow(0 0 6px ${tokens.colors.deepPlum})` : 'none',
+                                transition: isHolding ? 'none' : 'stroke-dasharray 0.2s ease',
                             }}
                         />
                     </svg>
@@ -212,76 +215,80 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                     {/* Icon */}
                     <span style={{
                         fontSize: isCompact ? '1rem' : '1.2rem',
-                        opacity: 0.8,
                         transition: 'transform 0.2s ease',
-                        transform: isHolding ? 'scale(0.9)' : 'scale(1)'
+                        transform: isHolding ? 'scale(0.9)' : 'scale(1)',
                     }}>
                         {holdProgress >= 1 ? '🔓' : '🔒'}
                     </span>
                 </button>
 
-                {/* Hold instruction tooltip */}
+                {/* Hold instruction tooltip — bright Kid-UI cream pill */}
                 {isHolding && holdProgress > 0 && holdProgress < 1 && (
-                    <div style={{
+                    <div className="kid-panel" style={{
                         position: 'absolute',
                         top: `${buttonSize + 12}px`,
                         right: 0,
-                        background: 'rgba(0, 0, 0, 0.8)',
-                        padding: isCompact ? '6px 10px' : '8px 12px',
-                        borderRadius: '8px',
-                        fontSize: isCompact ? '0.75rem' : '0.8rem',
-                        color: 'white',
+                        background: tokens.semantic.bgPanel,
+                        padding: isCompact ? '6px 12px' : '8px 14px',
+                        borderRadius: tokens.radius.pill,
+                        border: `1.5px solid ${tokens.semantic.borderPanel}`,
+                        fontFamily: tokens.fontFamily.heading,
+                        fontWeight: tokens.fontWeight.bold,
+                        fontSize: isCompact ? '0.78rem' : '0.85rem',
+                        color: tokens.semantic.textPrimary,
                         whiteSpace: 'nowrap',
-                        animation: 'fadeIn 0.2s ease'
+                        boxShadow: tokens.shadow.float,
+                        animation: 'fadeIn 0.2s ease',
                     }}>
-                        Hold to unlock... {Math.round(holdProgress * 100)}%
+                        Hold to unlock… {Math.round(holdProgress * 100)}%
                     </div>
                 )}
             </div>
 
-            {/* Adult Menu Overlay */}
+            {/* Parent Menu — Kid-UI bright modal */}
             {showMenu && (
                 <div
                     style={{
                         position: 'fixed',
                         inset: 0,
-                        background: 'rgba(0, 0, 0, 0.85)',
+                        background: 'rgba(190, 235, 255, 0.55)',
                         zIndex: 300,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         padding: isCompact ? '16px' : '24px',
-                        animation: 'fadeIn 0.3s ease'
+                        animation: 'fadeIn 0.3s ease',
                     }}
                     onClick={handleCloseMenu}
                 >
-                    <div
+                    <KidPanel
+                        size="lg"
+                        tone="white"
                         style={{
-                            background: 'rgba(30, 25, 60, 0.95)',
-                            borderRadius: isCompact ? '16px' : '24px',
-                            border: '1px solid rgba(255, 255, 255, 0.15)',
-                            padding: isCompact ? '20px' : '32px',
-                            maxWidth: '400px',
+                            maxWidth: '440px',
                             width: '100%',
-                            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-                            animation: 'float 0.3s ease'
+                            animation: 'modalPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
                         }}
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e?: React.MouseEvent) => e?.stopPropagation()}
                     >
                         <h2 style={{
-                            margin: '0 0 8px',
-                            fontSize: isCompact ? 'clamp(1.1rem, 4vw, 1.5rem)' : '1.5rem',
-                            color: 'white',
-                            textAlign: 'center'
+                            margin: `0 0 ${tokens.spacing.xs}`,
+                            fontFamily: tokens.fontFamily.display,
+                            fontWeight: tokens.fontWeight.bold,
+                            fontSize: isCompact ? 'clamp(1.2rem, 4vw, 1.6rem)' : '1.6rem',
+                            color: tokens.semantic.primary,
+                            textAlign: 'center',
+                            letterSpacing: tokens.letterSpacing.tight,
                         }}>
                             🔓 Parent Menu
                         </h2>
 
                         <p style={{
-                            margin: isCompact ? '0 0 16px' : '0 0 24px',
-                            color: 'rgba(255,255,255,0.6)',
+                            margin: `0 0 ${isCompact ? tokens.spacing.lg : tokens.spacing.xl}`,
+                            fontFamily: tokens.fontFamily.body,
+                            color: tokens.semantic.textSecondary,
                             textAlign: 'center',
-                            fontSize: isCompact ? '0.8rem' : '0.9rem'
+                            fontSize: isCompact ? '0.9rem' : '1rem',
                         }}>
                             This area is for grown-ups
                         </p>
@@ -289,141 +296,100 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                         <div style={{
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: isCompact ? '10px' : '12px'
+                            gap: tokens.spacing.md,
                         }}>
-                            {/* Exit to Menu */}
-                            <button
-                                onClick={handleExit}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: isCompact ? '8px' : '12px',
-                                    padding: isCompact ? '14px' : '16px',
-                                    minHeight: '44px',
-                                    background: 'rgba(255, 255, 255, 0.1)',
-                                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                                    borderRadius: isCompact ? '12px' : '16px',
-                                    color: 'white',
-                                    cursor: 'pointer',
-                                    fontSize: isCompact ? '0.9rem' : '1rem',
-                                    fontWeight: 600,
-                                    transition: 'all 0.2s ease',
-                                    touchAction: 'manipulation'
-                                }}
-                            >
-                                <span style={{ fontSize: isCompact ? '1.25rem' : '1.5rem' }}>🏠</span>
+                            <KidButton variant="primary" size="md" fullWidth onClick={handleExit}
+                                       icon={<span aria-hidden style={{ fontSize: '1.4rem' }}>🏠</span>}>
                                 Exit to Menu
-                            </button>
+                            </KidButton>
 
-                            {/* Settings (optional) */}
                             {onSettings && (
-                                <button
-                                    onClick={handleSettings}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: isCompact ? '8px' : '12px',
-                                        padding: isCompact ? '14px' : '16px',
-                                        minHeight: '44px',
-                                        background: 'rgba(255, 255, 255, 0.1)',
-                                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                                        borderRadius: isCompact ? '12px' : '16px',
-                                        color: 'white',
-                                        cursor: 'pointer',
-                                        fontSize: isCompact ? '0.9rem' : '1rem',
-                                        fontWeight: 600,
-                                        transition: 'all 0.2s ease',
-                                        touchAction: 'manipulation'
-                                    }}
-                                >
-                                    <span style={{ fontSize: isCompact ? '1.25rem' : '1.5rem' }}>⚙️</span>
+                                <KidButton variant="secondary" size="md" fullWidth onClick={handleSettings}
+                                           icon={<span aria-hidden style={{ fontSize: '1.4rem' }}>⚙️</span>}>
                                     Settings
-                                </button>
+                                </KidButton>
                             )}
 
-                            {/* Performance Toggle */}
+                            {/* Performance toggle — bright cream sub-panel */}
                             <div style={{
-                                padding: isCompact ? '12px' : '16px',
-                                background: 'rgba(0, 0, 0, 0.2)',
-                                borderRadius: isCompact ? '12px' : '16px',
-                                border: '1px solid rgba(255, 255, 255, 0.1)'
+                                padding: tokens.spacing.lg,
+                                background: tokens.semantic.bgPanelTinted,
+                                borderRadius: tokens.radius.lg,
+                                border: `1.5px solid ${tokens.semantic.borderPanel}`,
                             }}>
                                 <div style={{
-                                    marginBottom: isCompact ? '8px' : '12px',
-                                    fontSize: isCompact ? '0.85rem' : '0.9rem',
-                                    color: 'rgba(255,255,255,0.7)',
-                                    fontWeight: 600
+                                    marginBottom: tokens.spacing.md,
+                                    fontFamily: tokens.fontFamily.heading,
+                                    fontSize: tokens.fontSize.label,
+                                    color: tokens.semantic.textPrimary,
+                                    fontWeight: tokens.fontWeight.bold,
                                 }}>
                                     ⚡ Performance
                                 </div>
                                 <div style={{
                                     display: 'flex',
-                                    gap: isCompact ? '6px' : '8px'
+                                    gap: tokens.spacing.sm,
                                 }}>
-                                    {(['auto', 'high', 'low'] as PerformanceOverride[]).map((option) => (
-                                        <button
-                                            key={option}
-                                            onClick={() => handlePerfChange(option)}
-                                            style={{
-                                                flex: 1,
-                                                padding: isCompact ? '10px 8px' : '12px 10px',
-                                                minHeight: '44px',
-                                                background: perfOverride === option
-                                                    ? 'rgba(0, 229, 255, 0.2)'
-                                                    : 'rgba(255, 255, 255, 0.05)',
-                                                border: perfOverride === option
-                                                    ? '1px solid rgba(0, 229, 255, 0.5)'
-                                                    : '1px solid rgba(255, 255, 255, 0.1)',
-                                                borderRadius: isCompact ? '8px' : '10px',
-                                                color: 'white',
-                                                cursor: 'pointer',
-                                                fontSize: isCompact ? '0.8rem' : '0.85rem',
-                                                fontWeight: perfOverride === option ? 600 : 400,
-                                                transition: 'all 0.2s ease',
-                                                touchAction: 'manipulation',
-                                                textTransform: 'capitalize'
-                                            }}
-                                        >
-                                            {option === 'auto' ? 'Auto' : option === 'high' ? 'High' : 'Low'}
-                                        </button>
-                                    ))}
+                                    {(['auto', 'high', 'low'] as PerformanceOverride[]).map((option) => {
+                                        const active = perfOverride === option;
+                                        return (
+                                            <button
+                                                key={option}
+                                                onClick={() => handlePerfChange(option)}
+                                                style={{
+                                                    flex: 1,
+                                                    minHeight: '44px',
+                                                    padding: '10px 12px',
+                                                    background: active ? tokens.semantic.bgPanel : 'transparent',
+                                                    border: `2px solid ${active ? tokens.semantic.primary : tokens.semantic.borderPanel}`,
+                                                    borderRadius: tokens.radius.md,
+                                                    fontFamily: tokens.fontFamily.heading,
+                                                    fontWeight: tokens.fontWeight.bold,
+                                                    color: active ? tokens.semantic.primary : tokens.semantic.textPrimary,
+                                                    fontSize: tokens.fontSize.label,
+                                                    cursor: 'pointer',
+                                                    boxShadow: active ? tokens.shadow.float : 'none',
+                                                    transition: `all ${tokens.motion.duration.quick} ${tokens.motion.ease.standard}`,
+                                                    touchAction: 'manipulation',
+                                                    textTransform: 'capitalize',
+                                                }}
+                                            >
+                                                {option === 'auto' ? 'Auto' : option === 'high' ? 'High' : 'Low'}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                                 <div style={{
-                                    marginTop: isCompact ? '8px' : '10px',
-                                    fontSize: isCompact ? '0.7rem' : '0.75rem',
-                                    color: 'rgba(255,255,255,0.5)',
-                                    textAlign: 'center'
+                                    marginTop: tokens.spacing.sm,
+                                    fontFamily: tokens.fontFamily.body,
+                                    fontSize: tokens.fontSize.caption,
+                                    color: tokens.semantic.textMuted,
+                                    textAlign: 'center',
                                 }}>
                                     Current: {currentTier.toUpperCase()}
                                 </div>
                             </div>
 
-                            {/* Cancel */}
                             <button
                                 onClick={handleCloseMenu}
                                 style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: isCompact ? '8px' : '12px',
-                                    padding: isCompact ? '14px' : '16px',
                                     minHeight: '44px',
+                                    padding: '12px',
                                     background: 'transparent',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    borderRadius: isCompact ? '12px' : '16px',
-                                    color: 'rgba(255,255,255,0.6)',
+                                    border: 'none',
+                                    color: tokens.semantic.textSecondary,
                                     cursor: 'pointer',
-                                    fontSize: isCompact ? '0.9rem' : '1rem',
+                                    fontFamily: tokens.fontFamily.heading,
+                                    fontSize: tokens.fontSize.label,
+                                    fontWeight: tokens.fontWeight.semibold,
                                     transition: 'all 0.2s ease',
-                                    touchAction: 'manipulation'
+                                    touchAction: 'manipulation',
                                 }}
                             >
                                 ✕ Cancel
                             </button>
                         </div>
-                    </div>
+                    </KidPanel>
                 </div>
             )}
         </>

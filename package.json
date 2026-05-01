@@ -15,6 +15,7 @@
     "preview": "vite preview",
     "prebuild": "npm run type-check",
     "validate": "npm run type-check && npm run lint",
+    "check:secrets": "node scripts/check-secrets.mjs",
     "tracking:test": "echo 'Note: Compile TypeScript first, then run: node scripts/tracking-smoke-test.js' || (tsc scripts/tracking-smoke-test.ts --outDir scripts --module esnext --target es2020 && node scripts/tracking-smoke-test.js)"
   },
   "dependencies": {

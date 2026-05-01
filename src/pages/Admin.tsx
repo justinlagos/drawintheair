@@ -178,17 +178,37 @@ export const Admin: React.FC = () => {
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [lastAttemptTime, setLastAttemptTime] = useState(0);
 
-  // Admin PIN must be set via VITE_ADMIN_PIN environment variable.
+  // SECURITY: Admin PIN must be set via VITE_ADMIN_PIN environment variable.
   // There is intentionally no default fallback — if the env var is missing,
   // the admin panel is disabled rather than exposed with a known password.
+  // NOTE: This is a client-side check only. It prevents casual access but
+  // does NOT provide server-grade security. The PIN is embedded in the built
+  // JS bundle and can be extracted by a determined attacker. For production,
+  // admin functionality should be behind server-side authentication
+  // (e.g., the platform's /admin route which uses Supabase auth).
   const adminPin = (import.meta.env.VITE_ADMIN_PIN as string)
     || (import.meta.env.VITE_ADMIN_PASSWORD as string)
     || '';
+
+  // SECURITY: Production gate. The bundle-extractable PIN flow is only safe
+  // for casual deterrent in dev/staging. In production builds the panel is
+  // disabled by default — must be explicitly opted in via VITE_ENABLE_ADMIN_PANEL.
+  // For real prod admin access, use the Supabase-auth-backed /admin route on
+  // the Next.js platform deployment.
+  const isProduction = import.meta.env.PROD;
+  const adminPanelExplicitlyEnabled =
+    (import.meta.env.VITE_ENABLE_ADMIN_PANEL as string) === 'true';
+  const adminPanelDisabledByEnv = isProduction && !adminPanelExplicitlyEnabled;
 
   const sheetsEndpoint = (import.meta.env.VITE_SHEETS_ENDPOINT as string) || '';
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (adminPanelDisabledByEnv) {
+      setError('Admin panel is disabled in production. Use the Supabase-auth admin route instead.');
+      return;
+    }
 
     // If no admin PIN is configured via environment variable, deny all access.
     // This prevents the admin panel from being accessible in production builds
@@ -208,6 +228,7 @@ export const Admin: React.FC = () => {
     if (pin.trim() === adminPin) {
       setIsAuthenticated(true);
       sessionStorage.setItem('admin_authenticated', 'true');
+      // SECURITY: 15-minute session timeout for admin access
       sessionStorage.setItem('admin_session_expiry', (Date.now() + 15 * 60 * 1000).toString());
       setPin('');
       setError('');
@@ -251,9 +272,16 @@ export const Admin: React.FC = () => {
     setLoading(true);
     setFetchError(null);
     try {
-      const url = `${sheetsEndpoint}?pin=${encodeURIComponent(adminPin)}`;
+      // SECURITY FIX: Send PIN in POST body instead of URL query to avoid
+      // leaking credentials in server logs, browser history, and referrer headers
+      const url = sheetsEndpoint;
       console.debug('[Admin] Fetching from endpoint…');
-      const res = await fetch(url, { cache: 'no-store' });
+      const res = await fetch(url, {
+        method: 'POST',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: adminPin }),
+      });
       if (!res.ok) {
         const msg = `HTTP ${res.status} ${res.statusText}`;
         console.error('[Admin] Fetch failed:', msg);
@@ -303,8 +331,14 @@ export const Admin: React.FC = () => {
     }
     setTestingConnection(true);
     try {
-      const url = `${sheetsEndpoint}?pin=${encodeURIComponent(adminPin)}&action=health`;
-      const res = await fetch(url, { cache: 'no-store' });
+      // SECURITY FIX: Send credentials in POST body, not URL
+      const url = sheetsEndpoint;
+      const res = await fetch(url, {
+        method: 'POST',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: adminPin, action: 'health' }),
+      });
       const text = await res.text().catch(() => '(no body)');
       if (res.ok) {
         setFetchError(null);
@@ -354,6 +388,27 @@ export const Admin: React.FC = () => {
       <div className="admin-login">
         <div className="admin-login-card">
           <h1>Admin Dashboard</h1>
+          {adminPanelDisabledByEnv && (
+            <div
+              role="alert"
+              style={{
+                marginBottom: 16,
+                padding: '12px 16px',
+                borderRadius: 12,
+                background: 'rgba(255, 107, 107, 0.12)',
+                border: '1.5px solid rgba(255, 107, 107, 0.35)',
+                color: '#3F4052',
+                fontSize: '0.95rem',
+                lineHeight: 1.4,
+              }}
+            >
+              <strong>This panel is disabled in production.</strong>
+              <br />
+              The PIN flow is bundle-extractable and not safe for live use.
+              For real admin access, use the Supabase-auth admin route on the
+              Next.js platform deployment.
+            </div>
+          )}
           <form onSubmit={handleLogin}>
             <input
               type="password"
@@ -362,9 +417,14 @@ export const Admin: React.FC = () => {
               onChange={(e) => setPin(e.target.value)}
               className="admin-login-input"
               autoFocus
+              disabled={adminPanelDisabledByEnv}
             />
             {error && <p className="admin-login-error">{error}</p>}
-            <button type="submit" className="admin-btn admin-btn-primary">
+            <button
+              type="submit"
+              className="admin-btn admin-btn-primary"
+              disabled={adminPanelDisabledByEnv}
+            >
               Login
             </button>
           </form>

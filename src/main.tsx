@@ -22,6 +22,7 @@ import ParentAccess from './pages/ParentAccess.tsx'
 import { initAnalytics } from './lib/analytics.ts'
 import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 import { AuthProvider } from './context/AuthContext.tsx'
+import { KidStyles } from './styles/KidStyles.tsx'
 
 // SEO Lazy Imports
 const EmbedPage = React.lazy(() => import('./pages/seo/EmbedPage.tsx'));
@@ -453,6 +454,7 @@ function Root() {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    <KidStyles />
     <AuthProvider>
       <Root />
     </AuthProvider>

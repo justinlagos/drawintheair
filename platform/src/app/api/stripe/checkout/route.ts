@@ -70,7 +70,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${request.headers.get('host')}`
+    // SECURITY FIX: Never derive URLs from Host header — use env var only
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL
+    if (!appUrl) {
+      console.error('NEXT_PUBLIC_APP_URL is not defined')
+      return NextResponse.json(
+        { error: 'Application configuration error' },
+        { status: 500 }
+      )
+    }
 
     const stripe = await getStripe()
 
@@ -105,8 +113,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     console.error('Checkout error:', errorMessage)
+    // SECURITY FIX: Do not expose internal error details to clients
     return NextResponse.json(
-      { error: 'Failed to create checkout session', details: errorMessage },
+      { error: 'Failed to create checkout session' },
       { status: 500 }
     )
   }

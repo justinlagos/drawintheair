@@ -69,8 +69,22 @@ export async function GET(request: NextRequest) {
     // Determine redirect destination
     let redirectUrl = '/dashboard'
     if (next) {
-      // Validate that next is a safe relative path (starts with / and contains no protocol)
-      if (next.startsWith('/') && !next.includes('://')) {
+      // SECURITY: Validate redirect is a safe relative path
+      // - Must start with exactly one /
+      // - Must not contain protocol markers (even URL-encoded)
+      // - Must not start with // (protocol-relative URL → open redirect)
+      // - Must not contain backslashes (bypass on some browsers)
+      const decoded = decodeURIComponent(next)
+      const isSafe =
+        next.startsWith('/') &&
+        !next.startsWith('//') &&
+        !next.includes('://') &&
+        !decoded.startsWith('//') &&
+        !decoded.includes('://') &&
+        !next.includes('\\') &&
+        !decoded.includes('\\') &&
+        !/^\/\s/.test(decoded)
+      if (isSafe) {
         redirectUrl = next
       }
     }

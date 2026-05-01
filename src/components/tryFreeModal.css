@@ -1,4 +1,7 @@
-/* ─── Try Free Modal ─────────────────────────────────────────── */
+/* ─── Try Free Modal — Kid-UI bright sky ─────────────────────────
+   Bright cream panel, plum primary, fully on-brand with the Kid-UI
+   design system. Replaces the legacy dark navy treatment.
+─────────────────────────────────────────────────────────────────── */
 
 .tryfree-overlay {
   position: fixed;
@@ -7,35 +10,81 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(63, 64, 82, 0.45);
+  backdrop-filter: blur(10px) saturate(1.4);
+  -webkit-backdrop-filter: blur(10px) saturate(1.4);
   animation: tryfree-fade-in 0.25s ease-out;
   padding: 1rem;
+  font-family: 'Nunito', system-ui, sans-serif;
 }
 
 @keyframes tryfree-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .tryfree-card {
-  background: rgba(10, 18, 42, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 28px;
+  position: relative;
+  background:
+    linear-gradient(180deg, #FFFFFF 0%, #FBFCFF 60%, #F4FAFF 100%);
+  border: 3px solid rgba(108, 63, 164, 0.18);
+  border-radius: 36px;
   padding: 2.5rem 2rem 2rem;
-  max-width: 420px;
+  max-width: 460px;
   width: 100%;
   box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-  animation: tryfree-slide-up 0.3s ease-out;
-  position: relative;
+    0 30px 80px rgba(63, 64, 82, 0.25),
+    0 8px 24px rgba(108, 63, 164, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  animation: tryfree-slide-up 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+}
+
+/* Decorative sun in top corner */
+.tryfree-card::before {
+  content: '';
+  position: absolute;
+  top: -32px;
+  right: -24px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%,
+      #FFF1B5 0%,
+      #FFD84D 50%,
+      rgba(255, 216, 77, 0) 100%);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* Decorative cloud bottom-left */
+.tryfree-card::after {
+  content: '';
+  position: absolute;
+  bottom: -28px;
+  left: -18px;
+  width: 100px;
+  height: 36px;
+  background: linear-gradient(180deg, #FFFFFF, #DEF5FF);
+  border-radius: 9999px;
+  opacity: 0.65;
+  pointer-events: none;
+  box-shadow:
+    24px -6px 0 -2px #FFFFFF,
+    52px -2px 0 -4px #FFFFFF;
 }
 
 @keyframes tryfree-slide-up {
   from {
     opacity: 0;
-    transform: translateY(24px) scale(0.97);
+    transform: translateY(28px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -46,89 +95,113 @@
   position: absolute;
   top: 1rem;
   right: 1rem;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 1.25rem;
+  border: 2px solid rgba(108, 63, 164, 0.18);
+  background: #FFFFFF;
+  color: #6C3FA4;
+  font-size: 1.4rem;
+  font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
   line-height: 1;
+  box-shadow: 0 4px 10px rgba(108, 63, 164, 0.10);
+  z-index: 1;
 }
 
 .tryfree-close:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  transform: scale(1.1);
+  background: #F4FAFF;
+  color: #5A3290;
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 0 6px 14px rgba(108, 63, 164, 0.18);
 }
 
 .tryfree-title {
-  font-size: 1.5rem;
+  font-family: 'Fredoka', 'Baloo 2', system-ui, sans-serif;
+  font-size: 1.75rem;
   font-weight: 700;
-  color: #ffffff;
-  margin: 0 0 0.25rem 0;
+  color: #3F4052;
+  margin: 0 0 0.3rem 0;
   text-align: center;
+  letter-spacing: -0.01em;
+  position: relative;
+  z-index: 1;
 }
 
 .tryfree-subtitle {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.55);
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6C3FA4;
   text-align: center;
   margin: 0 0 1.75rem 0;
+  position: relative;
+  z-index: 1;
 }
 
 /* ─── Age Band Selector ─────────────────────────────────────── */
 
 .tryfree-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
+  font-family: 'Fredoka', 'Baloo 2', system-ui, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #6C3FA4;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.85rem;
   display: block;
+  text-align: center;
+  position: relative;
+  z-index: 1;
 }
 
 .tryfree-age-pills {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.6rem;
   flex-wrap: wrap;
   justify-content: center;
   margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 1;
 }
 
 .tryfree-age-pill {
-  padding: 0.625rem 1.125rem;
-  border-radius: 50px;
-  border: 1.5px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.95rem;
-  font-weight: 600;
+  padding: 0.7rem 1.25rem;
+  border-radius: 9999px;
+  border: 2.5px solid rgba(108, 63, 164, 0.22);
+  background: #FFFFFF;
+  color: #3F4052;
+  font-family: 'Fredoka', 'Baloo 2', system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-  min-width: 56px;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  min-width: 64px;
   text-align: center;
+  box-shadow: 0 3px 8px rgba(108, 63, 164, 0.08);
 }
 
 .tryfree-age-pill:hover {
-  background: rgba(255, 217, 61, 0.1);
-  border-color: rgba(255, 217, 61, 0.4);
-  color: #FFD93D;
-  transform: translateY(-1px);
+  background: #F4FAFF;
+  border-color: #6C3FA4;
+  color: #6C3FA4;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(108, 63, 164, 0.16);
 }
 
 .tryfree-age-pill[data-selected="true"] {
-  background: rgba(255, 217, 61, 0.2);
-  border-color: #FFD93D;
-  color: #FFD93D;
-  box-shadow: 0 0 12px rgba(255, 217, 61, 0.2);
+  background: linear-gradient(180deg, #7E4FB8 0%, #6C3FA4 100%);
+  border-color: #FFFFFF;
+  color: #FFFFFF;
+  box-shadow:
+    0 6px 16px rgba(108, 63, 164, 0.40),
+    0 0 0 4px rgba(108, 63, 164, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px) scale(1.05);
 }
 
 /* ─── Admin Fields ───────────────────────────────────────────── */
@@ -136,15 +209,18 @@
 .tryfree-admin-fields {
   margin-bottom: 1.5rem;
   padding: 1rem;
-  border-radius: 14px;
-  border: 1px dashed rgba(0, 229, 255, 0.3);
-  background: rgba(0, 229, 255, 0.03);
+  border-radius: 18px;
+  border: 2px dashed rgba(85, 221, 224, 0.55);
+  background: rgba(85, 221, 224, 0.08);
+  position: relative;
+  z-index: 1;
 }
 
 .tryfree-admin-badge {
-  font-size: 0.7rem;
+  font-family: 'Fredoka', 'Baloo 2', system-ui, sans-serif;
+  font-size: 0.75rem;
   font-weight: 700;
-  color: #00E5FF;
+  color: #2BAEB1;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-bottom: 0.75rem;
@@ -155,7 +231,7 @@
 
 .tryfree-admin-badge::before {
   content: '🔑';
-  font-size: 0.8rem;
+  font-size: 0.9rem;
 }
 
 .tryfree-admin-row {
@@ -166,87 +242,119 @@
 
 .tryfree-admin-input {
   flex: 1;
-  padding: 0.625rem 0.875rem;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
-  color: #ffffff;
-  font-size: 0.85rem;
-  font-family: inherit;
-  transition: border-color 0.2s ease;
+  padding: 0.7rem 0.95rem;
+  border-radius: 14px;
+  border: 2px solid rgba(108, 63, 164, 0.18);
+  background: #FFFFFF;
+  color: #3F4052;
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
 }
 
 .tryfree-admin-input::placeholder {
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(63, 64, 82, 0.4);
+  font-weight: 500;
 }
 
 .tryfree-admin-input:focus {
-  outline: none;
-  border-color: rgba(0, 229, 255, 0.5);
-  background: rgba(255, 255, 255, 0.08);
+  border-color: #55DDE0;
+  box-shadow: 0 0 0 4px rgba(85, 221, 224, 0.22);
 }
 
 /* ─── Privacy Copy ───────────────────────────────────────────── */
 
 .tryfree-privacy {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.4);
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-size: 0.85rem;
+  color: #3F4052;
+  opacity: 0.7;
   text-align: center;
-  margin-bottom: 1.5rem;
-  line-height: 1.5;
-  padding: 0 0.5rem;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.55;
+  padding: 0.75rem 1rem;
+  background: rgba(126, 217, 87, 0.10);
+  border: 2px solid rgba(126, 217, 87, 0.25);
+  border-radius: 16px;
+  position: relative;
+  z-index: 1;
+  font-weight: 600;
 }
 
 .tryfree-privacy-icon {
-  margin-right: 0.3rem;
+  margin-right: 0.4rem;
 }
 
 /* ─── Buttons ────────────────────────────────────────────────── */
 
 .tryfree-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.85rem;
+  position: relative;
+  z-index: 1;
 }
 
 .tryfree-btn {
   flex: 1;
-  padding: 0.875rem 1.25rem;
-  border-radius: 50px;
+  padding: 1rem 1.5rem;
+  border-radius: 9999px;
   border: none;
-  font-size: 1rem;
+  font-family: 'Fredoka', 'Baloo 2', system-ui, sans-serif;
+  font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.25s ease;
-  font-family: inherit;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  min-height: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
 }
 
 .tryfree-btn-start {
-  background: linear-gradient(135deg, #FFD93D 0%, #FFE066 100%);
-  color: #010C24;
-  box-shadow: 0 4px 20px rgba(255, 217, 61, 0.3);
+  background: linear-gradient(180deg, #7E4FB8 0%, #6C3FA4 100%);
+  color: #FFFFFF;
+  box-shadow:
+    0 6px 14px rgba(108, 63, 164, 0.35),
+    0 2px 4px rgba(108, 63, 164, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .tryfree-btn-start:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 28px rgba(255, 217, 61, 0.4);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 10px 22px rgba(108, 63, 164, 0.42),
+    0 4px 8px rgba(108, 63, 164, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.tryfree-btn-start:active:not(:disabled) {
+  transform: translateY(1px) scale(0.99);
+  box-shadow: 0 2px 4px rgba(108, 63, 164, 0.22);
 }
 
 .tryfree-btn-start:disabled {
-  opacity: 0.35;
+  opacity: 0.45;
   cursor: not-allowed;
   transform: none;
-  box-shadow: none;
+  box-shadow: 0 2px 6px rgba(108, 63, 164, 0.15);
 }
 
 .tryfree-btn-cancel {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #FFFFFF;
+  color: #6C3FA4;
+  border: 2.5px solid #6C3FA4;
+  box-shadow: 0 4px 10px rgba(108, 63, 164, 0.10);
 }
 
 .tryfree-btn-cancel:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
+  background: #F4FAFF;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(108, 63, 164, 0.16);
 }
 
 /* ─── Responsive ─────────────────────────────────────────────── */
@@ -254,25 +362,42 @@
 @media (max-width: 480px) {
   .tryfree-card {
     padding: 2rem 1.5rem 1.5rem;
-    border-radius: 20px;
+    border-radius: 28px;
   }
 
   .tryfree-title {
-    font-size: 1.3rem;
+    font-size: 1.45rem;
   }
 
   .tryfree-age-pills {
-    gap: 0.4rem;
+    gap: 0.5rem;
   }
 
   .tryfree-age-pill {
-    padding: 0.5rem 0.875rem;
-    font-size: 0.85rem;
-    min-width: 48px;
+    padding: 0.6rem 1rem;
+    font-size: 0.95rem;
+    min-width: 56px;
   }
 
   .tryfree-admin-row {
     flex-direction: column;
     gap: 0.5rem;
+  }
+
+  .tryfree-btn {
+    font-size: 1rem;
+    padding: 0.9rem 1.2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .tryfree-overlay,
+  .tryfree-card,
+  .tryfree-btn,
+  .tryfree-age-pill,
+  .tryfree-close {
+    animation: none !important;
+    transition: none !important;
   }
 }

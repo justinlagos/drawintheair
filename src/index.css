@@ -424,7 +424,11 @@ body {
   width: 100vw;
   max-width: 100vw;
   overflow-x: clip;
-  background: var(--world-bg-0);
+  /* Kid-UI bright sky default. Marketing pages and the in-app shell paint
+     their own backgrounds on top; this is the safe default if nothing else
+     sets a background. Replaces the legacy dark --world-bg-0 night theme. */
+  background:
+    linear-gradient(180deg, #BEEBFF 0%, #DEF5FF 35%, #FFF6E5 75%, #FFFAEB 100%);
   position: relative;
 }
 

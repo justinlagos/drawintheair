@@ -33,7 +33,7 @@ export interface WordSearchState {
     lastPinchState: boolean;
     settings: WordSearchSettings;
     hintState: HintState;
-    chapter: 1 | 2 | 3;
+    chapter: 1 | 2 | 3 | 4 | 5 | 6;
     lastHoverTileId: string | null;
     lastHoverTime: number;
 }

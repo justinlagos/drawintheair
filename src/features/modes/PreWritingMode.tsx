@@ -12,6 +12,9 @@ import {
     setInitialPathById
 } from './preWriting/preWritingLogic';
 import { GameTopBar } from '../../components/GameTopBar';
+import { TracingBackground } from './tracing/TracingBackground';
+import { KidPanel, KidButton, KidObjectiveCard } from '../../components/kid-ui';
+import { tokens } from '../../styles/tokens';
 import { showMessageCard, getRandomMessageCopy } from '../../core/messageCardService';
 
 // Responsive hook
@@ -24,7 +27,7 @@ const useResponsiveLayout = () => {
             isTabletSmall: w > 480 && w <= 768,
             isTablet: w > 768 && w <= 1024,
             isLandscapePhone: w > h && h <= 500,
-            screenWidth: w
+            screenWidth: w,
         };
     });
 
@@ -37,7 +40,7 @@ const useResponsiveLayout = () => {
                 isTabletSmall: w > 480 && w <= 768,
                 isTablet: w > 768 && w <= 1024,
                 isLandscapePhone: w > h && h <= 500,
-                screenWidth: w
+                screenWidth: w,
             });
         };
         window.addEventListener('resize', handleResize);
@@ -65,7 +68,7 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
     const { isMobile, isTabletSmall, isLandscapePhone } = layout;
     const isCompact = isMobile || isTabletSmall || isLandscapePhone;
 
-    // Jump to the specific letter/number/shape requested via ?trace= URL param (SEO deep-link)
+    // Jump to a specific letter/number/shape via ?trace= URL param (SEO deep-link)
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const trace = params.get('trace');
@@ -77,7 +80,7 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
         }
     }, []);
 
-    // Set up completion callback
+    // Completion callback — auto-advances to the next path
     useEffect(() => {
         setCompleteCallback(() => {
             const now = Date.now();
@@ -93,7 +96,6 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
                 showMessageCard({ text: getRandomMessageCopy(), variant: 'success', durationMs: 1100 });
             }
             setTimeout(() => {
-                // Auto-advance to next path
                 if (nextPath()) {
                     setProgress(0);
                     const newName = getCurrentPathName();
@@ -110,20 +112,14 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
         };
     }, []);
 
-    // Poll for updates (avoid React per-frame updates)
+    // Poll for state updates at 10fps so React doesn't render every frame.
     useEffect(() => {
         const interval = setInterval(() => {
-            const newProgress = getProgress();
-            const newName = getCurrentPathName();
-            const newIndex = getCurrentPathIndex();
-            const newIsLetter = isCurrentLetter();
-
-            setProgress(newProgress);
-            setPathName(newName);
-            setCurrentIndex(newIndex);
-            setIsLetter(newIsLetter);
-        }, 100); // Update UI at 10fps
-
+            setProgress(getProgress());
+            setPathName(getCurrentPathName());
+            setCurrentIndex(getCurrentPathIndex());
+            setIsLetter(isCurrentLetter());
+        }, 100);
         return () => clearInterval(interval);
     }, []);
 
@@ -131,8 +127,7 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
         nextPath();
         setProgress(0);
         stageStartTimeRef.current = Date.now();
-        const newName = getCurrentPathName();
-        setPathName(newName);
+        setPathName(getCurrentPathName());
         setCurrentIndex(getCurrentPathIndex());
         setIsLetter(isCurrentLetter());
     };
@@ -148,331 +143,188 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
         setProgress(0);
         setCurrentIndex(0);
         stageStartTimeRef.current = Date.now();
-        const newName = getCurrentPathName();
-        setPathName(newName);
+        setPathName(getCurrentPathName());
         setIsLetter(isCurrentLetter());
     };
 
     const progressPercent = Math.round(progress * 100);
-
-    // Responsive sizing
     const hudSpacing = isMobile ? '18px' : isTabletSmall ? '28px' : '40px';
-    const hudPadding = isCompact ? '12px 16px' : '18px 24px';
-    const hudRadius = isCompact ? '18px' : '22px';
 
     return (
         <>
-            {/* Back to menu */}
-            {onExit && (
-                <GameTopBar
-                    onBack={onExit}
-                    stage={`${currentIndex + 1} of ${totalPaths}`}
-                    compact={isCompact}
-                />
-            )}
+            <TracingBackground />
 
-            {/* Top Left - Mode indicator - Responsive */}
+            {/* Back to menu (no stage label — bespoke panel below shows it) */}
+            {onExit && <GameTopBar onBack={onExit} compact={isCompact} />}
+
+            {/* TOP-LEFT: Mode + path info card */}
             <div style={{
                 position: 'absolute',
                 top: hudSpacing,
                 left: hudSpacing,
-                zIndex: 20,
-                maxWidth: isCompact ? 'calc(50% - 20px)' : 'none'
+                zIndex: tokens.zIndex.hud,
+                pointerEvents: 'none',
+                maxWidth: isCompact ? 'calc(50% - 20px)' : '300px',
             }}>
-                <div style={{
-                    background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-
-
-                    borderRadius: hudRadius,
-                    border: '1.5px solid rgba(255, 255, 255, 0.12)',
-                    padding: hudPadding,
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15)'
-                }}>
+                <KidPanel size={isCompact ? 'sm' : 'md'}>
                     <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: isCompact ? '8px' : '14px',
-                        marginBottom: isCompact ? '8px' : '16px'
+                        display: 'flex', alignItems: 'center',
+                        gap: tokens.spacing.sm,
+                        marginBottom: tokens.spacing.sm,
                     }}>
-                        <span style={{ fontSize: isCompact ? '1.3rem' : '2rem' }}>✏️</span>
+                        <span aria-hidden style={{ fontSize: isCompact ? '1.2rem' : '1.5rem' }}>✏️</span>
                         <span style={{
-                            fontSize: isCompact ? '0.95rem' : '1.3rem',
-                            fontWeight: 700,
-                            background: 'linear-gradient(135deg, #4facfe, #00f2fe)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent'
-                        }}>
-                            {isCompact ? 'Tracing' : 'Tracing Mode'}
-                        </span>
+                            fontFamily: tokens.fontFamily.heading,
+                            fontWeight: tokens.fontWeight.bold,
+                            fontSize: isCompact ? tokens.fontSize.label : tokens.fontSize.button,
+                            color: tokens.semantic.primary,
+                        }}>Tracing</span>
                     </div>
-
-                    {/* Path info */}
                     <div style={{
-                        fontSize: isCompact ? '0.8rem' : '1rem',
-                        color: 'rgba(255,255,255,0.8)',
-                        marginBottom: isCompact ? '6px' : '12px',
-                        fontWeight: 500
+                        fontFamily: tokens.fontFamily.body,
+                        fontSize: tokens.fontSize.caption,
+                        color: tokens.semantic.textSecondary,
+                        marginBottom: tokens.spacing.xs,
                     }}>
                         {isLetter ? 'Letter' : 'Shape'} {currentIndex + 1}/{totalPaths}
                     </div>
-
                     <div style={{
-                        fontSize: isCompact ? '1rem' : '1.2rem',
-                        fontWeight: 700,
-                        color: 'white',
-                        marginBottom: isCompact ? '8px' : '16px'
-                    }}>
-                        {pathName}
-                    </div>
-
-                    {/* Progress dots - smaller on mobile */}
+                        fontFamily: tokens.fontFamily.heading,
+                        fontWeight: tokens.fontWeight.bold,
+                        fontSize: isCompact ? tokens.fontSize.label : tokens.fontSize.button,
+                        color: tokens.semantic.textPrimary,
+                        marginBottom: tokens.spacing.sm,
+                    }}>{pathName}</div>
+                    {/* Path progress dots */}
                     <div style={{
                         display: 'flex',
-                        gap: isCompact ? '5px' : '8px',
+                        gap: isCompact ? '5px' : '7px',
                         flexWrap: 'wrap',
-                        maxWidth: isCompact ? '160px' : '280px'
+                        maxWidth: isCompact ? '160px' : '260px',
                     }}>
                         {Array.from({ length: totalPaths }).map((_, i) => (
-                            <div
-                                key={i}
-                                style={{
-                                    width: isCompact ? '8px' : '12px',
-                                    height: isCompact ? '8px' : '12px',
-                                    borderRadius: '50%',
-                                    background: i < currentIndex
-                                        ? '#00f5d4'
-                                        : i === currentIndex
-                                            ? `conic-gradient(#00f5d4 ${progressPercent}%, rgba(255,255,255,0.2) ${progressPercent}%)`
-                                            : 'rgba(255,255,255,0.2)',
-                                    boxShadow: i <= currentIndex ? '0 0 10px #00f5d4' : 'none',
-                                    transition: 'all 0.3s ease'
-                                }}
-                            />
+                            <div key={i} style={{
+                                width: isCompact ? '9px' : '12px',
+                                height: isCompact ? '9px' : '12px',
+                                borderRadius: '50%',
+                                background: i < currentIndex
+                                    ? tokens.colors.aqua
+                                    : i === currentIndex
+                                        ? `conic-gradient(${tokens.colors.aqua} ${progressPercent}%, rgba(108,63,164,0.18) ${progressPercent}%)`
+                                        : 'rgba(108,63,164,0.18)',
+                                boxShadow: i <= currentIndex
+                                    ? `0 0 10px rgba(85, 221, 224, 0.55)` : 'none',
+                                transition: 'all 0.3s ease',
+                            }} />
                         ))}
                     </div>
-                </div>
+                </KidPanel>
             </div>
 
-            {/* Progress Bar - Top Center - Responsive */}
+            {/* TOP-CENTER: Progress bar */}
             <div style={{
                 position: 'absolute',
                 top: hudSpacing,
                 left: '50%',
                 transform: 'translateX(-50%)',
-                zIndex: 20,
+                zIndex: tokens.zIndex.hud,
                 pointerEvents: 'none',
-                maxWidth: isCompact ? 'calc(100% - 180px)' : 'none'
+                maxWidth: isCompact ? 'calc(100% - 200px)' : 'none',
             }}>
-                <div style={{
-                    background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-
-
-                    borderRadius: isCompact ? '20px' : '9999px',
-                    border: '1.5px solid rgba(255, 255, 255, 0.12)',
-                    padding: isCompact ? '10px 16px' : '14px 28px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: isCompact ? '10px' : '20px',
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15)'
+                <KidPanel size="sm" style={{
+                    padding: `${tokens.spacing.sm} ${tokens.spacing.lg}`,
+                    display: 'flex', alignItems: 'center',
+                    gap: isCompact ? tokens.spacing.sm : tokens.spacing.md,
                 }}>
-                    <span style={{
-                        fontSize: isCompact ? '1.3rem' : '2rem',
-                        filter: progress >= 0.95 ? 'drop-shadow(0 0 15px #FFD700)' : 'none'
+                    <span aria-hidden style={{
+                        fontSize: isCompact ? '1.2rem' : '1.6rem',
+                        filter: progress >= 0.95 ? 'drop-shadow(0 0 10px #FFD84D)' : 'none',
                     }}>
                         {progress >= 0.95 ? '⭐' : progress > 0.5 ? '🌟' : '✨'}
                     </span>
-
                     <div style={{
-                        width: isCompact ? 'clamp(80px, 20vw, 150px)' : '250px',
-                        height: isCompact ? '10px' : '14px',
-                        background: 'rgba(255,255,255,0.1)',
-                        borderRadius: '7px',
+                        width: isCompact ? 'clamp(80px, 20vw, 150px)' : '230px',
+                        height: isCompact ? '10px' : '12px',
+                        background: 'rgba(108,63,164,0.12)',
+                        borderRadius: tokens.radius.pill,
                         overflow: 'hidden',
-                        border: '2px solid rgba(255,255,255,0.2)'
                     }}>
                         <div style={{
                             width: `${progressPercent}%`,
                             height: '100%',
                             background: progress >= 0.95
-                                ? 'linear-gradient(90deg, #FFD700, #FFA500)'
-                                : 'linear-gradient(90deg, #00f5d4, #4facfe)',
-                            borderRadius: '7px',
-                            transition: 'width 0.15s ease',
-                            boxShadow: `0 0 20px ${progress >= 0.95 ? '#FFD700' : '#00f5d4'}88`
+                                ? `linear-gradient(90deg, ${tokens.colors.sunshine}, ${tokens.colors.warmOrange})`
+                                : `linear-gradient(90deg, ${tokens.colors.aqua}, ${tokens.colors.skyBlue})`,
+                            borderRadius: tokens.radius.pill,
+                            transition: 'width 0.18s ease',
+                            boxShadow: progress >= 0.95
+                                ? `0 0 14px ${tokens.colors.sunshine}88`
+                                : `0 0 12px ${tokens.colors.aqua}88`,
                         }} />
                     </div>
-
                     <span style={{
-                        fontSize: isCompact ? '1rem' : '1.3rem',
-                        fontWeight: 'bold',
-                        color: progress >= 0.95 ? '#FFD700' : '#00f5d4',
-                        minWidth: isCompact ? '40px' : '60px',
+                        fontFamily: tokens.fontFamily.heading,
+                        fontWeight: tokens.fontWeight.bold,
+                        fontSize: isCompact ? tokens.fontSize.label : tokens.fontSize.button,
+                        color: progress >= 0.95 ? tokens.colors.warmOrange : tokens.semantic.primary,
+                        minWidth: isCompact ? '42px' : '54px',
                         textAlign: 'right',
-                        textShadow: progress >= 0.95 ? '0 0 15px #FFD700' : 'none'
                     }}>
                         {progressPercent}%
                     </span>
-                </div>
+                </KidPanel>
             </div>
 
-            {/* Bottom Controls - Responsive */}
+            {/* BOTTOM CONTROLS: Restart + (manual Next when complete) */}
             <div style={{
                 position: 'absolute',
-                bottom: isCompact ? '12px' : '32px',
+                bottom: isCompact ? '12px' : '24px',
                 left: '50%',
                 transform: 'translateX(-50%)',
-                zIndex: 20,
+                zIndex: tokens.zIndex.hud,
                 pointerEvents: 'auto',
-                maxWidth: isCompact ? 'calc(100% - 24px)' : 'none'
+                display: 'flex',
+                gap: tokens.spacing.md,
+                flexWrap: 'wrap',
+                justifyContent: 'center',
             }}>
-                <div style={{
-                    background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
+                <KidButton variant="secondary" size="md" onClick={handleRestart}
+                           icon={<span aria-hidden>🔄</span>}>
+                    {isCompact ? 'Restart' : `Restart ${isLetter ? 'Letter' : 'Shape'}`}
+                </KidButton>
 
-
-                    borderRadius: isCompact ? '18px' : '9999px',
-                    border: '1.5px solid rgba(255, 255, 255, 0.12)',
-                    padding: isCompact ? '10px 14px' : '14px 24px',
-                    display: 'flex',
-                    gap: isCompact ? '8px' : '12px',
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15)',
-                    flexWrap: 'wrap',
-                    justifyContent: 'center'
-                }}>
-                    <button
-                        onClick={handleRestart}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: isCompact ? '4px' : '8px',
-                            padding: isCompact ? '10px 14px' : '14px 24px',
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            border: '2px solid rgba(255, 255, 255, 0.2)',
-                            borderRadius: isCompact ? '12px' : '16px',
-                            color: 'white',
-                            cursor: 'pointer',
-                            fontSize: isCompact ? '0.85rem' : '1rem',
-                            fontWeight: 600,
-                            transition: 'all 0.2s ease',
-                            minWidth: '44px',
-                            minHeight: '44px'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                        }}
-                    >
-                        <span>🔄</span>
-                        {isCompact ? 'Restart' : `Restart ${isLetter ? 'Letter' : 'Shape'}`}
-                    </button>
-
-                    {progress >= 0.95 && currentIndex < totalPaths - 1 && (
-                        <button
-                            onClick={handleNext}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: isCompact ? '4px' : '8px',
-                                padding: isCompact ? '10px 16px' : '14px 28px',
-                                background: 'linear-gradient(135deg, #00f5d4, #4facfe)',
-                                border: 'none',
-                                borderRadius: isCompact ? '12px' : '16px',
-                                color: 'white',
-                                cursor: 'pointer',
-                                fontSize: isCompact ? '0.85rem' : '1rem',
-                                fontWeight: 700,
-                                transition: 'all 0.2s ease',
-                                boxShadow: '0 4px 20px rgba(0, 245, 212, 0.4)',
-                                minWidth: '44px',
-                                minHeight: '44px'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = 'scale(1.05)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'scale(1)';
-                            }}
-                        >
-                            <span>➡️</span>
-                            {isCompact ? 'Next' : `Next ${isLetter ? 'Letter' : 'Shape'}`}
-                        </button>
-                    )}
-
-                    {currentIndex === totalPaths - 1 && progress >= 0.95 && (
-                        <button
-                            onClick={handleRestartAll}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: isCompact ? '4px' : '8px',
-                                padding: isCompact ? '10px 16px' : '14px 28px',
-                                background: 'linear-gradient(135deg, #FFD700, #FFA500)',
-                                border: 'none',
-                                borderRadius: isCompact ? '12px' : '16px',
-                                color: 'white',
-                                cursor: 'pointer',
-                                fontSize: isCompact ? '0.85rem' : '1rem',
-                                fontWeight: 700,
-                                transition: 'all 0.2s ease',
-                                boxShadow: '0 4px 20px rgba(255, 215, 0, 0.4)',
-                                minWidth: '44px',
-                                minHeight: '44px'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = 'scale(1.05)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'scale(1)';
-                            }}
-                        >
-                            <span>🎉</span>
-                            {isCompact ? 'Again' : 'Play Again'}
-                        </button>
-                    )}
-                </div>
+                {/* Auto-advance handles the next path on completion. These manual
+                    buttons are an extra safety net visible only at 95%+ progress. */}
+                {progress >= 0.95 && currentIndex < totalPaths - 1 && (
+                    <KidButton variant="primary" size="md" onClick={handleNext}
+                               icon={<span aria-hidden>➡️</span>}>
+                        {isCompact ? 'Next' : `Next ${isLetter ? 'Letter' : 'Shape'}`}
+                    </KidButton>
+                )}
+                {currentIndex === totalPaths - 1 && progress >= 0.95 && (
+                    <KidButton variant="success" size="md" onClick={handleRestartAll}
+                               icon={<span aria-hidden>🎉</span>}>
+                        {isCompact ? 'Again' : 'Play Again'}
+                    </KidButton>
+                )}
             </div>
 
-            {/* Instructions - Responsive */}
+            {/* Instruction objective card */}
             {progress < 0.1 && (
                 <div style={{
                     position: 'absolute',
                     bottom: isCompact ? '90px' : '120px',
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    zIndex: 15,
+                    zIndex: tokens.zIndex.hud,
                     pointerEvents: 'none',
-                    maxWidth: isCompact ? 'calc(100% - 32px)' : 'none'
+                    maxWidth: isCompact ? 'calc(100% - 32px)' : 'none',
                 }}>
-                    <div style={{
-                        background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                        border: '1.5px solid rgba(0, 245, 212, 0.3)',
-                        borderRadius: '9999px',
-                        padding: isCompact ? '10px 20px' : '14px 28px',
-                        color: '#00f5d4',
-                        fontSize: isCompact ? '0.9rem' : '1.1rem',
-                        fontWeight: 600,
-
-
-                        boxShadow: '0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15)',
-                        animation: 'float 3s ease-in-out infinite',
-                        textAlign: 'center',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                    }}>
-                        👆 {isCompact ? 'Pinch to draw!' : 'Pinch to draw — start at the green dot!'}
-                    </div>
+                    <KidObjectiveCard icon="👆">
+                        {isCompact ? 'Pinch to draw!' : 'Pinch to draw — start at the green dot!'}
+                    </KidObjectiveCard>
                 </div>
             )}
-
-            {/* CSS animation */}
-            <style>{`
-                @keyframes float {
-                    0%, 100% { transform: translateX(-50%) translateY(0px); }
-                    50% { transform: translateX(-50%) translateY(-10px); }
-                }
-            `}</style>
         </>
     );
 };

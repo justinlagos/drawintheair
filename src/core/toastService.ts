@@ -20,18 +20,20 @@ interface QueuedToast {
     durationMs: number;
 }
 
-/** Motivation copy bank — rotated randomly */
+/** Motivation copy bank — rotated randomly. Plain words (no emoji) per the
+ *  bright Kid-UI design language — visual feedback comes from the toast
+ *  styling itself, not pictographic clutter inside the message. */
 const MOTIVATION_BANK = [
-    'Nice one! 🌟',
-    'Great match! ✨',
-    'Keep going! 💪',
-    'You\'re doing well! ⭐',
-    'Almost there! 🔥',
-    'Level up! 🚀',
-    'Awesome! 🎯',
-    'Way to go! 🎉',
-    'Super! 🌈',
-    'Fantastic! 💫',
+    'Nice one!',
+    'Great match!',
+    'Keep going!',
+    "You're doing well!",
+    'Almost there!',
+    'Level up!',
+    'Awesome!',
+    'Way to go!',
+    'Super!',
+    'Fantastic!',
 ];
 
 let _lastMotivationIndex = -1;
@@ -73,24 +75,28 @@ class ToastService {
 
         const label = document.createElement('div');
         label.className = 'game-toast';
+        // Bright Kid-UI styling: cream pill, charcoal text, soft drop shadow.
+        // Variant border colour is set per-toast in show() below.
         label.style.cssText = `
       pointer-events: none;
       position: relative;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 12px 22px;
+      gap: 10px;
+      padding: 14px 28px;
       border-radius: 9999px;
-      background: linear-gradient(145deg, rgba(30,26,60,0.92) 0%, rgba(18,14,45,0.88) 100%);
-      border: 1.5px solid rgba(255,255,255,0.12);
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: rgba(255,255,255,0.95);
+      background: #FFFFFF;
+      border: 2px solid rgba(108, 63, 164, 0.18);
+      font-family: 'Fredoka', 'Baloo 2', system-ui, sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #3F4052;
+      box-shadow: 0 6px 20px rgba(108, 63, 164, 0.16), 0 2px 4px rgba(108, 63, 164, 0.08);
       white-space: nowrap;
       transform: translateY(-20px);
       opacity: 0;
-      transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1),
-                  opacity 180ms cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                  opacity 220ms cubic-bezier(0.4, 0, 0.2, 1);
       will-change: transform, opacity;
     `;
 
@@ -113,10 +119,11 @@ class ToastService {
 
         this.isShowing = true;
 
-        // Set variant border color
-        const borderColor = variant === 'success' ? 'rgba(0,245,212,0.4)'
-            : variant === 'warning' ? 'rgba(255,217,61,0.4)'
-                : 'rgba(79,172,254,0.4)';
+        // Set variant border colour — kid-bright tokens.
+        // success → meadow green, warning → sunshine, info → aqua
+        const borderColor = variant === 'success' ? 'rgba(126, 217, 87, 0.65)'
+            : variant === 'warning' ? 'rgba(255, 216, 77, 0.75)'
+                : 'rgba(85, 221, 224, 0.65)';
         this.label.style.borderColor = borderColor;
 
         // Set content

@@ -24,8 +24,17 @@ export interface SpellingWord {
     category: string;
 }
 
-const WORD_LIST: SpellingWord[] = [
-    // 3-letter words (easy set)
+/**
+ * Words organised in 4 tiers by length for progressive difficulty.
+ * The pickNextWord helper selects from the appropriate tier based on
+ * how many words the player has already spelled (`wordsSpelled`).
+ *
+ *   tier 1 (1–5):    3-letter words
+ *   tier 2 (6–10):   4-letter words
+ *   tier 3 (11–15):  5-letter words
+ *   tier 4 (16+):    6-letter words (loops back, stays at this tier)
+ */
+const WORD_LIST_TIER_1: SpellingWord[] = [
     { word: 'CAT', emoji: '🐱', category: 'Animals' },
     { word: 'DOG', emoji: '🐶', category: 'Animals' },
     { word: 'SUN', emoji: '☀️', category: 'Nature' },
@@ -41,7 +50,9 @@ const WORD_LIST: SpellingWord[] = [
     { word: 'EGG', emoji: '🥚', category: 'Food' },
     { word: 'JAM', emoji: '🍓', category: 'Food' },
     { word: 'KEY', emoji: '🔑', category: 'Objects' },
-    // 4-letter words (medium)
+];
+
+const WORD_LIST_TIER_2: SpellingWord[] = [
     { word: 'BIRD', emoji: '🐦', category: 'Animals' },
     { word: 'FROG', emoji: '🐸', category: 'Animals' },
     { word: 'BEAR', emoji: '🐻', category: 'Animals' },
@@ -52,6 +63,47 @@ const WORD_LIST: SpellingWord[] = [
     { word: 'FISH', emoji: '🐠', category: 'Animals' },
     { word: 'BOOK', emoji: '📚', category: 'Objects' },
     { word: 'BELL', emoji: '🔔', category: 'Objects' },
+    { word: 'TREE', emoji: '🌳', category: 'Nature' },
+    { word: 'LEAF', emoji: '🍃', category: 'Nature' },
+    { word: 'BALL', emoji: '⚽', category: 'Toys' },
+    { word: 'KITE', emoji: '🪁', category: 'Toys' },
+    { word: 'DUCK', emoji: '🦆', category: 'Animals' },
+];
+
+const WORD_LIST_TIER_3: SpellingWord[] = [
+    { word: 'APPLE', emoji: '🍎', category: 'Food' },
+    { word: 'BREAD', emoji: '🍞', category: 'Food' },
+    { word: 'GRAPE', emoji: '🍇', category: 'Food' },
+    { word: 'HORSE', emoji: '🐴', category: 'Animals' },
+    { word: 'TIGER', emoji: '🐯', category: 'Animals' },
+    { word: 'PANDA', emoji: '🐼', category: 'Animals' },
+    { word: 'WHALE', emoji: '🐳', category: 'Animals' },
+    { word: 'CLOUD', emoji: '☁️', category: 'Nature' },
+    { word: 'TRAIN', emoji: '🚂', category: 'Transport' },
+    { word: 'PIANO', emoji: '🎹', category: 'Music' },
+    { word: 'PLANE', emoji: '✈️', category: 'Transport' },
+    { word: 'PIZZA', emoji: '🍕', category: 'Food' },
+];
+
+const WORD_LIST_TIER_4: SpellingWord[] = [
+    { word: 'GUITAR', emoji: '🎸', category: 'Music' },
+    { word: 'ROCKET', emoji: '🚀', category: 'Transport' },
+    { word: 'BANANA', emoji: '🍌', category: 'Food' },
+    { word: 'CARROT', emoji: '🥕', category: 'Food' },
+    { word: 'TURTLE', emoji: '🐢', category: 'Animals' },
+    { word: 'RABBIT', emoji: '🐰', category: 'Animals' },
+    { word: 'FLOWER', emoji: '🌷', category: 'Nature' },
+    { word: 'PUZZLE', emoji: '🧩', category: 'Toys' },
+    { word: 'CASTLE', emoji: '🏰', category: 'Objects' },
+    { word: 'PENCIL', emoji: '✏️', category: 'Objects' },
+];
+
+// Combined list — kept for any callers that iterate everything.
+const WORD_LIST: SpellingWord[] = [
+    ...WORD_LIST_TIER_1,
+    ...WORD_LIST_TIER_2,
+    ...WORD_LIST_TIER_3,
+    ...WORD_LIST_TIER_4,
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -105,25 +157,58 @@ function shuffle<T>(arr: T[]): T[] {
     return a;
 }
 
+/**
+ * Pick the next word using tier-based difficulty progression.
+ *   spelled  0–4   → tier 1 (3-letter)
+ *   spelled  5–9   → tier 2 (4-letter)
+ *   spelled 10–14  → tier 3 (5-letter)
+ *   spelled 15+    → tier 4 (6-letter, loops within tier)
+ * Inside the active tier, words don't repeat until the tier is exhausted.
+ */
 function pickNextWord(): SpellingWord {
-    const available = WORD_LIST
-        .map((w, i) => ({ w, i }))
-        .filter(({ i }) => !usedWordIndices.includes(i));
+    const tier =
+        wordsSpelled < 5  ? WORD_LIST_TIER_1 :
+        wordsSpelled < 10 ? WORD_LIST_TIER_2 :
+        wordsSpelled < 15 ? WORD_LIST_TIER_3 :
+                            WORD_LIST_TIER_4;
 
+    // Find global indices for words in the active tier.
+    const tierIndices: number[] = tier.map(w => WORD_LIST.indexOf(w));
+    const available = tierIndices.filter(i => !usedWordIndices.includes(i));
+
+    // If we've cycled through this tier, clear ONLY this tier's used flags
+    // so the next-tier transition still works clean.
     if (available.length === 0) {
-        usedWordIndices = [];
-        return WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)];
+        usedWordIndices = usedWordIndices.filter(i => !tierIndices.includes(i));
+        const refreshed = tierIndices;
+        const pick = refreshed[Math.floor(Math.random() * refreshed.length)];
+        usedWordIndices.push(pick);
+        return WORD_LIST[pick];
     }
+
     const pick = available[Math.floor(Math.random() * available.length)];
-    usedWordIndices.push(pick.i);
-    return pick.w;
+    usedWordIndices.push(pick);
+    return WORD_LIST[pick];
 }
 
 function buildTiles(word: SpellingWord): LetterTile[] {
     const letters = word.word.split('');
-    // Add 2-3 distractor letters (not in the word)
     const allLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-    const distractors = shuffle(allLetters.filter(l => !letters.includes(l))).slice(0, Math.min(3, 6 - letters.length));
+
+    // Distractor count scales with how many words the player has spelled,
+    // so the tile pool gets fuller (harder to spot the right letter) over
+    // time. Capped to keep the pool from overflowing the screen.
+    const baseDistractors =
+        wordsSpelled < 5  ? 2 :
+        wordsSpelled < 10 ? 3 :
+        wordsSpelled < 15 ? 4 :
+                            5;
+    const maxPoolSize = 9; // hard cap so tiles still fit
+    const distractorCount = Math.min(baseDistractors, maxPoolSize - letters.length);
+
+    const distractors = shuffle(
+        allLetters.filter(l => !letters.includes(l)),
+    ).slice(0, Math.max(0, distractorCount));
     const pool = shuffle([...letters, ...distractors]);
 
     const count = pool.length;
@@ -198,25 +283,42 @@ function drawTile(
     const x = tc.x + wobbleX;
     const y = tc.y;
 
-    // Background colour by status
-    const bgColors: Record<string, string> = {
-        idle: 'rgba(255,255,255,0.15)',
-        correct: 'rgba(0,230,118,0.4)',
-        wrong: 'rgba(255,82,82,0.4)',
+    // Bright Kid-UI palette per status
+    const fillTop: Record<string, string> = {
+        idle: '#FFFFFF',
+        correct: 'rgba(126, 217, 87, 0.55)',  // meadow green
+        wrong: 'rgba(255, 107, 107, 0.55)',   // coral
+    };
+    const fillBot: Record<string, string> = {
+        idle: '#F4FAFF',
+        correct: 'rgba(126, 217, 87, 0.30)',
+        wrong: 'rgba(255, 107, 107, 0.30)',
     };
     const borderColors: Record<string, string> = {
-        idle: 'rgba(255,255,255,0.35)',
-        correct: '#00e676',
-        wrong: '#ff5252',
+        idle: 'rgba(108, 63, 164, 0.20)',
+        correct: '#7ED957',
+        wrong: '#FF6B6B',
+    };
+    const letterColors: Record<string, string> = {
+        idle: '#3F4052',     // charcoal
+        correct: '#3F4052',  // stays charcoal on green for contrast
+        wrong: '#3F4052',
     };
 
-    // Tile shadow
-    ctx.shadowBlur = tile.status === 'idle' ? 8 : 20;
-    ctx.shadowColor = tile.status === 'correct' ? '#00e67688' :
-        tile.status === 'wrong' ? '#ff525288' :
-            'rgba(0,0,0,0.4)';
+    // Drop shadow / soft glow
+    ctx.save();
+    ctx.shadowColor =
+        tile.status === 'correct' ? 'rgba(126, 217, 87, 0.55)'
+        : tile.status === 'wrong' ? 'rgba(255, 107, 107, 0.50)'
+        : 'rgba(108, 63, 164, 0.18)';
+    ctx.shadowBlur = tile.status === 'idle' ? 6 : 18;
+    ctx.shadowOffsetY = tile.status === 'idle' ? 3 : 0;
 
-    // Rounded rectangle fill
+    // Card body — vertical gradient
+    const tileGrad = ctx.createLinearGradient(x, y, x, y + th);
+    tileGrad.addColorStop(0, fillTop[tile.status]);
+    tileGrad.addColorStop(1, fillBot[tile.status]);
+    ctx.fillStyle = tileGrad;
     ctx.beginPath();
     ctx.moveTo(x + r, y);
     ctx.lineTo(x + tw - r, y);
@@ -228,22 +330,35 @@ function drawTile(
     ctx.lineTo(x, y + r);
     ctx.quadraticCurveTo(x, y, x + r, y);
     ctx.closePath();
-
-    ctx.fillStyle = bgColors[tile.status];
     ctx.fill();
+    ctx.restore();
+
+    // Top inner highlight — pillowy face
+    ctx.save();
+    ctx.globalAlpha = 0.6;
+    const sheen = ctx.createLinearGradient(x, y, x, y + th * 0.45);
+    sheen.addColorStop(0, 'rgba(255,255,255,0.95)');
+    sheen.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = sheen;
+    ctx.beginPath();
+    ctx.roundRect(x + 2, y + 2, tw - 4, th * 0.45, r - 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Border
     ctx.strokeStyle = borderColors[tile.status];
     ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.roundRect(x, y, tw, th, r);
     ctx.stroke();
-    ctx.shadowBlur = 0;
-    ctx.shadowColor = 'transparent';
 
-    // Letter
+    // Letter — Fredoka bold, charcoal
     ctx.save();
-    ctx.font = `bold ${Math.round(th * 0.58)}px Outfit, system-ui, sans-serif`;
+    ctx.font = `700 ${Math.round(th * 0.58)}px Fredoka, "Baloo 2", system-ui, -apple-system, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = tile.status === 'idle' ? '#ffffff' : tile.status === 'correct' ? '#00ff88' : '#ff8888';
-    ctx.fillText(tile.letter, x + tw / 2, y + th / 2);
+    ctx.fillStyle = letterColors[tile.status];
+    ctx.fillText(tile.letter, x + tw / 2, y + th / 2 + 1);
     ctx.restore();
 }
 
@@ -258,7 +373,7 @@ function drawDwellRing(
     const r = (Math.max(tile.width * width, tile.height * height) / 2) + 8;
     ctx.beginPath();
     ctx.arc(tc.x, tc.y, r, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
-    ctx.strokeStyle = '#FFD93D';
+    ctx.strokeStyle = '#FFD84D'; // sunshine — design-system reward tone
     ctx.lineWidth = 5;
     ctx.lineCap = 'round';
     ctx.stroke();
@@ -280,24 +395,9 @@ export const gestureSpellingLogic = (
     const now = Date.now();
     const { filteredPoint } = frameData;
 
-    // ── Background ────────────────────────────────────────────────────────────
-    const bg = ctx.createLinearGradient(0, 0, 0, height);
-    bg.addColorStop(0, '#0d0838');
-    bg.addColorStop(0.5, '#1a0f5c');
-    bg.addColorStop(1, '#0c1a3d');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, width, height);
-
-    // Scattered sparkles
-    for (let i = 0; i < 25; i++) {
-        const sx = ((i * 131 + 37) % 100) / 100 * width;
-        const sy = ((i * 79 + 13) % 65) / 100 * height;
-        const alpha = 0.3 + 0.5 * Math.abs(Math.sin(now * 0.0008 + i));
-        ctx.globalAlpha = alpha;
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(sx, sy, 2, 2);
-    }
-    ctx.globalAlpha = 1;
+    // ── Transparent canvas — HTML background layer (HTML/SVG) provides
+    // the scene. Clear previous frame so canvas pixels don't accumulate.
+    ctx.clearRect(0, 0, width, height);
 
     // ── Big picture emoji ─────────────────────────────────────────────────────
     const emojiSize = Math.min(width, height) * 0.18;
@@ -318,23 +418,22 @@ export const gestureSpellingLogic = (
         const bx = blankStartX + i * (blankSize + blankGap);
         const filled = i < typedSoFar.length;
 
-        // Underline
+        // Underline — deep plum at low opacity (idle) / meadow green (filled)
         ctx.beginPath();
         ctx.moveTo(bx, blankY + blankSize);
         ctx.lineTo(bx + blankSize, blankY + blankSize);
-        ctx.strokeStyle = filled ? '#00e676' : 'rgba(255,255,255,0.4)';
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = filled ? '#7ED957' : 'rgba(108, 63, 164, 0.35)';
+        ctx.lineWidth = 4;
         ctx.lineCap = 'round';
         ctx.stroke();
 
         if (filled) {
             ctx.save();
-            ctx.font = `bold ${Math.round(blankSize * 0.85)}px Outfit, system-ui, sans-serif`;
+            ctx.font = `700 ${Math.round(blankSize * 0.85)}px Fredoka, "Baloo 2", system-ui, sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#00e676';
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = '#00e67688';
+            ctx.fillStyle = '#3F4052'; // charcoal — readable on bright sky
+            ctx.shadowBlur = 0;
             ctx.fillText(typedSoFar[i], bx + blankSize / 2, blankY + blankSize / 2);
             ctx.restore();
         }
@@ -393,22 +492,22 @@ export const gestureSpellingLogic = (
         }
     });
 
-    // ── Category badge ────────────────────────────────────────────────────────
+    // ── Category badge — deep plum on the bright sky ──────────────────────────
     ctx.save();
-    ctx.font = `600 ${Math.round(Math.min(width, height) * 0.025)}px Outfit, system-ui, sans-serif`;
+    ctx.font = `600 ${Math.round(Math.min(width, height) * 0.025)}px Fredoka, "Baloo 2", system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fillStyle = 'rgba(108, 63, 164, 0.55)';
     ctx.fillText(currentWord.category, width / 2, height * 0.4);
     ctx.restore();
 
-    // ── Instruction ───────────────────────────────────────────────────────────
+    // ── Instruction — charcoal on bright sky for readability ──────────────────
     if (!wordComplete) {
         ctx.save();
-        ctx.font = `600 ${Math.round(Math.min(width, height) * 0.028)}px Outfit, system-ui, sans-serif`;
+        ctx.font = `700 ${Math.round(Math.min(width, height) * 0.028)}px Fredoka, "Baloo 2", system-ui, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.fillStyle = 'rgba(255,255,255,0.65)';
+        ctx.fillStyle = '#3F4052';
         ctx.fillText(
             typedSoFar.length === 0
                 ? 'Hover over each letter to spell the word!'
@@ -419,14 +518,18 @@ export const gestureSpellingLogic = (
         ctx.restore();
     }
 
-    // ── Finger cursor ─────────────────────────────────────────────────────────
+    // ── Finger cursor — aqua circle, deep plum stroke (visible on bright sky)
     if (fingerCanvas) {
+        ctx.save();
+        ctx.shadowColor = 'rgba(108, 63, 164, 0.30)';
+        ctx.shadowBlur = 8;
         ctx.beginPath();
         ctx.arc(fingerCanvas.x, fingerCanvas.y, 17, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.fillStyle = 'rgba(85, 221, 224, 0.85)'; // aqua
         ctx.fill();
-        ctx.strokeStyle = '#FFD93D';
+        ctx.strokeStyle = '#6C3FA4'; // deep plum
         ctx.lineWidth = 3;
         ctx.stroke();
+        ctx.restore();
     }
 };

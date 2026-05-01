@@ -36,7 +36,12 @@ export async function updateSession(request: NextRequest) {
     )
 
     // This refreshes the auth token if needed
-    await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // Expose user ID to the main middleware so it can check auth state
+    if (user) {
+      response.headers.set('x-user-id', user.id)
+    }
 
     return response
   } catch (error) {

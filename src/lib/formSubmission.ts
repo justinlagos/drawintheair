@@ -29,7 +29,8 @@ export interface FormPayload {
   [key: string]: string | number | boolean | undefined;
 }
 
-const FORM_ENDPOINT = import.meta.env.VITE_FORM_ENDPOINT;
+const FORM_ENDPOINT = import.meta.env.VITE_FORM_ENDPOINT
+  || 'https://app.drawintheair.com/api/form-submission';
 const SHEETS_ENDPOINT = import.meta.env.VITE_SHEETS_ENDPOINT;
 const LEADS_ENDPOINT = import.meta.env.VITE_LEADS_ENDPOINT;
 
@@ -67,11 +68,12 @@ export async function submitFormData(payload: FormPayload): Promise<{ success: b
   // Tier 2: Google Sheets endpoint
   if (SHEETS_ENDPOINT) {
     try {
-      const encoded = encodeURIComponent(JSON.stringify({
-        type: enriched.type,
-        payload: enriched,
-      }));
-      const res = await fetch(`${SHEETS_ENDPOINT}?data=${encoded}`, { method: 'GET' });
+      // SECURITY: Use POST to avoid leaking form data in URLs, logs, and referrer headers
+      const res = await fetch(SHEETS_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: enriched.type, payload: enriched }),
+      });
       if (res.ok || res.type === 'opaque') return { success: true, method: 'google_sheets' };
     } catch (err) {
       console.warn('[FormSubmission] Google Sheets failed, trying leads endpoint:', err);

@@ -1,22 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireAuth } from '@/lib/auth/session'
 import { randomBytes } from 'crypto'
+import {
+  sanitizeString,
+  stripHtml,
+  isValidEmail,
+  RateLimiter,
+  getClientIp,
+  isJsonContentType,
+} from '@/lib/security/validation'
+
+// Rate limit: 3 invite requests per minute per IP
+const inviteRateLimiter = new RateLimiter(3, 60 * 1000)
 
 export async function POST(request: NextRequest) {
   try {
-    const { teacher, error: authError } = await requireAuth()
-    if (authError || !teacher) {
+    // SECURITY: Rate limit
+    const ip = getClientIp(request)
+    const { allowed } = inviteRateLimiter.check(ip)
+    if (!allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    }
+
+    // SECURITY: Validate content type
+    if (!isJsonContentType(request)) {
+      return NextResponse.json({ error: 'Invalid content type' }, { status: 415 })
+    }
+
+    // Auth: verify the caller is authenticated
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Must be a school admin
-    if (!teacher.school_id) {
+    // Get teacher profile
+    const { data: teacher } = await supabase
+      .from('teachers')
+      .select('id, school_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!teacher || !teacher.school_id) {
       return NextResponse.json({ error: 'You must be part of a school to invite teachers' }, { status: 403 })
     }
-
-    const supabase = await createClient()
 
     // Check user is school owner/admin
     const { data: schoolTeacher } = await supabase
@@ -26,26 +55,36 @@ export async function POST(request: NextRequest) {
       .eq('teacher_id', teacher.id)
       .single()
 
-    if (!schoolTeacher || !['owner', 'admin'].includes(schoolTeacher.role)) {
+    if (!schoolTeacher || !['owner', 'admin', 'school_admin'].includes(schoolTeacher.role)) {
       return NextResponse.json({ error: 'Only school admins can invite teachers' }, { status: 403 })
     }
 
     const body = await request.json()
-    const { emails } = body as { emails: string[] }
+    const { emails } = body as { emails: unknown }
 
     if (!emails || !Array.isArray(emails) || emails.length === 0) {
       return NextResponse.json({ error: 'emails array is required' }, { status: 400 })
     }
 
+    // SECURITY: Cap batch size
     if (emails.length > 50) {
       return NextResponse.json({ error: 'Maximum 50 invites per request' }, { status: 400 })
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    const invalid = emails.filter(e => !emailRegex.test(e))
-    if (invalid.length > 0) {
-      return NextResponse.json({ error: `Invalid email(s): ${invalid.join(', ')}` }, { status: 400 })
+    // SECURITY: Validate and sanitize all email addresses
+    const sanitizedEmails: string[] = []
+    const invalidEmails: string[] = []
+    for (const rawEmail of emails) {
+      const cleaned = stripHtml(sanitizeString(rawEmail, 254)).toLowerCase()
+      if (!isValidEmail(cleaned)) {
+        invalidEmails.push(cleaned)
+      } else {
+        sanitizedEmails.push(cleaned)
+      }
+    }
+
+    if (invalidEmails.length > 0) {
+      return NextResponse.json({ error: `Invalid email(s): ${invalidEmails.slice(0, 5).join(', ')}` }, { status: 400 })
     }
 
     // Check seat availability
@@ -60,16 +99,17 @@ export async function POST(request: NextRequest) {
     }
 
     const seatsRemaining = school.seats_total - school.seats_used
-    if (emails.length > seatsRemaining) {
+    if (sanitizedEmails.length > seatsRemaining) {
       return NextResponse.json({
-        error: `Not enough seats. You have ${seatsRemaining} seat(s) available but tried to invite ${emails.length}.`
+        error: `Not enough seats. You have ${seatsRemaining} seat(s) available but tried to invite ${sanitizedEmails.length}.`
       }, { status: 400 })
     }
 
     const admin = createAdminClient()
-    const results: Array<{ email: string; status: 'sent' | 'already_member' | 'error'; token?: string }> = []
+    // SECURITY FIX: Do not include tokens in response — they should only be sent via email
+    const results: Array<{ email: string; status: 'sent' | 'already_member' | 'error' }> = []
 
-    for (const email of emails) {
+    for (const email of sanitizedEmails) {
       try {
         // Check if already a member
         const { data: existingTeacher } = await admin
@@ -83,7 +123,7 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // Generate invite token
+        // Generate invite token (cryptographically secure)
         const token = randomBytes(32).toString('hex')
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
 
@@ -103,12 +143,13 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // TODO: Send invite email via Resend
-        // For now, log the invite link (replace with email service in production)
-        const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/join-school?token=${token}`
-        console.log(`Invite link for ${email}: ${inviteUrl}`)
+        // SECURITY: Log invite generation for audit (no token in log)
+        console.log(`[SchoolInvite] Invite generated for ${email} to school ${teacher.school_id}`)
 
-        results.push({ email, status: 'sent', token })
+        // TODO: Send invite email via Resend (token should ONLY go in the email link)
+        // const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/join-school?token=${token}`
+
+        results.push({ email, status: 'sent' })
       } catch {
         results.push({ email, status: 'error' })
       }

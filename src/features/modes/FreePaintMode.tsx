@@ -22,6 +22,7 @@ import { paintToolsManager, type PaintTool } from './freePaintTools';
 import { undoRedoManager } from './freePaintUndo';
 import { HybridButton, type HybridButtonRef } from '../../components/HybridButton';
 import { normalizedToCanvas } from '../../core/coordinateUtils';
+import { tokens } from '../../styles/tokens';
 
 // Responsive breakpoint hook
 const useResponsiveLayout = () => {
@@ -85,17 +86,21 @@ interface FloatingToolProps {
     compact?: boolean;
 }
 
+// Floating tool surface — bright Kid-UI cream card. Used as the wrapper
+// for every Free Paint UI cluster (mode chip, colour palette, brush sizes,
+// toolbar). The `kid-panel` class participates in the global colour-
+// inheritance rules from styles/motion.ts so child text reads charcoal.
 const FloatingTool = ({ children, style = {}, compact = false }: FloatingToolProps) => (
     <div
+        className="kid-panel"
         style={{
-            background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-            
-            
-            borderRadius: compact ? '18px' : '22px',
-            border: '1.5px solid rgba(255, 255, 255, 0.12)',
-            boxShadow: '0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15)',
-            padding: compact ? '8px' : '16px',
-            ...style
+            background: tokens.semantic.bgPanel,
+            borderRadius: compact ? tokens.radius.xl : tokens.radius.xxl,
+            border: `1.5px solid ${tokens.semantic.borderPanel}`,
+            boxShadow: tokens.shadow.float,
+            padding: compact ? tokens.spacing.sm : tokens.spacing.lg,
+            color: tokens.semantic.textPrimary,
+            ...style,
         }}
     >
         {children}
@@ -417,15 +422,14 @@ export const FreePaintMode = ({ frameRef, onExit }: FreePaintModeProps) => {
                     <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: isCompact ? '8px' : '12px'
+                        gap: isCompact ? tokens.spacing.sm : tokens.spacing.md,
                     }}>
                         <span style={{ fontSize: isCompact ? '1.2rem' : '1.5rem' }}>🎨</span>
                         <span style={{
-                            fontSize: isCompact ? '0.9rem' : '1.1rem',
-                            fontWeight: 700,
-                            background: 'linear-gradient(135deg, #f093fb, #f5576c)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent'
+                            fontFamily: tokens.fontFamily.heading,
+                            fontWeight: tokens.fontWeight.bold,
+                            fontSize: isCompact ? tokens.fontSize.label : tokens.fontSize.button,
+                            color: tokens.semantic.primary,
                         }}>
                             Free Paint
                         </span>
@@ -539,19 +543,19 @@ export const FreePaintMode = ({ frameRef, onExit }: FreePaintModeProps) => {
                                     minHeight: '44px',
                                     borderRadius: '50%',
                                     background: activeSize === brush.size
-                                        ? 'rgba(255,255,255,0.25)'
-                                        : 'rgba(255,255,255,0.08)',
+                                        ? tokens.semantic.bgPanel
+                                        : tokens.semantic.bgPanelTinted,
                                     border: activeSize === brush.size
-                                        ? '3px solid rgba(255,255,255,0.7)'
-                                        : '2px solid rgba(255,255,255,0.2)',
+                                        ? `3px solid ${tokens.semantic.primary}`
+                                        : `2px solid ${tokens.semantic.borderPanel}`,
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     transform: activeSize === brush.size ? 'scale(1.1)' : 'scale(1)',
                                     boxShadow: activeSize === brush.size
-                                        ? '0 0 20px rgba(255,255,255,0.4), inset 0 2px 4px rgba(255,255,255,0.2)'
-                                        : '0 4px 12px rgba(0,0,0,0.3)',
-                                    padding: 0
+                                        ? `0 0 14px rgba(108, 63, 164, 0.30), ${tokens.shadow.float}`
+                                        : tokens.shadow.float,
+                                    padding: 0,
                                 }}
                                 data-brush-button={brush.size.toString()}
                             >
@@ -561,14 +565,16 @@ export const FreePaintMode = ({ frameRef, onExit }: FreePaintModeProps) => {
                                     borderRadius: '50%',
                                     background: activeColor,
                                     boxShadow: activeSize === brush.size
-                                        ? `0 0 15px ${activeColor}`
-                                        : 'none'
+                                        ? `0 0 12px ${activeColor}`
+                                        : 'none',
                                 }} />
-                                <span style={{ 
+                                <span style={{
                                     position: 'absolute',
                                     bottom: '-20px',
-                                    fontSize: '0.75rem',
-                                    color: 'rgba(255,255,255,0.7)'
+                                    fontFamily: tokens.fontFamily.heading,
+                                    fontWeight: tokens.fontWeight.bold,
+                                    fontSize: '0.78rem',
+                                    color: tokens.semantic.textSecondary,
                                 }}>
                                     {brush.label}
                                 </span>
@@ -603,9 +609,9 @@ export const FreePaintMode = ({ frameRef, onExit }: FreePaintModeProps) => {
                                     display: 'flex',
                                     gap: isCompact ? '4px' : '6px',
                                     padding: isCompact ? '6px' : '8px',
-                                    background: 'rgba(255,255,255,0.08)',
-                                    borderRadius: isCompact ? '10px' : '12px',
-                                    border: '1px solid rgba(255,255,255,0.15)'
+                                    background: tokens.semantic.bgPanelTinted,
+                                    borderRadius: isCompact ? tokens.radius.md : tokens.radius.lg,
+                                    border: `1.5px solid ${tokens.semantic.borderPanel}`,
                                 }}>
                                     {(['brush', 'eraser', 'fill'] as PaintTool[]).map(tool => (
                                         <HybridButton
@@ -619,19 +625,20 @@ export const FreePaintMode = ({ frameRef, onExit }: FreePaintModeProps) => {
                                             style={{
                                                 width: isCompact ? '36px' : '44px',
                                                 height: isCompact ? '36px' : '44px',
-                                                borderRadius: '8px',
+                                                borderRadius: tokens.radius.md,
                                                 background: activeTool === tool
-                                                    ? 'rgba(255,255,255,0.25)'
-                                                    : 'rgba(255,255,255,0.08)',
+                                                    ? tokens.semantic.bgPanel
+                                                    : 'transparent',
                                                 border: activeTool === tool
-                                                    ? '2px solid rgba(255,255,255,0.7)'
-                                                    : '1px solid rgba(255,255,255,0.2)',
-                                                color: '#fff',
+                                                    ? `2px solid ${tokens.semantic.primary}`
+                                                    : `1px solid ${tokens.semantic.borderPanel}`,
+                                                color: tokens.semantic.textPrimary,
                                                 fontSize: isCompact ? '1rem' : '1.2rem',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                transform: activeTool === tool ? 'scale(1.1)' : 'scale(1)'
+                                                transform: activeTool === tool ? 'scale(1.1)' : 'scale(1)',
+                                                boxShadow: activeTool === tool ? tokens.shadow.float : 'none',
                                             }}
                                             data-tool-button={tool}
                                         >
@@ -641,19 +648,16 @@ export const FreePaintMode = ({ frameRef, onExit }: FreePaintModeProps) => {
                                         </HybridButton>
                                     ))}
                                 </div>
-                                
+
                                 {/* Divider */}
                                 <div style={{
                                     width: '1px',
                                     height: '40px',
-                                    background: 'rgba(255,255,255,0.2)'
+                                    background: tokens.semantic.borderPanel,
                                 }} />
-                                
+
                                 {/* Undo/Redo */}
-                                <div style={{
-                                    display: 'flex',
-                                    gap: isCompact ? '4px' : '6px'
-                                }}>
+                                <div style={{ display: 'flex', gap: isCompact ? '4px' : '6px' }}>
                                     <HybridButton
                                         ref={el => {
                                             if (el) actionButtonRefs.current.set('undo', el);
@@ -664,17 +668,16 @@ export const FreePaintMode = ({ frameRef, onExit }: FreePaintModeProps) => {
                                         style={{
                                             width: isCompact ? '36px' : '44px',
                                             height: isCompact ? '36px' : '44px',
-                                            borderRadius: '8px',
-                                            background: canUndo
-                                                ? 'rgba(255,255,255,0.15)'
-                                                : 'rgba(255,255,255,0.05)',
-                                            border: '1px solid rgba(255,255,255,0.2)',
-                                            color: canUndo ? '#fff' : 'rgba(255,255,255,0.3)',
+                                            borderRadius: tokens.radius.md,
+                                            background: canUndo ? tokens.semantic.bgPanel : tokens.semantic.bgPanelTinted,
+                                            border: `1.5px solid ${tokens.semantic.borderPanel}`,
+                                            color: canUndo ? tokens.semantic.primary : tokens.semantic.textMuted,
                                             fontSize: isCompact ? '1rem' : '1.2rem',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            opacity: canUndo ? 1 : 0.5
+                                            opacity: canUndo ? 1 : 0.5,
+                                            boxShadow: canUndo ? tokens.shadow.float : 'none',
                                         }}
                                         data-action-button="undo"
                                     >
@@ -690,31 +693,30 @@ export const FreePaintMode = ({ frameRef, onExit }: FreePaintModeProps) => {
                                         style={{
                                             width: isCompact ? '36px' : '44px',
                                             height: isCompact ? '36px' : '44px',
-                                            borderRadius: '8px',
-                                            background: canRedo
-                                                ? 'rgba(255,255,255,0.15)'
-                                                : 'rgba(255,255,255,0.05)',
-                                            border: '1px solid rgba(255,255,255,0.2)',
-                                            color: canRedo ? '#fff' : 'rgba(255,255,255,0.3)',
+                                            borderRadius: tokens.radius.md,
+                                            background: canRedo ? tokens.semantic.bgPanel : tokens.semantic.bgPanelTinted,
+                                            border: `1.5px solid ${tokens.semantic.borderPanel}`,
+                                            color: canRedo ? tokens.semantic.primary : tokens.semantic.textMuted,
                                             fontSize: isCompact ? '1rem' : '1.2rem',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            opacity: canRedo ? 1 : 0.5
+                                            opacity: canRedo ? 1 : 0.5,
+                                            boxShadow: canRedo ? tokens.shadow.float : 'none',
                                         }}
                                         data-action-button="redo"
                                     >
                                         ↷
                                     </HybridButton>
                                 </div>
-                                
+
                                 {/* Divider */}
                                 <div style={{
                                     width: '1px',
                                     height: '40px',
-                                    background: 'rgba(255,255,255,0.2)'
+                                    background: tokens.semantic.borderPanel,
                                 }} />
-                                
+
                                 {/* Save */}
                                 <HybridButton
                                     ref={el => {
@@ -725,14 +727,15 @@ export const FreePaintMode = ({ frameRef, onExit }: FreePaintModeProps) => {
                                     style={{
                                         width: isCompact ? '36px' : '44px',
                                         height: isCompact ? '36px' : '44px',
-                                        borderRadius: '8px',
-                                        background: 'rgba(0, 245, 212, 0.2)',
-                                        border: '1px solid rgba(0, 245, 212, 0.4)',
-                                        color: '#00f5d4',
+                                        borderRadius: tokens.radius.md,
+                                        background: 'rgba(85, 221, 224, 0.20)',
+                                        border: `2px solid ${tokens.colors.aqua}`,
+                                        color: tokens.colors.aqua,
                                         fontSize: isCompact ? '1rem' : '1.2rem',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        justifyContent: 'center'
+                                        justifyContent: 'center',
+                                        boxShadow: tokens.shadow.float,
                                     }}
                                     data-action-button="save"
                                 >

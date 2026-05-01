@@ -31,3 +31,7 @@ internal/
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code internal state (worktrees, settings, scratch)
+.claude/
+

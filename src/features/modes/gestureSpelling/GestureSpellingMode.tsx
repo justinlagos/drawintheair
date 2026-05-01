@@ -1,13 +1,21 @@
 /**
- * GestureSpellingMode.tsx
+ * GestureSpellingMode — React UI wrapper for the Spelling Stars mode.
  *
- * React UI wrapper for the Gesture Spelling game mode.
- * Shows word count, hint label, celebration panel.
+ * Bright Kid-UI design language:
+ *   - Sky + stars + drifting letters background
+ *   - KidChip for words-spelled tally
+ *   - KidPanel housing the progress dots (one per letter, fills as typed)
+ *   - Celebration 2.0 with stars
+ *
+ * Game logic untouched — visual migration only.
  */
 
 import { useState, useEffect, useRef } from 'react';
 import { Celebration } from '../../../components/Celebration';
 import { GameTopBar } from '../../../components/GameTopBar';
+import { SpellingStarsBackground } from './SpellingStarsBackground';
+import { KidChip, KidPanel } from '../../../components/kid-ui';
+import { tokens } from '../../../styles/tokens';
 import {
     initGestureSpelling,
     getSpellingCurrentWord,
@@ -30,9 +38,7 @@ export const GestureSpellingMode = ({ onExit }: GestureSpellingModeProps) => {
     const wordCompletedRef = useRef(false);
     const [wordEmoji, setWordEmoji] = useState('');
 
-    useEffect(() => {
-        initGestureSpelling();
-    }, []);
+    useEffect(() => { initGestureSpelling(); }, []);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -59,67 +65,79 @@ export const GestureSpellingMode = ({ onExit }: GestureSpellingModeProps) => {
 
     return (
         <div style={{
-            position: 'relative',
-            width: '100%',
-            height: '100%',
-            overflow: 'hidden',
-            fontFamily: "'Outfit', system-ui, sans-serif",
+            position: 'relative', width: '100%', height: '100%', overflow: 'hidden',
+            fontFamily: tokens.fontFamily.body,
         }}>
-            <GameTopBar
-                onBack={onExit ?? (() => { })}
-                stage={`Words Spelled: ${wordsSpelled}`}
-            />
+            <SpellingStarsBackground />
 
-            {/* Progress dots */}
+            <GameTopBar onBack={onExit ?? (() => { })} />
+
+            {/* TOP-LEFT: Mode chip */}
             <div style={{
-                position: 'absolute',
-                bottom: '14px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                display: 'flex',
-                gap: '10px',
-                zIndex: 20,
-                pointerEvents: 'none',
+                position: 'absolute', top: '100px', left: tokens.spacing.xxl,
+                zIndex: tokens.zIndex.hud, pointerEvents: 'none',
             }}>
-                {Array.from({ length: wordLength }).map((_, i) => (
-                    <div key={i} style={{
-                        width: '18px',
-                        height: '18px',
-                        borderRadius: '50%',
-                        background: i < typedSoFar.length ? '#00e676' : 'rgba(255,255,255,0.25)',
-                        border: '2px solid ' + (i < typedSoFar.length ? '#00ff88' : 'rgba(255,255,255,0.3)'),
-                        boxShadow: i < typedSoFar.length ? '0 0 10px #00e67680' : 'none',
-                        transition: 'all 0.2s ease',
-                        transform: i < typedSoFar.length ? 'scale(1.2)' : 'scale(1)',
-                    }} />
-                ))}
+                <KidChip variant="neutral" size="md" icon={<span>✨</span>}>
+                    Spelling Stars
+                </KidChip>
             </div>
 
-            {/* Score badge */}
+            {/* TOP-RIGHT: Words spelled tally */}
             <div style={{
-                position: 'absolute',
-                top: '64px',
-                right: '20px',
-                background: 'rgba(255,255,255,0.12)',
-                border: '1.5px solid rgba(255,255,255,0.2)',
-                borderRadius: '16px',
-                padding: '8px 18px',
-                textAlign: 'center',
-                zIndex: 20,
-                pointerEvents: 'none',
+                position: 'absolute', top: '100px', right: tokens.spacing.xxl,
+                zIndex: tokens.zIndex.hud, pointerEvents: 'none',
             }}>
-                <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase' }}>Score</div>
-                <div style={{ color: '#FFD93D', fontSize: '1.6rem', fontWeight: 900, lineHeight: 1 }}>{wordsSpelled}</div>
+                <KidChip variant="reward" size="md"
+                         icon={<span style={{ color: tokens.colors.sunshine }}>★</span>}>
+                    {wordsSpelled}<span style={{
+                        color: tokens.semantic.textSecondary,
+                        fontWeight: tokens.fontWeight.medium,
+                        marginLeft: 4,
+                    }}>spelled</span>
+                </KidChip>
+            </div>
+
+            {/* BOTTOM-CENTER: Progress dots in a soft white panel */}
+            <div style={{
+                position: 'absolute', bottom: tokens.spacing.xl, left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: tokens.zIndex.hud, pointerEvents: 'none',
+            }}>
+                <KidPanel size="sm" tone="white" style={{
+                    padding: `${tokens.spacing.sm} ${tokens.spacing.lg}`,
+                    display: 'flex', alignItems: 'center', gap: tokens.spacing.md,
+                }}>
+                    {Array.from({ length: wordLength }).map((_, i) => {
+                        const filled = i < typedSoFar.length;
+                        return (
+                            <div key={i} style={{
+                                width: '22px', height: '22px',
+                                borderRadius: '50%',
+                                background: filled ? tokens.semantic.success : 'rgba(108, 63, 164, 0.10)',
+                                border: filled
+                                    ? `3px solid ${tokens.colors.meadowGreen}`
+                                    : `2px solid rgba(108, 63, 164, 0.20)`,
+                                boxShadow: filled
+                                    ? `0 0 14px rgba(126, 217, 87, 0.6), 0 2px 6px rgba(0,0,0,0.10)`
+                                    : `0 2px 4px rgba(108, 63, 164, 0.10)`,
+                                transform: filled ? 'scale(1.18)' : 'scale(1)',
+                                transition: `transform ${tokens.motion.duration.quick} ${tokens.motion.ease.bounce}`,
+                            }} />
+                        );
+                    })}
+                </KidPanel>
             </div>
 
             <Celebration
                 show={showCelebration}
-                message={`✅ You spelled it!`}
+                message="You spelled it!"
                 subMessage={`${wordEmoji} Well done, keep going!`}
-                icon="✍️"
+                icon="✨"
                 duration={2000}
-                onComplete={handleCelebrationDone}
+                stars={2}
+                showConfetti
                 soundEffect
+                onComplete={handleCelebrationDone}
             />
         </div>
     );

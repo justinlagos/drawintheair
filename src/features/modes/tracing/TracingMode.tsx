@@ -17,6 +17,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Celebration } from '../../../components/Celebration';
 import { GameTopBar } from '../../../components/GameTopBar';
+import { TracingBackground } from './TracingBackground';
+import { KidChip, KidPanel, KidButton, KidObjectiveCard } from '../../../components/kid-ui';
+import { tokens } from '../../../styles/tokens';
 import { initializeTracing, getTracingState, resetLevel, nextLevel, setCompletionCallback, reloadCurrentPath } from './tracingLogicV2';
 import { getCurrentPath, getCurrentPackProgress } from './tracingProgress';
 import { calculateHUDMetrics, getPackInfo } from './tracingUI';
@@ -43,7 +46,8 @@ export const TracingMode = ({ onExit }: TracingModeProps = {}) => {
     const streakEnabled = featureFlags.getFlag('tracingStreak');
     const stickerEnabled = featureFlags.getFlag('stickerRewards');
 
-    const celebrationTimeoutRef = useRef<number | undefined>(undefined);
+    // advanceTimeoutRef schedules the post-celebration level advance.
+    // Celebration's internal timer handles dismissal via onComplete.
     const advanceTimeoutRef = useRef<number | undefined>(undefined);
     const layoutRef = useRef<{ width: number; height: number }>({ width: window.innerWidth, height: window.innerHeight });
     const showCelebrationRef = useRef(false);
@@ -86,59 +90,47 @@ export const TracingMode = ({ onExit }: TracingModeProps = {}) => {
                     narrate('mode_complete');
                 }
 
-                // Clear any existing timeouts
-                if (celebrationTimeoutRef.current) {
-                    clearTimeout(celebrationTimeoutRef.current);
-                }
+                // Cancel any pending advance from a previous round.
                 if (advanceTimeoutRef.current) {
                     clearTimeout(advanceTimeoutRef.current);
                 }
-
-                // Auto-dismiss celebration after 1.5 seconds (1.2-2.0s range per requirement)
-                celebrationTimeoutRef.current = window.setTimeout(() => {
-                    showCelebrationRef.current = false;
-                    setShowCelebration(false);
-
-                    // Auto-advance to next level after 600ms
-                    advanceTimeoutRef.current = window.setTimeout(() => {
-                        // Reset guard for next level
-                        completionCallbackFiredRef.current = false;
-
-                        if (nextLevel()) {
-                            // Reload new level state
-                            reloadCurrentPath();
-                            const path = getCurrentPath();
-                            if (path) {
-                                setPathName(path.name);
-                                setCurrentPack(path.pack);
-                                setProgress(0);
-                            }
-                        } else {
-                            // All levels complete - reset to first level
-                            resetLevel();
-                            reloadCurrentPath();
-                            const path = getCurrentPath();
-                            if (path) {
-                                setPathName(path.name);
-                                setCurrentPack(path.pack);
-                                setProgress(0);
-                            }
-                        }
-                    }, 600);
-                }, 1500);
+                // Celebration's internal timer (duration=1500ms) auto-dismisses
+                // and calls handleCelebrationDone() — see prop on the component.
+                // The advance is scheduled there.
             });
         });
 
         return () => {
             setCompletionCallback(null);
-            if (celebrationTimeoutRef.current) {
-                clearTimeout(celebrationTimeoutRef.current);
-            }
             if (advanceTimeoutRef.current) {
                 clearTimeout(advanceTimeoutRef.current);
             }
         };
     }, []);
+
+    // Single source of truth for celebration dismissal + level advance.
+    // Called by Celebration's onComplete after its internal 1500ms timer.
+    const handleCelebrationDone = () => {
+        showCelebrationRef.current = false;
+        setShowCelebration(false);
+        // Auto-advance to next level after 600ms breathing room.
+        advanceTimeoutRef.current = window.setTimeout(() => {
+            completionCallbackFiredRef.current = false;
+            if (nextLevel()) {
+                reloadCurrentPath();
+            } else {
+                // All levels complete - reset to first level.
+                resetLevel();
+                reloadCurrentPath();
+            }
+            const path = getCurrentPath();
+            if (path) {
+                setPathName(path.name);
+                setCurrentPack(path.pack);
+                setProgress(0);
+            }
+        }, 600);
+    };
 
     // Initialize tracing
     useEffect(() => {
@@ -202,35 +194,12 @@ export const TracingMode = ({ onExit }: TracingModeProps = {}) => {
                 }
 
                 // Check for completion state changes (in case callback missed it)
-                // But only if celebration isn't already showing (prevent duplicates)
+                // But only if celebration isn't already showing (prevent duplicates).
+                // Celebration's internal timer + handleCelebrationDone now handle
+                // both dismissal and level advance.
                 if (state.isCompleted && !showCelebrationRef.current && !showCelebration) {
-                    // Completion happened but celebration didn't show - trigger it
                     showCelebrationRef.current = true;
                     setShowCelebration(true);
-                    celebrationTimeoutRef.current = window.setTimeout(() => {
-                        showCelebrationRef.current = false;
-                        setShowCelebration(false);
-                        advanceTimeoutRef.current = window.setTimeout(() => {
-                            if (nextLevel()) {
-                                reloadCurrentPath();
-                                const path = getCurrentPath();
-                                if (path) {
-                                    setPathName(path.name);
-                                    setCurrentPack(path.pack);
-                                    setProgress(0);
-                                }
-                            } else {
-                                resetLevel();
-                                reloadCurrentPath();
-                                const path = getCurrentPath();
-                                if (path) {
-                                    setPathName(path.name);
-                                    setCurrentPack(path.pack);
-                                    setProgress(0);
-                                }
-                            }
-                        }, 600);
-                    }, 1500);
                 }
 
                 const path = getCurrentPath();
@@ -265,15 +234,14 @@ export const TracingMode = ({ onExit }: TracingModeProps = {}) => {
 
     const progressPercent = Math.round(progress * 100);
 
-    const { hudSpacing, hudPadding, hudRadius, isCompact } = layout;
+    const { hudSpacing, isCompact } = layout;
 
     const handleRestart = () => {
         resetLevel();
         setProgress(0);
+        showCelebrationRef.current = false;
         setShowCelebration(false);
-        if (celebrationTimeoutRef.current) {
-            clearTimeout(celebrationTimeoutRef.current);
-        }
+        completionCallbackFiredRef.current = false;
         if (advanceTimeoutRef.current) {
             clearTimeout(advanceTimeoutRef.current);
         }
@@ -281,359 +249,245 @@ export const TracingMode = ({ onExit }: TracingModeProps = {}) => {
 
     return (
         <>
-            {/* Back to menu */}
+            <TracingBackground />
+
+            {/* Back to menu — stage label omitted, mode card below shows it */}
             {onExit && (
-                <GameTopBar
-                    onBack={onExit}
-                    stage={packInfo ? `${packInfo.icon} ${packInfo.name}` : undefined}
-                    compact={isCompact}
-                />
+                <GameTopBar onBack={onExit} compact={isCompact} />
             )}
 
-            {/* Top Left - Mode indicator */}
+            {/* TOP-LEFT: Mode + pack + level info in a soft white panel */}
             <div style={{
                 position: 'absolute',
                 top: hudSpacing,
                 left: hudSpacing,
-                zIndex: 20,
-                maxWidth: isCompact ? 'calc(50% - 20px)' : 'none'
+                zIndex: tokens.zIndex.hud,
+                pointerEvents: 'none',
+                maxWidth: isCompact ? 'calc(50% - 20px)' : '300px',
             }}>
-                <div style={{
-                    background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                    
-                    
-                    borderRadius: hudRadius,
-                    border: '1.5px solid rgba(255, 255, 255, 0.12)',
-                    padding: hudPadding,
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15)'
-                }}>
+                <KidPanel size={isCompact ? 'sm' : 'md'}>
                     <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: isCompact ? '8px' : '14px',
-                        marginBottom: isCompact ? '8px' : '16px'
+                        display: 'flex', alignItems: 'center',
+                        gap: tokens.spacing.sm,
+                        marginBottom: tokens.spacing.sm,
                     }}>
-                        <span style={{ fontSize: isCompact ? '1.3rem' : '2rem' }}>✏️</span>
+                        <span style={{ fontSize: isCompact ? '1.2rem' : '1.5rem' }}>✏️</span>
                         <span style={{
-                            fontSize: isCompact ? '0.95rem' : '1.3rem',
-                            fontWeight: 700,
-                            background: 'linear-gradient(135deg, #4facfe, #00f2fe)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent'
-                        }}>
-                            {isCompact ? 'Tracing' : 'Tracing Mode'}
-                        </span>
+                            fontFamily: tokens.fontFamily.heading,
+                            fontWeight: tokens.fontWeight.bold,
+                            fontSize: isCompact ? tokens.fontSize.label : tokens.fontSize.button,
+                            color: tokens.semantic.primary,
+                        }}>Tracing</span>
                     </div>
-
-                    {/* Pack info */}
                     <div style={{
-                        fontSize: isCompact ? '0.8rem' : '1rem',
-                        color: 'rgba(255,255,255,0.8)',
-                        marginBottom: isCompact ? '6px' : '12px',
-                        fontWeight: 500,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
+                        fontFamily: tokens.fontFamily.body,
+                        fontSize: tokens.fontSize.caption,
+                        color: tokens.semantic.textSecondary,
+                        marginBottom: tokens.spacing.xs,
+                        display: 'flex', alignItems: 'center', gap: tokens.spacing.xs,
                     }}>
                         <span>{packInfo.icon}</span>
                         <span>{packInfo.name}</span>
                     </div>
-
-                    {/* Level info */}
                     <div style={{
-                        fontSize: isCompact ? '1rem' : '1.2rem',
-                        fontWeight: 700,
-                        color: 'white',
-                        marginBottom: isCompact ? '8px' : '16px'
-                    }}>
-                        {pathName}
-                    </div>
-
-                    {/* Progress dots */}
+                        fontFamily: tokens.fontFamily.heading,
+                        fontWeight: tokens.fontWeight.bold,
+                        fontSize: isCompact ? tokens.fontSize.label : tokens.fontSize.button,
+                        color: tokens.semantic.textPrimary,
+                        marginBottom: tokens.spacing.sm,
+                    }}>{pathName}</div>
+                    {/* Level progress dots */}
                     <div style={{
                         display: 'flex',
-                        gap: isCompact ? '5px' : '8px',
+                        gap: isCompact ? '5px' : '7px',
                         flexWrap: 'wrap',
-                        maxWidth: isCompact ? '160px' : '280px'
+                        maxWidth: isCompact ? '160px' : '260px',
                     }}>
                         {Array.from({ length: packProgress.unlockedLevelIndex + 1 }).map((_, i) => (
-                            <div
-                                key={i}
-                                style={{
-                                    width: isCompact ? '8px' : '12px',
-                                    height: isCompact ? '8px' : '12px',
-                                    borderRadius: '50%',
-                                    background: i < packProgress.completedLevels
-                                        ? '#00f5d4'
-                                        : i === packProgress.completedLevels
-                                            ? `conic-gradient(#00f5d4 ${progressPercent}%, rgba(255,255,255,0.2) ${progressPercent}%)`
-                                            : 'rgba(255,255,255,0.2)',
-                                    boxShadow: i <= packProgress.completedLevels ? '0 0 10px #00f5d4' : 'none',
-                                    transition: 'all 0.3s ease'
-                                }}
-                            />
+                            <div key={i} style={{
+                                width: isCompact ? '9px' : '12px',
+                                height: isCompact ? '9px' : '12px',
+                                borderRadius: '50%',
+                                background: i < packProgress.completedLevels
+                                    ? tokens.colors.aqua
+                                    : i === packProgress.completedLevels
+                                        ? `conic-gradient(${tokens.colors.aqua} ${progressPercent}%, rgba(108,63,164,0.18) ${progressPercent}%)`
+                                        : 'rgba(108,63,164,0.18)',
+                                boxShadow: i <= packProgress.completedLevels
+                                    ? `0 0 10px rgba(85, 221, 224, 0.55)` : 'none',
+                                transition: 'all 0.3s ease',
+                            }} />
                         ))}
                     </div>
-                </div>
+                </KidPanel>
             </div>
 
-            {/* Progress Bar - Top Center */}
+            {/* TOP-CENTER: Progress bar + streak meter */}
             <div style={{
                 position: 'absolute',
                 top: hudSpacing,
                 left: '50%',
                 transform: 'translateX(-50%)',
-                zIndex: 20,
+                zIndex: tokens.zIndex.hud,
                 pointerEvents: 'none',
-                maxWidth: isCompact ? 'calc(100% - 180px)' : 'none',
+                maxWidth: isCompact ? 'calc(100% - 200px)' : 'none',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: isCompact ? '8px' : '12px',
-                alignItems: 'center'
+                gap: tokens.spacing.sm,
+                alignItems: 'center',
             }}>
-                <div style={{
-                    background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                    
-                    
-                    borderRadius: isCompact ? '20px' : '9999px',
-                    border: '1.5px solid rgba(255, 255, 255, 0.12)',
-                    padding: isCompact ? '10px 16px' : '14px 28px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: isCompact ? '10px' : '20px',
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15)'
+                <KidPanel size="sm" style={{
+                    padding: `${tokens.spacing.sm} ${tokens.spacing.lg}`,
+                    display: 'flex', alignItems: 'center',
+                    gap: isCompact ? tokens.spacing.sm : tokens.spacing.md,
                 }}>
                     <span style={{
-                        fontSize: isCompact ? '1.3rem' : '2rem',
-                        filter: progress >= 0.95 ? 'drop-shadow(0 0 15px #FFD700)' : 'none'
+                        fontSize: isCompact ? '1.2rem' : '1.6rem',
+                        filter: progress >= 0.95 ? 'drop-shadow(0 0 10px #FFD84D)' : 'none',
                     }}>
                         {progress >= 0.95 ? '⭐' : progress > 0.5 ? '🌟' : '✨'}
                     </span>
-
                     <div style={{
-                        width: isCompact ? 'clamp(80px, 20vw, 150px)' : '250px',
-                        height: isCompact ? '10px' : '14px',
-                        background: 'rgba(255,255,255,0.1)',
-                        borderRadius: '7px',
+                        width: isCompact ? 'clamp(80px, 20vw, 150px)' : '230px',
+                        height: isCompact ? '10px' : '12px',
+                        background: 'rgba(108,63,164,0.12)',
+                        borderRadius: tokens.radius.pill,
                         overflow: 'hidden',
-                        border: '2px solid rgba(255,255,255,0.2)'
                     }}>
                         <div style={{
                             width: `${progressPercent}%`,
                             height: '100%',
                             background: progress >= 0.95
-                                ? 'linear-gradient(90deg, #FFD700, #FFA500)'
-                                : 'linear-gradient(90deg, #00f5d4, #4facfe)',
-                            borderRadius: '7px',
-                            transition: 'width 0.15s ease',
-                            boxShadow: `0 0 20px ${progress >= 0.95 ? '#FFD700' : '#00f5d4'}88`
+                                ? `linear-gradient(90deg, ${tokens.colors.sunshine}, ${tokens.colors.warmOrange})`
+                                : `linear-gradient(90deg, ${tokens.colors.aqua}, ${tokens.colors.skyBlue})`,
+                            borderRadius: tokens.radius.pill,
+                            transition: 'width 0.18s ease',
+                            boxShadow: progress >= 0.95
+                                ? `0 0 14px ${tokens.colors.sunshine}88`
+                                : `0 0 12px ${tokens.colors.aqua}88`,
                         }} />
                     </div>
-
                     <span style={{
-                        fontSize: isCompact ? '1rem' : '1.3rem',
-                        fontWeight: 'bold',
-                        color: progress >= 0.95 ? '#FFD700' : '#00f5d4',
-                        minWidth: isCompact ? '40px' : '60px',
+                        fontFamily: tokens.fontFamily.heading,
+                        fontWeight: tokens.fontWeight.bold,
+                        fontSize: isCompact ? tokens.fontSize.label : tokens.fontSize.button,
+                        color: progress >= 0.95 ? tokens.colors.warmOrange : tokens.semantic.primary,
+                        minWidth: isCompact ? '42px' : '54px',
                         textAlign: 'right',
-                        textShadow: progress >= 0.95 ? '0 0 15px #FFD700' : 'none'
                     }}>
                         {progressPercent}%
                     </span>
-                </div>
+                </KidPanel>
 
-                {/* Streak Meter - if enabled */}
+                {/* Streak meter — kept as a feature, restyled bright */}
                 {streakEnabled && streakMeter > 0 && (
-                    <div style={{
-                        background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                        
-                        
-                        borderRadius: isCompact ? '16px' : '20px',
-                        border: streakRainbow ? '2px solid rgba(255, 230, 109, 0.8)' : streakSparkle ? '2px solid rgba(255, 230, 109, 0.5)' : '2px solid rgba(255, 255, 255, 0.2)',
-                        padding: isCompact ? '8px 12px' : '10px 20px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: isCompact ? '8px' : '12px',
-                        boxShadow: streakRainbow
-                            ? '0 0 30px rgba(255, 230, 109, 0.6), 0 0 60px rgba(255, 107, 157, 0.4), 0 0 90px rgba(77, 255, 255, 0.3)'
+                    <KidPanel size="sm" style={{
+                        padding: `${tokens.spacing.xs} ${tokens.spacing.md}`,
+                        display: 'flex', alignItems: 'center', gap: tokens.spacing.sm,
+                        border: streakRainbow
+                            ? `2px solid ${tokens.colors.sunshine}`
                             : streakSparkle
-                                ? '0 0 20px rgba(255, 230, 109, 0.4)'
-                                : '0 8px 24px rgba(0, 0, 0, 0.3)',
-                        animation: streakRainbow ? 'streakRainbow 1.5s ease infinite' : streakSparkle ? 'streakSparkle 1s ease infinite' : 'none'
+                                ? `2px solid rgba(255, 216, 77, 0.5)`
+                                : `1.5px solid ${tokens.semantic.borderPanel}`,
+                        boxShadow: streakRainbow
+                            ? `0 0 18px rgba(255, 216, 77, 0.5), 0 0 36px rgba(255, 107, 157, 0.3)`
+                            : tokens.shadow.float,
                     }}>
-                        <span style={{
-                            fontSize: isCompact ? '1rem' : '1.2rem',
-                            filter: streakRainbow
-                                ? 'drop-shadow(0 0 10px rgba(255, 230, 109, 1)) drop-shadow(0 0 20px rgba(255, 107, 157, 0.8)) drop-shadow(0 0 30px rgba(77, 255, 255, 0.6))'
-                                : streakSparkle
-                                    ? 'drop-shadow(0 0 8px rgba(255, 230, 109, 0.8))'
-                                    : 'none'
-                        }}>
+                        <span style={{ fontSize: isCompact ? '0.95rem' : '1.1rem' }}>
                             {streakRainbow ? '🌈' : streakSparkle ? '✨' : '⚡'}
                         </span>
                         <div style={{
-                            width: isCompact ? '80px' : '120px',
-                            height: isCompact ? '6px' : '8px',
-                            background: 'rgba(255,255,255,0.1)',
-                            borderRadius: '4px',
+                            width: isCompact ? '70px' : '110px',
+                            height: '6px',
+                            background: 'rgba(108,63,164,0.10)',
+                            borderRadius: tokens.radius.pill,
                             overflow: 'hidden',
-                            border: '1px solid rgba(255,255,255,0.2)'
                         }}>
                             <div style={{
                                 width: `${streakMeter * 100}%`,
                                 height: '100%',
                                 background: streakRainbow
-                                    ? 'linear-gradient(90deg, #FF6B9D, #FFE66D, #4DFFFF, #FF6B9D)'
-                                    : streakSparkle
-                                        ? 'linear-gradient(90deg, #FFE66D, #FF6B9D)'
-                                        : 'linear-gradient(90deg, #FFE66D, #FF6B9D)',
+                                    ? `linear-gradient(90deg, ${tokens.colors.coral}, ${tokens.colors.sunshine}, ${tokens.colors.aqua}, ${tokens.colors.coral})`
+                                    : `linear-gradient(90deg, ${tokens.colors.sunshine}, ${tokens.colors.coral})`,
                                 backgroundSize: streakRainbow ? '200% 100%' : '100% 100%',
                                 animation: streakRainbow ? 'streakRainbowGradient 2s linear infinite' : 'none',
-                                borderRadius: '4px',
+                                borderRadius: tokens.radius.pill,
                                 transition: 'width 0.2s ease',
-                                boxShadow: streakRainbow
-                                    ? '0 0 15px rgba(255, 230, 109, 0.8), 0 0 30px rgba(255, 107, 157, 0.6)'
-                                    : streakSparkle
-                                        ? '0 0 10px rgba(255, 230, 109, 0.6)'
-                                        : '0 0 5px rgba(255, 230, 109, 0.4)'
                             }} />
                         </div>
                         <span style={{
-                            fontSize: isCompact ? '0.7rem' : '0.85rem',
-                            fontWeight: 600,
-                            color: streakRainbow ? '#FFE66D' : streakSparkle ? '#FFE66D' : 'rgba(255, 230, 109, 0.9)',
-                            minWidth: isCompact ? '30px' : '40px',
-                            textAlign: 'right'
+                            fontFamily: tokens.fontFamily.heading,
+                            fontWeight: tokens.fontWeight.bold,
+                            fontSize: tokens.fontSize.caption,
+                            color: tokens.semantic.textPrimary,
+                            minWidth: isCompact ? '28px' : '36px',
+                            textAlign: 'right',
                         }}>
                             {Math.round(streakMeter * 10)}s
                         </span>
-                    </div>
+                    </KidPanel>
                 )}
             </div>
 
-            {/* Bottom Controls */}
+            {/* Restart button — bottom center */}
             <div style={{
                 position: 'absolute',
-                bottom: isCompact ? '12px' : '32px',
+                bottom: isCompact ? '12px' : '24px',
                 left: '50%',
                 transform: 'translateX(-50%)',
-                zIndex: 20,
+                zIndex: tokens.zIndex.hud,
                 pointerEvents: 'auto',
-                maxWidth: isCompact ? 'calc(100% - 24px)' : 'none'
             }}>
-                <div style={{
-                    background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                    
-                    
-                    borderRadius: isCompact ? '18px' : '9999px',
-                    border: '1.5px solid rgba(255, 255, 255, 0.12)',
-                    padding: isCompact ? '10px 14px' : '14px 24px',
-                    display: 'flex',
-                    gap: isCompact ? '8px' : '12px',
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15)',
-                    flexWrap: 'wrap',
-                    justifyContent: 'center'
-                }}>
-                    <button
-                        onClick={handleRestart}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: isCompact ? '4px' : '8px',
-                            padding: isCompact ? '10px 14px' : '14px 24px',
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            border: '2px solid rgba(255, 255, 255, 0.2)',
-                            borderRadius: isCompact ? '12px' : '16px',
-                            color: 'white',
-                            cursor: 'pointer',
-                            fontSize: isCompact ? '0.85rem' : '1rem',
-                            fontWeight: 600,
-                            transition: 'all 0.2s ease',
-                            minWidth: '44px',
-                            minHeight: '44px'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                        }}
-                    >
-                        <span>🔄</span>
-                        {isCompact ? 'Restart' : 'Restart Level'}
-                    </button>
-                </div>
+                <KidButton variant="secondary" size="md" onClick={handleRestart} icon={<span>🔄</span>}>
+                    {isCompact ? 'Restart' : 'Restart Level'}
+                </KidButton>
             </div>
 
-            {/* Instructions - Bottom Center - Show at level start and when paused */}
+            {/* Bottom-center instructions — show at level start */}
             {((progress < 0.15 && !showCelebration) || (isPaused && progress < 0.15)) && (
                 <div style={{
                     position: 'absolute',
                     bottom: isCompact ? '90px' : '120px',
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    zIndex: 15,
+                    zIndex: tokens.zIndex.hud,
                     pointerEvents: 'none',
-                    maxWidth: isCompact ? 'calc(100% - 32px)' : 'none'
+                    maxWidth: isCompact ? 'calc(100% - 32px)' : 'none',
                 }}>
-                    <div style={{
-                        background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                        border: '1.5px solid rgba(0, 245, 212, 0.3)',
-                        borderRadius: '9999px',
-                        padding: isCompact ? '10px 20px' : '14px 28px',
-                        color: '#00f5d4',
-                        fontSize: isCompact ? '0.9rem' : '1.1rem',
-                        fontWeight: 600,
-                        
-                        
-                        boxShadow: '0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15)',
-                        animation: progress < 0.05 ? 'pulse 2s ease-in-out infinite' : 'float 3s ease-in-out infinite',
-                        textAlign: 'center',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                    }}>
-                        👆 {isCompact ? 'Pinch to trace' : 'Pinch to trace — start at the green dot!'}
-                    </div>
+                    <KidObjectiveCard icon="👆">
+                        {isCompact ? 'Pinch to trace' : 'Pinch to trace — start at the green dot!'}
+                    </KidObjectiveCard>
                 </div>
             )}
 
-            {/* Paused Indicator */}
+            {/* Paused indicator */}
             {isPaused && (
                 <div style={{
                     position: 'absolute',
                     bottom: isCompact ? '90px' : '120px',
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    zIndex: 15,
+                    zIndex: tokens.zIndex.hud,
                     pointerEvents: 'none',
-                    background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                    border: '1.5px solid rgba(255, 217, 61, 0.3)',
-                    borderRadius: '9999px',
-                    padding: isCompact ? '10px 20px' : '14px 28px',
-                    color: '#FFD93D',
-                    fontSize: isCompact ? '0.9rem' : '1.1rem',
-                    fontWeight: 600,
-                    
-                    
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15)'
                 }}>
-                    Paused - Pinch to continue
+                    <KidChip variant="reward" size="md" icon={<span>⏸</span>}>
+                        Paused — Pinch to continue
+                    </KidChip>
                 </div>
             )}
 
-            {/* Celebration - Centered and auto-dismissing */}
-            {showCelebration && (
-                <Celebration
-                    show={true}
-                    message="Great Job!"
-                    subMessage={`You traced ${pathName}!`}
-                    icon="⭐"
-                    duration={1500}
-                    showConfetti={true}
-                    soundEffect={true}
-                />
-            )}
+            {/* Celebration 2.0 with stars — same dismissal flow as before */}
+            <Celebration
+                show={showCelebration}
+                message="Great Job!"
+                subMessage={`You traced ${pathName}!`}
+                icon="⭐"
+                duration={1500}
+                stars={2}
+                showConfetti
+                soundEffect
+                onComplete={handleCelebrationDone}
+            />
 
             {/* Debug overlay */}
             <TracingDebugOverlay

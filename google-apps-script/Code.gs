@@ -20,7 +20,16 @@ function getSheet(tabName) {
 }
 
 function getAdminPin() {
-  return PropertiesService.getScriptProperties().getProperty('ADMIN_PIN') || 'changeme';
+  // SECURITY: No default fallback. If ADMIN_PIN script property is unset,
+  // return null and reject all admin requests. Previously fell back to
+  // 'changeme', which silently exposed admin endpoints if the script
+  // property was forgotten during deployment.
+  var pin = PropertiesService.getScriptProperties().getProperty('ADMIN_PIN');
+  if (!pin) {
+    Logger.log('[SECURITY] ADMIN_PIN script property is not set — admin endpoints will reject all requests.');
+    return null;
+  }
+  return pin;
 }
 
 // ─── POST handler — append rows ─────────────────────────────────
@@ -166,7 +175,10 @@ function doGet(e) {
   
   // ── Summary read path ──
   var pin = params.pin || '';
-  if (pin !== getAdminPin()) {
+  var adminPin = getAdminPin();
+  // Reject if ADMIN_PIN is not configured (returns null) or if PINs don't match.
+  // Explicit null check prevents '' === null comparing as false but still blocking.
+  if (adminPin === null || pin !== adminPin) {
     return jsonResponse({ error: 'Unauthorized' }, 403);
   }
 

@@ -5,7 +5,7 @@
  */
 
 export type Difficulty = 'easy' | 'standard' | 'advanced';
-export type Chapter = 1 | 2 | 3;
+export type Chapter = 1 | 2 | 3 | 4 | 5 | 6;
 
 export type Theme = 'animals' | 'colours' | 'family' | 'food' | 'toys' | 'nature';
 
@@ -15,7 +15,7 @@ export interface WordSearchSettings {
     sound: boolean;
     backwardWords: boolean;
     reduceMotion: boolean;
-    chapter?: Chapter; // Current chapter (1-3)
+    chapter?: Chapter; // Current chapter (1-6)
 }
 
 export interface Tile {

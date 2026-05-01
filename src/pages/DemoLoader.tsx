@@ -9,6 +9,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useWebcam } from '../core/useWebcam';
 import './demoLoader.css';
 
+interface AnalyticsWindow {
+    analytics?: {
+        logEvent: (name: string, props?: Record<string, unknown>) => void;
+    };
+}
+
 export const DemoLoader = () => {
     const { stream, error, requestAccess, isLoading } = useWebcam({ autoStart: false });
     const [progress, setProgress] = useState(0);
@@ -22,10 +28,9 @@ export const DemoLoader = () => {
     // Start camera request immediately
     useEffect(() => {
         // Track loading view
-        if (typeof window !== 'undefined' && (window as any).analytics) {
-            (window as any).analytics.logEvent('demo_loading_view', {
-                load_stage: 'initial'
-            });
+        if (typeof window !== 'undefined') {
+            const analytics = (window as AnalyticsWindow).analytics;
+            analytics?.logEvent('demo_loading_view', { load_stage: 'initial' });
         }
         requestAccess();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -84,11 +89,10 @@ export const DemoLoader = () => {
                 animationFrameRef.current = requestAnimationFrame(animate);
             } else {
                 // Track loading complete
-                if (typeof window !== 'undefined' && (window as any).analytics) {
+                if (typeof window !== 'undefined') {
+                    const analytics = (window as AnalyticsWindow).analytics;
                     const duration = Date.now() - startTimeRef.current;
-                    (window as any).analytics.logEvent('demo_loading_complete', {
-                        duration_ms: duration
-                    });
+                    analytics?.logEvent('demo_loading_complete', { duration_ms: duration });
                 }
                 // Show confetti/shine effect
                 setShowConfetti(true);

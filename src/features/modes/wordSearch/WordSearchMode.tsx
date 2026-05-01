@@ -20,6 +20,8 @@ import { WORD_COUNTS, WORD_LENGTHS } from './wordSearchConstants';
 import type { WordSearchSettings, Theme, Difficulty, Chapter, Word } from './wordSearchTypes';
 import { showMessageCard, getRandomMessageCopy } from '../../../core/messageCardService';
 import { isCountdownActive } from '../../../core/countdownService';
+import { KidPanel, KidButton, KidObjectiveCard, KidBadge } from '../../../components/kid-ui';
+import { tokens } from '../../../styles/tokens';
 
 export interface WordSearchModeProps {
     frameRef?: MutableRefObject<TrackingFrameData>;
@@ -38,14 +40,17 @@ const DEFAULT_SETTINGS: WordSearchSettings = {
     chapter: 1
 };
 
-// Chapter themes (environment themes)
+// Chapter themes (environment themes) — 6 chapters of progressive difficulty.
 const CHAPTER_THEMES: Record<Chapter, Theme> = {
     1: 'animals',
     2: 'nature',
-    3: 'food'
+    3: 'food',
+    4: 'colours',
+    5: 'family',
+    6: 'toys',
 };
 
-// Chapter environment configs
+// Chapter environment configs — bright Kid-UI palette per chapter.
 const CHAPTER_ENVIRONMENTS: Record<Chapter, {
     backgroundGradient: string;
     accentColor: string;
@@ -53,23 +58,41 @@ const CHAPTER_ENVIRONMENTS: Record<Chapter, {
     icon: string;
 }> = {
     1: {
-        backgroundGradient: 'linear-gradient(135deg, #1a1a3e 0%, #2d2563 50%, #1e1e4a 100%)',
-        accentColor: '#4ECDC4',
+        backgroundGradient: 'linear-gradient(180deg, #BEEBFF 0%, #DEF5FF 55%, #FFFAEB 100%)',
+        accentColor: '#55DDE0',
         name: 'Animal Friends',
-        icon: '🐾'
+        icon: '🐾',
     },
     2: {
-        backgroundGradient: 'linear-gradient(135deg, #0d2b4e 0%, #1a4d6e 50%, #0a3a5e 100%)',
-        accentColor: '#27AE60',
+        backgroundGradient: 'linear-gradient(180deg, #C5F0BC 0%, #E5F8E0 60%, #FFF6E5 100%)',
+        accentColor: '#7ED957',
         name: 'Nature Garden',
-        icon: '🌿'
+        icon: '🌿',
     },
     3: {
-        backgroundGradient: 'linear-gradient(135deg, #3d2e1a 0%, #5a4a2d 50%, #4a3a1a 100%)',
-        accentColor: '#FF9500',
+        backgroundGradient: 'linear-gradient(180deg, #FFE4D4 0%, #FFF4E0 55%, #FFFAEB 100%)',
+        accentColor: '#FFB14D',
         name: 'Yummy Food',
-        icon: '🍎'
-    }
+        icon: '🍎',
+    },
+    4: {
+        backgroundGradient: 'linear-gradient(180deg, #FFE0F0 0%, #FFF0FA 55%, #FFFAEB 100%)',
+        accentColor: '#FF6B9D',
+        name: 'Rainbow Colours',
+        icon: '🌈',
+    },
+    5: {
+        backgroundGradient: 'linear-gradient(180deg, #FFF6E5 0%, #FFFAF0 55%, #FFE8C0 100%)',
+        accentColor: '#FFD84D',
+        name: 'Family Time',
+        icon: '👪',
+    },
+    6: {
+        backgroundGradient: 'linear-gradient(180deg, #E8DEFB 0%, #F4EAFF 55%, #FFF6E5 100%)',
+        accentColor: '#A855F7',
+        name: 'Toy Chest',
+        icon: '🧸',
+    },
 };
 
 // Instruction text based on state
@@ -255,13 +278,13 @@ export const WordSearchMode = ({ frameRef, showSettings = false, onCloseSettings
                             showMessageCard({ text: getRandomMessageCopy(), variant: 'success', durationMs: 1100 });
                         }
 
-                        // Auto-advance to next chapter after delay
+                        // Auto-advance to next chapter after delay (6 chapters)
                         setTimeout(() => {
                             setShowLevelComplete(false);
-                            if (chapter < 3) {
+                            if (chapter < 6) {
                                 setChapter((chapter + 1) as Chapter);
                             } else {
-                                // All chapters complete - go back to chapter 1
+                                // All chapters complete - loop back to chapter 1
                                 setChapter(1);
                             }
                         }, 2500);
@@ -381,58 +404,36 @@ export const WordSearchMode = ({ frameRef, showSettings = false, onCloseSettings
                 zIndex: 50,
                 pointerEvents: 'none'
             }}>
-                {/* Left: Back button + Mode Name */}
+                {/* Left: KidButton-secondary back + mode label */}
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: isCompact ? '8px' : '12px',
-                    pointerEvents: 'auto'
+                    gap: isCompact ? tokens.spacing.sm : tokens.spacing.md,
+                    pointerEvents: 'auto',
                 }}>
                     {onExit && (
-                        <button
-                            onClick={onExit}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '5px',
-                                padding: isCompact ? '6px 10px' : '7px 13px',
-                                minHeight: '36px',
-                                minWidth: '44px',
-                                background: 'rgba(0,0,0,0.30)',
-                                border: '1.5px solid rgba(255,255,255,0.18)',
-                                borderRadius: '9999px',
-                                color: 'rgba(255,255,255,0.92)',
-                                cursor: 'pointer',
-                                fontSize: isCompact ? '0.78rem' : '0.82rem',
-                                fontWeight: 700,
-                                transition: 'transform 0.12s ease',
-                                touchAction: 'manipulation',
-                            }}
-                            onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.93)'; }}
-                            onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                            onTouchStart={e => { e.currentTarget.style.transform = 'scale(0.93)'; }}
-                            onTouchEnd={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                        >
-                            <span style={{ fontSize: '0.8rem' }}>←</span>
-                            <span>Menu</span>
-                        </button>
+                        <KidButton variant="secondary" size="md" onClick={onExit}
+                                   icon={<span aria-hidden>←</span>}>
+                            Menu
+                        </KidButton>
                     )}
                     <span style={{ fontSize: isCompact ? '1.3rem' : '1.8rem' }}>🔍</span>
                     <div>
                         <div style={{
-                            fontSize: isCompact ? '1rem' : '1.3rem',
-                            fontWeight: 700,
-                            color: 'white',
-                            lineHeight: 1.2
+                            fontFamily: tokens.fontFamily.heading,
+                            fontWeight: tokens.fontWeight.bold,
+                            fontSize: isCompact ? tokens.fontSize.label : tokens.fontSize.button,
+                            color: tokens.semantic.primary,
+                            lineHeight: 1.2,
                         }}>
                             {isCompact ? 'Words' : 'Word Search'}
                         </div>
                         {!isCompact && (
                             <div style={{
-                                fontSize: '0.85rem',
-                                color: 'rgba(255, 255, 255, 0.7)',
-                                fontWeight: 500
+                                fontFamily: tokens.fontFamily.body,
+                                fontSize: tokens.fontSize.caption,
+                                color: tokens.semantic.textSecondary,
+                                fontWeight: tokens.fontWeight.medium,
                             }}>
                                 Find the words
                             </div>
@@ -440,101 +441,79 @@ export const WordSearchMode = ({ frameRef, showSettings = false, onCloseSettings
                     </div>
                 </div>
 
-                {/* Center: Logo (small, calm) - hidden on mobile */}
-                {!isCompact && (
-                    <div style={{
-                        position: 'absolute',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        fontSize: '1.2rem',
-                        fontWeight: 700,
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        letterSpacing: '0.5px'
-                    }}>
-                        DRAW IN THE AIR
-                    </div>
-                )}
-
-                {/* Right: Lock icon handled by AdultGate component in App.tsx */}
+                {/* Centre and right intentionally minimal — AdultGate handles the lock icon */}
                 <div style={{ width: isCompact ? '50px' : '100px' }} />
             </div>
 
-            {/* ═══════════════════════════════════════════════════════════════
-                PROGRESS STRIP - Visual dots showing progress - Responsive
-            ═══════════════════════════════════════════════════════════════ */}
+            {/* PROGRESS STRIP — Kid-UI cream pill with bright dots */}
             <div style={{
                 position: 'fixed',
-                top: isCompact ? '55px' : '75px',
+                top: isCompact ? '60px' : '82px',
                 left: '50%',
                 transform: 'translateX(-50%)',
-                zIndex: 40,
-                display: 'flex',
-                alignItems: 'center',
-                gap: isCompact ? '8px' : '16px',
-                background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                
-                
-                borderRadius: isCompact ? '20px' : '9999px',
-                padding: isCompact ? '8px 14px' : '12px 24px',
-                border: '1.5px solid rgba(255, 255, 255, 0.12)',
+                zIndex: tokens.zIndex.hud,
+                pointerEvents: 'none',
                 maxWidth: isCompact ? 'calc(100% - 120px)' : 'none',
-                boxShadow: '0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15)'
             }}>
-                {!isCompact && (
-                    <>
-                        <span style={{
-                            fontSize: '0.9rem',
-                            color: 'rgba(255, 255, 255, 0.8)',
-                            fontWeight: 600
-                        }}>
-                            {environment.icon} {environment.name}
-                        </span>
-                        <div style={{
-                            width: '1px',
-                            height: '20px',
-                            background: 'rgba(255, 255, 255, 0.2)'
-                        }} />
-                    </>
-                )}
-                <div style={{
+                <KidPanel size="sm" tone="white" style={{
+                    padding: `${tokens.spacing.sm} ${tokens.spacing.lg}`,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: isCompact ? '5px' : '8px',
-                    flexWrap: 'wrap',
-                    justifyContent: 'center'
+                    gap: isCompact ? tokens.spacing.sm : tokens.spacing.md,
                 }}>
-                    {Array.from({ length: totalWords }).map((_, i) => {
-                        const isFilled = i < foundCount;
-                        const isJustFilled = i === foundCount - 1 && justFoundWord;
-                        return (
-                            <div
-                                key={i}
-                                style={{
-                                    width: isCompact ? '10px' : '14px',
-                                    height: isCompact ? '10px' : '14px',
+                    {!isCompact && (
+                        <>
+                            <span style={{
+                                fontFamily: tokens.fontFamily.heading,
+                                fontWeight: tokens.fontWeight.bold,
+                                fontSize: tokens.fontSize.label,
+                                color: tokens.semantic.textPrimary,
+                                whiteSpace: 'nowrap',
+                            }}>
+                                {environment.icon} {environment.name}
+                            </span>
+                            <div style={{
+                                width: '1px', height: '20px',
+                                background: 'rgba(108, 63, 164, 0.18)',
+                            }} />
+                        </>
+                    )}
+                    <div style={{
+                        display: 'flex', alignItems: 'center',
+                        gap: isCompact ? '5px' : '8px',
+                        flexWrap: 'wrap', justifyContent: 'center',
+                    }}>
+                        {Array.from({ length: totalWords }).map((_, i) => {
+                            const isFilled = i < foundCount;
+                            const isJustFilled = i === foundCount - 1 && justFoundWord;
+                            return (
+                                <div key={i} style={{
+                                    width: isCompact ? '11px' : '15px',
+                                    height: isCompact ? '11px' : '15px',
                                     borderRadius: '50%',
                                     background: isFilled
                                         ? environment.accentColor
-                                        : 'rgba(255, 255, 255, 0.15)',
-                                    border: `2px solid ${isFilled ? environment.accentColor : 'rgba(255, 255, 255, 0.3)'}`,
-                                    boxShadow: isFilled ? `0 0 12px ${environment.accentColor}` : 'none',
+                                        : 'rgba(108, 63, 164, 0.12)',
+                                    border: `2px solid ${isFilled
+                                        ? environment.accentColor
+                                        : 'rgba(108, 63, 164, 0.20)'}`,
+                                    boxShadow: isFilled ? `0 0 10px ${environment.accentColor}88` : 'none',
                                     transition: 'all 0.4s ease',
                                     transform: isJustFilled ? 'scale(1.3)' : 'scale(1)',
-                                    animation: isJustFilled ? 'dotPop 0.6s ease' : 'none'
-                                }}
-                            />
-                        );
-                    })}
-                </div>
-                <span style={{
-                    fontSize: isCompact ? '0.75rem' : '0.85rem',
-                    color: 'rgba(255, 255, 255, 0.6)',
-                    fontWeight: 500
-                }}>
-                    {foundCount}/{totalWords}
-                </span>
+                                    animation: isJustFilled ? 'dotPop 0.6s ease' : 'none',
+                                }} />
+                            );
+                        })}
+                    </div>
+                    <span style={{
+                        fontFamily: tokens.fontFamily.heading,
+                        fontWeight: tokens.fontWeight.bold,
+                        fontSize: tokens.fontSize.label,
+                        color: tokens.semantic.textSecondary,
+                    }}>
+                        {foundCount}<span style={{ color: tokens.semantic.textMuted }}>/{totalWords}</span>
+                    </span>
+                </KidPanel>
             </div>
 
             {/* ═══════════════════════════════════════════════════════════════
@@ -564,131 +543,110 @@ export const WordSearchMode = ({ frameRef, showSettings = false, onCloseSettings
                 }}
             />
 
-            {/* ═══════════════════════════════════════════════════════════════
-                ONBOARDING INSTRUCTION CARD - Appears briefly on load - Responsive
-            ═══════════════════════════════════════════════════════════════ */}
+            {/* ONBOARDING — Kid-UI cream card, animated in/out via existing keyframes */}
             {showOnboarding && (
                 <div style={{
                     position: 'fixed',
-                    top: isCompact ? '100px' : '140px',
+                    top: isCompact ? '110px' : '150px',
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    zIndex: 100,
-                    background: 'linear-gradient(145deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 100%)',
-                    
-                    
-                    borderRadius: '9999px',
-                    padding: isCompact ? '12px 20px' : '16px 28px',
-                    border: `1.5px solid ${environment.accentColor}40`,
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15)',
+                    zIndex: tokens.zIndex.modal,
+                    pointerEvents: 'none',
                     animation: 'fadeInOut 3s ease-in-out',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: isCompact ? '10px' : '16px',
-                    maxWidth: isCompact ? 'calc(100% - 32px)' : 'none'
+                    maxWidth: isCompact ? 'calc(100% - 32px)' : '460px',
                 }}>
-                    <div style={{ fontSize: isCompact ? '1.8rem' : '2.5rem' }}>🤏</div>
-                    <div>
-                        <div style={{
-                            fontSize: isCompact ? '0.9rem' : '1.1rem',
-                            fontWeight: 700,
-                            color: 'white',
-                            marginBottom: '4px'
-                        }}>
-                            {isCompact ? 'Pinch and drag' : 'Pinch and drag to find a word'}
+                    <KidPanel size="md" tone="white" style={{
+                        display: 'flex', alignItems: 'center',
+                        gap: tokens.spacing.lg,
+                    }}>
+                        <span aria-hidden style={{ fontSize: isCompact ? '1.8rem' : '2.4rem' }}>🤏</span>
+                        <div>
+                            <div style={{
+                                fontFamily: tokens.fontFamily.heading,
+                                fontWeight: tokens.fontWeight.bold,
+                                fontSize: isCompact ? tokens.fontSize.label : tokens.fontSize.button,
+                                color: tokens.semantic.textPrimary,
+                                marginBottom: tokens.spacing.xs,
+                            }}>
+                                {isCompact ? 'Pinch and drag' : 'Pinch and drag to find a word'}
+                            </div>
+                            <div style={{
+                                fontFamily: tokens.fontFamily.body,
+                                fontSize: tokens.fontSize.caption,
+                                color: tokens.semantic.textSecondary,
+                            }}>
+                                Trace from start to end
+                            </div>
                         </div>
-                        <div style={{
-                            fontSize: isCompact ? '0.75rem' : '0.9rem',
-                            color: 'rgba(255, 255, 255, 0.7)'
-                        }}>
-                            Trace from start to end
-                        </div>
-                    </div>
+                    </KidPanel>
                 </div>
             )}
 
-            {/* ═══════════════════════════════════════════════════════════════
-                BOTTOM INSTRUCTION BAR - Always visible, dynamic copy - Responsive
-            ═══════════════════════════════════════════════════════════════ */}
+            {/* BOTTOM INSTRUCTION — KidObjectiveCard with state-based icon */}
             <div style={{
                 position: 'fixed',
                 bottom: (isMobile || isTabletSmall) ? '150px' : '32px',
                 left: '50%',
                 transform: 'translateX(-50%)',
-                zIndex: 40,
+                zIndex: tokens.zIndex.hud,
                 pointerEvents: 'none',
-                maxWidth: isCompact ? 'calc(100% - 24px)' : 'none'
+                maxWidth: isCompact ? 'calc(100% - 24px)' : 'none',
             }}>
-                <div style={{
-                    background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                    
-                    
-                    borderRadius: '9999px',
-                    border: `1.5px solid ${instructionState === 'success' ? environment.accentColor + '60' : 'rgba(255, 255, 255, 0.12)'}`,
-                    padding: isCompact ? '10px 20px' : '14px 28px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: isCompact ? '8px' : '12px',
-                    boxShadow: instructionState === 'success'
-                        ? `0 0 30px ${environment.accentColor}40`
-                        : '0 8px 32px rgba(0, 0, 0, 0.4)',
-                    transition: 'all 0.3s ease'
-                }}>
-                    <span style={{ fontSize: isCompact ? '1rem' : '1.3rem' }}>{instruction.icon}</span>
-                    <span style={{
-                        fontSize: isCompact ? '0.85rem' : '1rem',
-                        fontWeight: 600,
-                        color: instructionState === 'success' ? environment.accentColor : 'white'
-                    }}>
-                        {instruction.text}
-                    </span>
-                </div>
+                <KidObjectiveCard
+                    icon={<span>{instruction.icon}</span>}
+                    animate={instructionState === 'idle'}
+                    style={{
+                        border: instructionState === 'success'
+                            ? `2px solid ${environment.accentColor}`
+                            : `2px solid ${tokens.semantic.borderPanel}`,
+                        boxShadow: instructionState === 'success'
+                            ? `0 0 28px ${environment.accentColor}66, ${tokens.shadow.float}`
+                            : tokens.shadow.float,
+                    }}
+                >
+                    {instruction.text}
+                </KidObjectiveCard>
             </div>
 
-            {/* ═══════════════════════════════════════════════════════════════
-                LEVEL COMPLETE OVERLAY - Calm, centered reward - Responsive
-            ═══════════════════════════════════════════════════════════════ */}
+            {/* LEVEL COMPLETE — Kid-UI overlay with badge + bright text */}
             {showLevelComplete && (
                 <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(0, 0, 0, 0.7)',
-                    
-                    zIndex: 200,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    position: 'fixed', inset: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    zIndex: tokens.zIndex.modal,
+                    background: 'rgba(190, 235, 255, 0.55)',
                     animation: 'fadeIn 0.4s ease',
-                    padding: isCompact ? '16px' : '24px'
+                    padding: isCompact ? tokens.spacing.lg : tokens.spacing.xl,
                 }}>
-                    <div style={{
+                    <KidPanel size="lg" tone="white" style={{
                         textAlign: 'center',
-                        animation: 'levelCompletePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                        maxWidth: isCompact ? '92%' : '500px',
+                        animation: 'levelCompletePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
                     }}>
                         <div style={{
-                            fontSize: isCompact ? '3.5rem' : '5rem',
-                            marginBottom: isCompact ? '10px' : '16px',
-                            animation: 'starGlow 1.5s ease infinite'
+                            display: 'flex', justifyContent: 'center',
+                            marginBottom: tokens.spacing.lg,
                         }}>
-                            ⭐
+                            <KidBadge shape="star" tone="sunshine" size="lg" animateIn />
                         </div>
                         <div style={{
-                            fontSize: isCompact ? '1.8rem' : '2.8rem',
-                            fontWeight: 'bold',
-                            color: '#FFD700',
-                            textShadow: '0 0 30px #FFD700',
-                            marginBottom: isCompact ? '8px' : '12px'
+                            fontFamily: tokens.fontFamily.display,
+                            fontWeight: tokens.fontWeight.bold,
+                            fontSize: 'clamp(1.7rem, 5vw, 2.4rem)',
+                            color: tokens.semantic.primary,
+                            marginBottom: tokens.spacing.md,
+                            letterSpacing: tokens.letterSpacing.tight,
                         }}>
                             Great Job!
                         </div>
                         <div style={{
-                            fontSize: isCompact ? '1rem' : '1.3rem',
-                            color: 'white',
-                            opacity: 0.9
+                            fontFamily: tokens.fontFamily.body,
+                            fontSize: 'clamp(1rem, 2.4vw, 1.2rem)',
+                            color: tokens.semantic.textPrimary,
                         }}>
-                            {chapter < 3 ? 'Get ready for the next level!' : 'You completed all levels!'}
+                            {chapter < 6 ? 'Get ready for the next level!' : 'You completed all levels!'}
                         </div>
-                    </div>
+                    </KidPanel>
                 </div>
             )}
 
@@ -761,53 +719,45 @@ interface WordPanelProps {
 }
 
 const WordPanel = ({ words, justFoundWord, hintWordIndex, hintPhase, isMobile, accentColor, isCompact = false }: WordPanelProps) => {
+    // Kid-UI cream card with bright shadow. Mobile: bottom sheet shape;
+    // desktop: floating side panel.
     const containerStyle: React.CSSProperties = isMobile
         ? {
             position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 30,
-            background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-            
-            
-            borderTop: '1.5px solid rgba(255, 255, 255, 0.12)',
-            borderRadius: isCompact ? '22px 22px 0 0' : '28px 28px 0 0',
-            padding: isCompact ? '12px' : '20px',
-            maxHeight: isCompact ? '130px' : '170px',
+            bottom: 0, left: 0, right: 0,
+            zIndex: tokens.zIndex.hud,
+            background: tokens.semantic.bgPanel,
+            borderTop: `2px solid ${tokens.semantic.borderPanel}`,
+            borderRadius: isCompact ? '24px 24px 0 0' : '32px 32px 0 0',
+            padding: isCompact ? tokens.spacing.md : tokens.spacing.xl,
+            maxHeight: isCompact ? '140px' : '190px',
             paddingBottom: 'max(env(safe-area-inset-bottom, 12px), 12px)',
-            boxShadow: '0 -4px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15)'
+            boxShadow: '0 -8px 28px rgba(108, 63, 164, 0.14)',
         }
         : {
             position: 'fixed',
-            right: '24px',
-            top: '50%',
+            right: tokens.spacing.xl, top: '50%',
             transform: 'translateY(-50%)',
-            zIndex: 30,
-            background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-            
-            
-            borderRadius: '22px',
-            border: '1.5px solid rgba(255, 255, 255, 0.12)',
-            padding: '24px',
-            minWidth: '220px',
-            maxWidth: '260px',
-            boxShadow: '0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15)'
+            zIndex: tokens.zIndex.hud,
+            background: tokens.semantic.bgPanel,
+            border: `2px solid ${tokens.semantic.borderPanel}`,
+            borderRadius: tokens.radius.xxl,
+            padding: tokens.spacing.xl,
+            minWidth: '230px', maxWidth: '270px',
+            boxShadow: tokens.shadow.float,
         };
 
     return (
         <div style={containerStyle}>
-            {/* Title - smaller on compact */}
             <div style={{
-                fontSize: isCompact ? '0.85rem' : '1rem',
-                fontWeight: 700,
-                color: 'white',
-                marginBottom: isCompact ? '10px' : '16px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: isCompact ? '6px' : '8px'
+                fontFamily: tokens.fontFamily.heading,
+                fontWeight: tokens.fontWeight.bold,
+                fontSize: isCompact ? tokens.fontSize.label : tokens.fontSize.button,
+                color: tokens.semantic.primary,
+                marginBottom: isCompact ? tokens.spacing.md : tokens.spacing.lg,
+                display: 'flex', alignItems: 'center', gap: tokens.spacing.sm,
             }}>
-                <span>📝</span>
+                <span aria-hidden>📝</span>
                 <span>{isCompact ? 'Find' : 'Find these words'}</span>
             </div>
 
@@ -828,25 +778,20 @@ const WordPanel = ({ words, justFoundWord, hintWordIndex, hintPhase, isMobile, a
                         <div
                             key={word.text}
                             style={{
-                                padding: isCompact
-                                    ? '6px 10px'
-                                    : isMobile
-                                        ? '10px 16px'
-                                        : '14px 18px',
-                                borderRadius: isCompact ? '10px' : '16px',
+                                padding: isCompact ? '7px 12px' : isMobile ? '11px 16px' : '13px 18px',
+                                borderRadius: isCompact ? tokens.radius.md : tokens.radius.lg,
                                 background: isFound
-                                    ? `linear-gradient(135deg, ${accentColor}20, ${accentColor}30)`
+                                    ? `linear-gradient(135deg, ${accentColor}26, ${accentColor}40)`
                                     : isHinted
-                                        ? 'rgba(255, 230, 109, 0.15)'
-                                        : 'rgba(255, 255, 255, 0.05)',
+                                        ? 'rgba(255, 216, 77, 0.22)'
+                                        : '#F4FAFF',
                                 border: isFound
                                     ? `2px solid ${accentColor}`
                                     : isHinted
-                                        ? '2px solid rgba(255, 230, 109, 0.5)'
-                                        : '2px solid rgba(255, 255, 255, 0.1)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: isCompact ? '6px' : '10px',
+                                        ? `2px solid ${tokens.colors.sunshine}`
+                                        : `2px solid ${tokens.semantic.borderPanel}`,
+                                display: 'flex', alignItems: 'center',
+                                gap: isCompact ? tokens.spacing.xs : tokens.spacing.sm,
                                 transition: 'all 0.3s ease',
                                 animation: isJustFound
                                     ? 'wordPillPop 0.5s ease'
@@ -854,25 +799,29 @@ const WordPanel = ({ words, justFoundWord, hintWordIndex, hintPhase, isMobile, a
                                         ? 'softPulse 2s ease infinite'
                                         : 'none',
                                 boxShadow: isFound
-                                    ? `0 0 20px ${accentColor}30`
-                                    : 'none'
+                                    ? `0 0 18px ${accentColor}55, 0 2px 6px rgba(108,63,164,0.10)`
+                                    : '0 2px 4px rgba(108,63,164,0.06)',
                             }}
                         >
-                            {/* Icon or checkmark */}
-                            <span style={{
+                            <span aria-hidden style={{
                                 fontSize: isCompact ? '0.9rem' : '1.2rem',
-                                opacity: isFound ? 1 : 0.5
+                                opacity: isFound ? 1 : 0.85,
                             }}>
                                 {isFound ? '✓' : wordIcon}
                             </span>
-
-                            {/* Word text */}
                             <span style={{
-                                fontSize: isCompact ? '0.75rem' : isMobile ? '0.95rem' : '1.05rem',
-                                fontWeight: isFound ? 700 : 600,
-                                color: isFound ? accentColor : 'rgba(255, 255, 255, 0.8)',
+                                fontFamily: tokens.fontFamily.heading,
+                                fontSize: isCompact ? '0.78rem' : isMobile ? '0.95rem' : '1.05rem',
+                                fontWeight: tokens.fontWeight.bold,
+                                color: isFound
+                                    ? accentColor
+                                    : isHinted
+                                        ? tokens.semantic.textPrimary
+                                        : tokens.semantic.textPrimary,
                                 textTransform: 'uppercase',
-                                letterSpacing: '0.5px'
+                                letterSpacing: '0.5px',
+                                textDecoration: isFound ? 'line-through' : 'none',
+                                textDecorationThickness: isFound ? '2px' : undefined,
                             }}>
                                 {word.text}
                             </span>
@@ -897,184 +846,139 @@ const SettingsModal = ({ settings, onSettingsChange, onClose }: SettingsModalPro
     return (
         <div
             style={{
-                position: 'fixed',
-                inset: 0,
-                background: 'rgba(0, 0, 0, 0.8)',
-                
-                zIndex: 300,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
+                position: 'fixed', inset: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                zIndex: tokens.zIndex.modal,
+                background: 'rgba(190, 235, 255, 0.55)',
+                padding: tokens.spacing.xl,
             }}
             onClick={onClose}
         >
-            <div
-                style={{
-                    background: 'linear-gradient(145deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 100%)',
-                    
-                    
-                    borderRadius: '28px',
-                    border: '1.5px solid rgba(255, 255, 255, 0.12)',
-                    padding: '32px',
-                    maxWidth: '500px',
-                    width: '90%',
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.25), 0 12px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15)'
-                }}
-                onClick={(e) => e.stopPropagation()}
+            <KidPanel
+                size="lg"
+                tone="white"
+                style={{ maxWidth: '500px', width: '90%' }}
+                onClick={(e?: React.MouseEvent) => e?.stopPropagation()}
             >
                 <h2 style={{
-                    margin: '0 0 24px',
-                    fontSize: '1.8rem',
-                    color: 'white',
-                    textAlign: 'center'
+                    margin: `0 0 ${tokens.spacing.xl}`,
+                    fontFamily: tokens.fontFamily.display,
+                    fontWeight: tokens.fontWeight.bold,
+                    fontSize: 'clamp(1.4rem, 4vw, 1.8rem)',
+                    color: tokens.semantic.primary,
+                    textAlign: 'center',
+                    letterSpacing: tokens.letterSpacing.tight,
                 }}>
                     ⚙️ Settings
                 </h2>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing.lg }}>
                     {/* Difficulty */}
                     <div>
                         <label style={{
                             display: 'block',
-                            marginBottom: '8px',
-                            color: 'white',
-                            fontSize: '1rem',
-                            fontWeight: 600
+                            marginBottom: tokens.spacing.sm,
+                            fontFamily: tokens.fontFamily.heading,
+                            fontWeight: tokens.fontWeight.bold,
+                            fontSize: tokens.fontSize.label,
+                            color: tokens.semantic.textPrimary,
                         }}>
                             Difficulty
                         </label>
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                            {(['easy', 'standard'] as Difficulty[]).map(diff => (
-                                <button
-                                    key={diff}
-                                    onClick={() => onSettingsChange({ ...settings, difficulty: diff })}
-                                    style={{
-                                        flex: 1,
-                                        padding: '12px',
-                                        background: settings.difficulty === diff
-                                            ? 'rgba(102, 126, 234, 0.3)'
-                                            : 'rgba(255, 255, 255, 0.1)',
-                                        border: `2px solid ${settings.difficulty === diff ? '#667eea' : 'rgba(255, 255, 255, 0.2)'}`,
-                                        borderRadius: '12px',
-                                        color: 'white',
-                                        cursor: 'pointer',
-                                        fontSize: '0.95rem',
-                                        fontWeight: 600,
-                                        textTransform: 'capitalize'
-                                    }}
-                                >
-                                    {diff === 'easy' ? '🌱 Easy' : '🌿 Standard'}
-                                </button>
-                            ))}
+                        <div style={{ display: 'flex', gap: tokens.spacing.md }}>
+                            {(['easy', 'standard'] as Difficulty[]).map((diff) => {
+                                const active = settings.difficulty === diff;
+                                return (
+                                    <KidButton
+                                        key={diff}
+                                        variant={active ? 'primary' : 'secondary'}
+                                        size="md"
+                                        fullWidth
+                                        onClick={() => onSettingsChange({ ...settings, difficulty: diff })}
+                                    >
+                                        {diff === 'easy' ? '🌱 Easy' : '🌿 Standard'}
+                                    </KidButton>
+                                );
+                            })}
                         </div>
                     </div>
 
-                    {/* Sound */}
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '12px',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        borderRadius: '12px'
-                    }}>
-                        <label style={{
-                            color: 'white',
-                            fontSize: '1rem',
-                            fontWeight: 600
-                        }}>
-                            🔊 Sound Effects
-                        </label>
-                        <button
-                            onClick={() => onSettingsChange({ ...settings, sound: !settings.sound })}
-                            style={{
-                                width: '50px',
-                                height: '28px',
-                                borderRadius: '14px',
-                                background: settings.sound ? '#4ECDC4' : 'rgba(255, 255, 255, 0.2)',
-                                border: 'none',
-                                cursor: 'pointer',
-                                position: 'relative',
-                                transition: 'background 0.2s'
-                            }}
-                        >
-                            <div style={{
-                                position: 'absolute',
-                                top: '2px',
-                                left: settings.sound ? '24px' : '2px',
-                                width: '24px',
-                                height: '24px',
-                                borderRadius: '50%',
-                                background: 'white',
-                                transition: 'left 0.2s'
-                            }} />
-                        </button>
-                    </div>
+                    {/* Sound toggle */}
+                    <SettingsToggleRow
+                        label="🔊 Sound Effects"
+                        active={settings.sound}
+                        onToggle={() => onSettingsChange({ ...settings, sound: !settings.sound })}
+                    />
 
-                    {/* Reduce Motion */}
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '12px',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        borderRadius: '12px'
-                    }}>
-                        <label style={{
-                            color: 'white',
-                            fontSize: '1rem',
-                            fontWeight: 600
-                        }}>
-                            ✨ Reduce Motion
-                        </label>
-                        <button
-                            onClick={() => onSettingsChange({ ...settings, reduceMotion: !settings.reduceMotion })}
-                            style={{
-                                width: '50px',
-                                height: '28px',
-                                borderRadius: '14px',
-                                background: settings.reduceMotion ? '#4ECDC4' : 'rgba(255, 255, 255, 0.2)',
-                                border: 'none',
-                                cursor: 'pointer',
-                                position: 'relative',
-                                transition: 'background 0.2s'
-                            }}
-                        >
-                            <div style={{
-                                position: 'absolute',
-                                top: '2px',
-                                left: settings.reduceMotion ? '24px' : '2px',
-                                width: '24px',
-                                height: '24px',
-                                borderRadius: '50%',
-                                background: 'white',
-                                transition: 'left 0.2s'
-                            }} />
-                        </button>
-                    </div>
+                    {/* Reduce Motion toggle */}
+                    <SettingsToggleRow
+                        label="✨ Reduce Motion"
+                        active={settings.reduceMotion}
+                        onToggle={() => onSettingsChange({ ...settings, reduceMotion: !settings.reduceMotion })}
+                    />
 
                     {/* Close button */}
-                    <button
-                        onClick={onClose}
-                        style={{
-                            marginTop: '8px',
-                            padding: '14px',
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            borderRadius: '16px',
-                            color: 'white',
-                            cursor: 'pointer',
-                            fontSize: '1rem',
-                            fontWeight: 600
-                        }}
-                    >
+                    <KidButton variant="primary" size="md" fullWidth onClick={onClose}>
                         Done
-                    </button>
+                    </KidButton>
                 </div>
-            </div>
+            </KidPanel>
         </div>
     );
 };
+
+/**
+ * Settings row with a label + toggle switch — styled to bright Kid-UI.
+ */
+const SettingsToggleRow = ({
+    label, active, onToggle,
+}: {
+    label: string; active: boolean; onToggle: () => void;
+}) => (
+    <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: tokens.spacing.md,
+        background: tokens.semantic.bgPanelTinted,
+        borderRadius: tokens.radius.lg,
+        border: `1.5px solid ${tokens.semantic.borderPanel}`,
+    }}>
+        <label style={{
+            fontFamily: tokens.fontFamily.heading,
+            fontWeight: tokens.fontWeight.bold,
+            fontSize: tokens.fontSize.label,
+            color: tokens.semantic.textPrimary,
+        }}>
+            {label}
+        </label>
+        <button
+            onClick={onToggle}
+            aria-pressed={active}
+            style={{
+                width: '52px',
+                height: '30px',
+                borderRadius: '15px',
+                background: active ? tokens.semantic.success : tokens.colors.softGrey,
+                border: 'none',
+                cursor: 'pointer',
+                position: 'relative',
+                transition: `background ${tokens.motion.duration.quick} ${tokens.motion.ease.standard}`,
+                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.10)',
+            }}
+        >
+            <div style={{
+                position: 'absolute',
+                top: '3px',
+                left: active ? '25px' : '3px',
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                background: '#FFFFFF',
+                transition: `left ${tokens.motion.duration.quick} ${tokens.motion.ease.bounce}`,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+            }} />
+        </button>
+    </div>
+);
 
 /**
  * Get tile at point (helper)

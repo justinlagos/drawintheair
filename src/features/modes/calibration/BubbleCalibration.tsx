@@ -27,6 +27,13 @@ import {
     type BubbleLevel
 } from './bubbleCalibrationLogic';
 import { GameTopBar } from '../../../components/GameTopBar';
+import {
+    KidChip,
+    KidPanel,
+    KidButton,
+    KidBadge,
+} from '../../../components/kid-ui';
+import { tokens } from '../../../styles/tokens';
 import { earnSticker } from '../../../core/stickerBook';
 import { featureFlags } from '../../../core/featureFlags';
 import { showMessageCard, getRandomMessageCopy } from '../../../core/messageCardService';
@@ -170,7 +177,8 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
                     setShowResultsOverlay(true);
                 } else {
                     setShowEndModal(true);
-                    // Auto-advance on success for non-final levels
+                    // Auto-advance on success for non-final levels — hands-free
+                    // for kids; 2200ms gives time to read the star/text.
                     if (goalReached && level < MAX_LEVEL) {
                         setAutoAdvanceScheduled(true);
                         autoAdvanceTimeout = window.setTimeout(() => {
@@ -178,7 +186,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
                             setShowEndModal(false);
                             setAutoAdvanceScheduled(false);
                             setLevel(nextLevel);
-                        }, 1200);
+                        }, 2200);
                     }
                 }
                 if (eligible) {
@@ -244,478 +252,245 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
 
     // Responsive sizing
     const hudSpacing = isMobile ? '18px' : isTabletSmall ? '28px' : '40px';
-    const hudPadding = isCompact ? '10px 16px' : '14px 20px';
-    const hudRadius = isCompact ? '18px' : '22px';
-    const hudGap = isCompact ? '10px' : '24px';
+    const lowTime = timeRemaining < 5000;
 
     return (
         <>
-            {/* Back to menu + level chip */}
-            <GameTopBar
-                onBack={onExit}
-                stage={`Level ${level} of ${MAX_LEVEL}`}
-                compact={isCompact}
-            />
+            {/* Back to menu top bar — stage label omitted, KidChip below shows it */}
+            <GameTopBar onBack={onExit} compact={isCompact} />
 
-            {/* Top Bar - Responsive layout */}
+            {/* Top HUD — bright Kid-UI chips arranged in a single bar */}
             <div style={{
                 position: 'absolute',
                 top: hudSpacing,
                 left: '50%',
                 transform: 'translateX(-50%)',
-                zIndex: 400,
+                zIndex: tokens.zIndex.hud,
                 pointerEvents: 'none',
                 display: 'flex',
-                flexDirection: isCompact ? 'column' : 'row',
-                gap: isCompact ? '8px' : hudGap,
+                gap: isCompact ? tokens.spacing.sm : tokens.spacing.lg,
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: isCompact ? 'auto' : '100%',
-                maxWidth: isCompact ? 'calc(100% - 100px)' : '1200px',
-                padding: isCompact ? '0' : '0 24px'
+                flexWrap: 'wrap',
+                maxWidth: isCompact ? 'calc(100% - 100px)' : '1100px',
+                padding: isCompact ? `0 ${tokens.spacing.md}` : `0 ${tokens.spacing.xl}`,
             }}>
-                {/* Compact mode: Single row with mode name, timer and score */}
-                {isCompact ? (
-                    <div style={{
-                        display: 'flex',
-                        gap: '8px',
-                        alignItems: 'center',
-                        flexWrap: 'wrap',
-                        justifyContent: 'center'
-                    }}>
-                        {/* Mode Name */}
-                        <div style={{
-                            background: 'linear-gradient(180deg, #1B274F, #0F1836)',
-                            borderRadius: hudRadius,
-                            border: '1px solid rgba(255, 255, 255, 0.16)',
-                            padding: hudPadding,
-                            boxShadow: '0 8px 20px rgba(0,0,0,0.35)'
-                        }}>
-                            <span style={{
-                                fontSize: '1rem',
-                                fontWeight: 700,
-                                color: '#FFFFFF'
-                            }}>
-                                Bubble Pop
-                            </span>
-                        </div>
+                <KidChip variant="neutral" size={isCompact ? 'sm' : 'md'}
+                         icon={<span>🫧</span>}>
+                    {`Level ${level} of ${MAX_LEVEL}`}
+                </KidChip>
 
-                        {/* Timer */}
-                        <div style={{
-                            background: 'linear-gradient(180deg, #1B274F, #0F1836)',
-                            borderRadius: hudRadius,
-                            border: timeRemaining < 5000
-                                ? '1px solid rgba(222, 49, 99, 0.6)'
-                                : '1px solid rgba(255, 255, 255, 0.16)',
-                            padding: hudPadding,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            boxShadow: '0 8px 20px rgba(0,0,0,0.35)'
-                        }}>
-                            <span style={{ fontSize: '1rem' }}>⏱</span>
-                            <span style={{
-                                fontSize: '1.1rem',
-                                fontWeight: 'bold',
-                                color: timeRemaining < 5000 ? '#DE3163' : '#FFD966',
-                                fontFamily: 'monospace'
-                            }}>
-                                {formatTime(timeRemaining)}
-                            </span>
-                        </div>
+                <KidChip
+                    variant={lowTime ? 'reward' : 'timer'}
+                    size={isCompact ? 'sm' : 'md'}
+                    icon={<span style={{
+                        color: lowTime ? tokens.semantic.danger : tokens.semantic.primary,
+                    }}>⏱</span>}
+                    style={lowTime ? { borderColor: tokens.semantic.danger } : undefined}
+                >
+                    <span style={{
+                        fontFamily: tokens.fontFamily.heading,
+                        fontWeight: tokens.fontWeight.extrabold,
+                        color: lowTime ? tokens.semantic.danger : tokens.semantic.textPrimary,
+                    }}>{formatTime(timeRemaining)}</span>
+                </KidChip>
 
-                        {/* Score */}
-                        <div style={{
-                            background: 'linear-gradient(180deg, #1B274F, #0F1836)',
-                            borderRadius: hudRadius,
-                            border: '1px solid rgba(255, 255, 255, 0.16)',
-                            padding: hudPadding,
-                            boxShadow: '0 8px 20px rgba(0,0,0,0.35)'
-                        }}>
-                            <span style={{
-                                fontSize: '1.1rem',
-                                fontWeight: 'bold',
-                                color: '#FFD966'
-                            }}>
-                                {score}/{currentGoal}
-                            </span>
-                        </div>
-                    </div>
-                ) : (
-                    /* Desktop: Full layout */
-                    <>
-                        {/* Left: Mode Name */}
-                        <div style={{
-                            background: 'linear-gradient(180deg, #1B274F, #0F1836)',
-                            borderRadius: hudRadius,
-                            border: '1px solid rgba(255, 255, 255, 0.16)',
-                            padding: hudPadding,
-                            boxShadow: '0 8px 20px rgba(0,0,0,0.35)'
-                        }}>
-                            <div style={{
-                                fontSize: '1.25rem',
-                                fontWeight: 700,
-                                color: '#FFFFFF'
-                            }}>
-                                Bubble Pop
-                            </div>
-                        </div>
-
-                        {/* Center: Timer */}
-                        <div style={{
-                            background: 'linear-gradient(180deg, #1B274F, #0F1836)',
-                            borderRadius: hudRadius,
-                            border: timeRemaining < 5000
-                                ? '1px solid rgba(222, 49, 99, 0.6)'
-                                : '1px solid rgba(255, 255, 255, 0.16)',
-                            padding: hudPadding,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                            boxShadow: '0 8px 20px rgba(0,0,0,0.35)'
-                        }}>
-                            <span style={{ fontSize: '1.5rem' }}>⏱</span>
-                            <span style={{
-                                fontSize: '1.75rem',
-                                fontWeight: 'bold',
-                                color: timeRemaining < 5000 ? '#DE3163' : '#FFD966',
-                                fontFamily: 'monospace'
-                            }}>
-                                {formatTime(timeRemaining)}
-                            </span>
-                        </div>
-
-                        {/* Right: Score and Goal */}
-                        <div style={{
-                            background: 'linear-gradient(180deg, #1B274F, #0F1836)',
-                            borderRadius: hudRadius,
-                            border: '1px solid rgba(255, 255, 255, 0.16)',
-                            padding: hudPadding,
-                            textAlign: 'center',
-                            boxShadow: '0 8px 20px rgba(0,0,0,0.35)'
-                        }}>
-                            <div style={{
-                                fontSize: '1.75rem',
-                                fontWeight: 'bold',
-                                color: '#FFD966',
-                                marginBottom: '4px'
-                            }}>
-                                Score {score} / {currentGoal}
-                            </div>
-                            <div style={{
-                                fontSize: '0.85rem',
-                                color: '#FFFFFF',
-                                marginTop: '2px'
-                            }}>
-                                Pop {currentGoal} bubbles
-                            </div>
-                        </div>
-                    </>
-                )}
+                <KidChip variant="score" size={isCompact ? 'sm' : 'md'}
+                         icon={<span style={{ color: tokens.colors.sunshine }}>★</span>}>
+                    <span>{score}<span style={{
+                        color: tokens.semantic.textMuted,
+                        fontWeight: tokens.fontWeight.medium,
+                    }}>{` / ${currentGoal}`}</span></span>
+                </KidChip>
             </div>
 
             {/* Motivation toasts handled by toastService — no in-component overlay */}
 
-            {/* End-of-Round Modal - Center Screen - Responsive */}
+            {/* End-of-Round Modal — bright Kid-UI */}
             {showEndModal && (
                 <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    width: '100vw',
-                    height: '100dvh',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 10000,
-                    background: 'rgba(0, 0, 0, 0.6)',
-
-                    padding: isCompact ? '16px' : '24px',
-                    boxSizing: 'border-box'
+                    position: 'fixed', inset: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    zIndex: tokens.zIndex.modal,
+                    background: 'rgba(190, 235, 255, 0.55)',
+                    padding: tokens.spacing.xl,
+                    boxSizing: 'border-box',
                 }}>
-                    <div style={{
-                        background: 'rgba(1, 12, 36, 0.95)',
-
-                        borderRadius: isCompact ? '24px' : '32px',
-                        border: '3px solid rgba(255, 255, 255, 0.1)',
-                        padding: isCompact ? '24px 28px' : '48px 56px',
+                    <KidPanel size="lg" tone="white" style={{
                         textAlign: 'center',
-                        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.08)',
-                        maxWidth: isCompact ? '90%' : '500px',
+                        maxWidth: isCompact ? '92%' : '520px',
                         width: '100%',
-                        animation: 'modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                        animation: 'modalPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)',
                     }}>
                         <div style={{
-                            fontSize: isCompact ? '3rem' : '4rem',
-                            marginBottom: isCompact ? '12px' : '20px',
-                            animation: goalReached ? 'starGlow 1.2s ease infinite' : 'none'
+                            display: 'flex', justifyContent: 'center',
+                            marginBottom: tokens.spacing.lg,
                         }}>
-                            {goalReached ? '⭐' : '✨'}
+                            <KidBadge
+                                shape={goalReached ? 'star' : 'shield'}
+                                tone={goalReached ? 'sunshine' : 'aqua'}
+                                size="lg"
+                                animateIn
+                            />
                         </div>
 
                         <h2 style={{
-                            fontSize: isCompact ? '1.5rem' : '2.5rem',
-                            fontWeight: 'bold',
-                            color: goalReached ? '#FFD93D' : 'white',
-                            textShadow: goalReached ? '0 0 30px #FFD93D' : 'none',
-                            margin: `0 0 ${isCompact ? '10px' : '16px'} 0`
+                            fontFamily: tokens.fontFamily.display,
+                            fontSize: 'clamp(1.6rem, 5vw, 2.4rem)',
+                            fontWeight: tokens.fontWeight.bold,
+                            color: tokens.semantic.primary,
+                            margin: `0 0 ${tokens.spacing.md} 0`,
+                            letterSpacing: tokens.letterSpacing.tight,
                         }}>
                             {goalReached
-                                ? (isLastLevel ? 'All Levels Complete! 🎉' : 'Level Complete!')
-                                : 'Nice Try!'
-                            }
+                                ? (isLastLevel ? 'All Levels Complete!' : 'Level Complete!')
+                                : 'Nice Try!'}
                         </h2>
 
                         <p style={{
-                            fontSize: isCompact ? '1rem' : '1.3rem',
-                            color: 'rgba(255,255,255,0.8)',
-                            marginBottom: isCompact ? '20px' : '32px'
+                            fontFamily: tokens.fontFamily.body,
+                            fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+                            color: tokens.semantic.textPrimary,
+                            margin: `0 0 ${tokens.spacing.xl} 0`,
                         }}>
-                            You popped <strong style={{ color: '#00E5FF' }}>{score}</strong> bubbles!
+                            You popped <strong style={{ color: tokens.colors.coral }}>{score}</strong> bubbles!
                             {goalReached && !isLastLevel && (
-                                <div style={{ marginTop: '12px', fontSize: '1.1rem', color: '#FFD93D' }}>
-                                    Moving to next level...
+                                <div style={{
+                                    marginTop: tokens.spacing.md,
+                                    fontSize: tokens.fontSize.label,
+                                    color: tokens.semantic.textSecondary,
+                                }}>
+                                    Moving to the next level…
                                 </div>
                             )}
                             {goalReached && isLastLevel && (
-                                <div style={{ marginTop: '12px', fontSize: '1.1rem', color: '#FFD93D' }}>
-                                    Amazing! You completed all {MAX_LEVEL} levels! 🌟
+                                <div style={{
+                                    marginTop: tokens.spacing.md,
+                                    fontSize: tokens.fontSize.label,
+                                    color: tokens.semantic.textSecondary,
+                                }}>
+                                    Amazing! You completed all {MAX_LEVEL} levels.
                                 </div>
                             )}
                         </p>
 
                         <div style={{
                             display: 'flex',
-                            gap: isCompact ? '10px' : '16px',
+                            gap: tokens.spacing.md,
                             justifyContent: 'center',
-                            flexWrap: 'wrap'
+                            flexWrap: 'wrap',
                         }}>
-                            {/* Next Level button - shown when goal reached and not last level */}
-                            {goalReached && !isLastLevel && (
-                                <button
-                                    onClick={handleNextLevel}
-                                    style={{
-                                        padding: isCompact ? '12px 24px' : '16px 32px',
-                                        background: 'linear-gradient(180deg, rgba(255, 217, 61, 0.4) 0%, rgba(255, 217, 61, 0.3) 100%)',
-                                        border: '2px solid rgba(255, 217, 61, 0.6)',
-                                        borderRadius: isCompact ? '16px' : '24px',
-                                        color: '#FFD93D',
-                                        cursor: 'pointer',
-                                        fontSize: isCompact ? '0.95rem' : '1.1rem',
-                                        fontWeight: 700,
-                                        transition: 'all 0.2s ease',
-                                        boxShadow: '0 4px 16px rgba(255, 217, 61, 0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
-                                        minWidth: '44px',
-                                        minHeight: '44px'
-                                    }}
-                                    onMouseDown={(e) => {
-                                        e.currentTarget.style.transform = 'scale(0.95)';
-                                    }}
-                                    onMouseUp={(e) => {
-                                        e.currentTarget.style.transform = 'scale(1)';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.transform = 'scale(1)';
-                                    }}
-                                >
+                            {/* Manual "Next Level" only appears if auto-advance is
+                                NOT scheduled (e.g., final level or failed round).
+                                In auto-advance mode the modal closes itself after
+                                2.2s, so kids never need to click. */}
+                            {goalReached && !isLastLevel && !autoAdvanceScheduled && (
+                                <KidButton variant="primary" size="md" onClick={handleNextLevel}>
                                     Next Level
-                                </button>
+                                </KidButton>
                             )}
-                            {/* Try Again button - always shown */}
-                            <button
-                                onClick={handleTryAgain}
-                                style={{
-                                    padding: isCompact ? '12px 24px' : '16px 32px',
-                                    background: goalReached
-                                        ? 'linear-gradient(180deg, rgba(79, 172, 254, 0.3) 0%, rgba(79, 172, 254, 0.2) 100%)'
-                                        : 'linear-gradient(180deg, rgba(79, 172, 254, 0.4) 0%, rgba(79, 172, 254, 0.3) 100%)',
-                                    border: '2px solid rgba(79, 172, 254, 0.5)',
-                                    borderRadius: isCompact ? '16px' : '24px',
-                                    color: '#4facfe',
-                                    cursor: 'pointer',
-                                    fontSize: isCompact ? '0.95rem' : '1.1rem',
-                                    fontWeight: 700,
-                                    transition: 'all 0.2s ease',
-                                    boxShadow: '0 4px 16px rgba(79, 172, 254, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
-                                    minWidth: '44px',
-                                    minHeight: '44px'
-                                }}
-                                onMouseDown={(e) => {
-                                    e.currentTarget.style.transform = 'scale(0.95)';
-                                }}
-                                onMouseUp={(e) => {
-                                    e.currentTarget.style.transform = 'scale(1)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = 'scale(1)';
-                                }}
-                            >
+                            <KidButton variant="secondary" size="md" onClick={handleTryAgain}>
                                 Try Again
-                            </button>
+                            </KidButton>
                         </div>
-                    </div>
+                    </KidPanel>
                 </div>
             )}
 
-            {/* Results Overlay — shown when all levels complete */}
+            {/* Results Overlay — all levels complete; bright Kid-UI */}
             {showResultsOverlay && (
                 <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    width: '100vw',
-                    height: '100dvh',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 10001,
-                    background: 'rgba(0,0,0,0.65)',
-                    padding: isCompact ? '16px' : '24px',
-                    boxSizing: 'border-box'
+                    position: 'fixed', inset: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    zIndex: tokens.zIndex.modal + 1,
+                    background: 'rgba(190, 235, 255, 0.6)',
+                    padding: tokens.spacing.xl,
+                    boxSizing: 'border-box',
                 }}>
-                    <div style={{
-                        background: 'rgba(1,12,36,0.96)',
-                        borderRadius: isCompact ? '24px' : '32px',
-                        border: '2px solid rgba(255,215,61,0.35)',
-                        padding: isCompact ? '28px 24px' : '52px 56px',
+                    <KidPanel size="lg" tone="white" style={{
                         textAlign: 'center',
-                        maxWidth: isCompact ? '92%' : '480px',
+                        maxWidth: isCompact ? '92%' : '520px',
                         width: '100%',
-                        animation: 'modalPop 0.4s cubic-bezier(0.34,1.56,0.64,1)'
+                        animation: 'modalPop 0.45s cubic-bezier(0.34,1.56,0.64,1)',
                     }}>
-                        {/* Trophy */}
-                        <div style={{ fontSize: isCompact ? '3.5rem' : '4.5rem', marginBottom: isCompact ? '12px' : '20px' }}>
-                            🏆
+                        <div style={{
+                            display: 'flex', justifyContent: 'center',
+                            marginBottom: tokens.spacing.lg,
+                        }}>
+                            <KidBadge shape="medal" tone="sunshine" size="lg" animateIn />
                         </div>
 
                         <h2 style={{
-                            margin: `0 0 ${isCompact ? '10px' : '16px'} 0`,
-                            fontSize: isCompact ? '1.6rem' : '2.4rem',
-                            fontWeight: 800,
-                            color: '#FFD93D',
+                            fontFamily: tokens.fontFamily.display,
+                            fontSize: 'clamp(1.7rem, 5vw, 2.4rem)',
+                            fontWeight: tokens.fontWeight.bold,
+                            color: tokens.semantic.primary,
+                            margin: `0 0 ${tokens.spacing.md} 0`,
+                            letterSpacing: tokens.letterSpacing.tight,
                         }}>
                             All Done!
                         </h2>
 
                         <p style={{
-                            fontSize: isCompact ? '1rem' : '1.2rem',
-                            color: 'rgba(255,255,255,0.85)',
-                            margin: `0 0 ${isCompact ? '6px' : '10px'} 0`
+                            fontFamily: tokens.fontFamily.body,
+                            fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+                            color: tokens.semantic.textPrimary,
+                            margin: `0 0 ${tokens.spacing.lg} 0`,
                         }}>
-                            You completed all <strong style={{ color: '#00E5FF' }}>{MAX_LEVEL}</strong> levels!
+                            You completed all <strong style={{ color: tokens.colors.coral }}>{MAX_LEVEL}</strong> levels!
                         </p>
 
-                        {/* Stats */}
+                        {/* Stats — three soft tinted KidPanels */}
                         <div style={{
                             display: 'flex',
-                            gap: isCompact ? '10px' : '16px',
+                            gap: tokens.spacing.md,
                             justifyContent: 'center',
-                            margin: `${isCompact ? '16px' : '28px'} 0`,
-                            flexWrap: 'wrap'
+                            margin: `${tokens.spacing.lg} 0`,
+                            flexWrap: 'wrap',
                         }}>
-                            {/* Score */}
-                            <div style={{
-                                background: 'rgba(0,229,255,0.1)',
-                                border: '1.5px solid rgba(0,229,255,0.3)',
-                                borderRadius: '16px',
-                                padding: isCompact ? '10px 16px' : '14px 22px',
-                                textAlign: 'center'
-                            }}>
-                                <div style={{ fontSize: isCompact ? '1.6rem' : '2rem', fontWeight: 800, color: '#00E5FF' }}>
-                                    {finalScore}
-                                </div>
-                                <div style={{ fontSize: isCompact ? '0.72rem' : '0.78rem', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>
-                                    bubbles popped
-                                </div>
-                            </div>
-
-                            {/* Accuracy */}
-                            <div style={{
-                                background: 'rgba(255,217,61,0.1)',
-                                border: '1.5px solid rgba(255,217,61,0.3)',
-                                borderRadius: '16px',
-                                padding: isCompact ? '10px 16px' : '14px 22px',
-                                textAlign: 'center'
-                            }}>
-                                <div style={{ fontSize: isCompact ? '1.6rem' : '2rem', fontWeight: 800, color: '#FFD93D' }}>
-                                    {Math.min(100, Math.round((finalScore / getCurrentGoal()) * 100))}%
-                                </div>
-                                <div style={{ fontSize: isCompact ? '0.72rem' : '0.78rem', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>
-                                    accuracy
-                                </div>
-                            </div>
-
-                            {/* Time */}
-                            <div style={{
-                                background: 'rgba(100,255,200,0.1)',
-                                border: '1.5px solid rgba(100,255,200,0.25)',
-                                borderRadius: '16px',
-                                padding: isCompact ? '10px 16px' : '14px 22px',
-                                textAlign: 'center'
-                            }}>
-                                <div style={{ fontSize: isCompact ? '1.6rem' : '2rem', fontWeight: 800, color: '#64FFC8' }}>
-                                    30s
-                                </div>
-                                <div style={{ fontSize: isCompact ? '0.72rem' : '0.78rem', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>
-                                    per level
-                                </div>
-                            </div>
+                            {[
+                                { v: finalScore, l: 'bubbles popped', c: tokens.colors.coral },
+                                {
+                                    v: `${Math.min(100, Math.round((finalScore / getCurrentGoal()) * 100))}%`,
+                                    l: 'accuracy', c: tokens.colors.sunshine,
+                                },
+                                { v: '30s', l: 'per level', c: tokens.colors.aqua },
+                            ].map((s, i) => (
+                                <KidPanel key={i} size="sm" tone="sky" flat style={{
+                                    minWidth: '92px',
+                                    textAlign: 'center',
+                                    padding: tokens.spacing.md,
+                                }}>
+                                    <div style={{
+                                        fontFamily: tokens.fontFamily.heading,
+                                        fontWeight: tokens.fontWeight.extrabold,
+                                        fontSize: 'clamp(1.4rem, 3.5vw, 1.8rem)',
+                                        color: s.c,
+                                        lineHeight: 1,
+                                    }}>{s.v}</div>
+                                    <div style={{
+                                        fontSize: tokens.fontSize.caption,
+                                        color: tokens.semantic.textSecondary,
+                                        marginTop: tokens.spacing.xs,
+                                    }}>{s.l}</div>
+                                </KidPanel>
+                            ))}
                         </div>
 
-                        {/* Buttons */}
                         <div style={{
                             display: 'flex',
-                            gap: isCompact ? '10px' : '14px',
+                            gap: tokens.spacing.md,
                             justifyContent: 'center',
-                            flexWrap: 'wrap'
+                            flexWrap: 'wrap',
                         }}>
-                            {/* Back to Menu */}
-                            <button
-                                onClick={onExit}
-                                style={{
-                                    padding: isCompact ? '12px 22px' : '14px 28px',
-                                    background: 'rgba(255,255,255,0.08)',
-                                    border: '2px solid rgba(255,255,255,0.25)',
-                                    borderRadius: isCompact ? '16px' : '20px',
-                                    color: 'rgba(255,255,255,0.9)',
-                                    cursor: 'pointer',
-                                    fontSize: isCompact ? '0.95rem' : '1rem',
-                                    fontWeight: 700,
-                                    transition: 'transform 0.15s ease',
-                                    minHeight: '44px',
-                                    touchAction: 'manipulation'
-                                }}
-                                onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.96)'; }}
-                                onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                            >
+                            <KidButton variant="secondary" size="md" onClick={onExit}>
                                 ← Menu
-                            </button>
-
-                            {/* Play Again */}
-                            <button
-                                onClick={handlePlayAgain}
-                                style={{
-                                    padding: isCompact ? '12px 22px' : '14px 28px',
-                                    background: 'linear-gradient(180deg, rgba(255,217,61,0.35) 0%, rgba(255,217,61,0.25) 100%)',
-                                    border: '2px solid rgba(255,217,61,0.55)',
-                                    borderRadius: isCompact ? '16px' : '20px',
-                                    color: '#FFD93D',
-                                    cursor: 'pointer',
-                                    fontSize: isCompact ? '0.95rem' : '1rem',
-                                    fontWeight: 700,
-                                    transition: 'transform 0.15s ease',
-                                    minHeight: '44px',
-                                    touchAction: 'manipulation'
-                                }}
-                                onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.96)'; }}
-                                onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                            >
-                                Play Again ↺
-                            </button>
+                            </KidButton>
+                            <KidButton variant="primary" size="md" onClick={handlePlayAgain}>
+                                Play Again
+                            </KidButton>
                         </div>
-                    </div>
+                    </KidPanel>
                 </div>
             )}
 

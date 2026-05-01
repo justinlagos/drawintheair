@@ -326,29 +326,10 @@ export const rainbowBridgeLogic = (
     const now = Date.now();
     const { filteredPoint } = frameData;
 
-    // ── Background: a soft pastel meadow sky ──────────────────────────────────
-    const sky = ctx.createLinearGradient(0, 0, 0, height);
-    sky.addColorStop(0, '#87CEEB');
-    sky.addColorStop(0.6, '#b0e0ff');
-    sky.addColorStop(1, '#7ec850');
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, width, height);
-
-    // Green ground strip
-    ctx.fillStyle = '#4CAF50';
-    ctx.fillRect(0, height * 0.82, width, height * 0.18);
-    ctx.fillStyle = '#388E3C';
-    ctx.fillRect(0, height * 0.82, width, height * 0.03);
-
-    // Fluffy white background clouds (decorative)
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    [[0.15, 0.08], [0.72, 0.12], [0.45, 0.05], [0.88, 0.07]].forEach(([px, py]) => {
-        ctx.beginPath();
-        ctx.arc(px * width, py * height, 30, 0, Math.PI * 2);
-        ctx.arc(px * width - 22, py * height + 8, 22, 0, Math.PI * 2);
-        ctx.arc(px * width + 22, py * height + 8, 22, 0, Math.PI * 2);
-        ctx.fill();
-    });
+    // ── Transparent canvas — HTML RainbowBridgeBackground provides the
+    // sky, hills, rainbow centrepiece and clouds. Game-relevant elements
+    // (rainbow arcs being built, pattern clouds, stones) still draw below.
+    ctx.clearRect(0, 0, width, height);
 
     // ── Draw rainbow arcs (completed steps) ───────────────────────────────────
     drawRainbowArcs(ctx, width, height);

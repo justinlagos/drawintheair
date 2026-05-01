@@ -148,19 +148,19 @@ const GameCard = ({ mode, featured, isHovered, isSelected, hoverProgress, onClic
                 background: `
                     linear-gradient(
                         165deg,
-                        rgba(255,255,255,0.14) 0%,
-                        rgba(255,255,255,0.06) 40%,
-                        rgba(0,0,0,0.15) 100%
+                        #FFFFFF 0%,
+                        #FBFCFF 60%,
+                        #F4FAFF 100%
                     )
                 `,
                 boxShadow: isSelected
-                    ? `inset 0 2px 6px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)`
+                    ? `inset 0 2px 6px rgba(108,63,164,0.18), 0 2px 4px rgba(108,63,164,0.10)`
                     : isHovered
-                        ? `0 8px 32px ${mode.accentGlow}, 0 16px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2)`
-                        : `0 6px 20px rgba(0,0,0,0.35), 0 12px 40px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15)`,
+                        ? `0 12px 30px ${mode.accentGlow}, 0 4px 8px rgba(108,63,164,0.10)`
+                        : `0 6px 18px rgba(108,63,164,0.14), 0 1px 2px rgba(108,63,164,0.06)`,
                 outline: isHovered
-                    ? `2.5px solid ${mode.accentColor}88`
-                    : '2px solid rgba(255,255,255,0.12)',
+                    ? `3px solid ${mode.accentColor}`
+                    : `2px solid rgba(108, 63, 164, 0.18)`,
                 outlineOffset: '-2px',
                 transform: pressed || isSelected
                     ? 'scale(0.97)'
@@ -250,24 +250,24 @@ const GameCard = ({ mode, featured, isHovered, isSelected, hoverProgress, onClic
                     minWidth: 0,
                 }}>
                     <div style={{
+                        fontFamily: "'Fredoka', 'Baloo 2', system-ui, sans-serif",
                         fontSize: compact ? '1.05rem' : featured ? '1.5rem' : '1.15rem',
                         fontWeight: 800,
-                        color: '#ffffff',
+                        color: '#3F4052',
                         lineHeight: 1.2,
-                        letterSpacing: '0.02em',
-                        textShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                        letterSpacing: '-0.02em',
                         whiteSpace: 'normal',
                         wordBreak: 'break-word',
                     }}>
                         {mode.title}
                     </div>
                     <div style={{
-                        fontSize: compact ? '0.8rem' : featured ? '0.95rem' : '0.8rem',
-                        fontWeight: 500,
-                        color: 'rgba(255,255,255,0.6)',
-                        marginTop: '3px',
+                        fontFamily: "'Nunito', 'Quicksand', system-ui, sans-serif",
+                        fontSize: compact ? '0.82rem' : featured ? '0.98rem' : '0.85rem',
+                        fontWeight: 600,
+                        color: '#6B6E80',
+                        marginTop: '4px',
                         lineHeight: 1.3,
-                        textShadow: '0 1px 4px rgba(0,0,0,0.3)',
                     }}>
                         {mode.subtitle}
                     </div>
@@ -308,9 +308,7 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
     const [hoverProgress, setHoverProgress] = useState(0);
     const hoverStartTime = useRef<number | null>(null);
     const cardRefs = useRef<Map<GameMode, DOMRect>>(new Map());
-    const [screenInfo, setScreenInfo] = useState(() => getScreenInfo());
-
-    function getScreenInfo() {
+    const getScreenInfo = useCallback(() => {
         const w = window.innerWidth;
         const h = window.innerHeight;
         return {
@@ -321,13 +319,14 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
             width: w,
             height: h,
         };
-    }
+    }, []);
+    const [screenInfo, setScreenInfo] = useState(getScreenInfo);
 
     useEffect(() => {
         const handleResize = () => setScreenInfo(getScreenInfo());
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
-    }, []);
+    }, [getScreenInfo]);
 
     const { isPhone, isTablet, isDesktop, isLandscape } = screenInfo;
     const isMobilePortrait = isPhone && !isLandscape;
@@ -347,6 +346,11 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
     }, []);
 
     // Hand tracking: dwell-to-select (1.5s hover)
+    // This effect synchronizes external hand-tracking data (MediaPipe results)
+    // into React state — the legitimate "subscribe to external system" pattern
+    // for useEffect. The set-state calls are guarded by hover transitions so
+    // they only fire on changes, not every frame.
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         if (!trackingResults?.landmarks?.length) {
             if (hoverStartTime.current) {
@@ -384,6 +388,7 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
             }
         }
     }, [trackingResults, hoveredMode, selectedMode, onSelect]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     const handleSelect = useCallback((mode: ModeOption) => {
         if (selectedMode) return;
@@ -412,18 +417,26 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
             boxSizing: 'border-box',
             minHeight: '100vh',
         }}>
-            {/* World background */}
-            <div className="world-bg" />
-            <div className="play-stage-light" />
-
-            {/* Ambient vignette */}
+            {/* Bright Kid-UI menu background — sky + soft sun glow */}
             <div style={{
-                position: 'fixed',
-                inset: 0,
-                background: 'radial-gradient(ellipse at center, transparent 30%, rgba(7,12,24,0.6) 100%)',
-                pointerEvents: 'none',
-                zIndex: 0,
+                position: 'fixed', inset: 0, zIndex: 0,
+                background: 'linear-gradient(180deg, #9FDFFF 0%, #BEEBFF 30%, #DEF5FF 65%, #FFF6E5 100%)',
             }} />
+            <div style={{
+                position: 'fixed', inset: 0, zIndex: 0,
+                background: 'radial-gradient(circle 700px at 78% 18%, rgba(255, 216, 77, 0.40) 0%, rgba(255, 216, 77, 0.18) 35%, transparent 70%)',
+            }} />
+            {/* Soft cloud silhouettes + meadow at bottom */}
+            <svg aria-hidden viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice"
+                 style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
+                <g opacity="0.85">
+                    <ellipse cx="220" cy="160" rx="85" ry="24" fill="#FFFFFF" />
+                    <ellipse cx="780" cy="120" rx="100" ry="28" fill="#FFFFFF" />
+                    <ellipse cx="1180" cy="200" rx="80" ry="22" fill="#FFFFFF" />
+                </g>
+                <path d="M0,720 Q300,680 720,710 T1440,700 L1440,900 L0,900 Z" fill="#A6E89A" />
+                <path d="M0,800 Q300,760 720,790 T1440,780 L1440,900 L0,900 Z" fill="#7ED957" />
+            </svg>
 
             {/* Content */}
             <div style={{
@@ -435,26 +448,31 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
                 flexDirection: 'column',
                 gap: isMobilePortrait ? '12px' : isPhone ? '14px' : '20px',
             }}>
-                {/* Back to Home button */}
+                {/* Back to Home — Kid-UI secondary pill */}
                 {onBack && (
                     <button
                         onClick={onBack}
+                        className="kid-panel"
                         style={{
                             position: 'absolute',
                             top: 0,
                             left: 0,
-                            background: 'rgba(255,255,255,0.1)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            borderRadius: '12px',
-                            padding: '8px 16px',
-                            color: 'rgba(255,255,255,0.8)',
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
+                            background: '#FFFFFF',
+                            border: '2.5px solid #6C3FA4',
+                            borderRadius: '9999px',
+                            padding: '10px 22px',
+                            minHeight: '44px',
+                            color: '#6C3FA4',
+                            fontFamily: "'Fredoka', 'Baloo 2', system-ui, sans-serif",
+                            fontSize: '0.95rem',
+                            fontWeight: 700,
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '6px',
+                            gap: '8px',
                             zIndex: 10,
+                            boxShadow: '0 4px 16px rgba(108, 63, 164, 0.12), 0 1px 2px rgba(108, 63, 164, 0.08)',
+                            touchAction: 'manipulation',
                         }}
                     >
                         ← Back
@@ -481,11 +499,12 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
                     />
                     <p style={{
                         margin: 0,
-                        marginTop: '8px',
-                        fontSize: isPhone ? '0.9rem' : '1.05rem',
-                        color: 'rgba(255,255,255,0.65)',
-                        fontWeight: 500,
-                        textShadow: '0 1px 6px rgba(0,0,0,0.3)',
+                        marginTop: '12px',
+                        fontFamily: "'Fredoka', 'Baloo 2', system-ui, sans-serif",
+                        fontSize: isPhone ? '1.1rem' : '1.4rem',
+                        color: '#3F4052',
+                        fontWeight: 700,
+                        letterSpacing: '-0.3px',
                     }}>
                         Choose your adventure
                     </p>
@@ -573,30 +592,26 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
                     </div>
                 )}
 
-                {/* Footer instruction pill */}
-                <div style={{
-                    padding: isPhone ? '10px 18px' : '12px 24px',
-                    background: 'linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)',
-                    borderRadius: '999px',
-                    border: '1.5px solid rgba(255,255,255,0.10)',
+                {/* Footer instruction — Kid-UI cream pill */}
+                <div className="kid-panel" style={{
+                    padding: isPhone ? '12px 22px' : '14px 28px',
+                    background: '#FFFFFF',
+                    borderRadius: '9999px',
+                    border: '2px solid rgba(108, 63, 164, 0.15)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '10px',
                     alignSelf: 'center',
-                    marginTop: isMobilePortrait ? '4px' : '8px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.08)',
+                    marginTop: isMobilePortrait ? '8px' : '12px',
+                    boxShadow: '0 4px 16px rgba(108, 63, 164, 0.12), 0 1px 2px rgba(108, 63, 164, 0.08)',
                 }}>
+                    <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>👆</span>
                     <span style={{
-                        fontSize: '1.1rem',
-                        lineHeight: 1,
-                        filter: 'drop-shadow(0 0 6px rgba(255,217,61,0.4))',
-                    }}>👆</span>
-                    <span style={{
-                        fontSize: isPhone ? '0.82rem' : '0.9rem',
-                        fontWeight: 600,
-                        color: 'rgba(255,255,255,0.75)',
-                        letterSpacing: '0.2px',
+                        fontFamily: "'Fredoka', 'Baloo 2', system-ui, sans-serif",
+                        fontSize: isPhone ? '0.9rem' : '1rem',
+                        fontWeight: 700,
+                        color: '#3F4052',
                     }}>
                         {isPhone ? 'Tap to play' : 'Point and hold to select'}
                     </span>

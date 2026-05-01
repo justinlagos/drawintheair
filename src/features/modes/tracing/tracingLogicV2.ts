@@ -686,11 +686,9 @@ export const tracingLogicV2 = (
         tracingState.lastIdleCheckTime = 0;
     }
     
-    // Draw paused indicator if paused (at end, so it's on top)
-    if (tracingState.isPaused) {
-        drawPausedIndicator(ctx, width, height);
-    }
-    
+    // Paused indicator is rendered by the React layer (KidChip in TracingMode);
+    // drawing it here too caused a double-render overlap during Batch 3B.
+
     // Check completion (only trigger once) - use small epsilon for floating point comparison
     // Also check if very close to end and finger is at/near end of path (forgiveness near completion)
     // ONLY check here (not in progress update) to prevent duplicate triggers
@@ -938,11 +936,11 @@ const drawStartDot = (
     ctx.fillStyle = 'rgba(255,255,255,0.85)';
     ctx.fill();
 
-    // "START" label
+    // "START" label — bright Kid-UI palette
     ctx.shadowBlur = 3 * perfConfig.shadowBlurScale;
-    ctx.shadowColor = 'rgba(0, 245, 212, 0.5)';
-    ctx.fillStyle = '#00F5D4';
-    ctx.font = prominent ? 'bold 13px Arial' : 'bold 11px Arial';
+    ctx.shadowColor = 'rgba(85, 221, 224, 0.55)';
+    ctx.fillStyle = '#55DDE0'; // aqua
+    ctx.font = `700 ${prominent ? 13 : 11}px Fredoka, "Baloo 2", system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
     ctx.fillText('START', px, py - size - 6);
@@ -1001,10 +999,10 @@ const drawEndTarget = (
     ctx.fillStyle = 'rgba(255,255,255,0.7)';
     ctx.fill();
 
-    // "END" label
+    // "END" label — sunshine
     ctx.globalAlpha = 0.5 + glow * 0.5;
-    ctx.fillStyle = '#FFD700';
-    ctx.font = 'bold 11px Arial';
+    ctx.fillStyle = '#FFD84D';
+    ctx.font = '700 11px Fredoka, "Baloo 2", system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
     ctx.fillText('END', px, py - size - 5);
@@ -1043,19 +1041,17 @@ const drawFingerFeedback = (
     ctx.restore();
 };
 
-// Draw off-path hint (gentle, no punishment)
+// Draw off-path hint (gentle, no punishment) — Fredoka + brand palette
 const drawOffPathHint = (
     ctx: CanvasRenderingContext2D,
     width: number,
     height: number
 ): void => {
     ctx.save();
-    ctx.fillStyle = 'rgba(255, 217, 61, 0.15)';
-    ctx.font = 'bold 18px Arial';
+    ctx.fillStyle = 'rgba(108, 63, 164, 0.55)'; // deep plum, low-key
+    ctx.font = '700 18px Fredoka, "Baloo 2", system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.shadowBlur = 5;
-    ctx.shadowColor = 'rgba(255, 217, 61, 0.5)';
     ctx.fillText('Try staying on the glowing path', width / 2, height / 2 + 100);
     ctx.restore();
 };
@@ -1131,32 +1127,9 @@ const drawSparkleTrail = (
     ctx.restore();
 };
 
-// Draw paused indicator (bottom center, more visible)
-const drawPausedIndicator = (
-    ctx: CanvasRenderingContext2D,
-    width: number,
-    height: number
-): void => {
-    ctx.save();
-    // Background for better visibility
-    ctx.fillStyle = 'rgba(255, 217, 61, 0.25)';
-    ctx.fillRect(width / 2 - 100, height - 80, 200, 50);
-    
-    // Border
-    ctx.strokeStyle = 'rgba(255, 217, 61, 0.6)';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(width / 2 - 100, height - 80, 200, 50);
-    
-    // Text
-    ctx.fillStyle = '#FFD93D';
-    ctx.font = 'bold 20px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.shadowBlur = 5;
-    ctx.shadowColor = 'rgba(255, 217, 61, 0.8)';
-    ctx.fillText('⏸️ Paused', width / 2, height - 55);
-    ctx.restore();
-};
+// Paused indicator removed — the React layer (TracingMode) renders a
+// KidChip "Paused — Pinch to continue" at zIndex.hud. Drawing it here too
+// caused a double-render overlap during Batch 3B verification.
 
 // Get current state (for UI polling)
 export const getTracingState = (): TracingState => {

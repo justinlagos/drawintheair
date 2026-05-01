@@ -332,24 +332,10 @@ export const balloonMathLogic = (
     const cfg = LEVEL_CONFIGS[levelIndex];
     if (!cfg) return;
 
-    // ── Beautiful gradient sky background ────────────────────────────────────
-    const sky = ctx.createLinearGradient(0, 0, 0, height);
-    sky.addColorStop(0, '#1a0533');
-    sky.addColorStop(0.4, '#2d0a6b');
-    sky.addColorStop(1, '#0f1836');
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, width, height);
-
-    // Twinkling stars
-    ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    for (let i = 0; i < 30; i++) {
-        const sx = ((i * 173 + 17) % 100) / 100 * width;
-        const sy = ((i * 97 + 31) % 50) / 100 * height;
-        const sparkle = 0.4 + 0.6 * Math.abs(Math.sin(now * 0.001 + i));
-        ctx.globalAlpha = sparkle;
-        ctx.fillRect(sx, sy, 2, 2);
-    }
-    ctx.globalAlpha = 1;
+    // ── Transparent canvas — HTML BalloonMathBackground provides the scene
+    // (sky + balloons + math symbols + hills). Clearing the previous frame
+    // is essential because the canvas accumulates pixels otherwise.
+    ctx.clearRect(0, 0, width, height);
 
     // ── Move + float each balloon ─────────────────────────────────────────────
     const fingerCanvas = filteredPoint ? normalizedToCanvas(filteredPoint, width, height) : null;

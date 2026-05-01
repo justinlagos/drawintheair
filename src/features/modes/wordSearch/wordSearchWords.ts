@@ -211,7 +211,35 @@ export const WORD_CATEGORIES: WordCategory[] = [
             'WIZARD', 'CROWN', 'DWARF', 'GOBLIN', 'LEGEND', 'MERMAID', 'MONSTER', 'PHOENIX', 'PIRATE', 'PRINCESS',
             'SCEPTER', 'THRONE', 'TREASURE', 'TROLL', 'UNICORN', 'VAMPIRE', 'WARRIOR', 'CRYSTAL', 'ENCHANT', 'KINGDOM'
         ]
-    }
+    },
+    // Hard-tier sets for Family / Toys / Colors used by chapters 4-6.
+    // Without these, those chapters fail to populate a word list because
+    // the difficulty selector pushes 6+ letter requests into the Hard
+    // bucket and finds no matching theme entries.
+    {
+        name: 'Family (Hard)',
+        difficulty: 3,
+        words: [
+            'COUSIN', 'GRANNY', 'GRANDPA', 'PARENT', 'NEPHEW', 'SISTER', 'BROTHER', 'FATHER', 'MOTHER', 'GRANDMA',
+            'AUNTIE', 'FAMILY', 'GRANDAD', 'TWINS', 'NEIGHBOR', 'STEPMUM', 'STEPDAD', 'GODSON', 'GODMUM', 'NEWBORN',
+        ],
+    },
+    {
+        name: 'Toys (Hard)',
+        difficulty: 3,
+        words: [
+            'TEDDY', 'PUZZLE', 'ROCKET', 'SOLDIER', 'RATTLE', 'JIGSAW', 'BLOCKS', 'YOYO', 'MARBLE', 'PUPPET',
+            'CRAYON', 'SCOOTER', 'BALLOON', 'WHISTLE', 'JUMP-ROPE', 'CASTLE', 'DOMINO', 'BUBBLE', 'BUCKET', 'SPADE',
+        ],
+    },
+    {
+        name: 'Colors (Hard)',
+        difficulty: 3,
+        words: [
+            'PURPLE', 'ORANGE', 'YELLOW', 'INDIGO', 'MAGENTA', 'TURQUOISE', 'CRIMSON', 'SCARLET', 'EMERALD', 'BURGUNDY',
+            'COBALT', 'SAFFRON', 'MAROON', 'BRONZE', 'COPPER', 'SALMON', 'SAPPHIRE', 'JADE', 'MUSTARD', 'PASTEL',
+        ],
+    },
 ];
 
 // ===========================================

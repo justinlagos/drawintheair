@@ -1,8 +1,356 @@
+/**
+ * Landing - Draw in the Air (Kid-UI bright sky redesign)
+ *
+ * Marketing landing rewritten to match the in-app Kid-UI design system:
+ *   • Bright sky+meadow scene (sun, clouds, sparkles, rainbow trail)
+ *   • Fredoka display headlines, Nunito body
+ *   • KidButton primary/secondary CTAs everywhere
+ *   • KidPanel + KidGameCard tiles for activities, parents, schools
+ *   • Tactile 2.5D illustrations for each game mode (no emoji)
+ *   • Soft, warm, kid-friendly. Never dark.
+ *
+ * Preserves the existing modals (TryFreeModal, School Pilot pack request,
+ * Feedback widget) and the submitFormData wiring.
+ */
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { TryFreeModal } from '../components/TryFreeModal';
 import { submitFormData } from '../lib/formSubmission';
-import '../components/landing/new-landing.css';
+import { KidButton } from '../components/kid-ui';
+import { tokens } from '../styles/tokens';
+import '../components/landing/landing-kid.css';
 
+// ─── Mode showcase data ────────────────────────────────────────────────
+// Bespoke Kid-UI mascot tiles. No emoji, no stock photos.
+interface ModeTile {
+  id: string;
+  step: string;
+  title: string;
+  description: string;
+  detail: string;
+  accent: string;
+  illustration: React.ReactNode;
+}
+
+// Reusable hand+sparkle illustration core
+const SparkleHand = ({ accent }: { accent: string }) => (
+  <svg viewBox="0 0 120 120" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id={`hand-skin-${accent}`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#FFE7C9" />
+        <stop offset="1" stopColor="#F4C58E" />
+      </linearGradient>
+    </defs>
+    <circle cx="60" cy="60" r="56" fill={accent} opacity="0.18" />
+    <circle cx="60" cy="60" r="44" fill="#FFFFFF" opacity="0.6" />
+    {/* Pinch hand (thumb + index) */}
+    <path d="M40 78 C40 60 50 50 56 50 L60 50 C66 50 72 56 72 60 L72 70 C76 70 80 74 80 78 L80 84 C80 92 74 98 66 98 L52 98 C44 98 40 92 40 84 Z"
+      fill={`url(#hand-skin-${accent})`} stroke="#3F4052" strokeWidth="2" />
+    {/* Pinch dot */}
+    <circle cx="60" cy="48" r="6" fill="#FFFFFF" stroke={accent} strokeWidth="3" />
+    <circle cx="60" cy="48" r="2.5" fill={accent} />
+    {/* Sparkles */}
+    <path d="M86 32 l3 0 l1 -8 l1 8 l3 0 l-3 1 l-1 8 l-1 -8 z" fill="#FFD84D" />
+    <path d="M28 28 l2 0 l0 -6 l1 6 l2 0 l-2 1 l0 6 l-1 -6 z" fill="#FF6B6B" />
+    <circle cx="92" cy="62" r="3" fill="#7ED957" />
+    <circle cx="22" cy="64" r="2.5" fill="#55DDE0" />
+  </svg>
+);
+
+const FreePaintIllustration = () => (
+  <svg viewBox="0 0 120 120" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="60" cy="60" r="56" fill="#FF6B6B" opacity="0.18" />
+    <path d="M16 78 Q40 50 60 70 T104 56" stroke="#FF6B6B" strokeWidth="9" strokeLinecap="round" fill="none" />
+    <path d="M22 92 Q42 70 62 84 T100 76" stroke="#FFD84D" strokeWidth="7" strokeLinecap="round" fill="none" />
+    <path d="M28 60 Q50 40 70 50" stroke="#55DDE0" strokeWidth="6" strokeLinecap="round" fill="none" />
+    <circle cx="104" cy="56" r="9" fill="#FFFFFF" stroke="#FF6B6B" strokeWidth="3" />
+    <circle cx="104" cy="56" r="3.5" fill="#FF6B6B" />
+    {/* Brush tip */}
+    <rect x="86" y="82" width="22" height="8" rx="4" fill="#6C3FA4" transform="rotate(-25 86 82)" />
+    <path d="M82 90 l8 -4" stroke="#FFD84D" strokeWidth="3" strokeLinecap="round" />
+  </svg>
+);
+
+const TracingIllustration = () => (
+  <svg viewBox="0 0 120 120" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="60" cy="60" r="56" fill="#55DDE0" opacity="0.18" />
+    {/* Letter B trace */}
+    <path d="M44 28 L44 92" stroke="#E8DEFB" strokeWidth="14" strokeLinecap="round" />
+    <path d="M44 28 Q70 28 70 44 Q70 56 50 60 Q74 60 74 76 Q74 92 44 92" stroke="#E8DEFB" strokeWidth="14" strokeLinecap="round" fill="none" />
+    <path d="M44 28 Q70 28 70 44 Q70 56 50 60 Q74 60 74 76 Q74 92 44 92" stroke="#6C3FA4" strokeWidth="2.5" strokeDasharray="5 4" strokeLinecap="round" fill="none" />
+    {/* Glowing trace dot */}
+    <circle cx="74" cy="76" r="9" fill="#FFFFFF" stroke="#55DDE0" strokeWidth="3" />
+    <circle cx="74" cy="76" r="4" fill="#55DDE0" />
+    {/* Stars */}
+    <path d="M92 30 l2 0 l1 -7 l1 7 l2 0 l-2 1 l-1 6 l-1 -6 z" fill="#FFD84D" />
+    <circle cx="22" cy="30" r="3" fill="#FF6B6B" />
+  </svg>
+);
+
+const BubblePopIllustration = () => (
+  <svg viewBox="0 0 120 120" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="bub-1" cx="0.35" cy="0.35">
+        <stop offset="0" stopColor="#FFFFFF" />
+        <stop offset="0.5" stopColor="#A8D8FF" />
+        <stop offset="1" stopColor="#55DDE0" />
+      </radialGradient>
+      <radialGradient id="bub-2" cx="0.35" cy="0.35">
+        <stop offset="0" stopColor="#FFFFFF" />
+        <stop offset="0.5" stopColor="#FFD2E0" />
+        <stop offset="1" stopColor="#FF6B6B" />
+      </radialGradient>
+      <radialGradient id="bub-3" cx="0.35" cy="0.35">
+        <stop offset="0" stopColor="#FFFFFF" />
+        <stop offset="0.5" stopColor="#FFF1B5" />
+        <stop offset="1" stopColor="#FFD84D" />
+      </radialGradient>
+    </defs>
+    <circle cx="60" cy="60" r="56" fill="#A8D8FF" opacity="0.18" />
+    <circle cx="38" cy="48" r="20" fill="url(#bub-1)" stroke="#3F4052" strokeOpacity="0.18" strokeWidth="1.5" />
+    <ellipse cx="33" cy="42" rx="6" ry="3.5" fill="#FFFFFF" opacity="0.7" />
+    <circle cx="76" cy="40" r="14" fill="url(#bub-3)" stroke="#3F4052" strokeOpacity="0.18" strokeWidth="1.5" />
+    <ellipse cx="73" cy="36" rx="4" ry="2.5" fill="#FFFFFF" opacity="0.7" />
+    <circle cx="68" cy="80" r="22" fill="url(#bub-2)" stroke="#3F4052" strokeOpacity="0.18" strokeWidth="1.5" />
+    <ellipse cx="62" cy="74" rx="7" ry="4" fill="#FFFFFF" opacity="0.7" />
+    {/* Pop sparkle */}
+    <path d="M30 80 l4 4 M26 84 l8 0 M30 88 l4 -4" stroke="#FFD84D" strokeWidth="2.5" strokeLinecap="round" />
+  </svg>
+);
+
+const SortPlaceIllustration = () => (
+  <svg viewBox="0 0 120 120" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="60" cy="60" r="56" fill="#7ED957" opacity="0.18" />
+    {/* Two boxes */}
+    <rect x="14" y="64" width="38" height="36" rx="8" fill="#FFFFFF" stroke="#6C3FA4" strokeWidth="2.5" />
+    <rect x="68" y="64" width="38" height="36" rx="8" fill="#FFFFFF" stroke="#6C3FA4" strokeWidth="2.5" />
+    {/* Box labels */}
+    <circle cx="33" cy="82" r="6" fill="#FF6B6B" />
+    <rect x="83" y="76" width="10" height="10" rx="2" fill="#55DDE0" />
+    {/* Floating items */}
+    <circle cx="36" cy="40" r="11" fill="#FF6B6B" />
+    <ellipse cx="32" cy="36" rx="3" ry="2" fill="#FFFFFF" opacity="0.7" />
+    <rect x="68" y="28" width="22" height="22" rx="4" fill="#55DDE0" />
+    <rect x="71" y="32" width="6" height="3" rx="1" fill="#FFFFFF" opacity="0.7" />
+    {/* Arrows */}
+    <path d="M44 50 L40 60" stroke="#7ED957" strokeWidth="3" strokeLinecap="round" markerEnd="url(#arr)" />
+    <path d="M76 50 L80 60" stroke="#7ED957" strokeWidth="3" strokeLinecap="round" />
+    <defs>
+      <marker id="arr" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0 0 L8 4 L0 8 z" fill="#7ED957" />
+      </marker>
+    </defs>
+  </svg>
+);
+
+const WordSearchIllustration = () => (
+  <svg viewBox="0 0 120 120" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="60" cy="60" r="56" fill="#FFD84D" opacity="0.20" />
+    <rect x="20" y="20" width="80" height="80" rx="14" fill="#FFFFFF" stroke="#6C3FA4" strokeOpacity="0.18" strokeWidth="2" />
+    {/* 4x4 letter grid */}
+    {['C', 'A', 'T', 'B', 'D', 'O', 'G', 'R', 'S', 'U', 'N', 'Q', 'M', 'A', 'P', 'X'].map((ch, i) => {
+      const col = i % 4; const row = Math.floor(i / 4);
+      return (
+        <text
+          key={i}
+          x={32 + col * 18}
+          y={42 + row * 18}
+          textAnchor="middle"
+          fontFamily="Fredoka, sans-serif"
+          fontSize="14"
+          fontWeight="700"
+          fill="#3F4052"
+        >{ch}</text>
+      );
+    })}
+    {/* Highlight line through CAT */}
+    <rect x="26" y="32" width="46" height="14" rx="7" fill="#FFD84D" opacity="0.5" />
+  </svg>
+);
+
+const MODE_TILES: ModeTile[] = [
+  {
+    id: 'free-paint',
+    step: '01',
+    title: 'Free Paint',
+    description: 'Big glowing strokes. Choose colours and brush sizes.',
+    detail: 'Kids create freely while building fine-motor confidence: pinch, paint, release.',
+    accent: tokens.colors.coral,
+    illustration: <FreePaintIllustration />,
+  },
+  {
+    id: 'tracing',
+    step: '02',
+    title: 'Tracing',
+    description: 'Letters A to Z, numbers and shapes. Guided, kid-friendly paths.',
+    detail: 'On-path feedback in real time, with a celebration on every finish.',
+    accent: tokens.colors.aqua,
+    illustration: <TracingIllustration />,
+  },
+  {
+    id: 'bubble-pop',
+    step: '03',
+    title: 'Bubble Pop',
+    description: 'Reach, pinch, pop. A timed challenge of focus and reaction.',
+    detail: 'Builds sustained attention, quick decisions and gross-motor reach.',
+    accent: tokens.colors.bubbleBlue,
+    illustration: <BubblePopIllustration />,
+  },
+  {
+    id: 'sort-place',
+    step: '04',
+    title: 'Sort & Place',
+    description: 'Pick up shapes, animals, food, vehicles. Place them in the right home.',
+    detail: 'Seven themed worlds: beach, jungle, kitchen, recycling, classroom and more.',
+    accent: tokens.colors.meadowGreen,
+    illustration: <SortPlaceIllustration />,
+  },
+  {
+    id: 'word-search',
+    step: '05',
+    title: 'Word Search',
+    description: 'Find hidden words by drawing through the grid with a pinch.',
+    detail: 'Six chapters of difficulty. Letter recognition meets spatial scanning.',
+    accent: tokens.colors.sunshine,
+    illustration: <WordSearchIllustration />,
+  },
+];
+
+// ─── Skill data (Why this matters) ─────────────────────────────────────
+interface Skill {
+  title: string;
+  description: string;
+  color: string;
+  bg: string;
+  icon: React.ReactNode;
+}
+
+const SKILLS: Skill[] = [
+  {
+    title: 'Fine motor control',
+    description: 'Precise pinch-and-release trains small muscle coordination.',
+    color: tokens.colors.coral,
+    bg: '#FFE2E2',
+    icon: (
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 11V6a2 2 0 014 0v5" /><path d="M5 13V8a2 2 0 014 0" /><path d="M13 11v-1a2 2 0 014 0v6" /><path d="M17 13a2 2 0 014 0v3a8 8 0 01-16 0v-1" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Hand–eye coordination',
+    description: 'Real-time feedback links body movement to visual outcome.',
+    color: tokens.colors.aqua,
+    bg: '#D9F7F7',
+    icon: (
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r="1.5" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Spatial awareness',
+    description: 'Drawing in 3D space teaches position, scale and distance.',
+    color: tokens.colors.deepPlum,
+    bg: '#EAE0FB',
+    icon: (
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="3" /><path d="M3 9h18M9 3v18" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Early literacy',
+    description: 'Tracing letters with motion cements letter-formation memory.',
+    color: tokens.colors.warmOrange,
+    bg: '#FFE9CF',
+    icon: (
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 7V4h16v3" /><path d="M9 20h6M12 4v16" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Sustained focus',
+    description: 'Fast feedback and clear goals build attention and confidence.',
+    color: tokens.colors.sunshine,
+    bg: '#FFF3B5',
+    icon: (
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Active screen time',
+    description: 'Replaces passive scroll with movement-based engagement.',
+    color: tokens.colors.meadowGreen,
+    bg: '#DCF5C9',
+    icon: (
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /><circle cx="12" cy="12" r="4" />
+      </svg>
+    ),
+  },
+];
+
+// ─── Steps ─────────────────────────────────────────────────────────────
+interface Step {
+  step: string;
+  title: string;
+  desc: string;
+  color: string;
+  icon: React.ReactNode;
+}
+
+const STEPS: Step[] = [
+  {
+    step: '1',
+    title: 'Raise Your Hand',
+    desc: 'The webcam spots your hand in real time.',
+    color: tokens.colors.deepPlum,
+    icon: (
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 11V6a2 2 0 014 0v5" /><path d="M5 13V8a2 2 0 014 0" /><path d="M13 11v-1a2 2 0 014 0v6" /><path d="M17 13a2 2 0 014 0v3a8 8 0 01-16 0v-1" />
+      </svg>
+    ),
+  },
+  {
+    step: '2',
+    title: 'Pinch to Draw',
+    desc: 'Touch your thumb and finger together. That\'s the pen.',
+    color: tokens.colors.coral,
+    icon: (
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3" /><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+      </svg>
+    ),
+  },
+  {
+    step: '3',
+    title: 'Open Hand to Pause',
+    desc: 'Lift away. No accidental marks. Total control.',
+    color: tokens.colors.aqua,
+    icon: (
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="4" width="16" height="16" rx="3" /><path d="M9 9h.01M15 15h.01" />
+      </svg>
+    ),
+  },
+  {
+    step: '4',
+    title: 'Instant Magic',
+    desc: 'Smooth, lag-free strokes that feel like real drawing.',
+    color: tokens.colors.sunshine,
+    icon: (
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+      </svg>
+    ),
+  },
+];
+
+// ─── Component ─────────────────────────────────────────────────────────
 export const Landing: React.FC = () => {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
@@ -26,21 +374,26 @@ export const Landing: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tryFreeOpen, setTryFreeOpen] = useState(false);
 
-  // Scroll reveal
+  // Scroll reveal observer
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
-          if (e.isIntersecting) e.target.classList.add('nl-visible');
+          if (e.isIntersecting) e.target.classList.add('dl-visible');
         });
       },
-      { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
+      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
     );
-    document.querySelectorAll('.nl-reveal').forEach((el) => observer.observe(el));
+    document.querySelectorAll('.dl-reveal').forEach((el) => observer.observe(el));
     return () => observer.disconnect();
   }, []);
 
-  // Escape key closes modals
+  // Esc closes things
+  const closePilotModal = useCallback(() => {
+    setPilotOpen(false);
+    document.body.style.overflow = '';
+  }, []);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -51,12 +404,11 @@ export const Landing: React.FC = () => {
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, []);
+  }, [closePilotModal]);
 
-  // Feedback
   const toggleFeedback = useCallback(() => {
     setFeedbackOpen((prev) => {
-      if (!prev) { setFeedbackSent(false); }
+      if (!prev) setFeedbackSent(false);
       return !prev;
     });
   }, []);
@@ -77,18 +429,12 @@ export const Landing: React.FC = () => {
     }).catch(() => setFeedbackSending(false));
   }, [feedbackText, feedbackEmail]);
 
-  // School Pilot
   const openPilotModal = useCallback(() => {
     setPilotOpen(true);
     setPilotSent(false);
     setPilotErrors({});
     setPilotSubmitError('');
     document.body.style.overflow = 'hidden';
-  }, []);
-
-  const closePilotModal = useCallback(() => {
-    setPilotOpen(false);
-    document.body.style.overflow = '';
   }, []);
 
   const submitPilot = useCallback(() => {
@@ -116,8 +462,8 @@ export const Landing: React.FC = () => {
       setPilotSending(false);
       setPilotName(''); setPilotEmail(''); setPilotSchool('');
       setPilotRole(''); setPilotYear(''); setPilotDevice(''); setPilotNotes('');
-    }).catch((err: any) => {
-      setPilotSubmitError(err.message);
+    }).catch((err: { message?: string }) => {
+      setPilotSubmitError(err.message ?? 'Something went wrong. Please try again.');
       setPilotSending(false);
     });
   }, [pilotName, pilotEmail, pilotSchool, pilotRole, pilotYear, pilotDevice, pilotNotes]);
@@ -128,557 +474,1360 @@ export const Landing: React.FC = () => {
     e.preventDefault();
     closeMobileMenu();
     const section = document.getElementById(id);
-    if (section) {
-      section.scrollIntoView({ behavior: 'smooth' });
-      // Make it fun: add a playful pop when we land on the section
-      setTimeout(() => {
-        section.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
-        section.style.transform = 'scale(1.02)';
-        setTimeout(() => { section.style.transform = 'scale(1)'; }, 400);
-      }, 600);
-    }
+    if (section) section.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // ─── Render ──────────────────────────────────────────────────────────
   return (
-    <div className="nl-page">
+    <div className="dl-page">
+
+      {/* ═══════ STATIC SKY BACKGROUND ═══════ */}
+      <div className="dl-sky-scene" aria-hidden>
+        <div className="dl-sun" />
+        <div className="dl-cloud dl-cloud-1" />
+        <div className="dl-cloud dl-cloud-2" />
+        <div className="dl-cloud dl-cloud-3" />
+        <div className="dl-cloud dl-cloud-4" />
+        {/* Sparkles */}
+        <div className="dl-spark" style={{ top: '18%', left: '12%', width: 80, height: 80, color: 'rgba(255,216,77,.55)' }} />
+        <div className="dl-spark" style={{ top: '32%', right: '6%', width: 110, height: 110, color: 'rgba(255,107,107,.40)', animationDelay: '-2s' }} />
+        <div className="dl-spark" style={{ top: '55%', left: '4%', width: 90, height: 90, color: 'rgba(85,221,224,.45)', animationDelay: '-4s' }} />
+        <div className="dl-spark" style={{ top: '70%', right: '14%', width: 70, height: 70, color: 'rgba(126,217,87,.45)', animationDelay: '-1s' }} />
+      </div>
 
       {/* ═══════ NAV ═══════ */}
-      <nav className="fixed top-0 left-0 right-0 z-50 nl-nav-blur" style={{ background: 'rgba(255,255,255,.97)', borderBottom: '1px solid rgba(226,232,240,1)' }}>
+      <nav
+        className="fixed top-0 left-0 right-0 z-50 dl-nav-blur"
+        style={{
+          background: 'rgba(255, 255, 255, 0.78)',
+          borderBottom: '1.5px solid rgba(108, 63, 164, 0.10)',
+          zIndex: 50,
+        }}
+      >
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <a href="#top" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="flex items-center gap-3 no-underline text-slate-900 group cursor-pointer flex-shrink-0">
-            <img src="/logo.png" alt="Draw in the Air" className="h-8 md:h-9 w-auto object-contain flex-shrink-0 transition-all duration-300 ease-out group-hover:scale-110 group-hover:-rotate-6 group-hover:drop-shadow-[0_0_10px_rgba(249,115,22,0.8)]" style={{ maxHeight: '36px', height: '36px' }} />
+          <a
+            href="#top"
+            onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            className="flex items-center gap-3 no-underline group cursor-pointer flex-shrink-0"
+            style={{ color: tokens.colors.charcoal }}
+          >
+            <img src="/logo.png" alt="Draw in the Air" className="h-9 w-auto object-contain transition-all duration-300 ease-out group-hover:scale-110 group-hover:-rotate-6" style={{ height: '36px' }} />
+            <span style={{
+              fontFamily: tokens.fontFamily.display,
+              fontWeight: 700,
+              fontSize: '1.1rem',
+              color: tokens.colors.deepPlum,
+              letterSpacing: '-0.01em',
+            }} className="hidden sm:inline">Draw in the Air</span>
           </a>
-          <div className="hidden md:flex items-center gap-8 text-sm text-slate-600">
-            <a href="#how-it-works" onClick={(e) => scrollToSection(e, 'how-it-works')} className="hover:text-orange-500 hover:scale-110 transition-all no-underline cursor-pointer">How It Works</a>
-            <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="hover:text-orange-500 hover:scale-110 transition-all no-underline cursor-pointer">Activities</a>
-            <a href="#parents" onClick={(e) => scrollToSection(e, 'parents')} className="hover:text-orange-500 hover:scale-110 transition-all no-underline cursor-pointer">For Parents</a>
-            <a href="#schools" onClick={(e) => scrollToSection(e, 'schools')} className="hover:text-orange-500 hover:scale-110 transition-all no-underline cursor-pointer">For Schools</a>
-            <a href="/faq" className="hover:text-orange-500 hover:scale-110 transition-all no-underline">FAQ</a>
-            <button onClick={() => setTryFreeOpen(true)} className="nl-btn-primary text-white font-semibold px-5 py-2 rounded-lg text-sm border-none cursor-pointer">Try Free</button>
-            <button onClick={openPilotModal} className="nl-btn-secondary font-semibold px-5 py-2 rounded-lg text-sm border-none cursor-pointer">School Pilot</button>
+          <div className="hidden md:flex items-center gap-7" style={{ fontFamily: tokens.fontFamily.body, fontWeight: 600, color: tokens.colors.charcoal }}>
+            <a href="#how-it-works" onClick={(e) => scrollToSection(e, 'how-it-works')} className="text-sm hover:opacity-70 transition cursor-pointer">How it Works</a>
+            <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="text-sm hover:opacity-70 transition cursor-pointer">Activities</a>
+            <a href="#parents" onClick={(e) => scrollToSection(e, 'parents')} className="text-sm hover:opacity-70 transition cursor-pointer">For Parents</a>
+            <a href="#schools" onClick={(e) => scrollToSection(e, 'schools')} className="text-sm hover:opacity-70 transition cursor-pointer">For Schools</a>
+            <a href="/faq" className="text-sm hover:opacity-70 transition">FAQ</a>
+            <KidButton variant="primary" size="md" onClick={() => setTryFreeOpen(true)} style={{ minHeight: '44px', padding: '8px 22px', fontSize: '0.95rem' }}>
+              Try Free
+            </KidButton>
+            <KidButton variant="secondary" size="md" onClick={openPilotModal} style={{ minHeight: '44px', padding: '8px 20px', fontSize: '0.95rem' }}>
+              School Pilot
+            </KidButton>
           </div>
-          <button className="md:hidden text-slate-600" style={{ background: 'none', border: 'none', boxShadow: 'none' }} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+          <button
+            className="md:hidden"
+            style={{ background: 'none', border: 'none', boxShadow: 'none', color: tokens.colors.deepPlum }}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
         </div>
         {mobileMenuOpen && (
-          <div className="md:hidden px-6 pb-4 space-y-3 text-sm text-slate-600 bg-white border-t border-slate-200">
-            <a href="#how-it-works" onClick={(e) => scrollToSection(e, 'how-it-works')} className="block py-2 no-underline text-slate-600 hover:text-orange-500">How It Works</a>
-            <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="block py-2 no-underline text-slate-600 hover:text-orange-500">Activities</a>
-            <a href="#parents" onClick={(e) => scrollToSection(e, 'parents')} className="block py-2 no-underline text-slate-600 hover:text-orange-500">For Parents</a>
-            <a href="#schools" onClick={(e) => scrollToSection(e, 'schools')} className="block py-2 no-underline text-slate-600 hover:text-orange-500">For Schools</a>
-            <a href="/faq" className="block py-2 no-underline text-slate-600 hover:text-orange-500">FAQ</a>
-            <button onClick={() => { closeMobileMenu(); setTryFreeOpen(true); }} className="block w-full nl-btn-primary text-white font-semibold px-5 py-2.5 rounded-lg text-center mt-2 border-none cursor-pointer">Try Free</button>
-            <button onClick={() => { closeMobileMenu(); openPilotModal(); }} className="block w-full nl-btn-secondary font-semibold px-5 py-2.5 rounded-lg text-center border-none cursor-pointer">School Pilot</button>
+          <div className="md:hidden px-6 pb-4 pt-2 dl-mobile-drawer" style={{ fontFamily: tokens.fontFamily.body, color: tokens.colors.charcoal }}>
+            <a href="#how-it-works" onClick={(e) => scrollToSection(e, 'how-it-works')} className="block py-2 text-base font-semibold no-underline" style={{ color: tokens.colors.charcoal }}>How it Works</a>
+            <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="block py-2 text-base font-semibold no-underline" style={{ color: tokens.colors.charcoal }}>Activities</a>
+            <a href="#parents" onClick={(e) => scrollToSection(e, 'parents')} className="block py-2 text-base font-semibold no-underline" style={{ color: tokens.colors.charcoal }}>For Parents</a>
+            <a href="#schools" onClick={(e) => scrollToSection(e, 'schools')} className="block py-2 text-base font-semibold no-underline" style={{ color: tokens.colors.charcoal }}>For Schools</a>
+            <a href="/faq" className="block py-2 text-base font-semibold no-underline" style={{ color: tokens.colors.charcoal }}>FAQ</a>
+            <div className="flex flex-col gap-3 mt-3">
+              <KidButton variant="primary" size="md" onClick={() => { closeMobileMenu(); setTryFreeOpen(true); }} fullWidth>Try Free</KidButton>
+              <KidButton variant="secondary" size="md" onClick={() => { closeMobileMenu(); openPilotModal(); }} fullWidth>School Pilot</KidButton>
+            </div>
           </div>
         )}
       </nav>
 
       {/* ═══════ HERO ═══════ */}
-      <section className="relative min-h-screen flex items-center nl-hero-gradient pt-16">
-        <svg className="absolute inset-0 w-full h-full pointer-events-none nl-line-glow" viewBox="0 0 1200 800" fill="none" preserveAspectRatio="xMidYMid slice">
-          <path d="M100 650 Q300 400 500 500 T900 300" stroke="rgba(249,115,22,.15)" strokeWidth="2" strokeDasharray="8 12" className="nl-glow-pulse" />
-          <path d="M200 700 Q450 350 700 450 T1100 250" stroke="rgba(251,146,60,.1)" strokeWidth="1.5" strokeDasharray="6 10" className="nl-glow-pulse" style={{ animationDelay: '1.5s' }} />
-          <circle cx="850" cy="200" r="3" fill="rgba(249,115,22,.3)" className="nl-glow-pulse" />
-          <circle cx="350" cy="300" r="2" fill="rgba(251,146,60,.25)" className="nl-glow-pulse" style={{ animationDelay: '1s' }} />
-          <circle cx="1050" cy="500" r="2.5" fill="rgba(249,115,22,.2)" className="nl-glow-pulse" style={{ animationDelay: '2s' }} />
-        </svg>
-
-        <div className="relative max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          <div className="nl-fade-up">
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight mb-6">
-              Learning<br />That <span className="text-orange-500 nl-glow-text">Moves</span>
+      <section style={{ position: 'relative', minHeight: '100vh', paddingTop: '90px', paddingBottom: '40px', zIndex: 1 }}>
+        <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+          <div className="dl-fade-up" style={{ position: 'relative', zIndex: 2 }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              background: 'rgba(255, 255, 255, 0.85)',
+              border: '2px solid rgba(108, 63, 164, 0.15)',
+              borderRadius: 9999,
+              padding: '6px 14px',
+              fontFamily: tokens.fontFamily.body,
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              color: tokens.colors.deepPlum,
+              boxShadow: tokens.shadow.float,
+              marginBottom: tokens.spacing.lg,
+            }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: tokens.colors.meadowGreen }} />
+              Hands-free play for ages 3 to 7
+            </div>
+            <h1 style={{
+              fontFamily: tokens.fontFamily.display,
+              fontWeight: 700,
+              fontSize: 'clamp(3rem, 7vw, 5.5rem)',
+              lineHeight: 1.05,
+              letterSpacing: '-0.025em',
+              color: tokens.colors.charcoal,
+              marginBottom: tokens.spacing.xl,
+            }}>
+              Learning that{' '}
+              <span style={{
+                color: tokens.colors.deepPlum,
+                position: 'relative',
+                whiteSpace: 'nowrap',
+                display: 'inline-block',
+              }}>
+                moves
+                <svg
+                  viewBox="0 0 220 22"
+                  preserveAspectRatio="none"
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    bottom: '-12px',
+                    width: '100%',
+                    height: '20px',
+                  }}
+                >
+                  <path
+                    d="M4 14 Q60 2 110 11 T216 9"
+                    stroke={tokens.colors.sunshine}
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                </svg>
+              </span>
             </h1>
-            <p className="text-lg sm:text-xl text-slate-600 leading-relaxed max-w-lg mb-8">
-              Draw in the Air turns your child's hands into the controller. No touch screens. No downloads. Just motion, creativity, and real engagement.
+            <p style={{
+              fontFamily: tokens.fontFamily.body,
+              fontSize: 'clamp(1.05rem, 1.6vw, 1.25rem)',
+              lineHeight: 1.55,
+              color: tokens.colors.charcoal,
+              opacity: 0.85,
+              maxWidth: 540,
+              marginBottom: tokens.spacing.xxl,
+            }}>
+              Draw in the Air turns your child's hands into the controller. No touchscreens. No downloads.
+              Just motion, creativity, and play that builds real skills.
             </p>
-            <div className="flex flex-wrap gap-4 mb-8">
-              <button onClick={() => setTryFreeOpen(true)} className="nl-btn-primary text-white font-bold px-8 py-3.5 rounded-xl text-base border-none cursor-pointer">Try It Now</button>
-              <a href="#how-it-works" className="nl-btn-secondary font-semibold px-8 py-3.5 rounded-xl text-base no-underline">See How It Works</a>
+            <div className="flex flex-wrap items-center gap-4 mb-6">
+              <div className="dl-cta-glow">
+                <KidButton variant="primary" size="lg" onClick={() => setTryFreeOpen(true)}>
+                  Play Now. It's Free
+                </KidButton>
+              </div>
+              <KidButton
+                variant="secondary"
+                size="lg"
+                onClick={(e) => scrollToSection(e as unknown as React.MouseEvent<HTMLAnchorElement>, 'how-it-works')}
+              >
+                See How It Works
+              </KidButton>
             </div>
-
-            <div className="mt-2 mb-8 flex justify-start">
-              <a href="https://www.producthunt.com/products/draw-in-the-air?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-draw-in-the-air" target="_blank" rel="noopener noreferrer">
-                <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1092521&theme=light&t=1773061821068" alt="Draw in the Air - Product Hunt" style={{ width: '250px', height: '54px' }} width="250" height="54" />
-              </a>
+            <div className="flex items-center gap-3 flex-wrap mt-6" style={{ color: tokens.colors.charcoal, opacity: 0.75 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.9rem', fontWeight: 600 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={tokens.colors.meadowGreen} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="10" />
+                </svg>
+                Runs in your browser
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.9rem', fontWeight: 600 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={tokens.colors.meadowGreen} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="10" />
+                </svg>
+                No installs
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.9rem', fontWeight: 600 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={tokens.colors.meadowGreen} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="10" />
+                </svg>
+                Camera stays on the device
+              </span>
             </div>
-
-            <p className="text-sm text-slate-500 flex items-center gap-2">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-500"><path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="10" /></svg>
-              Runs in your browser. No installs. No data stored.
-            </p>
           </div>
 
-          <div className="relative nl-fade-up" style={{ animationDelay: '.2s' }}>
-            <div className="nl-hero-photo-wrap" style={{ aspectRatio: '4/3' }}>
-              <img src="/landing-images/hero-neon-waves.jpg" alt="Child interacting with flowing neon light waves" />
+          {/* Hero illustration card */}
+          <div className="dl-fade-up" style={{ animationDelay: '0.2s', position: 'relative' }}>
+            <div className="dl-hero-frame" style={{ aspectRatio: '4/3' }}>
+              {/* Inside-card 2.5D scene */}
+              <svg viewBox="0 0 480 360" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+                <defs>
+                  <linearGradient id="hsky" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor="#9FDFFF" />
+                    <stop offset="0.5" stopColor="#BEEBFF" />
+                    <stop offset="1" stopColor="#FFF6E5" />
+                  </linearGradient>
+                  <linearGradient id="hgrass" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor="#92E36C" />
+                    <stop offset="1" stopColor="#7ED957" />
+                  </linearGradient>
+                  <radialGradient id="hsun" cx="0.35" cy="0.35">
+                    <stop offset="0" stopColor="#FFF1B5" />
+                    <stop offset="0.5" stopColor="#FFD84D" />
+                    <stop offset="1" stopColor="#FFB14D" />
+                  </radialGradient>
+                  <linearGradient id="htrail" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0" stopColor="#FF6B6B" />
+                    <stop offset="0.33" stopColor="#FFD84D" />
+                    <stop offset="0.66" stopColor="#7ED957" />
+                    <stop offset="1" stopColor="#55DDE0" />
+                  </linearGradient>
+                </defs>
+                {/* Sky */}
+                <rect width="480" height="360" fill="url(#hsky)" />
+                {/* Sun */}
+                <circle cx="380" cy="80" r="44" fill="url(#hsun)" opacity="0.95" />
+                {/* Clouds */}
+                <ellipse cx="80" cy="60" rx="36" ry="14" fill="#FFFFFF" opacity="0.95" />
+                <ellipse cx="100" cy="55" rx="22" ry="12" fill="#FFFFFF" opacity="0.95" />
+                <ellipse cx="220" cy="40" rx="30" ry="11" fill="#FFFFFF" opacity="0.85" />
+                {/* Hills */}
+                <path d="M0 280 Q90 230 180 250 T360 240 T480 260 L480 360 L0 360 Z" fill="#B5F15C" opacity="0.6" />
+                <path d="M0 300 Q120 260 220 280 T420 280 T480 300 L480 360 L0 360 Z" fill="url(#hgrass)" />
+                {/* Rainbow trail (animated) */}
+                <path
+                  className="dl-trail-draw"
+                  d="M40 260 Q120 180 200 200 T340 130 T440 90"
+                  stroke="url(#htrail)"
+                  strokeWidth="14"
+                  strokeLinecap="round"
+                  fill="none"
+                  opacity="0.95"
+                />
+                {/* Trail sparkles */}
+                <path className="dl-wobble" d="M260 150 l3 0 l1 -10 l1 10 l3 0 l-3 1 l-1 10 l-1 -10 z" fill="#FFD84D" />
+                <circle cx="120" cy="220" r="5" fill="#FFFFFF" stroke="#FF6B6B" strokeWidth="2" />
+                <circle cx="380" cy="120" r="4" fill="#FFFFFF" stroke="#55DDE0" strokeWidth="2" />
+                {/* Kid silhouette: playful, simple */}
+                <g transform="translate(180,200)">
+                  {/* Body */}
+                  <rect x="-22" y="40" width="44" height="62" rx="14" fill="#FF6B6B" />
+                  {/* Head */}
+                  <circle cx="0" cy="22" r="22" fill="#FFE7C9" stroke="#3F4052" strokeOpacity="0.18" strokeWidth="1.5" />
+                  {/* Hair */}
+                  <path d="M-22 16 Q-16 -2 0 -2 Q16 -2 22 16 Q14 6 0 6 Q-14 6 -22 16 z" fill="#3F4052" />
+                  {/* Eyes */}
+                  <circle cx="-7" cy="22" r="2.4" fill="#3F4052" />
+                  <circle cx="7" cy="22" r="2.4" fill="#3F4052" />
+                  {/* Smile */}
+                  <path d="M-6 30 Q0 36 6 30" stroke="#3F4052" strokeWidth="2" strokeLinecap="round" fill="none" />
+                  {/* Arm raised pinching */}
+                  <path d="M16 50 Q40 30 60 -20" stroke="#FFE7C9" strokeWidth="14" strokeLinecap="round" fill="none" />
+                  {/* Pinch hand */}
+                  <circle cx="60" cy="-20" r="10" fill="#FFE7C9" stroke="#3F4052" strokeOpacity="0.3" strokeWidth="1.5" />
+                </g>
+                {/* Pinch sparkle dot */}
+                <circle cx="240" cy="180" r="9" fill="#FFFFFF" stroke="#55DDE0" strokeWidth="3" />
+                <circle cx="240" cy="180" r="3.5" fill="#55DDE0" />
+              </svg>
+
+              {/* Live cursor overlay */}
+              <div className="dl-pinch-cursor" style={{ position: 'absolute', top: '38%', left: '46%' }} />
             </div>
-            <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 480 360" fill="none" style={{ borderRadius: '1rem' }}>
-              <path d="M60 280 Q180 200 280 240 T440 180" stroke="rgba(249,115,22,.35)" strokeWidth="2" strokeLinecap="round" strokeDasharray="200" strokeDashoffset="200" style={{ animation: 'nl-draw-line 3s ease forwards infinite' }} />
-              <path d="M40 300 Q200 180 320 260 T460 200" stroke="rgba(251,146,60,.25)" strokeWidth="1.8" strokeLinecap="round" strokeDasharray="180" strokeDashoffset="180" style={{ animation: 'nl-draw-line 3s ease .8s forwards infinite' }} />
-              <rect x="16" y="16" width="80" height="22" rx="4" fill="rgba(255,255,255,.85)" stroke="rgba(249,115,22,.3)" strokeWidth="1" />
-              <text x="30" y="31" fill="rgba(249,115,22,.8)" fontSize="9" fontFamily="monospace">TRACKING</text>
-              <rect x="16" y="320" width="110" height="22" rx="4" fill="rgba(255,255,255,.85)" stroke="rgba(251,146,60,.25)" strokeWidth="1" />
-              <text x="26" y="335" fill="rgba(251,146,60,.6)" fontSize="8" fontFamily="monospace">60fps • PINCH ON</text>
-            </svg>
-            <div className="absolute -bottom-4 -left-4 rounded-xl px-4 py-2.5 flex items-center gap-2 nl-float z-10" style={{ background: 'white', border: '1px solid rgba(249,115,22,.25)', boxShadow: '0 2px 12px rgba(0,0,0,.08)', animationDelay: '.5s' }}>
-              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-xs text-slate-600 font-semibold">Camera Active</span>
+
+            {/* Floating "TRACKING" pill */}
+            <div className="dl-float" style={{
+              position: 'absolute',
+              top: -16,
+              left: -16,
+              background: '#FFFFFF',
+              border: `2px solid ${tokens.colors.aqua}`,
+              borderRadius: 9999,
+              padding: '8px 14px',
+              fontFamily: tokens.fontFamily.body,
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              color: tokens.colors.charcoal,
+              boxShadow: tokens.shadow.float,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              zIndex: 2,
+            }}>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: tokens.colors.meadowGreen, boxShadow: `0 0 0 4px ${tokens.colors.meadowGreen}33` }} />
+              Tracking 60fps
+            </div>
+
+            {/* Floating "PINCH ON" badge */}
+            <div className="dl-float-2" style={{
+              position: 'absolute',
+              bottom: -12,
+              right: -12,
+              background: tokens.colors.sunshine,
+              border: `3px solid #FFFFFF`,
+              borderRadius: 9999,
+              padding: '10px 18px',
+              fontFamily: tokens.fontFamily.display,
+              fontWeight: 700,
+              fontSize: '0.95rem',
+              color: tokens.colors.charcoal,
+              boxShadow: tokens.shadow.glow,
+              zIndex: 2,
+            }}>
+              ✨ Pinch on
             </div>
           </div>
         </div>
       </section>
 
+      {/* ═══════ DIVIDER ═══════ */}
+      <div className="dl-divider" style={{ marginTop: '8px', marginBottom: '8px' }} />
+
       {/* ═══════ PROBLEM ═══════ */}
-      <section className="relative py-28">
-        <div className="nl-section-divider" />
-        <div className="max-w-6xl mx-auto px-6 pt-20 grid lg:grid-cols-2 gap-16 items-center">
-          <div className="nl-reveal">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-8 leading-tight">
-              Screens That Drain.<br />Or Screens That <span className="text-orange-400 nl-glow-orange">Build.</span>
+      <section style={{ position: 'relative', padding: '90px 0', zIndex: 1 }}>
+        <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-5 gap-12 items-center">
+          <div className="dl-reveal lg:col-span-3">
+            <h2 style={{
+              fontFamily: tokens.fontFamily.display,
+              fontWeight: 700,
+              fontSize: 'clamp(2.25rem, 5vw, 3.5rem)',
+              lineHeight: 1.05,
+              color: tokens.colors.charcoal,
+              marginBottom: tokens.spacing.xl,
+            }}>
+              Screens that drain.<br />
+              Or screens that <span style={{ color: tokens.colors.deepPlum }}>build</span>.
             </h2>
-            <div className="text-slate-600 text-lg leading-relaxed max-w-2xl space-y-4">
-              <p>Most kids' screen time is passive. Tap. Swipe. Scroll. Repeat. Draw in the Air flips that model.</p>
-              <p>Here, screen time requires movement. It trains coordination. It builds focus. It rewards precision.</p>
-            </div>
-            <div className="mt-10 inline-block">
-              <span className="text-orange-500 font-bold text-xl tracking-wide">This is active digital play.</span>
+            <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '1.15rem', lineHeight: 1.6, color: tokens.colors.charcoal, opacity: 0.85, marginBottom: tokens.spacing.lg, maxWidth: 620 }}>
+              Most kids' screen time is passive. Tap. Swipe. Scroll. Repeat. Draw in the Air flips
+              that. Here, screen time means moving: reaching, pinching, tracing, focusing.
+            </p>
+            <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '1.15rem', lineHeight: 1.6, color: tokens.colors.charcoal, opacity: 0.85, maxWidth: 620 }}>
+              Real motion builds real coordination. And kids love the magic of it.
+            </p>
+            <div style={{
+              display: 'inline-block',
+              marginTop: tokens.spacing.xxl,
+              background: tokens.colors.sunshine,
+              border: `3px solid #FFFFFF`,
+              borderRadius: 9999,
+              padding: '12px 24px',
+              fontFamily: tokens.fontFamily.display,
+              fontWeight: 700,
+              fontSize: '1.1rem',
+              color: tokens.colors.charcoal,
+              boxShadow: tokens.shadow.glow,
+            }}>
+              This is active digital play.
             </div>
           </div>
-          <div className="nl-reveal" style={{ transitionDelay: '.15s' }}>
-            <div className="nl-img-frame nl-img-overlay-cyan rounded-2xl" style={{ aspectRatio: '4/3' }}>
-              <img src="/landing-images/child-drawing-light.jpg" alt="Child drawing a glowing light trail" loading="lazy" className="nl-ken-burns" />
+          <div className="dl-reveal lg:col-span-2" style={{ position: 'relative' }}>
+            <div style={{
+              position: 'relative',
+              aspectRatio: '1/1',
+              borderRadius: 36,
+              background: 'linear-gradient(165deg, #FFFFFF 0%, #F4FAFF 100%)',
+              border: '3px solid rgba(108, 63, 164, 0.12)',
+              boxShadow: tokens.shadow.float,
+              padding: 24,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+            }}>
+              <SparkleHand accent={tokens.colors.deepPlum} />
             </div>
           </div>
         </div>
       </section>
 
       {/* ═══════ HOW IT WORKS ═══════ */}
-      <section id="how-it-works" className="relative py-28">
-        <div className="nl-section-divider" />
-        <div className="max-w-6xl mx-auto px-6 pt-20">
-          <div className="text-center mb-8 nl-reveal">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-4">
-              Your Hands Become the <span className="text-orange-500 nl-glow-text">Tool</span>
+      <section id="how-it-works" style={{ position: 'relative', padding: '90px 0', zIndex: 1 }}>
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center dl-reveal" style={{ marginBottom: tokens.spacing.xxxl }}>
+            <h2 style={{
+              fontFamily: tokens.fontFamily.display,
+              fontWeight: 700,
+              fontSize: 'clamp(2.25rem, 5vw, 3.5rem)',
+              lineHeight: 1.05,
+              color: tokens.colors.charcoal,
+              marginBottom: tokens.spacing.lg,
+            }}>
+              Your hands become the <span style={{ color: tokens.colors.deepPlum }}>tool</span>
             </h2>
+            <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '1.1rem', color: tokens.colors.charcoal, opacity: 0.7, maxWidth: 620, margin: '0 auto' }}>
+              Four simple gestures. Endless ways to play.
+            </p>
           </div>
-          <div className="max-w-2xl mx-auto mb-16 nl-reveal">
-            <div className="nl-img-frame nl-img-overlay-dark rounded-2xl" style={{ aspectRatio: '16/9' }}>
-              <img src="/landing-images/child-at-laptop.jpg" alt="Child gesturing at a laptop with webcam" loading="lazy" />
-            </div>
-          </div>
+
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { icon: <><path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2v0M14 10V4a2 2 0 00-2-2 2 2 0 00-2 2v2M10 10.5V6a2 2 0 00-2-2 2 2 0 00-2 2v8" /><path d="M18 8a2 2 0 012 2v7.1a2 2 0 01-.6 1.4l-3 2.9a2 2 0 01-1.4.6H9.5a2 2 0 01-1.4-.6l-5-5a2 2 0 010-2.8l.6-.6a2 2 0 012.8 0L10 16V6" /></>, color: '#f97316', step: '1', title: 'Raise Your Hand', desc: 'The camera detects movement in real time.' },
-              { icon: <><circle cx="12" cy="12" r="3" /><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" /></>, color: '#fb923c', step: '2', title: 'Pinch to Draw', desc: "Thumb and index finger together. That's your pen." },
-              { icon: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 9h.01M15 15h.01" /></>, color: '#f97316', step: '3', title: 'Release to Pause', desc: 'Open hand stops the action. No accidental marks.' },
-              { icon: <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />, color: '#fb923c', step: '4', title: 'Instant Response', desc: 'Smooth strokes. No lag. Natural left-to-right movement.' },
-            ].map((s, i) => (
-              <div key={i} className="nl-reveal nl-card-feature rounded-2xl p-8 text-center" style={{ transitionDelay: `${(i + 1) * .1}s` }}>
-                <div className="w-14 h-14 mx-auto mb-5 rounded-xl flex items-center justify-center" style={{ background: `${s.color}15`, border: `1px solid ${s.color}33` }}>
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={s.color} strokeWidth="2" strokeLinecap="round">{s.icon}</svg>
+            {STEPS.map((s, i) => (
+              <div
+                key={s.step}
+                className="dl-reveal"
+                style={{
+                  background: 'linear-gradient(165deg, #FFFFFF 0%, #FBFCFF 60%, #F4FAFF 100%)',
+                  border: '2px solid rgba(108, 63, 164, 0.14)',
+                  borderRadius: 28,
+                  padding: 28,
+                  textAlign: 'center',
+                  boxShadow: tokens.shadow.panel,
+                  transitionDelay: `${i * 0.08}s`,
+                  position: 'relative',
+                }}
+              >
+                <div className="dl-step-num" style={{ position: 'absolute', top: -22, left: '50%', transform: 'translateX(-50%)' }}>
+                  {s.step}
                 </div>
-                <div className="text-xs font-bold tracking-widest mb-2" style={{ color: `${s.color}99` }}>STEP {s.step}</div>
-                <h3 className="text-lg font-bold mb-2">{s.title}</h3>
-                <p className="text-sm text-slate-500 leading-relaxed">{s.desc}</p>
+                <div style={{
+                  width: 72,
+                  height: 72,
+                  margin: '24px auto 16px',
+                  borderRadius: 22,
+                  background: `linear-gradient(165deg, ${s.color}22 0%, ${s.color}10 100%)`,
+                  border: `2px solid ${s.color}33`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: s.color,
+                  boxShadow: tokens.shadow.inset,
+                }}>
+                  {s.icon}
+                </div>
+                <h3 style={{
+                  fontFamily: tokens.fontFamily.display,
+                  fontWeight: 700,
+                  fontSize: '1.25rem',
+                  color: tokens.colors.charcoal,
+                  marginBottom: 8,
+                }}>{s.title}</h3>
+                <p style={{
+                  fontFamily: tokens.fontFamily.body,
+                  fontSize: '0.95rem',
+                  color: tokens.colors.charcoal,
+                  opacity: 0.7,
+                  lineHeight: 1.5,
+                }}>{s.desc}</p>
               </div>
             ))}
           </div>
-          <p className="text-center text-sm text-slate-500 mt-10 tracking-wide nl-reveal">Unmirrored camera &middot; Natural motion &middot; No confusion</p>
         </div>
       </section>
 
+      {/* ═══════ DIVIDER ═══════ */}
+      <div className="dl-divider" />
+
       {/* ═══════ FEATURES ═══════ */}
-      <section id="features" className="relative py-28">
-        <div className="nl-section-divider" />
-        <div className="max-w-6xl mx-auto px-6 pt-20">
-          <div className="text-center mb-20 nl-reveal">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-4">
-              Five Ways to Learn Through <span className="text-orange-500 nl-glow-text">Motion</span>
+      <section id="features" style={{ position: 'relative', padding: '90px 0', zIndex: 1 }}>
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center dl-reveal" style={{ marginBottom: tokens.spacing.xxxl }}>
+            <h2 style={{
+              fontFamily: tokens.fontFamily.display,
+              fontWeight: 700,
+              fontSize: 'clamp(2.25rem, 5vw, 3.5rem)',
+              lineHeight: 1.05,
+              color: tokens.colors.charcoal,
+              marginBottom: tokens.spacing.lg,
+            }}>
+              Five worlds. <span style={{ color: tokens.colors.deepPlum }}>One pinch.</span>
             </h2>
+            <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '1.1rem', color: tokens.colors.charcoal, opacity: 0.7, maxWidth: 620, margin: '0 auto' }}>
+              Every mode is built around the same simple gesture. Learn one. Play them all.
+            </p>
           </div>
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Free Paint */}
-            <div className="nl-reveal nl-card-feature rounded-2xl overflow-hidden">
-              <div className="nl-feature-img-wrap" style={{ aspectRatio: '16/9' }}>
-                <img src="/landing-images/free-paint-particles.jpg" alt="Child painting in the air with light particles" loading="lazy" />
-              </div>
-              <div className="p-8">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-xs font-bold tracking-widest" style={{ color: 'rgba(249,115,22,.7)' }}>01</span>
-                  <h3 className="text-xl font-bold">Free Paint</h3>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {MODE_TILES.map((mode, i) => (
+              <div
+                key={mode.id}
+                className="dl-reveal dl-mode-tile"
+                style={{
+                  background: 'linear-gradient(165deg, #FFFFFF 0%, #FBFCFF 60%, #F4FAFF 100%)',
+                  border: `2.5px solid ${mode.accent}33`,
+                  borderRadius: 32,
+                  padding: 28,
+                  boxShadow: tokens.shadow.float,
+                  transitionDelay: `${i * 0.08}s`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 16,
+                  minHeight: 380,
+                }}
+              >
+                <div style={{
+                  aspectRatio: '1/1',
+                  width: '70%',
+                  margin: '0 auto',
+                  background: `radial-gradient(circle at 35% 25%, #FFFFFF 0%, ${mode.accent}15 70%)`,
+                  borderRadius: 28,
+                  padding: 16,
+                  border: `2px solid ${mode.accent}22`,
+                  boxShadow: tokens.shadow.inset,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  {mode.illustration}
                 </div>
-                <p className="text-slate-600 leading-relaxed">Big glowing strokes. Multiple brush sizes. Kids create without limits.</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <span style={{
+                    background: mode.accent,
+                    color: tokens.colors.charcoal,
+                    fontFamily: tokens.fontFamily.display,
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    padding: '4px 12px',
+                    borderRadius: 9999,
+                    border: '2px solid #FFFFFF',
+                    boxShadow: tokens.shadow.float,
+                  }}>{mode.step}</span>
+                  <h3 style={{
+                    fontFamily: tokens.fontFamily.display,
+                    fontWeight: 700,
+                    fontSize: '1.5rem',
+                    color: tokens.colors.charcoal,
+                  }}>{mode.title}</h3>
+                </div>
+                <p style={{
+                  fontFamily: tokens.fontFamily.body,
+                  fontSize: '1rem',
+                  color: tokens.colors.charcoal,
+                  opacity: 0.85,
+                  lineHeight: 1.5,
+                  marginBottom: 4,
+                }}>{mode.description}</p>
+                <p style={{
+                  fontFamily: tokens.fontFamily.body,
+                  fontSize: '0.9rem',
+                  color: tokens.colors.charcoal,
+                  opacity: 0.6,
+                  lineHeight: 1.5,
+                }}>{mode.detail}</p>
               </div>
+            ))}
+            {/* CTA tile to balance grid (3 cols × 2 rows) */}
+            <div className="dl-reveal" style={{
+              background: `linear-gradient(165deg, ${tokens.colors.deepPlum} 0%, ${tokens.semantic.primaryHover} 100%)`,
+              border: '3px solid #FFFFFF',
+              borderRadius: 32,
+              padding: 32,
+              boxShadow: tokens.shadow.glow,
+              minHeight: 380,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              color: '#FFFFFF',
+              transitionDelay: '0.4s',
+            }}>
+              <div style={{
+                width: 96,
+                height: 96,
+                borderRadius: 28,
+                background: 'rgba(255,255,255,0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '3.5rem',
+                marginBottom: 20,
+                border: '3px solid rgba(255,255,255,0.4)',
+              }}>
+                <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 3l14 9-14 9V3z" />
+                </svg>
+              </div>
+              <h3 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.75rem', color: '#FFFFFF', marginBottom: 12 }}>
+                Try it now
+              </h3>
+              <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '1rem', color: '#FFFFFF', opacity: 0.95, lineHeight: 1.5, marginBottom: 24 }}>
+                Pop a bubble in 10 seconds. No sign up.
+              </p>
+              <KidButton
+                variant="success"
+                size="lg"
+                onClick={() => setTryFreeOpen(true)}
+              >
+                Start Playing
+              </KidButton>
             </div>
-            {/* Tracing Mode */}
-            <div className="nl-reveal nl-card-feature rounded-2xl overflow-hidden" style={{ transitionDelay: '.15s' }}>
-              <div className="nl-feature-img-wrap" style={{ aspectRatio: '16/9' }}>
-                <img src="/landing-images/tracing-letter.jpg" alt="Boy tracing the letter B with a glowing light trail" loading="lazy" />
-              </div>
-              <div className="p-8">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-xs font-bold tracking-widest" style={{ color: 'rgba(251,146,60,.7)' }}>02</span>
-                  <h3 className="text-xl font-bold">Tracing Mode</h3>
-                </div>
-                <p className="text-slate-600 leading-relaxed">Letters A–Z. Shapes. Guided paths. On-path feedback. Instant celebration when completed.</p>
-              </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ DIVIDER ═══════ */}
+      <div className="dl-divider" />
+
+      {/* ═══════ WHY THIS MATTERS ═══════ */}
+      <section style={{ position: 'relative', padding: '90px 0', zIndex: 1 }}>
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="grid lg:grid-cols-5 gap-12 items-start">
+            <div className="dl-reveal lg:col-span-2">
+              <h2 style={{
+                fontFamily: tokens.fontFamily.display,
+                fontWeight: 700,
+                fontSize: 'clamp(2.25rem, 5vw, 3.5rem)',
+                lineHeight: 1.05,
+                color: tokens.colors.charcoal,
+                marginBottom: tokens.spacing.xl,
+              }}>
+                Movement strengthens <span style={{ color: tokens.colors.deepPlum }}>learning</span>.
+              </h2>
+              <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '1.1rem', lineHeight: 1.6, color: tokens.colors.charcoal, opacity: 0.85 }}>
+                When kids move, their brains engage differently. Each mode targets one or more
+                early-childhood skills, without ever feeling like work.
+              </p>
+              <p style={{ marginTop: tokens.spacing.xl, fontFamily: tokens.fontFamily.body, fontSize: '0.95rem', color: tokens.colors.charcoal, opacity: 0.6, fontStyle: 'italic' }}>
+                Built by parents and a teacher. Aligned with EYFS Prime Areas of Learning.
+              </p>
             </div>
-            {/* Bubble Pop */}
-            <div className="nl-reveal nl-card-feature rounded-2xl overflow-hidden" style={{ transitionDelay: '.1s' }}>
-              <div className="nl-feature-img-wrap" style={{ aspectRatio: '16/9' }}>
-                <img src="/landing-images/bubble-pop.jpg" alt="Child reaching up to pop colorful floating bubbles" loading="lazy" />
-              </div>
-              <div className="p-8">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-xs font-bold tracking-widest" style={{ color: 'rgba(249,115,22,.7)' }}>03</span>
-                  <h3 className="text-xl font-bold">Bubble Pop</h3>
-                </div>
-                <p className="text-slate-600 leading-relaxed">Timed challenge. 30 seconds. Reach 20 pops and unlock rewards.</p>
-              </div>
-            </div>
-            {/* Sort & Place */}
-            <div className="nl-reveal nl-card-feature rounded-2xl overflow-hidden" style={{ transitionDelay: '.25s' }}>
-              <div className="nl-feature-img-wrap" style={{ aspectRatio: '16/9' }}>
-                <img src="/landing-images/sort-place.jpg" alt="Child pinching a holographic cube with floating shapes" loading="lazy" />
-              </div>
-              <div className="p-8">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-xs font-bold tracking-widest" style={{ color: 'rgba(251,146,60,.7)' }}>04</span>
-                  <h3 className="text-xl font-bold">Sort &amp; Place</h3>
-                </div>
-                <p className="text-slate-600 leading-relaxed">Grab by pinching. Sort by color, size, or category. Three levels. Increasing complexity.</p>
-              </div>
-            </div>
-            {/* Word Search — NOW WITH wordsearch.jpg */}
-            <div className="nl-reveal nl-card-feature rounded-2xl overflow-hidden md:col-span-2" style={{ transitionDelay: '.3s' }}>
-              <div className="grid md:grid-cols-2">
-                <div className="nl-wordsearch-img-wrap" style={{ aspectRatio: '16/9' }}>
-                  <img src="/landing-images/wordsearch.jpg" alt="Word search game interface with letter grid and gesture-based highlighting" loading="lazy" />
-                </div>
-                <div className="p-8 flex flex-col justify-center">
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="text-xs font-bold tracking-widest" style={{ color: 'rgba(249,115,22,.7)' }}>05</span>
-                    <h3 className="text-xl font-bold">Word Search</h3>
+            <div className="grid sm:grid-cols-2 gap-5 lg:col-span-3">
+              {SKILLS.map((skill, i) => (
+                <div
+                  key={skill.title}
+                  className="dl-reveal"
+                  style={{
+                    background: '#FFFFFF',
+                    border: `2px solid ${skill.color}33`,
+                    borderRadius: 24,
+                    padding: 22,
+                    boxShadow: tokens.shadow.panel,
+                    transitionDelay: `${i * 0.06}s`,
+                    display: 'flex',
+                    gap: 18,
+                    alignItems: 'flex-start',
+                  }}
+                >
+                  <div className="dl-skill-plate" style={{ background: skill.bg, color: skill.color, flexShrink: 0 }}>
+                    {skill.icon}
                   </div>
-                  <p className="text-slate-600 leading-relaxed mb-4">Pinch to select. Drag to highlight. Find hidden words in a letter grid using gesture controls.</p>
-                  <p className="text-slate-500 text-sm leading-relaxed">Combines letter recognition with spatial scanning. Themed word sets keep it fresh. Difficulty scales with grid size and word count.</p>
+                  <div>
+                    <h3 style={{
+                      fontFamily: tokens.fontFamily.display,
+                      fontWeight: 700,
+                      fontSize: '1.15rem',
+                      color: tokens.colors.charcoal,
+                      marginBottom: 4,
+                    }}>{skill.title}</h3>
+                    <p style={{
+                      fontFamily: tokens.fontFamily.body,
+                      fontSize: '0.92rem',
+                      color: tokens.colors.charcoal,
+                      opacity: 0.75,
+                      lineHeight: 1.5,
+                    }}>{skill.description}</p>
+                  </div>
                 </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ DIVIDER ═══════ */}
+      <div className="dl-divider" />
+
+      {/* ═══════ FOR PARENTS ═══════ */}
+      <section id="parents" style={{ position: 'relative', padding: '90px 0', zIndex: 1 }}>
+        <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+          <div className="dl-reveal order-2 lg:order-1">
+            <div style={{
+              background: 'linear-gradient(165deg, #FFFFFF 0%, #F4FAFF 100%)',
+              border: '3px solid rgba(108, 63, 164, 0.14)',
+              borderRadius: 36,
+              padding: 24,
+              boxShadow: tokens.shadow.float,
+            }}>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { label: 'No downloads', color: tokens.colors.coral, bg: '#FFE2E2', icon: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /> },
+                  { label: 'No ads', color: tokens.colors.warmOrange, bg: '#FFE9CF', icon: <><circle cx="12" cy="12" r="9" /><path d="M5 5l14 14" /></> },
+                  { label: 'No tracking', color: tokens.colors.deepPlum, bg: '#EAE0FB', icon: <><circle cx="11" cy="11" r="6" /><path d="M21 21l-4.35-4.35" /></> },
+                  { label: 'No data stored', color: tokens.colors.meadowGreen, bg: '#DCF5C9', icon: <><rect x="3" y="6" width="18" height="14" rx="2" /><path d="M3 10h18" /></> },
+                ].map((b) => (
+                  <div key={b.label} className="dl-tick-tile" style={{ borderColor: `${b.color}33`, background: '#FFFFFF' }}>
+                    <div style={{
+                      width: 56,
+                      height: 56,
+                      margin: '0 auto 12px',
+                      borderRadius: 18,
+                      background: b.bg,
+                      color: b.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: tokens.shadow.inset,
+                    }}>
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                        {b.icon}
+                      </svg>
+                    </div>
+                    <p style={{
+                      fontFamily: tokens.fontFamily.display,
+                      fontWeight: 700,
+                      fontSize: '1rem',
+                      color: tokens.colors.charcoal,
+                    }}>{b.label}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-          <p className="text-center text-slate-500 mt-12 text-base nl-reveal">
-            Every mode is built around the same interaction logic. <span className="text-slate-700 font-semibold">One gesture. Total control.</span>
+          <div className="dl-reveal order-1 lg:order-2">
+            <h2 style={{
+              fontFamily: tokens.fontFamily.display,
+              fontWeight: 700,
+              fontSize: 'clamp(2.25rem, 5vw, 3.5rem)',
+              lineHeight: 1.05,
+              color: tokens.colors.charcoal,
+              marginBottom: tokens.spacing.xl,
+            }}>
+              Screen time you don't have to <span style={{ color: tokens.colors.deepPlum }}>feel guilty</span> about.
+            </h2>
+            <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '1.15rem', lineHeight: 1.6, color: tokens.colors.charcoal, opacity: 0.85, marginBottom: tokens.spacing.xxl, maxWidth: 540 }}>
+              Everything runs in the browser. The camera feed never leaves the device. No accounts.
+              No tracking. No surprise fees. Just play.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <KidButton variant="primary" size="lg" onClick={() => setTryFreeOpen(true)}>
+                Start in 10 Seconds
+              </KidButton>
+              <a
+                href="/privacy"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontFamily: tokens.fontFamily.body,
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  color: tokens.colors.deepPlum,
+                  textDecoration: 'none',
+                  padding: '12px 4px',
+                }}
+              >
+                Read our privacy promise →
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ DIVIDER ═══════ */}
+      <div className="dl-divider" />
+
+      {/* ═══════ FOR SCHOOLS ═══════ */}
+      <section id="schools" style={{ position: 'relative', padding: '90px 0', zIndex: 1 }}>
+        <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+          <div className="dl-reveal">
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              background: tokens.colors.meadowGreen,
+              color: tokens.colors.charcoal,
+              border: '2px solid #FFFFFF',
+              borderRadius: 9999,
+              padding: '6px 14px',
+              fontFamily: tokens.fontFamily.body,
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              boxShadow: tokens.shadow.float,
+              marginBottom: tokens.spacing.lg,
+            }}>
+              For early-years educators
+            </div>
+            <h2 style={{
+              fontFamily: tokens.fontFamily.display,
+              fontWeight: 700,
+              fontSize: 'clamp(2.25rem, 5vw, 3.5rem)',
+              lineHeight: 1.05,
+              color: tokens.colors.charcoal,
+              marginBottom: tokens.spacing.xl,
+            }}>
+              Built for <span style={{ color: tokens.colors.deepPlum }}>classrooms</span>.
+            </h2>
+            <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '1.15rem', lineHeight: 1.6, color: tokens.colors.charcoal, opacity: 0.85, marginBottom: tokens.spacing.lg }}>
+              Runs on laptops, Chromebooks, and interactive whiteboards. No installs.
+              No student accounts. No friction.
+            </p>
+            <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '1rem', color: tokens.colors.charcoal, opacity: 0.7, marginBottom: tokens.spacing.xxl }}>
+              Free pilot pack: lesson plans, EYFS mapping, classroom poster, and a teacher-facing
+              quick-start. Designed with reception teachers in mind.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <KidButton variant="primary" size="lg" onClick={openPilotModal}>
+                Request Pilot Pack
+              </KidButton>
+              <a
+                href="/schools"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontFamily: tokens.fontFamily.body,
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  color: tokens.colors.deepPlum,
+                  textDecoration: 'none',
+                  padding: '12px 4px',
+                }}
+              >
+                Learn more →
+              </a>
+            </div>
+          </div>
+          <div className="dl-reveal">
+            <div style={{
+              position: 'relative',
+              aspectRatio: '4/3',
+              borderRadius: 36,
+              background: 'linear-gradient(165deg, #FFFFFF 0%, #F4FAFF 100%)',
+              border: '3px solid rgba(108, 63, 164, 0.14)',
+              boxShadow: tokens.shadow.float,
+              overflow: 'hidden',
+              padding: 24,
+            }}>
+              {/* Classroom illustration */}
+              <svg viewBox="0 0 480 360" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                  <linearGradient id="classroom-board" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor="#7ED957" />
+                    <stop offset="1" stopColor="#92E36C" />
+                  </linearGradient>
+                </defs>
+                {/* Floor */}
+                <rect x="0" y="280" width="480" height="80" fill="#FFE9CF" />
+                {/* Wall background */}
+                <rect x="0" y="0" width="480" height="280" fill="#DEF5FF" />
+                {/* Whiteboard */}
+                <rect x="60" y="50" width="360" height="200" rx="14" fill="url(#classroom-board)" stroke="#3F4052" strokeOpacity="0.2" strokeWidth="3" />
+                {/* Letter A on board */}
+                <text x="180" y="180" textAnchor="middle" fontFamily="Fredoka, sans-serif" fontSize="120" fontWeight="700" fill="#FFFFFF">A</text>
+                {/* Trace dots around A */}
+                <circle cx="200" cy="100" r="6" fill="#FFD84D" />
+                <circle cx="160" cy="160" r="6" fill="#FFD84D" />
+                <circle cx="240" cy="160" r="6" fill="#FFD84D" />
+                {/* Star and tick on board */}
+                <path d="M340 100 l4 0 l2 -14 l2 14 l4 0 l-4 2 l-2 14 l-2 -14 z" fill="#FFD84D" />
+                <path d="M310 220 l12 12 l24 -24" stroke="#FFFFFF" strokeWidth="6" strokeLinecap="round" fill="none" />
+                {/* Two kids */}
+                <g transform="translate(120, 290)">
+                  <circle cx="0" cy="-26" r="20" fill="#FFE7C9" />
+                  <path d="M-20 -26 Q-12 -42 0 -42 Q12 -42 20 -26 Q12 -32 0 -32 Q-12 -32 -20 -26 z" fill="#FF6B6B" />
+                  <circle cx="-7" cy="-26" r="2" fill="#3F4052" />
+                  <circle cx="7" cy="-26" r="2" fill="#3F4052" />
+                  <path d="M-5 -18 Q0 -14 5 -18" stroke="#3F4052" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+                  <rect x="-22" y="-6" width="44" height="50" rx="10" fill="#55DDE0" />
+                </g>
+                <g transform="translate(360, 290)">
+                  <circle cx="0" cy="-26" r="20" fill="#FFE7C9" />
+                  <path d="M-20 -28 Q-14 -42 0 -42 Q14 -42 20 -28 Q14 -34 0 -34 Q-14 -34 -20 -28 z" fill="#3F4052" />
+                  <circle cx="-7" cy="-26" r="2" fill="#3F4052" />
+                  <circle cx="7" cy="-26" r="2" fill="#3F4052" />
+                  <path d="M-5 -18 Q0 -14 5 -18" stroke="#3F4052" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+                  <rect x="-22" y="-6" width="44" height="50" rx="10" fill="#FFD84D" />
+                  {/* Raised arm */}
+                  <path d="M-22 4 Q-44 -10 -42 -36" stroke="#FFE7C9" strokeWidth="10" strokeLinecap="round" fill="none" />
+                  <circle cx="-42" cy="-36" r="8" fill="#FFE7C9" />
+                </g>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ DIVIDER ═══════ */}
+      <div className="dl-divider" />
+
+      {/* ═══════ TESTIMONIALS ═══════ */}
+      <section style={{ position: 'relative', padding: '90px 0', zIndex: 1 }}>
+        <div className="max-w-6xl mx-auto px-6">
+          <h2 className="dl-reveal text-center" style={{
+            fontFamily: tokens.fontFamily.display,
+            fontWeight: 700,
+            fontSize: 'clamp(2.25rem, 5vw, 3.5rem)',
+            lineHeight: 1.05,
+            color: tokens.colors.charcoal,
+            marginBottom: tokens.spacing.xxxl,
+          }}>
+            Loved by families and <span style={{ color: tokens.colors.deepPlum }}>educators</span>.
+          </h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { quote: 'My son struggled to trace letters on paper. This made it click.', author: 'Parent', role: 'Age 4', tint: tokens.colors.coral },
+              { quote: 'Best movement-based learning tool I have used in class.', author: 'Reception Teacher', role: 'London', tint: tokens.colors.aqua },
+              { quote: 'No downloads saved us IT time. Kids were using it in minutes.', author: 'IT Coordinator', role: 'Primary School', tint: tokens.colors.meadowGreen },
+            ].map((t, i) => (
+              <div key={i} className="dl-reveal dl-quote-card" style={{ transitionDelay: `${i * 0.1}s` }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill={t.tint} opacity="0.85" style={{ marginBottom: 12 }}>
+                  <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21zm12 0c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z" />
+                </svg>
+                <p style={{
+                  fontFamily: tokens.fontFamily.body,
+                  fontSize: '1.05rem',
+                  lineHeight: 1.5,
+                  color: tokens.colors.charcoal,
+                  marginBottom: 16,
+                }}>"{t.quote}"</p>
+                <p style={{
+                  fontFamily: tokens.fontFamily.display,
+                  fontWeight: 700,
+                  fontSize: '0.95rem',
+                  color: tokens.colors.deepPlum,
+                  marginBottom: 2,
+                }}>{t.author}</p>
+                <p style={{
+                  fontFamily: tokens.fontFamily.body,
+                  fontSize: '0.85rem',
+                  color: tokens.colors.charcoal,
+                  opacity: 0.65,
+                }}>{t.role}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ DIVIDER ═══════ */}
+      <div className="dl-divider" />
+
+      {/* ═══════ TECH CREDIBILITY ═══════ */}
+      <section style={{ position: 'relative', padding: '90px 0', zIndex: 1 }}>
+        <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+          <div className="dl-reveal">
+            <h2 style={{
+              fontFamily: tokens.fontFamily.display,
+              fontWeight: 700,
+              fontSize: 'clamp(2rem, 4.5vw, 3rem)',
+              lineHeight: 1.1,
+              color: tokens.colors.charcoal,
+              marginBottom: tokens.spacing.lg,
+            }}>
+              Built like a <span style={{ color: tokens.colors.deepPlum }}>serious</span> product.
+            </h2>
+            <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '1.1rem', lineHeight: 1.6, color: tokens.colors.charcoal, opacity: 0.85, marginBottom: tokens.spacing.xxl }}>
+              Performance matters. Kids notice lag instantly. We built every interaction to feel
+              effortless and immediate.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              {['60fps render loop', '30fps hand tracking', 'MediaPipe landmarks', 'One Euro filter', 'Zero frame storage', 'Local-only processing'].map((t) => (
+                <span key={t} className="dl-tech-badge">{t}</span>
+              ))}
+            </div>
+          </div>
+          <div className="dl-reveal" style={{ position: 'relative' }}>
+            <div style={{
+              position: 'relative',
+              aspectRatio: '1/1',
+              borderRadius: 36,
+              background: 'linear-gradient(165deg, #FFFFFF 0%, #F4FAFF 100%)',
+              border: '3px solid rgba(108, 63, 164, 0.14)',
+              boxShadow: tokens.shadow.float,
+              padding: 28,
+              overflow: 'hidden',
+            }}>
+              {/* Hand tracking landmark visualisation */}
+              <svg viewBox="0 0 360 360" width="100%" height="100%">
+                <defs>
+                  <radialGradient id="hand-glow" cx="0.5" cy="0.5">
+                    <stop offset="0" stopColor="#FFD84D" stopOpacity="0.4" />
+                    <stop offset="1" stopColor="#FFD84D" stopOpacity="0" />
+                  </radialGradient>
+                </defs>
+                <circle cx="180" cy="180" r="160" fill="url(#hand-glow)" />
+                {/* Hand silhouette */}
+                <path d="M120 280 Q120 220 140 200 L140 110 Q140 100 152 100 Q164 100 164 110 L164 180 L168 180 L168 90 Q168 80 180 80 Q192 80 192 90 L192 180 L196 180 L196 100 Q196 90 208 90 Q220 90 220 100 L220 180 L224 180 L224 130 Q224 120 236 120 Q248 120 248 130 L248 200 Q258 220 258 280 Z"
+                  fill="#FFE7C9" stroke="#6C3FA4" strokeWidth="2.5" strokeOpacity="0.5" />
+                {/* 21 landmarks */}
+                {[
+                  [120, 280], [140, 240], [148, 200], [156, 170], [164, 140],
+                  [168, 180], [172, 150], [176, 120], [180, 90],
+                  [188, 180], [192, 140], [196, 110], [200, 80],
+                  [212, 180], [216, 145], [220, 115], [224, 90],
+                  [232, 200], [240, 175], [248, 155], [256, 135],
+                ].map(([x, y], i) => (
+                  <g key={i}>
+                    <circle cx={x} cy={y} r="6" fill="#FFD84D" stroke="#FFFFFF" strokeWidth="2" />
+                    <circle cx={x} cy={y} r="9" fill="none" stroke="#FFD84D" strokeOpacity="0.4" strokeWidth="2" />
+                  </g>
+                ))}
+                {/* Connecting bones (thumb + index) */}
+                <path d="M120 280 L140 240 L148 200 L156 170 L164 140" stroke="#FFD84D" strokeWidth="2.5" fill="none" />
+                <path d="M120 280 L168 180 L172 150 L176 120 L180 90" stroke="#FFD84D" strokeWidth="2.5" fill="none" />
+                <path d="M120 280 L188 180 L192 140 L196 110 L200 80" stroke="#FFD84D" strokeWidth="2.5" fill="none" />
+                <path d="M120 280 L212 180 L216 145 L220 115 L224 90" stroke="#FFD84D" strokeWidth="2.5" fill="none" />
+                <path d="M120 280 L232 200 L240 175 L248 155 L256 135" stroke="#FFD84D" strokeWidth="2.5" fill="none" />
+                {/* Pinch dot */}
+                <circle cx="170" cy="115" r="14" fill="#FFFFFF" stroke="#55DDE0" strokeWidth="4" />
+                <circle cx="170" cy="115" r="6" fill="#55DDE0" />
+              </svg>
+              <div style={{
+                position: 'absolute',
+                bottom: 14,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: '#FFFFFF',
+                border: `2px solid ${tokens.colors.aqua}`,
+                borderRadius: 9999,
+                padding: '8px 14px',
+                fontFamily: tokens.fontFamily.body,
+                fontWeight: 700,
+                fontSize: '0.8rem',
+                color: tokens.colors.charcoal,
+                whiteSpace: 'nowrap',
+                boxShadow: tokens.shadow.float,
+              }}>
+                21 landmarks · real-time
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ DIVIDER ═══════ */}
+      <div className="dl-divider" />
+
+      {/* ═══════ PRIVACY ═══════ */}
+      <section style={{ position: 'relative', padding: '90px 0', zIndex: 1 }}>
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="dl-reveal text-center" style={{ marginBottom: tokens.spacing.xxxl }}>
+            <h2 style={{
+              fontFamily: tokens.fontFamily.display,
+              fontWeight: 700,
+              fontSize: 'clamp(2rem, 4.5vw, 3rem)',
+              lineHeight: 1.1,
+              color: tokens.colors.charcoal,
+              marginBottom: tokens.spacing.md,
+            }}>
+              Privacy by <span style={{ color: tokens.colors.deepPlum }}>design</span>.
+            </h2>
+            <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '1.05rem', color: tokens.colors.charcoal, opacity: 0.7, maxWidth: 540, margin: '0 auto' }}>
+              Four guarantees. Every session. No fine print.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              { label: 'Camera processed locally', icon: <><rect x="3" y="6" width="14" height="12" rx="2" /><path d="M21 8v8l-4-3v-2l4-3z" /></>, color: tokens.colors.deepPlum },
+              { label: 'No recordings ever', icon: <><circle cx="12" cy="12" r="9" /><path d="M5 5l14 14" /></>, color: tokens.colors.coral },
+              { label: 'No child analytics', icon: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M9 12l2 2 4-4" /></>, color: tokens.colors.meadowGreen },
+              { label: 'Adult gate for settings', icon: <><rect x="6" y="11" width="12" height="9" rx="2" /><path d="M9 11V8a3 3 0 016 0v3" /></>, color: tokens.colors.warmOrange },
+            ].map((t, i) => (
+              <div key={i} className="dl-reveal dl-tick-tile" style={{ transitionDelay: `${i * 0.06}s` }}>
+                <div style={{
+                  width: 64,
+                  height: 64,
+                  margin: '0 auto 14px',
+                  borderRadius: 22,
+                  background: `${t.color}1A`,
+                  color: t.color,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: `2px solid ${t.color}33`,
+                  boxShadow: tokens.shadow.inset,
+                }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    {t.icon}
+                  </svg>
+                </div>
+                <p style={{
+                  fontFamily: tokens.fontFamily.display,
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  color: tokens.colors.charcoal,
+                }}>{t.label}</p>
+              </div>
+            ))}
+          </div>
+          <p className="dl-reveal text-center" style={{
+            fontFamily: tokens.fontFamily.body,
+            fontSize: '0.95rem',
+            color: tokens.colors.charcoal,
+            opacity: 0.65,
+            marginTop: tokens.spacing.xxl,
+          }}>
+            <a
+              href="/privacy"
+              style={{
+                color: tokens.colors.deepPlum,
+                fontWeight: 700,
+                textDecoration: 'none',
+              }}
+            >
+              Read our full privacy policy →
+            </a>
           </p>
         </div>
       </section>
 
-      {/* ═══════ WHY THIS MATTERS ═══════ */}
-      <section className="relative py-28">
-        <div className="nl-section-divider" />
-        <div className="max-w-6xl mx-auto px-6 pt-20 grid lg:grid-cols-2 gap-16 items-center">
-          <div className="nl-reveal">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-8 leading-tight">
-              Movement Strengthens <span className="text-orange-500 nl-glow-text">Learning</span>
-            </h2>
-            <p className="text-lg text-slate-600 leading-relaxed mb-10">
-              When kids move, their brains engage differently. Draw in the Air supports development across multiple dimensions:
-            </p>
-            <div className="space-y-4">
-              {[
-                { icon: <><path d="M14 4h6v6M10 14l10-10M3 12a9 9 0 1018 0 9 9 0 00-18 0z" /></>, color: '#f97316', title: 'Fine motor development', desc: 'Precise pinch-and-release trains small muscle control' },
-                { icon: <><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="3" /></>, color: '#fb923c', title: 'Hand-eye coordination', desc: 'Real-time tracking connects movement to visual feedback' },
-                { icon: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 3v18" /></>, color: '#f97316', title: 'Spatial awareness', desc: 'Drawing in 3D space builds understanding of position and distance' },
-                { icon: <path d="M4 7V4h16v3M9 20h6M12 4v16" />, color: '#fb923c', title: 'Early literacy', desc: 'Letter tracing through physical motion cements letter formation' },
-                { icon: <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />, color: '#f97316', title: 'Focus under timed interaction', desc: 'Bubble Pop builds sustained attention and quick decision-making' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-start gap-4">
-                  <div className="w-10 h-10 shrink-0 rounded-lg flex items-center justify-center mt-0.5" style={{ background: `${item.color}15`, border: `1px solid ${item.color}33` }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={item.color} strokeWidth="2">{item.icon}</svg>
-                  </div>
-                  <div><span className="font-bold text-slate-800">{item.title}</span><br /><span className="text-sm text-slate-500">{item.desc}</span></div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="nl-reveal" style={{ transitionDelay: '.2s' }}>
-            <div className="nl-img-frame nl-img-overlay-cyan rounded-2xl max-w-md mx-auto" style={{ aspectRatio: '3/4', borderColor: 'rgba(249,115,22,.2)' }}>
-              <img src="/landing-images/free-paint-particles.jpg" alt="Child surrounded by glowing light particles" loading="lazy" style={{ objectPosition: 'center top' }} />
-            </div>
-            <p className="text-center text-slate-500 text-sm mt-6 italic">This isn't entertainment disguised as education. It's interaction engineered for growth.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════ FOR PARENTS ═══════ */}
-      <section id="parents" className="relative py-28">
-        <div className="nl-section-divider" />
-        <div className="max-w-6xl mx-auto px-6 pt-20 grid lg:grid-cols-2 gap-16 items-center">
-          <div className="nl-reveal order-2 lg:order-1">
-            <div className="nl-img-frame nl-img-overlay-heavy rounded-2xl" style={{ aspectRatio: '4/3' }}>
-              <img src="/landing-images/parent-child-screen.jpg" alt="Mother and child at a learning screen" loading="lazy" />
-            </div>
-            <div className="grid grid-cols-4 gap-3 mt-5">
-              {[
-                { label: 'No Downloads', color: '#f97316', icon: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /> },
-                { label: 'No Ads', color: '#fb923c', icon: <><path d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10" /></> },
-                { label: 'No Links Out', color: '#fb923c', icon: <><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></> },
-                { label: 'No Storage', color: '#f97316', icon: <><path d="M23 7l-7 5 7 5V7z" /><rect x="1" y="5" width="15" height="14" rx="2" /></> },
-              ].map((b, i) => (
-                <div key={i} className="rounded-lg py-3 text-center" style={{ background: 'rgba(248,250,252,1)', border: `1px solid ${b.color}18` }}>
-                  <svg className="mx-auto mb-1" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={b.color} strokeWidth="1.5" opacity=".7">{b.icon}</svg>
-                  <span className="text-slate-500 font-semibold block" style={{ fontSize: '10px' }}>{b.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="nl-reveal order-1 lg:order-2">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-6 leading-tight">
-              Screen Time You Don't Have to <span className="text-orange-400 nl-glow-orange">Feel Guilty</span> About
-            </h2>
-            <p className="text-lg text-slate-600 leading-relaxed mb-8">
-              Everything runs locally in the browser. Your child's camera feed never leaves the device. No accounts. No tracking. No surprises.
-            </p>
-            <button onClick={() => setTryFreeOpen(true)} className="nl-btn-primary inline-block text-white font-bold px-8 py-3.5 rounded-xl text-base border-none cursor-pointer">Start in 10 Seconds</button>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════ FOR SCHOOLS ═══════ */}
-      <section id="schools" className="relative py-28">
-        <div className="nl-section-divider" />
-        <div className="max-w-6xl mx-auto px-6 pt-20">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="nl-reveal">
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-6">
-                Built for <span className="text-orange-500 nl-glow-text">Classrooms</span>
-              </h2>
-              <p className="text-lg text-slate-600 leading-relaxed mb-4">
-                Runs on laptops. Works on interactive boards. No installs required. No student accounts needed.
-              </p>
-              <p className="text-base text-slate-500 mb-10">EYFS alignment support available. Designed for early years engagement.</p>
-              <div className="flex flex-wrap gap-4">
-                <button onClick={openPilotModal} className="nl-btn-primary text-white font-bold px-8 py-3.5 rounded-xl text-base">Request School Pilot Pack</button>
-                <a href="/schools" className="nl-btn-secondary font-semibold px-8 py-3.5 rounded-xl text-base no-underline">Learn More</a>
-              </div>
-            </div>
-            <div className="nl-reveal" style={{ transitionDelay: '.15s' }}>
-              <div className="nl-school-photo-wrap" style={{ aspectRatio: '4/3' }}>
-                <img src="/landing-images/classroom.jpg" alt="Children in a classroom with learning technology" loading="lazy" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════ TECH CREDIBILITY ═══════ */}
-      <section className="relative py-28">
-        <div className="nl-section-divider" />
-        <div className="max-w-6xl mx-auto px-6 pt-20">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="nl-reveal">
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-4">
-                Built Like a <span className="text-orange-500 nl-glow-text">Serious</span> Product
-              </h2>
-              <p className="text-slate-500 text-base mt-4 mb-8">Performance matters. Kids notice lag instantly. We built this to feel immediate.</p>
-              <div className="flex flex-wrap gap-3">
-                {['60fps render loop', '30fps hand tracking', 'MediaPipe hand detection', 'One Euro Filter smoothing', 'Zero frame storage', 'No per-frame React rerenders'].map((t) => (
-                  <span key={t} className="nl-tech-badge text-sm px-4 py-2 rounded-lg" style={{ color: 'rgba(249,115,22,.8)' }}>{t}</span>
-                ))}
-              </div>
-            </div>
-            <div className="nl-reveal" style={{ transitionDelay: '.15s' }}>
-              <div className="nl-img-frame nl-img-overlay-dark rounded-2xl" style={{ aspectRatio: '4/3', borderColor: 'rgba(249,115,22,.25)' }}>
-                <img src="/landing-images/hand-tracking.jpg" alt="Hand with MediaPipe landmark tracking" loading="lazy" />
-              </div>
-              <p className="text-center text-slate-500 text-xs mt-4 tracking-wider" style={{ fontFamily: "'SF Mono', 'Fira Code', monospace" }}>REAL-TIME HAND LANDMARK DETECTION</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════ SOCIAL PROOF ═══════ */}
-      <section className="relative py-28">
-        <div className="nl-section-divider" />
-        <div className="max-w-6xl mx-auto px-6 pt-20">
-          <h2 className="text-3xl sm:text-4xl font-black tracking-tight mb-14 text-center nl-reveal">
-            Loved by Families and <span className="text-orange-400 nl-glow-orange">Educators</span>
-          </h2>
-          <div className="grid md:grid-cols-3 gap-6 nl-reveal">
-            {[
-              { quote: 'My son struggled to trace letters on paper. This made it click.', author: 'Parent, Age 4', color: 'rgba(249,115,22,.3)' },
-              { quote: "Best movement-based learning tool I've used in class.", author: 'Reception Teacher, London', color: 'rgba(251,146,60,.3)' },
-              { quote: 'No downloads saved us IT time. Kids were using it in minutes.', author: 'IT Coordinator, Primary School', color: 'rgba(249,115,22,.3)' },
-            ].map((t, i) => (
-              <div key={i} className="nl-testimonial-card rounded-2xl p-8">
-                <svg className="mb-4" width="28" height="28" viewBox="0 0 24 24" fill={t.color}><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21zm12 0c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z" /></svg>
-                <p className="text-slate-700 leading-relaxed mb-4">{t.quote}</p>
-                <p className="text-sm text-slate-500 font-semibold">{t.author}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════ PRIVACY ═══════ */}
-      <section className="relative py-28">
-        <div className="nl-section-divider" />
-        <div className="max-w-6xl mx-auto px-6 pt-20">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="nl-reveal">
-              <div className="nl-img-frame nl-img-overlay-dark rounded-2xl" style={{ aspectRatio: '4/3' }}>
-                <img src="/landing-images/privacy-camera.jpg" alt="Privacy shield on laptop camera" loading="lazy" />
-              </div>
-            </div>
-            <div className="nl-reveal text-center lg:text-left" style={{ transitionDelay: '.15s' }}>
-              <h2 className="text-3xl sm:text-4xl font-black tracking-tight mb-10">
-                Privacy by <span className="text-orange-500 nl-glow-text">Design</span>
-              </h2>
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                {['Camera processed locally', 'No recordings', 'No child analytics', 'Adult gate for settings'].map((label) => (
-                  <div key={label} className="rounded-xl p-5 text-center" style={{ background: 'rgba(248,250,252,0.9)', border: '1px solid rgba(226,232,240,1)' }}>
-                    <div className="w-10 h-10 mx-auto mb-3 rounded-lg flex items-center justify-center" style={{ background: 'rgba(34,197,94,.1)' }}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2"><path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="10" /></svg>
-                    </div>
-                    <p className="text-sm text-slate-700 font-semibold">{label}</p>
-                  </div>
-                ))}
-              </div>
-              <p className="text-slate-500 text-sm">
-                Transparency builds trust.
-                <a href="/privacy" className="ml-1 transition-colors no-underline" style={{ color: 'rgba(249,115,22,.8)' }}>Read our Privacy Policy →</a>
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ═══════ FINAL CTA ═══════ */}
-      <section id="launch" className="relative py-32">
-        <div className="nl-section-divider" />
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="rounded-full" style={{ width: 600, height: 400, background: 'rgba(249,115,22,.05)', filter: 'blur(100px)' }} />
-        </div>
-        <div className="relative max-w-3xl mx-auto px-6 pt-12 text-center nl-reveal">
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-6 leading-tight">
-            Let Them Draw.<br />Let Them Move.<br />Let Them <span className="text-orange-500 nl-glow-text">Learn.</span>
-          </h2>
-          <div className="flex flex-wrap justify-center gap-4 mt-10 mb-6">
-            <button onClick={() => setTryFreeOpen(true)} className="nl-btn-primary text-white font-bold px-10 py-4 rounded-xl text-lg border-none cursor-pointer">Launch Draw in the Air</button>
-            <a href="#how-it-works" className="nl-btn-secondary font-semibold px-10 py-4 rounded-xl text-lg no-underline">See It in Action</a>
+      <section id="launch" style={{ position: 'relative', padding: '120px 0 100px', zIndex: 1 }}>
+        <div className="max-w-3xl mx-auto px-6 text-center dl-reveal">
+          <div style={{
+            position: 'relative',
+            background: 'linear-gradient(180deg, #FFFFFF 0%, #FBFCFF 100%)',
+            border: '3px solid rgba(108, 63, 164, 0.18)',
+            borderRadius: 48,
+            padding: '60px 40px',
+            boxShadow: tokens.shadow.modal,
+            overflow: 'hidden',
+          }}>
+            {/* Decorative balloons */}
+            <div style={{ position: 'absolute', top: 24, left: 24, fontSize: '2rem' }}>
+              <svg viewBox="0 0 60 80" width="56" height="76">
+                <ellipse cx="30" cy="30" rx="20" ry="26" fill="#FF6B6B" />
+                <ellipse cx="22" cy="22" rx="6" ry="4" fill="#FFFFFF" opacity="0.5" />
+                <path d="M30 56 L26 64 L30 60 L34 64 L30 56" fill="#FF6B6B" />
+                <path d="M30 60 Q25 70 30 80" stroke="#3F4052" strokeWidth="1.5" fill="none" />
+              </svg>
+            </div>
+            <div style={{ position: 'absolute', top: 30, right: 28 }}>
+              <svg viewBox="0 0 60 80" width="46" height="64">
+                <ellipse cx="30" cy="30" rx="20" ry="26" fill="#FFD84D" />
+                <ellipse cx="22" cy="22" rx="6" ry="4" fill="#FFFFFF" opacity="0.5" />
+                <path d="M30 56 L26 64 L30 60 L34 64 L30 56" fill="#FFD84D" />
+                <path d="M30 60 Q35 70 30 80" stroke="#3F4052" strokeWidth="1.5" fill="none" />
+              </svg>
+            </div>
+
+            <h2 style={{
+              fontFamily: tokens.fontFamily.display,
+              fontWeight: 700,
+              fontSize: 'clamp(2.5rem, 6vw, 4rem)',
+              lineHeight: 1.05,
+              color: tokens.colors.charcoal,
+              marginBottom: tokens.spacing.xl,
+            }}>
+              Let them draw.<br />
+              Let them move.<br />
+              Let them <span style={{ color: tokens.colors.deepPlum }}>learn</span>.
+            </h2>
+            <p style={{
+              fontFamily: tokens.fontFamily.body,
+              fontSize: '1.15rem',
+              color: tokens.colors.charcoal,
+              opacity: 0.75,
+              marginBottom: tokens.spacing.xxl,
+              maxWidth: 480,
+              margin: `0 auto ${tokens.spacing.xxl}`,
+            }}>
+              Free forever. Works in any modern browser with a webcam.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <div className="dl-cta-glow">
+                <KidButton variant="primary" size="xl" onClick={() => setTryFreeOpen(true)}>
+                  Launch Draw in the Air
+                </KidButton>
+              </div>
+            </div>
+            <p style={{
+              fontFamily: tokens.fontFamily.body,
+              fontSize: '0.9rem',
+              color: tokens.colors.charcoal,
+              opacity: 0.6,
+              marginTop: tokens.spacing.xl,
+            }}>
+              No sign up. No download. Just play.
+            </p>
           </div>
-          <p className="text-sm text-slate-500">Works on modern browsers with camera access.</p>
         </div>
       </section>
 
       {/* ═══════ FOOTER ═══════ */}
-      <footer style={{ borderTop: '1px solid rgba(226,232,240,1)' }} className="py-16">
+      <footer style={{
+        background: 'linear-gradient(180deg, #FFFAEB 0%, #FFF6E5 100%)',
+        borderTop: '2px solid rgba(108, 63, 164, 0.12)',
+        padding: '60px 0 32px',
+        position: 'relative',
+        zIndex: 1,
+      }}>
         <div className="max-w-6xl mx-auto px-6">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <img src="/logo.png" alt="Draw in the Air" className="h-8 w-auto" />
-                <span className="font-bold">Draw in the Air</span>
+              <div className="flex items-center gap-3 mb-4">
+                <img src="/logo.png" alt="Draw in the Air" style={{ height: 36 }} />
+                <span style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.05rem', color: tokens.colors.deepPlum }}>
+                  Draw in the Air
+                </span>
               </div>
-              <p className="text-sm text-slate-500 leading-relaxed">Gesture-based learning platform for children aged 3–7. Built with care.</p>
+              <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.9rem', color: tokens.colors.charcoal, opacity: 0.7, lineHeight: 1.6 }}>
+                Hands-free, screen-friendly learning for ages 3 to 7. Built with care.
+              </p>
             </div>
             <div>
-              <h4 className="text-xs font-bold text-slate-600 tracking-widest uppercase mb-4">Product</h4>
-              <div className="space-y-2.5">
-                <button onClick={() => setTryFreeOpen(true)} className="block text-sm text-slate-500 hover:text-orange-500 transition-colors text-left" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>Try Free</button>
-                <a href="/play" className="block text-sm text-slate-500 hover:text-orange-500 transition-colors no-underline">Try Free</a>
-                <a href="/schools" className="block text-sm text-slate-500 hover:text-orange-500 transition-colors no-underline">School Pilot Pack</a>
-                <a href="/faq" className="block text-sm text-slate-500 hover:text-orange-500 transition-colors no-underline">FAQ</a>
-              </div>
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-slate-600 tracking-widest uppercase mb-4">Legal</h4>
-              <div className="space-y-2.5">
-                <a href="/privacy" className="block text-sm text-slate-500 hover:text-orange-500 transition-colors no-underline">Privacy Policy</a>
-                <a href="/terms" className="block text-sm text-slate-500 hover:text-orange-500 transition-colors no-underline">Terms of Use</a>
-                <a href="/safeguarding" className="block text-sm text-slate-500 hover:text-orange-500 transition-colors no-underline">Safeguarding</a>
-                <a href="/accessibility" className="block text-sm text-slate-500 hover:text-orange-500 transition-colors no-underline">Accessibility</a>
-                <a href="/cookies" className="block text-sm text-slate-500 hover:text-orange-500 transition-colors no-underline">Cookie Policy</a>
+              <h4 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '0.85rem', color: tokens.colors.deepPlum, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 14 }}>Product</h4>
+              <div className="flex flex-col gap-2.5">
+                <button onClick={() => setTryFreeOpen(true)} style={{ background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', fontFamily: tokens.fontFamily.body, fontSize: '0.9rem', color: tokens.colors.charcoal, opacity: 0.75 }}>
+                  Try Free
+                </button>
+                <a href="/play" style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.9rem', color: tokens.colors.charcoal, opacity: 0.75, textDecoration: 'none' }}>Play Now</a>
+                <a href="/schools" style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.9rem', color: tokens.colors.charcoal, opacity: 0.75, textDecoration: 'none' }}>School Pilot Pack</a>
+                <a href="/faq" style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.9rem', color: tokens.colors.charcoal, opacity: 0.75, textDecoration: 'none' }}>FAQ</a>
               </div>
             </div>
             <div>
-              <h4 className="text-xs font-bold text-slate-600 tracking-widest uppercase mb-4">Contact</h4>
-              <div className="space-y-2.5">
-                <a href="mailto:partnership@drawintheair.com" className="block text-sm text-slate-500 hover:text-orange-500 transition-colors no-underline">partnership@drawintheair.com</a>
-                <button onClick={openPilotModal} className="block text-sm text-slate-500 hover:text-orange-500 transition-colors text-left" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>Request a Demo</button>
+              <h4 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '0.85rem', color: tokens.colors.deepPlum, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 14 }}>Legal</h4>
+              <div className="flex flex-col gap-2.5">
+                <a href="/privacy" style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.9rem', color: tokens.colors.charcoal, opacity: 0.75, textDecoration: 'none' }}>Privacy Policy</a>
+                <a href="/terms" style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.9rem', color: tokens.colors.charcoal, opacity: 0.75, textDecoration: 'none' }}>Terms of Use</a>
+                <a href="/safeguarding" style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.9rem', color: tokens.colors.charcoal, opacity: 0.75, textDecoration: 'none' }}>Safeguarding</a>
+                <a href="/accessibility" style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.9rem', color: tokens.colors.charcoal, opacity: 0.75, textDecoration: 'none' }}>Accessibility</a>
+                <a href="/cookies" style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.9rem', color: tokens.colors.charcoal, opacity: 0.75, textDecoration: 'none' }}>Cookie Policy</a>
+              </div>
+            </div>
+            <div>
+              <h4 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '0.85rem', color: tokens.colors.deepPlum, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 14 }}>Contact</h4>
+              <div className="flex flex-col gap-2.5">
+                <a href="mailto:partnership@drawintheair.com" style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.9rem', color: tokens.colors.charcoal, opacity: 0.75, textDecoration: 'none' }}>partnership@drawintheair.com</a>
+                <button onClick={openPilotModal} style={{ background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', fontFamily: tokens.fontFamily.body, fontSize: '0.9rem', color: tokens.colors.charcoal, opacity: 0.75 }}>
+                  Request a Demo
+                </button>
               </div>
             </div>
           </div>
-          <div style={{ borderTop: '1px solid rgba(226,232,240,1)' }} className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-slate-500">© 2026 Draw in the Air. All rights reserved.</p>
-            <p className="text-xs text-slate-700">Made with care for young learners.</p>
+          <div style={{
+            borderTop: '1.5px solid rgba(108, 63, 164, 0.12)',
+            paddingTop: 20,
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}>
+            <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.8rem', color: tokens.colors.charcoal, opacity: 0.6 }}>
+              © 2026 Draw in the Air. All rights reserved.
+            </p>
+            <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.8rem', color: tokens.colors.deepPlum, fontWeight: 700 }}>
+              Made with care for young learners.
+            </p>
           </div>
         </div>
       </footer>
 
       {/* ═══════ FEEDBACK WIDGET ═══════ */}
-      <button className="nl-feedback-btn" onClick={toggleFeedback} aria-label="Send Feedback">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" /></svg>
+      <button className="dl-feedback-btn" onClick={toggleFeedback} aria-label="Send Feedback">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+        </svg>
       </button>
-      <div className={`nl-feedback-panel ${feedbackOpen ? 'nl-open' : ''}`}>
+      <div className={`dl-feedback-panel ${feedbackOpen ? 'dl-open' : ''}`}>
         {!feedbackSent ? (
           <div>
-            <h3 className="font-bold text-base mb-1">Send Feedback</h3>
-            <p className="text-xs text-slate-500 mb-4">We'd love to hear from you.</p>
-            <textarea className="nl-form-input mb-3" rows={4} placeholder="What's on your mind?" value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} />
-            <input type="email" className="nl-form-input mb-4" placeholder="Email (optional)" value={feedbackEmail} onChange={(e) => setFeedbackEmail(e.target.value)} />
+            <h3 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.1rem', color: tokens.colors.charcoal, marginBottom: 4 }}>Send feedback</h3>
+            <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.85rem', color: tokens.colors.charcoal, opacity: 0.65, marginBottom: 16 }}>
+              We'd love to hear from you.
+            </p>
+            <textarea
+              className="dl-form-input"
+              rows={4}
+              placeholder="What's on your mind?"
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              style={{ marginBottom: 12, resize: 'vertical' }}
+            />
+            <input
+              type="email"
+              className="dl-form-input"
+              placeholder="Email (optional)"
+              value={feedbackEmail}
+              onChange={(e) => setFeedbackEmail(e.target.value)}
+              style={{ marginBottom: 16 }}
+            />
             <div className="flex items-center justify-between">
-              <button onClick={submitFeedback} disabled={feedbackSending} className="nl-btn-primary text-white font-semibold px-6 py-2 rounded-lg text-sm">
+              <KidButton variant="primary" size="md" onClick={submitFeedback} disabled={feedbackSending} style={{ minHeight: '48px', padding: '8px 22px', fontSize: '0.95rem' }}>
                 {feedbackSending ? 'Sending...' : 'Send'}
+              </KidButton>
+              <button
+                onClick={toggleFeedback}
+                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: tokens.fontFamily.body, fontSize: '0.85rem', color: tokens.colors.charcoal, opacity: 0.6, fontWeight: 600 }}
+              >
+                Cancel
               </button>
-              <button onClick={toggleFeedback} className="text-xs text-slate-500 hover:text-slate-600 transition-colors" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>Cancel</button>
             </div>
           </div>
         ) : (
-          <div className="text-center py-4">
-            <div className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: 'rgba(34,197,94,.1)' }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2"><path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="10" /></svg>
+          <div style={{ textAlign: 'center', padding: '12px 0' }}>
+            <div style={{
+              width: 56,
+              height: 56,
+              margin: '0 auto 14px',
+              borderRadius: '50%',
+              background: tokens.colors.meadowGreen,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: tokens.shadow.glow,
+            }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="10" />
+              </svg>
             </div>
-            <p className="text-sm font-semibold text-slate-700">Thank you!</p>
-            <p className="text-xs text-slate-500 mt-1">Your feedback has been sent.</p>
+            <p style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.1rem', color: tokens.colors.charcoal, marginBottom: 4 }}>Thank you!</p>
+            <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.85rem', color: tokens.colors.charcoal, opacity: 0.65 }}>Your feedback has been sent.</p>
           </div>
         )}
       </div>
 
       {/* ═══════ SCHOOL PILOT MODAL ═══════ */}
-      <div className={`nl-modal-backdrop ${pilotOpen ? 'nl-open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) closePilotModal(); }}>
-        <div className="nl-modal-content">
+      <div className={`dl-modal-backdrop ${pilotOpen ? 'dl-open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) closePilotModal(); }}>
+        <div className="dl-modal-content">
           {!pilotSent ? (
             <div>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold">Request School Pilot Pack</h2>
-                <button onClick={closePilotModal} className="text-slate-400 hover:text-slate-700 transition-colors" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+              <div className="flex items-center justify-between mb-5">
+                <h2 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.4rem', color: tokens.colors.charcoal }}>Request school pilot pack</h2>
+                <button
+                  onClick={closePilotModal}
+                  style={{ background: '#F4FAFF', border: '2px solid rgba(108,63,164,0.18)', borderRadius: '50%', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: tokens.colors.deepPlum }}
+                  aria-label="Close"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
                 </button>
               </div>
-              <p className="text-sm text-slate-600 mb-6">Fill in the details below and we'll send you everything you need to run a pilot in your school.</p>
+              <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.95rem', color: tokens.colors.charcoal, opacity: 0.7, marginBottom: 22 }}>
+                Tell us a bit about your school and we'll send a free pilot pack with lesson plans,
+                EYFS mapping and a teacher quick-start.
+              </p>
               {pilotSubmitError && (
-                <div className="mb-4 p-3 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', fontSize: '0.9rem' }}>
+                <div style={{
+                  marginBottom: 16,
+                  padding: 12,
+                  borderRadius: 14,
+                  background: 'rgba(255, 107, 107, 0.10)',
+                  border: '2px solid rgba(255, 107, 107, 0.4)',
+                  color: tokens.colors.coral,
+                  fontFamily: tokens.fontFamily.body,
+                  fontSize: '0.9rem',
+                }}>
                   <strong>Error:</strong> {pilotSubmitError}
                 </div>
               )}
-              <div className="space-y-4">
+              <div className="flex flex-col gap-3.5">
                 <div>
-                  <label className="nl-form-label">Your Name *</label>
-                  <input type="text" className="nl-form-input" placeholder="Jane Smith" value={pilotName} onChange={(e) => { setPilotName(e.target.value); setPilotErrors((p) => ({ ...p, name: false })); }} style={pilotErrors.name ? { borderColor: 'rgba(239,68,68,.5)' } : {}} />
+                  <label className="dl-form-label">Your name *</label>
+                  <input type="text" className="dl-form-input" placeholder="Jane Smith" value={pilotName} onChange={(e) => { setPilotName(e.target.value); setPilotErrors((p) => ({ ...p, name: false })); }} style={pilotErrors.name ? { borderColor: tokens.colors.coral } : undefined} />
                 </div>
                 <div>
-                  <label className="nl-form-label">Email *</label>
-                  <input type="email" className="nl-form-input" placeholder="jane@school.edu" value={pilotEmail} onChange={(e) => { setPilotEmail(e.target.value); setPilotErrors((p) => ({ ...p, email: false })); }} style={pilotErrors.email ? { borderColor: 'rgba(239,68,68,.5)' } : {}} />
+                  <label className="dl-form-label">Email *</label>
+                  <input type="email" className="dl-form-input" placeholder="jane@school.edu" value={pilotEmail} onChange={(e) => { setPilotEmail(e.target.value); setPilotErrors((p) => ({ ...p, email: false })); }} style={pilotErrors.email ? { borderColor: tokens.colors.coral } : undefined} />
                 </div>
                 <div>
-                  <label className="nl-form-label">School Name *</label>
-                  <input type="text" className="nl-form-input" placeholder="Elm Park Primary" value={pilotSchool} onChange={(e) => { setPilotSchool(e.target.value); setPilotErrors((p) => ({ ...p, school: false })); }} style={pilotErrors.school ? { borderColor: 'rgba(239,68,68,.5)' } : {}} />
+                  <label className="dl-form-label">School name *</label>
+                  <input type="text" className="dl-form-input" placeholder="Elm Park Primary" value={pilotSchool} onChange={(e) => { setPilotSchool(e.target.value); setPilotErrors((p) => ({ ...p, school: false })); }} style={pilotErrors.school ? { borderColor: tokens.colors.coral } : undefined} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="nl-form-label">Your Role</label>
-                    <select className="nl-form-input" value={pilotRole} onChange={(e) => setPilotRole(e.target.value)}>
+                    <label className="dl-form-label">Your role</label>
+                    <select className="dl-form-input" value={pilotRole} onChange={(e) => setPilotRole(e.target.value)}>
                       <option value="">Select...</option>
                       <option>Teacher</option>
                       <option>Teaching Assistant</option>
@@ -689,8 +1838,8 @@ export const Landing: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="nl-form-label">Year Group</label>
-                    <select className="nl-form-input" value={pilotYear} onChange={(e) => setPilotYear(e.target.value)}>
+                    <label className="dl-form-label">Year group</label>
+                    <select className="dl-form-input" value={pilotYear} onChange={(e) => setPilotYear(e.target.value)}>
                       <option value="">Select...</option>
                       <option>Nursery (3-4)</option>
                       <option>Reception (4-5)</option>
@@ -701,8 +1850,8 @@ export const Landing: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="nl-form-label">Primary Device Type</label>
-                  <select className="nl-form-input" value={pilotDevice} onChange={(e) => setPilotDevice(e.target.value)}>
+                  <label className="dl-form-label">Primary device</label>
+                  <select className="dl-form-input" value={pilotDevice} onChange={(e) => setPilotDevice(e.target.value)}>
                     <option value="">Select...</option>
                     <option>Laptops</option>
                     <option>Chromebooks</option>
@@ -712,25 +1861,45 @@ export const Landing: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="nl-form-label">Additional Notes</label>
-                  <textarea className="nl-form-input" rows={3} placeholder="Anything else we should know?" value={pilotNotes} onChange={(e) => setPilotNotes(e.target.value)} />
+                  <label className="dl-form-label">Notes</label>
+                  <textarea className="dl-form-input" rows={3} placeholder="Anything else we should know?" value={pilotNotes} onChange={(e) => setPilotNotes(e.target.value)} style={{ resize: 'vertical' }} />
                 </div>
               </div>
-              <div className="mt-6 flex items-center justify-between">
-                <button onClick={submitPilot} disabled={pilotSending} className="nl-btn-primary text-white font-bold px-8 py-3 rounded-xl text-base">
+              <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                <KidButton variant="primary" size="lg" onClick={submitPilot} disabled={pilotSending}>
                   {pilotSending ? 'Sending...' : 'Send Request'}
+                </KidButton>
+                <button
+                  onClick={closePilotModal}
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: tokens.fontFamily.body, fontSize: '0.95rem', color: tokens.colors.charcoal, opacity: 0.6, fontWeight: 600 }}
+                >
+                  Cancel
                 </button>
-                <button onClick={closePilotModal} className="text-sm text-slate-500 hover:text-slate-600 transition-colors" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>Cancel</button>
               </div>
             </div>
           ) : (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: 'rgba(34,197,94,.1)' }}>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2"><path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="10" /></svg>
+            <div style={{ textAlign: 'center', padding: '24px 0' }}>
+              <div style={{
+                width: 80,
+                height: 80,
+                margin: '0 auto 18px',
+                borderRadius: '50%',
+                background: tokens.colors.meadowGreen,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: tokens.shadow.glow,
+                border: `4px solid #FFFFFF`,
+              }}>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="10" />
+                </svg>
               </div>
-              <h3 className="text-lg font-bold text-slate-800 mb-2">Request Sent!</h3>
-              <p className="text-sm text-slate-500">We'll be in touch within 24 hours with your pilot pack.</p>
-              <button onClick={closePilotModal} className="nl-btn-secondary font-semibold px-6 py-2 rounded-lg text-sm mt-6">Close</button>
+              <h3 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.4rem', color: tokens.colors.charcoal, marginBottom: 8 }}>Request sent!</h3>
+              <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.95rem', color: tokens.colors.charcoal, opacity: 0.7, marginBottom: 20 }}>
+                We'll be in touch within 24 hours with your pilot pack.
+              </p>
+              <KidButton variant="secondary" size="md" onClick={closePilotModal}>Close</KidButton>
             </div>
           )}
         </div>

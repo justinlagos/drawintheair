@@ -9,16 +9,19 @@ import type { Theme } from './wordSearchTypes';
 
 // Word sets with expanded vocabulary from wordSearchWords.ts
 // Uses the new expanded word bank with 400+ words
-import { getRandomWords, WORD_CATEGORIES } from './wordSearchWords';
+import { WORD_CATEGORIES } from './wordSearchWords';
 
-// Map themes to categories for word selection
+// Map themes to categories for word selection.
+// Each theme pulls from all difficulty tiers so that chapter-driven length
+// constraints can find at least one matching word. Without the (Hard) tiers
+// for family / colours / toys, chapters 4-6 used to render an empty list.
 const THEME_TO_CATEGORIES: Record<Theme, string[]> = {
     animals: ['Animals (Easy)', 'Animals (Medium)', 'Animals (Hard)'],
-    colours: ['Colors (Easy)', 'Colors (Medium)'],
-    family: ['Family (Medium)'],
+    colours: ['Colors (Easy)', 'Colors (Medium)', 'Colors (Hard)'],
+    family: ['Family (Medium)', 'Family (Hard)'],
     food: ['Food (Easy)', 'Food (Medium)'],
-    toys: ['Toys (Easy)'],
-    nature: ['Nature (Easy)', 'Nature (Medium)', 'Nature (Hard)']
+    toys: ['Toys (Easy)', 'Toys (Hard)'],
+    nature: ['Nature (Easy)', 'Nature (Medium)', 'Nature (Hard)'],
 };
 
 // Legacy WORD_SETS for backward compatibility - now uses expanded vocabulary
@@ -81,44 +84,51 @@ export function getWordSet(theme: Theme): string[] {
 }
 
 /**
- * Select random words from a set with length constraints
- * Now uses expanded vocabulary with tracking to avoid repetition
+ * Select random words from a theme with length constraints.
+ *
+ * Robust against new chapter configurations: if the strict difficulty tier
+ * yields no words for the given theme + length, falls back to ALL tiers
+ * for that theme. Guarantees a non-empty list as long as the theme has
+ * any words within the length range.
  */
 export function selectWords(theme: Theme, count: number, minLength?: number, maxLength?: number): string[] {
-    // Determine difficulty based on length constraints
-    let difficulty: 1 | 2 | 3 | undefined = undefined;
-    if (minLength !== undefined && maxLength !== undefined) {
-        if (maxLength <= 4) difficulty = 1;
-        else if (maxLength <= 5) difficulty = 2;
-        else difficulty = 3;
-    }
-    
-    // Get words from appropriate categories for this theme
+    const matchesLength = (word: string): boolean => {
+        const len = word.length;
+        if (minLength !== undefined && len < minLength) return false;
+        if (maxLength !== undefined && len > maxLength) return false;
+        return true;
+    };
+
     const categories = THEME_TO_CATEGORIES[theme] || [];
-    let allWords: string[] = [];
-    
-    categories.forEach(catName => {
-        const category = WORD_CATEGORIES.find(c => c.name === catName);
-        if (category) {
-            if (!difficulty || category.difficulty === difficulty) {
-                allWords = allWords.concat(category.words);
-            }
-        }
-    });
-    
-    // Filter by length if constraints provided
-    if (minLength !== undefined || maxLength !== undefined) {
-        allWords = allWords.filter(word => {
-            const len = word.length;
-            if (minLength !== undefined && len < minLength) return false;
-            if (maxLength !== undefined && len > maxLength) return false;
-            return true;
-        });
+    const themeCategories = categories
+        .map(name => WORD_CATEGORIES.find(c => c.name === name))
+        .filter((c): c is NonNullable<typeof c> => c !== undefined);
+
+    // Pool 1: words from this theme that match the length range, regardless
+    // of which difficulty tier they live in.
+    const themeMatchingWords = themeCategories
+        .flatMap(c => c.words)
+        .filter(matchesLength);
+
+    if (themeMatchingWords.length === 0) {
+        // Last-ditch fallback — pull anything from the theme even if length
+        // doesn't match. Better to play with off-length words than render
+        // an empty grid.
+        const themeAnyWords = themeCategories.flatMap(c => c.words);
+        return shuffleSlice(themeAnyWords, count);
     }
-    
-    // Use getRandomWords to avoid repetition
-    return getRandomWords(Math.min(count, allWords.length), difficulty);
+
+    return shuffleSlice(themeMatchingWords, count);
 }
+
+const shuffleSlice = (pool: string[], n: number): string[] => {
+    const a = [...pool];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a.slice(0, Math.min(n, a.length));
+};
 
 /**
  * Theme colors for visual styling - Kid-friendly, high contrast

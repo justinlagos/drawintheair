@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Celebration } from '../../../components/Celebration';
 import { GameTopBar } from '../../../components/GameTopBar';
+import { KidPanel, KidChip, KidObjectiveCard, KidProgressBar } from '../../../components/kid-ui';
+import { tokens } from '../../../styles/tokens';
 import { STAGES } from './ColourBuilderStages';
 import { startStage, getScore, isRoundComplete, getCelebrationTime, getStreak } from './colourBuilderLogic';
 
@@ -58,6 +60,20 @@ export const ColourBuilderMode = ({ onExit }: ColourBuilderModeProps = {}) => {
     const badgeLayerRef = useRef<HTMLDivElement>(null);
     const skylineRef = useRef<HTMLDivElement>(null);
 
+    // Single source of truth for stage transition. Called by Celebration's
+    // onComplete when its internal timer expires.
+    const handleCelebrationDone = () => {
+        roundCompletedRef.current = false;
+        setShowCelebration(false);
+        if (stageNumber < STAGES.length) {
+            setStageNumber(prev => prev + 1);
+        } else {
+            // All stages complete — loop back to stage 1.
+            setStageNumber(1);
+            startStage(0);
+        }
+    };
+
     useEffect(() => {
         startStage(stageNumber - 1);
         const stage = STAGES[stageNumber - 1];
@@ -78,18 +94,10 @@ export const ColourBuilderMode = ({ onExit }: ColourBuilderModeProps = {}) => {
                         if (skylineRef.current) skylineRef.current.style.filter = "brightness(1)";
                     }, 1000);
                 }
-
-                setTimeout(() => {
-                    roundCompletedRef.current = false;
-                    setShowCelebration(false);
-                    if (stageNumber < STAGES.length) {
-                        setStageNumber(prev => prev + 1);
-                    } else {
-                        // All complete
-                        setStageNumber(1);
-                        startStage(0);
-                    }
-                }, 2500);
+                // Stage transition is handled by Celebration's onComplete
+                // (see prop on the component below). Removing the duplicate
+                // outer setTimeout fixes a race where the popup could persist
+                // over the resumed game.
             }
         }, 100);
 
@@ -187,28 +195,29 @@ export const ColourBuilderMode = ({ onExit }: ColourBuilderModeProps = {}) => {
     return (
         <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
 
-            {/* Skyline Background Gradient */}
+            {/* Bright Kid-UI sky background — sits behind the game canvas */}
             <div style={{
                 position: 'absolute', inset: 0,
-                background: 'linear-gradient(180deg, #1B274F, #0F1836)',
-                zIndex: -2 // behind game canvas
+                background: 'linear-gradient(180deg, #BEEBFF 0%, #DEF5FF 55%, #FFF6E5 100%)',
+                zIndex: -2,
             }} />
 
-            {/* Background City dusk silhouette */}
+            {/* Soft meadow horizon — replaces the dark city skyline */}
             <div ref={skylineRef} style={{
                 position: 'absolute', bottom: 0, width: '100%', height: '30%',
-                background: 'url(/path/to/skyline.png) center bottom / cover no-repeat', // placeholder
-                backgroundColor: '#0F1836', // fallback solid
-                borderTop: '2px solid rgba(255,255,255,0.1)',
-                display: 'flex', gap: '4px', alignItems: 'flex-end', justifyContent: 'center',
+                background: `linear-gradient(180deg, transparent 0%, rgba(126, 217, 87, 0.30) 30%, ${tokens.colors.meadowGreen} 100%)`,
+                display: 'flex', gap: '6px', alignItems: 'flex-end', justifyContent: 'center',
                 zIndex: -1,
-                transition: 'filter 0.3s'
+                transition: 'filter 0.3s',
             }}>
-                {/* Simulated lit windows that light up on match */}
+                {/* "Houses" that light up on matches — bright cream cards */}
                 {Array.from({ length: 20 }).map((_, i) => (
                     <div key={i} style={{
-                        width: '10px', height: '10px', background: 'rgba(255,255,255,0.05)',
-                        marginBottom: `${Math.random() * 50 + 20}px`
+                        width: '12px', height: '12px',
+                        background: 'rgba(255, 255, 255, 0.45)',
+                        borderRadius: '3px',
+                        marginBottom: `${Math.random() * 50 + 20}px`,
+                        boxShadow: '0 1px 3px rgba(108, 63, 164, 0.10)',
                     }} />
                 ))}
             </div>
@@ -226,63 +235,73 @@ export const ColourBuilderMode = ({ onExit }: ColourBuilderModeProps = {}) => {
                 }
             `}</style>
 
-            {/* Top Bar Zone A */}
+            {/* Top Bar — Menu (left) + Stage chip (centre via GameTopBar) + Score chip (right) */}
             {onExit && (
-                <div style={{ position: 'absolute', top: padding, left: padding, right: padding, zIndex: 9999, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-
-                    <GameTopBar onBack={onExit} stage={`Stage ${stageNumber}`} compact={isCompact} />
-
-                    {/* Score display logic */}
-                    <div style={{
-                        background: 'linear-gradient(180deg, #1B274F, #0F1836)',
-                        padding: '12px 24px',
-                        borderRadius: '18px',
-                        border: '1px solid rgba(255,255,255,0.16)',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center'
-                    }}>
-                        <span style={{ color: 'white', fontSize: '1rem', fontWeight: 600 }}>SCORE</span>
-                        <span style={{ color: '#FFCC33', fontSize: '1.5rem', fontWeight: 800 }}>{score}</span>
+                <div style={{
+                    position: 'absolute',
+                    top: padding,
+                    left: padding,
+                    right: padding,
+                    zIndex: tokens.zIndex.hud,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    pointerEvents: 'none',
+                }}>
+                    <GameTopBar onBack={onExit} compact={isCompact} />
+                    <div style={{ pointerEvents: 'auto' }}>
+                        <KidChip variant="score" size={isCompact ? 'sm' : 'md'}
+                                 icon={<span style={{ color: tokens.colors.sunshine }}>★</span>}>
+                            {score}
+                        </KidChip>
                     </div>
                 </div>
             )}
 
-            {/* Instruction Message Zone B */}
+            {/* Stage chip — top-left under the Menu button */}
+            <div style={{
+                position: 'absolute',
+                top: `calc(${topBarHeight} + ${padding})`,
+                left: padding,
+                zIndex: tokens.zIndex.hud,
+                pointerEvents: 'none',
+            }}>
+                <KidChip variant="neutral" size={isCompact ? 'sm' : 'md'} icon={<span>🏗️</span>}>
+                    Stage {stageNumber}
+                </KidChip>
+            </div>
+
+            {/* Instruction — Kid-UI objective card centred near the top */}
             <div style={{
                 position: 'absolute',
                 top: `calc(${topBarHeight} + ${padding} + 20px)`,
                 left: '50%',
                 transform: 'translateX(-50%)',
-                background: 'rgba(0,0,0,0.6)',
-                color: 'white',
-                padding: '10px 20px',
-                borderRadius: '20px',
-                fontSize: '1.2rem',
-                fontWeight: 600,
-                textAlign: 'center',
-                zIndex: 20
+                zIndex: tokens.zIndex.hud,
+                pointerEvents: 'none',
+                maxWidth: 'min(640px, 80vw)',
             }}>
-                {instruction}
+                <KidObjectiveCard icon="✨">
+                    {instruction}
+                </KidObjectiveCard>
             </div>
 
-            {/* Zone D - Thin Progress Indicator at Bottom */}
+            {/* Bottom progress — Kid-UI panel containing a sunshine progress bar */}
             <div style={{
                 position: 'absolute',
-                bottom: '10px',
-                left: '10%',
-                right: '10%',
-                height: '4px',
-                background: 'rgba(255,255,255,0.2)',
-                borderRadius: '2px',
-                zIndex: 20
+                bottom: tokens.spacing.lg,
+                left: '8%',
+                right: '8%',
+                zIndex: tokens.zIndex.hud,
+                pointerEvents: 'none',
             }}>
-                <div style={{
-                    width: `${progress * 100}%`,
-                    height: '100%',
-                    background: '#FACC15',
-                    borderRadius: '2px',
-                    transition: 'width 0.3s ease-out'
-                }} />
+                <KidPanel size="sm" tone="white" style={{ padding: tokens.spacing.md }}>
+                    <KidProgressBar
+                        value={progress}
+                        tone={progress >= 1 ? 'lime' : 'sunshine'}
+                        ariaLabel={`Stage ${stageNumber} progress`}
+                    />
+                </KidPanel>
             </div>
 
             {/* FX Overlays */}
@@ -294,6 +313,7 @@ export const ColourBuilderMode = ({ onExit }: ColourBuilderModeProps = {}) => {
                 message={stageNumber === STAGES.length ? "All Stages Complete!" : "Stage Complete!"}
                 subMessage="Great building!"
                 icon="🏗️"
+                onComplete={handleCelebrationDone}
             />
         </div>
     );

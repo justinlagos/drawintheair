@@ -26,7 +26,7 @@ import { ModeBackground } from './components/ModeBackground';
 import { PerfOverlay } from './components/PerfOverlay';
 import { MessageCardOverlay } from './components/MessageCardOverlay';
 import { CountdownOverlay } from './components/CountdownOverlay';
-import { ShareButton } from './components/share/ShareButton';
+// ShareButton intentionally not imported in-game — teacher CTA only.
 import { drawingEngine, PenState } from './core/drawingEngine';
 import { perf } from './core/perf';
 import { initToyMode } from './core/toyMode';
@@ -362,8 +362,9 @@ function App() {
                     <GestureSpellingMode onExit={handleExitToMenu} />
                   )}
 
-                  {/* Share button — floating, always visible during a game */}
-                  <ShareButton gameMode={gameMode ?? 'calibration'} variant="floating" />
+                  {/* Share with a Colleague intentionally not rendered in-game.
+                      That CTA is for teachers/parents discovering modes; mid-play
+                      it's clutter for kids. Lives on landing/marketing routes. */}
 
                 </>
               )}

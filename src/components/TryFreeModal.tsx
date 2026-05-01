@@ -10,10 +10,10 @@ import { startSession, type PilotAgeBand } from '../lib/pilotAnalytics';
 import './tryFreeModal.css';
 
 const AGE_BANDS: { value: PilotAgeBand; label: string }[] = [
-    { value: '4-5', label: '4–5' },
-    { value: '6-7', label: '6–7' },
-    { value: '8-9', label: '8–9' },
-    { value: '10-11', label: '10–11' },
+    { value: '4-5', label: '4-5' },
+    { value: '6-7', label: '6-7' },
+    { value: '8-9', label: '8-9' },
+    { value: '10-11', label: '10-11' },
     { value: '12+', label: '12+' },
 ];
 
@@ -22,18 +22,22 @@ interface TryFreeModalProps {
     onClose: () => void;
 }
 
+interface AnalyticsWindow {
+    analytics?: {
+        logEvent: (name: string, props?: Record<string, unknown>) => void;
+    };
+}
+
+// Read ?admin=1 once at module load — pure, no setState-in-effect needed.
+const initialAdmin =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('admin') === '1';
+
 export const TryFreeModal: React.FC<TryFreeModalProps> = ({ open, onClose }) => {
     const [ageBand, setAgeBand] = useState<PilotAgeBand | null>(null);
     const [schoolCode, setSchoolCode] = useState('');
     const [classCode, setClassCode] = useState('');
-    const [showAdmin, setShowAdmin] = useState(false);
-
-    // Detect ?admin=1 in URL
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        const params = new URLSearchParams(window.location.search);
-        setShowAdmin(params.get('admin') === '1');
-    }, []);
+    const [showAdmin] = useState(initialAdmin);
 
     const handleStart = useCallback(() => {
         if (!ageBand) return;
@@ -42,8 +46,9 @@ export const TryFreeModal: React.FC<TryFreeModalProps> = ({ open, onClose }) => 
         startSession(ageBand, schoolCode.trim(), classCode.trim());
 
         // Log the demo_try_click for the existing analytics too
-        if (typeof window !== 'undefined' && (window as any).analytics) {
-            (window as any).analytics.logEvent('demo_try_click', {
+        if (typeof window !== 'undefined') {
+            const analytics = (window as AnalyticsWindow).analytics;
+            analytics?.logEvent('demo_try_click', {
                 source: 'tryfree_modal',
                 age_band: ageBand,
             });
@@ -85,7 +90,7 @@ export const TryFreeModal: React.FC<TryFreeModalProps> = ({ open, onClose }) => 
                 <p className="tryfree-subtitle">Just one quick question</p>
 
                 {/* Age Band Selector */}
-                <label className="tryfree-label">How old is the child?</label>
+                <label className="tryfree-label">How Old Is the Child?</label>
                 <div className="tryfree-age-pills" role="radiogroup" aria-label="Age band">
                     {AGE_BANDS.map((band) => (
                         <button

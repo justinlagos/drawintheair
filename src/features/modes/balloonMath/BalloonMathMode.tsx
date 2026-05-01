@@ -1,14 +1,25 @@
 /**
- * BalloonMathMode.tsx
+ * BalloonMathMode — React UI wrapper for the Balloon Pop Math mode.
  *
- * React UI wrapper for the Balloon Pop Math game mode.
- * Renders the equation/target at the top, score, progress bar,
- * and celebration. Per-frame canvas work is done by balloonMathLogic.ts
+ * Bright Kid-UI design language:
+ *   - Sky-and-balloon themed background (BalloonMathBackground)
+ *   - KidObjectiveCard for the equation/target prompt
+ *   - KidPanel + KidProgressBar + KidChip for level/score HUD
+ *   - Celebration 2.0 with stars
+ *
+ * Game logic untouched — this is purely a visual migration.
  */
 
 import { useState, useEffect, useRef } from 'react';
 import { Celebration } from '../../../components/Celebration';
 import { GameTopBar } from '../../../components/GameTopBar';
+import { BalloonMathBackground } from './BalloonMathBackground';
+import {
+    KidChip,
+    KidPanel,
+    KidProgressBar,
+} from '../../../components/kid-ui';
+import { tokens } from '../../../styles/tokens';
 import {
     initBalloonMath,
     getBalloonMathScore,
@@ -37,15 +48,10 @@ export const BalloonMathMode = ({ onExit }: BalloonMathModeProps) => {
     const [popsThisLevel, setPopsThisLevel] = useState(0);
     const [popsNeeded, setPopsNeeded] = useState(3);
     const [showCelebration, setShowCelebration] = useState(false);
-    // useRef so polling always reads the latest value without stale closure
     const levelCompletedRef = useRef(false);
 
-    // Initialise game on mount
-    useEffect(() => {
-        initBalloonMath(0);
-    }, []);
+    useEffect(() => { initBalloonMath(0); }, []);
 
-    // Poll module-level state every 100ms (same pattern as ColourBuilderMode)
     useEffect(() => {
         const interval = setInterval(() => {
             setTarget(getBalloonMathTarget());
@@ -72,105 +78,121 @@ export const BalloonMathMode = ({ onExit }: BalloonMathModeProps) => {
     };
 
     const isUsingEquation = equation[0] > 0;
-    const progressPct = popsNeeded > 0 ? (popsThisLevel / popsNeeded) * 100 : 0;
+    const progress = popsNeeded > 0 ? popsThisLevel / popsNeeded : 0;
 
     return (
-        <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', fontFamily: "'Outfit', system-ui, sans-serif" }}>
+        <div style={{
+            position: 'relative', width: '100%', height: '100%', overflow: 'hidden',
+            fontFamily: tokens.fontFamily.body,
+        }}>
+            <BalloonMathBackground />
 
-            {/* Top bar */}
-            <GameTopBar
-                onBack={onExit ?? (() => { })}
-                stage={`${levelName} · Score ${score}`}
-            />
+            {/* Back-to-menu top bar (no stage label — bespoke panel below) */}
+            <GameTopBar onBack={onExit ?? (() => { })} />
 
-            {/* Target equation banner */}
+            {/* TOP-CENTER: Objective card with the equation/target — big Fredoka */}
             <div style={{
                 position: 'absolute',
-                top: '60px',
+                top: '92px',
                 left: '50%',
                 transform: 'translateX(-50%)',
-                zIndex: 200,
-                textAlign: 'center',
+                zIndex: tokens.zIndex.hud,
                 pointerEvents: 'none',
+                maxWidth: 'min(640px, 90vw)',
             }}>
-                <div style={{
-                    background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.08) 100%)',
-                    border: '2px solid rgba(255,255,255,0.25)',
-                    borderRadius: '24px',
-                    padding: '14px 32px',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-                    whiteSpace: 'nowrap',
+                <KidPanel size="md" tone="white" style={{
+                    textAlign: 'center',
+                    padding: `${tokens.spacing.md} ${tokens.spacing.xxl}`,
                 }}>
                     <div style={{
-                        fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
-                        fontWeight: 600,
-                        color: 'rgba(255,255,255,0.7)',
-                        letterSpacing: '0.05em',
-                        textTransform: 'uppercase',
-                        marginBottom: '4px',
+                        fontFamily: tokens.fontFamily.body,
+                        fontWeight: tokens.fontWeight.semibold,
+                        fontSize: tokens.fontSize.label,
+                        color: tokens.semantic.textSecondary,
+                        marginBottom: tokens.spacing.xs,
                     }}>
-                        🎈 Pop the number
+                        Pop the number
                     </div>
                     <div style={{
-                        fontSize: 'clamp(2.5rem, 8vw, 4.5rem)',
-                        fontWeight: 900,
+                        fontFamily: tokens.fontFamily.display,
+                        fontWeight: tokens.fontWeight.extrabold,
+                        fontSize: 'clamp(2.6rem, 7vw, 4.2rem)',
                         lineHeight: 1,
-                        background: 'linear-gradient(135deg, #FFD93D 0%, #FF6B6B 50%, #C77DFF 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        letterSpacing: '-2px',
+                        color: tokens.semantic.primary,
+                        letterSpacing: tokens.letterSpacing.tight,
                     }}>
                         {isUsingEquation
                             ? <>{equation[0]} + {equation[1]} = ?</>
-                            : target
-                        }
+                            : target}
                     </div>
-                </div>
+                </KidPanel>
             </div>
 
-            {/* Progress bar */}
+            {/* TOP-LEFT: Level chip */}
             <div style={{
-                position: 'absolute',
-                bottom: '18px',
-                left: '10%',
-                right: '10%',
-                height: '8px',
-                background: 'rgba(255,255,255,0.15)',
-                borderRadius: '4px',
-                zIndex: 200,
-                overflow: 'hidden',
+                position: 'absolute', top: '100px', left: tokens.spacing.xxl,
+                zIndex: tokens.zIndex.hud, pointerEvents: 'none',
             }}>
-                <div style={{
-                    height: '100%',
-                    width: `${progressPct}%`,
-                    background: 'linear-gradient(90deg, #FFD93D, #FF6B6B)',
-                    borderRadius: '4px',
-                    transition: 'width 0.35s ease-out',
-                    boxShadow: '0 0 10px rgba(255,217,61,0.6)',
-                }} />
+                <KidChip variant="neutral" size="md" icon={<span>🎈</span>}>
+                    {levelName || `Level ${level}`}
+                </KidChip>
             </div>
 
-            {/* Level label */}
+            {/* TOP-RIGHT: Score chip */}
+            <div style={{
+                position: 'absolute', top: '100px', right: tokens.spacing.xxl,
+                zIndex: tokens.zIndex.hud, pointerEvents: 'none',
+            }}>
+                <KidChip variant="score" size="md"
+                         icon={<span style={{ color: tokens.colors.sunshine }}>★</span>}>
+                    {score}
+                </KidChip>
+            </div>
+
+            {/* BOTTOM: Progress bar in a soft panel */}
             <div style={{
                 position: 'absolute',
-                bottom: '30px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                color: 'rgba(255,255,255,0.55)',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                zIndex: 200,
+                bottom: tokens.spacing.xl,
+                left: '8%',
+                right: '8%',
+                zIndex: tokens.zIndex.hud,
                 pointerEvents: 'none',
             }}>
-                Level {level}
+                <KidPanel size="sm" tone="white" style={{ padding: tokens.spacing.md }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: tokens.spacing.md,
+                    }}>
+                        <span style={{
+                            fontFamily: tokens.fontFamily.heading,
+                            fontWeight: tokens.fontWeight.bold,
+                            fontSize: tokens.fontSize.label,
+                            color: tokens.semantic.textPrimary,
+                            whiteSpace: 'nowrap',
+                        }}>
+                            {popsThisLevel}<span style={{ color: tokens.semantic.textMuted }}>{` / ${popsNeeded}`}</span>
+                        </span>
+                        <div style={{ flex: 1 }}>
+                            <KidProgressBar
+                                value={progress}
+                                tone={progress >= 1 ? 'lime' : 'sunshine'}
+                                ariaLabel={`Progress, ${popsThisLevel} of ${popsNeeded} pops`}
+                            />
+                        </div>
+                    </div>
+                </KidPanel>
             </div>
 
             <Celebration
                 show={showCelebration}
-                message={isLastBalloonMathLevel() ? '🏆 All Levels Done!' : '🎉 Level Complete!'}
-                subMessage={isLastBalloonMathLevel() ? 'You\'re a Math Star!' : 'Ready for the next one?'}
+                message={isLastBalloonMathLevel() ? 'All Levels Done!' : 'Level Complete!'}
+                subMessage={isLastBalloonMathLevel() ? "You're a Math Star!" : 'Ready for the next one?'}
                 icon="🎈"
                 duration={2500}
+                stars={isLastBalloonMathLevel() ? 3 : 2}
+                showConfetti
+                soundEffect
                 onComplete={handleCelebrationDone}
             />
         </div>

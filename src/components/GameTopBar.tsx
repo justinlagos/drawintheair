@@ -1,15 +1,21 @@
 /**
- * GameTopBar — Reusable per-game top bar
+ * GameTopBar — Per-game top bar in the bright Kid-UI design language.
  *
- * Left : ← Menu button  (calls onBack)
- * Center: optional stage chip  (e.g. "Level 3 of 6")
- * Right : empty spacer (keeps center chip truly centred)
+ * Left   : ← Menu button  (KidButton secondary style: white fill + plum
+ *          outline + plum text — pillowy, kid-target-sized)
+ * Center : optional stage chip in cream pill style
+ * Right  : empty spacer (kept for symmetric layout)
  *
  * Rules:
- *  - transform + opacity animations only — no blur, no animated box-shadow
+ *  - transform + opacity animations only
  *  - pointerEvents: none on the container; auto only on interactive children
  *  - no React state — pure presentational
+ *
+ * Modes that have their own bespoke panel showing the level (e.g. Sort &
+ * Place) should pass `stage` undefined to avoid a duplicate indicator.
  */
+
+import { tokens } from '../styles/tokens';
 
 interface GameTopBarProps {
   onBack: () => void;
@@ -19,9 +25,7 @@ interface GameTopBarProps {
 }
 
 export const GameTopBar = ({ onBack, stage, compact = false }: GameTopBarProps) => {
-  const h = compact ? '44px' : '52px';
-  const px = compact ? '8px' : '12px';
-  const fs = compact ? '0.78rem' : '0.82rem';
+  const px = compact ? '10px' : '14px';
 
   return (
     <div
@@ -30,62 +34,70 @@ export const GameTopBar = ({ onBack, stage, compact = false }: GameTopBarProps) 
         top: 0,
         left: 0,
         right: 0,
-        height: h,
+        height: compact ? '60px' : '72px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: `0 ${px}`,
+        padding: `${tokens.spacing.md} ${px}`,
         zIndex: 500,
         pointerEvents: 'none',
       }}
     >
-      {/* Left: Back button */}
+      {/* Left: Back-to-Menu button — KidButton secondary style inlined here
+          to avoid an import cycle with the kid-ui barrel. Shape and tokens
+          match KidButton variant="secondary". */}
       <button
         onClick={onBack}
+        aria-label="Back to menu"
         style={{
-          display: 'flex',
+          display: 'inline-flex',
           alignItems: 'center',
-          gap: '5px',
-          padding: compact ? '7px 11px' : '8px 14px',
-          minHeight: '36px',
-          minWidth: '44px',
-          background: 'rgba(0,0,0,0.35)',
-          border: '1.5px solid rgba(255,255,255,0.18)',
-          borderRadius: '9999px',
-          color: 'rgba(255,255,255,0.92)',
+          gap: tokens.spacing.sm,
+          padding: compact ? `${tokens.spacing.sm} ${tokens.spacing.lg}` : `${tokens.spacing.md} ${tokens.spacing.xl}`,
+          minHeight: compact ? '52px' : tokens.targetSize.min,
+          background: tokens.semantic.bgPanel,
+          color: tokens.semantic.primary,
+          border: `2.5px solid ${tokens.semantic.primary}`,
+          borderRadius: tokens.radius.pill,
+          boxShadow: tokens.shadow.float,
+          fontFamily: tokens.fontFamily.heading,
+          fontWeight: tokens.fontWeight.bold,
+          fontSize: compact ? tokens.fontSize.label : tokens.fontSize.button,
+          letterSpacing: tokens.letterSpacing.normal,
           cursor: 'pointer',
-          fontSize: fs,
-          fontWeight: 700,
-          letterSpacing: '0.2px',
           pointerEvents: 'auto',
-          transition: 'transform 0.12s ease, opacity 0.12s ease',
+          transition: `transform ${tokens.motion.duration.quick} ${tokens.motion.ease.bounce}, box-shadow ${tokens.motion.duration.quick} ${tokens.motion.ease.standard}`,
           touchAction: 'manipulation',
           userSelect: 'none',
+          WebkitTapHighlightColor: 'transparent',
         }}
-        onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.93)'; }}
-        onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-        onTouchStart={e => { e.currentTarget.style.transform = 'scale(0.93)'; }}
-        onTouchEnd={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+        onPointerDown={(e) => { e.currentTarget.style.transform = 'translateY(2px) scale(0.97)'; }}
+        onPointerUp={(e) => { e.currentTarget.style.transform = 'translateY(0) scale(1)'; }}
+        onPointerLeave={(e) => { e.currentTarget.style.transform = 'translateY(0) scale(1)'; }}
       >
-        <span style={{ fontSize: '0.8rem', lineHeight: 1 }}>←</span>
+        <span aria-hidden style={{ fontSize: '1.1em', lineHeight: 1 }}>←</span>
         <span>Menu</span>
       </button>
 
-      {/* Centre: optional stage chip */}
+      {/* Centre: optional stage chip (Kid-UI style cream pill).
+          Modes with their own bespoke level panel should not pass a `stage`
+          prop — duplicate level indicators look broken. */}
       {stage ? (
         <div
           style={{
             position: 'absolute',
             left: '50%',
             transform: 'translateX(-50%)',
-            background: 'rgba(0,0,0,0.30)',
-            border: '1.5px solid rgba(255,255,255,0.14)',
-            borderRadius: '9999px',
-            padding: compact ? '5px 12px' : '6px 16px',
-            fontSize: compact ? '0.72rem' : '0.78rem',
-            fontWeight: 600,
-            color: 'rgba(255,255,255,0.80)',
+            top: compact ? '14px' : '18px',
+            background: tokens.semantic.bgPanel,
+            color: tokens.semantic.textPrimary,
+            border: `1.5px solid ${tokens.semantic.borderPanel}`,
+            borderRadius: tokens.radius.pill,
+            padding: compact ? `${tokens.spacing.xs} ${tokens.spacing.lg}` : `${tokens.spacing.sm} ${tokens.spacing.xl}`,
+            fontFamily: tokens.fontFamily.heading,
+            fontSize: compact ? tokens.fontSize.caption : tokens.fontSize.label,
+            fontWeight: tokens.fontWeight.bold,
+            boxShadow: tokens.shadow.float,
             whiteSpace: 'nowrap',
             pointerEvents: 'none',
           }}
@@ -93,11 +105,10 @@ export const GameTopBar = ({ onBack, stage, compact = false }: GameTopBarProps) 
           {stage}
         </div>
       ) : (
-        /* keep layout symmetric even with no chip */
         <div style={{ flex: 1 }} />
       )}
 
-      {/* Right: spacer so back button stays left-aligned */}
+      {/* Right: spacer so the back button stays left-aligned even with no stage chip */}
       <div style={{ width: compact ? '70px' : '88px', flexShrink: 0 }} />
     </div>
   );

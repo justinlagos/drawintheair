@@ -58,16 +58,15 @@ export function renderGrid(
 }
 
 /**
- * Render a wooden board container around the grid
- * ═══════════════════════════════════════════════
- * WOODEN BOARD — warm brown with grain texture
- * ═══════════════════════════════════════════════
+ * Render the grid container — bright Kid-UI panel.
+ * Cream card-stock surface with a deep-plum low-opacity border, soft
+ * top highlight, and lavender drop-shadow tint underneath.
  */
 function renderGridContainer(
     ctx: CanvasRenderingContext2D,
     grid: Grid,
     width: number,
-    height: number
+    height: number,
 ): void {
     if (grid.tiles.length === 0 || grid.tiles[0].length === 0) return;
 
@@ -79,49 +78,55 @@ function renderGridContainer(
     const y = (firstTile.y - padding) * height;
     const w = (lastTile.x + lastTile.width - firstTile.x + padding * 2) * width;
     const h = (lastTile.y + lastTile.height - firstTile.y + padding * 2) * height;
-    const radius = 18;
+    const radius = 28;
 
-    // Wooden board background
-    const woodGrad = ctx.createLinearGradient(x, y, x, y + h);
-    woodGrad.addColorStop(0, 'rgba(140, 100, 60, 0.35)');
-    woodGrad.addColorStop(0.5, 'rgba(110, 75, 45, 0.30)');
-    woodGrad.addColorStop(1, 'rgba(90, 60, 35, 0.35)');
+    // Soft drop shadow underneath
+    ctx.save();
+    ctx.shadowColor = 'rgba(108, 63, 164, 0.18)';
+    ctx.shadowBlur = 24;
+    ctx.shadowOffsetY = 8;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, radius);
+    ctx.fill();
+    ctx.restore();
 
-    ctx.fillStyle = woodGrad;
+    // Cream/sky-tint surface gradient
+    const surf = ctx.createLinearGradient(x, y, x, y + h);
+    surf.addColorStop(0, '#FFFFFF');
+    surf.addColorStop(0.55, '#FBFCFF');
+    surf.addColorStop(1, '#EFF4FA');
+    ctx.fillStyle = surf;
     ctx.beginPath();
     ctx.roundRect(x, y, w, h, radius);
     ctx.fill();
 
-    // Top highlight shine
-    const shineGrad = ctx.createLinearGradient(x, y, x, y + h * 0.2);
-    shineGrad.addColorStop(0, 'rgba(255, 220, 160, 0.12)');
-    shineGrad.addColorStop(1, 'rgba(255, 220, 160, 0)');
-    ctx.fillStyle = shineGrad;
+    // Top inner highlight — pillowy "lit-from-above"
+    ctx.save();
+    ctx.globalAlpha = 0.7;
+    const shine = ctx.createLinearGradient(x, y, x, y + h * 0.25);
+    shine.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+    shine.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = shine;
     ctx.beginPath();
-    ctx.roundRect(x + 2, y + 2, w - 4, h * 0.2, radius);
+    ctx.roundRect(x + 4, y + 4, w - 8, h * 0.25, radius - 4);
     ctx.fill();
+    ctx.restore();
 
-    // Border — wood frame
-    ctx.strokeStyle = 'rgba(160, 120, 70, 0.4)';
-    ctx.lineWidth = 3;
+    // Outer border — deep plum, low opacity
+    ctx.strokeStyle = 'rgba(108, 63, 164, 0.18)';
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
     ctx.roundRect(x, y, w, h, radius);
-    ctx.stroke();
-
-    // Inner border
-    ctx.strokeStyle = 'rgba(200, 160, 100, 0.15)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.roundRect(x + 4, y + 4, w - 8, h - 8, radius - 2);
     ctx.stroke();
 }
 
 /**
- * Render a single tile — Chunky Wooden Block Style
- * ═══════════════════════════════════════════════
- * Each tile looks like a physical wooden letter block
- * with bevel, embossed text, and warm wood tones
- * ═══════════════════════════════════════════════
+ * Render a single tile — bright Kid-UI letter card.
+ *   idle:     cream card / charcoal letter / soft lavender border
+ *   hovered:  warm cream + slight lift / deep plum letter
+ *   selected: aqua tint / deep plum letter / aqua border + glow
+ *   found:    chapter accent tint / accent letter / accent glow
  */
 function renderTile(
     ctx: CanvasRenderingContext2D,
@@ -131,69 +136,67 @@ function renderTile(
     isSelected: boolean,
     isFound: boolean,
     width: number,
-    height: number
+    height: number,
 ): void {
     const x = tile.x * width;
     const y = tile.y * height;
     const w = tile.width * width;
     const h = tile.height * height;
-    const radius = Math.min(w, h) * 0.18;
+    const radius = Math.min(w, h) * 0.20;
 
-    const gap = 4;
+    const gap = 5;
     const ax = x + gap / 2;
     const ay = y + gap / 2;
     const aw = w - gap;
     const ah = h - gap;
 
-    // Lift effect for hovered/selected
+    // Lift on interaction
     const liftY = (isHovered || isSelected) ? -3 : 0;
     const drawY = ay + liftY;
 
-    // State-based colors
-    let topColor: string, botColor: string, borderCol: string, letterCol: string;
-    let glowCol = '', glowBlur = 0;
+    // State-driven palette — every value from the Kid-UI design system.
+    let topColor: string, botColor: string, borderCol: string;
+    let letterCol: string, glowCol = '', glowBlur = 0;
 
     if (isFound) {
-        topColor = hexToRgba(colors.primary, 0.4);
-        botColor = hexToRgba(colors.primary, 0.25);
+        topColor = hexToRgba(colors.primary, 0.35);
+        botColor = hexToRgba(colors.primary, 0.20);
         borderCol = colors.primary;
         letterCol = colors.primary;
         glowCol = colors.primary;
-        glowBlur = 12;
+        glowBlur = 14;
     } else if (isSelected) {
-        topColor = 'rgba(78, 205, 196, 0.50)';
-        botColor = 'rgba(50, 160, 150, 0.40)';
-        borderCol = '#4ECDC4';
-        letterCol = 'white';
-        glowCol = '#4ECDC4';
-        glowBlur = 15;
+        topColor = 'rgba(85, 221, 224, 0.45)';   // aqua
+        botColor = 'rgba(85, 221, 224, 0.25)';
+        borderCol = '#55DDE0';
+        letterCol = '#3F4052';                   // charcoal
+        glowCol = '#55DDE0';
+        glowBlur = 16;
     } else if (isHovered) {
-        topColor = 'rgba(180, 140, 90, 0.55)';
-        botColor = 'rgba(140, 100, 60, 0.45)';
-        borderCol = 'rgba(220, 180, 120, 0.6)';
-        letterCol = 'white';
-        glowCol = 'rgba(255, 220, 160, 0.3)';
-        glowBlur = 8;
+        topColor = '#FFFFFF';
+        botColor = '#F1E8FF';                    // soft lavender wash
+        borderCol = 'rgba(108, 63, 164, 0.45)';  // deeper plum
+        letterCol = '#6C3FA4';                   // deep plum
     } else {
-        // Default: wooden block
-        topColor = 'rgba(120, 90, 55, 0.65)';
-        botColor = 'rgba(80, 55, 30, 0.70)';
-        borderCol = 'rgba(160, 120, 70, 0.4)';
-        letterCol = 'rgba(255, 240, 210, 0.9)';
+        // Default: cream card stock
+        topColor = '#FFFFFF';
+        botColor = '#F4FAFF';
+        borderCol = 'rgba(108, 63, 164, 0.18)';
+        letterCol = '#3F4052';                   // charcoal
     }
 
-    // Shadow
+    // Drop shadow + optional glow
     ctx.save();
     if (glowCol && glowBlur > 0) {
         ctx.shadowColor = glowCol;
         ctx.shadowBlur = glowBlur;
     } else {
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+        ctx.shadowColor = 'rgba(108, 63, 164, 0.18)';
         ctx.shadowBlur = 6;
         ctx.shadowOffsetY = 3;
     }
 
-    // Block body
+    // Card body fill
     const bgGrad = ctx.createLinearGradient(ax, drawY, ax, drawY + ah);
     bgGrad.addColorStop(0, topColor);
     bgGrad.addColorStop(1, botColor);
@@ -203,55 +206,32 @@ function renderTile(
     ctx.fill();
     ctx.restore();
 
-    // Top bevel highlight
+    // Top inner highlight (subtle glossy face)
     ctx.save();
-    ctx.globalAlpha = 0.25;
-    const bevelGrad = ctx.createLinearGradient(ax, drawY, ax, drawY + ah * 0.35);
-    bevelGrad.addColorStop(0, 'rgba(255,255,255,0.5)');
+    ctx.globalAlpha = 0.55;
+    const bevelGrad = ctx.createLinearGradient(ax, drawY, ax, drawY + ah * 0.4);
+    bevelGrad.addColorStop(0, 'rgba(255,255,255,0.95)');
     bevelGrad.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = bevelGrad;
     ctx.beginPath();
-    ctx.roundRect(ax + 2, drawY + 2, aw - 4, ah * 0.35, radius);
-    ctx.fill();
-    ctx.restore();
-
-    // Bottom bevel shadow
-    ctx.save();
-    ctx.globalAlpha = 0.15;
-    const botBevel = ctx.createLinearGradient(ax, drawY + ah * 0.7, ax, drawY + ah);
-    botBevel.addColorStop(0, 'rgba(0,0,0,0)');
-    botBevel.addColorStop(1, 'rgba(0,0,0,0.4)');
-    ctx.fillStyle = botBevel;
-    ctx.beginPath();
-    ctx.roundRect(ax + 2, drawY + ah * 0.7, aw - 4, ah * 0.3 - 2, radius);
+    ctx.roundRect(ax + 2, drawY + 2, aw - 4, ah * 0.4, radius - 2);
     ctx.fill();
     ctx.restore();
 
     // Border
     ctx.strokeStyle = borderCol;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
     ctx.roundRect(ax, drawY, aw, ah, radius);
     ctx.stroke();
 
-    // Letter — embossed style (dark shadow, bright face)
-    const fontSize = Math.min(aw, ah) * 0.48;
-    ctx.font = `bold ${fontSize}px 'Outfit', 'Nunito', 'Comic Neue', Arial, sans-serif`;
+    // Letter — Fredoka if loaded, fallback otherwise
+    const fontSize = Math.min(aw, ah) * 0.50;
+    ctx.font = `700 ${fontSize}px Fredoka, "Baloo 2", system-ui, -apple-system, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-
-    // Dark shadow under letter (embossed)
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.fillText(tile.letter, ax + aw / 2 + 1, drawY + ah / 2 + 3);
-
-    // Main letter
     ctx.fillStyle = letterCol;
-    ctx.shadowColor = 'rgba(0,0,0,0.2)';
-    ctx.shadowBlur = 1;
-    ctx.shadowOffsetY = 1;
-    ctx.fillText(tile.letter, ax + aw / 2, drawY + ah / 2 + 1);
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetY = 0;
+    ctx.fillText(tile.letter, ax + aw / 2, drawY + ah / 2 + 2);
 }
 
 /**
@@ -266,13 +246,13 @@ function renderSelectionPath(
 ): void {
     if (selectionState.selectionPath.length < 2) return;
     
-    // Draw thick rounded corridor connecting selected tiles
-    ctx.strokeStyle = '#4ECDC4';
-    ctx.lineWidth = width * 0.035; // 3.5% of screen width - thick friendly line
+    // Draw thick rounded corridor connecting selected tiles — Kid-UI aqua
+    ctx.strokeStyle = '#55DDE0';
+    ctx.lineWidth = width * 0.035;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.shadowColor = '#4ECDC4';
-    ctx.shadowBlur = width * 0.025;
+    ctx.shadowColor = 'rgba(85, 221, 224, 0.7)';
+    ctx.shadowBlur = width * 0.022;
     
     ctx.beginPath();
     

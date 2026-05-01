@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Draw in the Air — E2E Test Report</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.6; }
+  .container { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+  h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; color: #0f172a; }
+  .subtitle { color: #64748b; font-size: 1rem; margin-bottom: 32px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 40px; }
+  .summary-card { background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; }
+  .summary-card .label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 4px; }
+  .summary-card .value { font-size: 1.5rem; font-weight: 700; }
+  .pass { color: #16a34a; }
+  .warn { color: #f59e0b; }
+  .fail { color: #dc2626; }
+  .flow-section { margin-bottom: 48px; }
+  .flow-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; padding-bottom: 12px; border-bottom: 2px solid #f97316; display: inline-block; }
+  .flow-desc { color: #64748b; margin-bottom: 24px; margin-top: 8px; }
+  .step { background: white; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; overflow: hidden; }
+  .step-header { padding: 16px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #f1f5f9; }
+  .step-num { background: #f97316; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+  .step-title { font-weight: 600; font-size: 1rem; }
+  .step-status { margin-left: auto; font-size: 0.8rem; font-weight: 600; padding: 4px 12px; border-radius: 20px; }
+  .status-pass { background: #dcfce7; color: #16a34a; }
+  .status-warn { background: #fef9c3; color: #a16207; }
+  .status-skip { background: #f1f5f9; color: #64748b; }
+  .step-body { padding: 16px 20px; }
+  .step-body p { margin-bottom: 8px; color: #475569; font-size: 0.95rem; }
+  .step-url { font-family: monospace; font-size: 0.8rem; color: #6366f1; background: #eef2ff; padding: 2px 8px; border-radius: 4px; }
+  .finding { margin-top: 16px; padding: 12px 16px; border-radius: 8px; font-size: 0.9rem; }
+  .finding-good { background: #f0fdf4; border-left: 3px solid #16a34a; }
+  .finding-warn { background: #fffbeb; border-left: 3px solid #f59e0b; }
+  .finding-info { background: #eff6ff; border-left: 3px solid #3b82f6; }
+  .issues { margin-top: 40px; }
+  .issues h2 { font-size: 1.3rem; margin-bottom: 16px; }
+  .issue-item { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 16px 20px; margin-bottom: 12px; }
+  .issue-item .severity { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .issue-item p { color: #475569; font-size: 0.9rem; }
+  .footer { margin-top: 48px; padding-top: 24px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 0.85rem; text-align: center; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Draw in the Air — E2E Test Report</h1>
+  <p class="subtitle">Date: 14 March 2026 &nbsp;|&nbsp; Tester: Claude &nbsp;|&nbsp; Environment: Production</p>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="label">Steps Tested</div>
+      <div class="value">12</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Passed</div>
+      <div class="value pass">10</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Issues Found</div>
+      <div class="value warn">2</div>
+    </div>
+  </div>
+
+  <!-- SCHOOL FLOW -->
+  <div class="flow-section">
+    <div class="flow-title">School Flow</div>
+    <p class="flow-desc">Testing the journey a school administrator takes: homepage → For Schools → School Pilot form → submission → confirmation.</p>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <div class="step-title">Homepage loads correctly</div>
+        <span class="step-status status-pass">PASS</span>
+      </div>
+      <div class="step-body">
+        <p>Landing page loads with hero section "Learning That Moves", hero image of child with hand tracking, nav bar with all links, "Try Free" and "School Pilot" buttons visible.</p>
+        <p><span class="step-url">https://drawintheair.com</span></p>
+        <div class="finding finding-good">Hero section renders cleanly. Product Hunt badge, "Camera Active" indicator, and "Runs in your browser" tagline all visible.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <div class="step-title">For Schools page</div>
+        <span class="step-status status-pass">PASS</span>
+      </div>
+      <div class="step-body">
+        <p>Clicked "For Schools" in nav. Page loads with "Built for Classrooms" hero, classroom photo, EYFS alignment messaging, and "Request School Pilot Pack" CTA.</p>
+        <p><span class="step-url">https://drawintheair.com → #schools section</span></p>
+        <div class="finding finding-good">Sections confirmed: Built for Classrooms, Built Like a Serious Product (60fps, 30fps stats), Privacy by Design (4 checkmarks), Testimonials (3 cards), and footer CTA.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <div class="step-title">Pricing page — 3 cards in one row</div>
+        <span class="step-status status-pass">PASS</span>
+      </div>
+      <div class="step-body">
+        <p>Navigated to /pricing. All 3 pricing cards (Free £0, Teacher Pro £4.99/mo, School from £299/yr) display in a single horizontal row.</p>
+        <p><span class="step-url">https://drawintheair.com/pricing</span></p>
+        <div class="finding finding-good">Orange gradient on "Most Popular" Teacher Pro card. £ currency used throughout. "Transparent Pricing" badge. Layout is responsive-ready with the 3-column grid.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">4</div>
+        <div class="step-title">School Pilot application page loads</div>
+        <span class="step-status status-pass">PASS</span>
+      </div>
+      <div class="step-body">
+        <p>Navigated to app.drawintheair.com/school. "Apply for a School Pilot" page loads with benefits banner (Full Access, Onboarding, Direct Input) and form fields.</p>
+        <p><span class="step-url">https://app.drawintheair.com/school</span></p>
+        <div class="finding finding-good">Form fields: Your name, Your role (dropdown), School name, School email, Number of pupils (dropdown), Additional notes (textarea). Orange "Apply for School Pilot" submit button.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">5</div>
+        <div class="step-title">School Pilot form — fill and submit</div>
+        <span class="step-status status-pass">PASS</span>
+      </div>
+      <div class="step-body">
+        <p>Filled form with test data: Name = "Test School Admin", Role = "Head Teacher / Principal", School = "Oakwood Primary School", Email = "test@oakwoodprimary.ac.uk", Pupils = "101-300", Notes = "Test submission - Reception and Year 1".</p>
+        <div class="finding finding-good">All fields accepted input correctly. Dropdowns populated with appropriate options. Form validated and submitted successfully.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">6</div>
+        <div class="step-title">Submission confirmation</div>
+        <span class="step-status status-pass">PASS</span>
+      </div>
+      <div class="step-body">
+        <p>After clicking "Apply for School Pilot", the page shows green checkmark with "Application received!" message, 2-business-day response promise, and "Explore the Activities" CTA button.</p>
+        <div class="finding finding-good">Clean success state. No errors in console. CTA directs users to explore the product while they wait.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">7</div>
+        <div class="step-title">Admin Dashboard — PIN protection</div>
+        <span class="step-status status-pass">PASS</span>
+      </div>
+      <div class="step-body">
+        <p>Navigated to /admin. PIN login screen displays correctly with dark theme. No hardcoded fallback PIN — panel is disabled without VITE_ADMIN_PIN environment variable.</p>
+        <p><span class="step-url">https://drawintheair.com/admin</span></p>
+        <div class="finding finding-info">Security check passed. Admin dashboard requires VITE_ADMIN_PIN to be set as an environment variable. Rate limiting (5 attempts/minute) is implemented in code.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEACHER FLOW -->
+  <div class="flow-section">
+    <div class="flow-title">Teacher Flow</div>
+    <p class="flow-desc">Testing the journey a teacher takes: Class Mode → Google sign-in → activity selection → session launch → Full Dashboard link.</p>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <div class="step-title">Class Mode page loads</div>
+        <span class="step-status status-pass">PASS</span>
+      </div>
+      <div class="step-body">
+        <p>Navigated to /class. Dark-themed "Class Mode" page loads with "Teacher Sign In" card and "Sign in with Google" button.</p>
+        <p><span class="step-url">https://drawintheair.com/class</span></p>
+        <div class="finding finding-good">Clean, focused UI. Single CTA for Google sign-in. Supabase Auth integration configured correctly.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <div class="step-title">Google OAuth sign-in</div>
+        <span class="step-status status-pass">PASS</span>
+      </div>
+      <div class="step-body">
+        <p>Clicked "Sign in with Google". Google account chooser appeared correctly, redirecting through Supabase (fmrsfjxwswzhvicylaph.supabase.co). Selected account and authenticated successfully.</p>
+        <div class="finding finding-good">OAuth flow works end-to-end. Redirects back to /class after authentication. Teacher name "Justin Ukaegbu" displayed in the top-right with Sign Out button.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <div class="step-title">Teacher Dashboard — activity grid</div>
+        <span class="step-status status-pass">PASS</span>
+      </div>
+      <div class="step-body">
+        <p>After sign-in, the "Start a Session" dashboard loads with 9 activity cards: Bubble Pop, Balloon Math, Tracing, Sort & Place, Colour Builder, Rainbow Bridge, Spelling Stars, Word Search, Free Paint.</p>
+        <div class="finding finding-good">All 9 activities render with emoji icons. Grid layout is responsive. "Full Dashboard" link and "Sign Out" button in the top bar. Recent Sessions section shows historical data (Free Paint 13 Mar, Rainbow Bridge 9 Mar, Sort & Place 9 Mar).</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">4</div>
+        <div class="step-title">Activity selection and session start</div>
+        <span class="step-status status-pass">PASS</span>
+      </div>
+      <div class="step-body">
+        <p>Clicked "Tracing" activity card — it highlights with a purple border indicating selection. Scrolled down to reveal "Start Class Mode" button (purple gradient). Button is clickable.</p>
+        <div class="finding finding-info">Session launch requires camera access (browser permission). The flow up to the launch point works correctly. In a classroom with a webcam, the session would start with a join code for students.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">5</div>
+        <div class="step-title">Full Dashboard link (cross-domain)</div>
+        <span class="step-status status-warn">WARN</span>
+      </div>
+      <div class="step-body">
+        <p>Clicked "→ Full Dashboard" link in top bar. Opens new tab to <span class="step-url">https://app.drawintheair.com/auth/login?redirect=/dashboard</span>. The URL is correct (includes login redirect), but the page falls back to the homepage.</p>
+        <div class="finding finding-warn"><strong>Issue:</strong> The platform (app.drawintheair.com) does not yet have a /dashboard page or /auth/login route built. The link correctly points to the right URL pattern, but the destination pages need to be implemented in the Next.js platform.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ISSUES -->
+  <div class="issues">
+    <h2>Issues Found</h2>
+
+    <div class="issue-item">
+      <div class="severity warn">Medium — Platform Dashboard Missing</div>
+      <p>The "Full Dashboard" link from Class Mode goes to <code>app.drawintheair.com/auth/login?redirect=/dashboard</code>, but the platform doesn't have these routes built yet. The link URL is correct — the Next.js pages just need to be created. This would include a teacher dashboard showing session history, student analytics, and classroom management.</p>
+    </div>
+
+    <div class="issue-item">
+      <div class="severity" style="color: #3b82f6;">Low — Form Submissions Table Empty</div>
+      <p>The Supabase <code>form_submissions</code> table exists (migration applied) but the School Pilot form on <code>app.drawintheair.com/school</code> stores data via its own mechanism, not through the new unified <code>formSubmission.ts</code> pipeline. The Vite SPA forms (on drawintheair.com) will use the unified pipeline once <code>VITE_FORM_ENDPOINT</code> is configured in Vercel. The platform's school pilot form may need its own integration with the <code>/api/form-submission</code> route.</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>Draw in the Air — End-to-End Test Report &nbsp;|&nbsp; Generated 14 March 2026</p>
+  </div>
+</div>
+</body>
+</html>

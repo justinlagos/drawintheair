@@ -1,11 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
-    ignoreDuringBuilds: true,
+    // SECURITY FIX: Do not ignore lint errors — they catch security issues
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    // Allow build to complete even with type errors during initial development
-    ignoreBuildErrors: true,
+    // SECURITY FIX: Do not ignore type errors — they catch logic bugs
+    ignoreBuildErrors: false,
   },
   images: {
     remotePatterns: [
@@ -16,6 +17,8 @@ const nextConfig = {
       },
     ],
   },
+  // SECURITY: Disable x-powered-by header
+  poweredByHeader: false,
 }
 
 module.exports = nextConfig

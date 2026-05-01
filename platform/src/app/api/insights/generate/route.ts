@@ -256,17 +256,10 @@ Provide 3-5 actionable insights in JSON format with the specified structure. Foc
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     console.error('Insights generation error:', errorMessage)
 
-    // Determine appropriate status code
-    let statusCode = 500
-    if (errorMessage.includes('Invalid authorization')) {
-      statusCode = 401
-    } else if (errorMessage.includes('Pro users only')) {
-      statusCode = 403
-    }
-
+    // SECURITY FIX: Do not expose internal error details to clients
     return NextResponse.json(
-      { error: 'Failed to generate insights', details: errorMessage },
-      { status: statusCode }
+      { error: 'Failed to generate insights' },
+      { status: 500 }
     )
   }
 }

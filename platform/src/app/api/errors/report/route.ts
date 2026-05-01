@@ -1,35 +1,17 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import {
+  RateLimiter,
+  getClientIp,
+  hashIp,
+  sanitizeString,
+  isValidUUID,
+  isJsonContentType,
+  isPayloadWithinLimit,
+} from '@/lib/security/validation'
 
-// Rate limiting: max 10 errors per minute per IP
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
-
-function getRateLimitKey(ip: string): string {
-  return `error-report:${ip}`
-}
-
-function checkRateLimit(ip: string): boolean {
-  const key = getRateLimitKey(ip)
-  const now = Date.now()
-
-  const limitData = rateLimitMap.get(key)
-
-  if (!limitData || limitData.resetAt < now) {
-    // Reset limit window (1 minute)
-    rateLimitMap.set(key, {
-      count: 1,
-      resetAt: now + 60 * 1000,
-    })
-    return true
-  }
-
-  if (limitData.count >= 10) {
-    return false
-  }
-
-  limitData.count++
-  return true
-}
+// Rate limiting: max 10 errors per minute per IP (with automatic cleanup)
+const errorRateLimiter = new RateLimiter(10, 60 * 1000)
 
 interface ErrorReportBody {
   error_type?: string
@@ -43,15 +25,22 @@ interface ErrorReportBody {
 
 export async function POST(request: NextRequest) {
   try {
+    // SECURITY: Validate content type
+    if (!isJsonContentType(request)) {
+      return NextResponse.json({ error: 'Invalid content type' }, { status: 415 })
+    }
+
+    // SECURITY: Reject oversized payloads (50KB max for error reports)
+    if (!isPayloadWithinLimit(request, 51200)) {
+      return NextResponse.json({ error: 'Payload too large' }, { status: 413 })
+    }
+
     // Get client IP
-    const ip =
-      request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-      request.headers.get('x-real-ip') ||
-      request.ip ||
-      'unknown'
+    const ip = getClientIp(request)
 
     // Check rate limit
-    if (!checkRateLimit(ip)) {
+    const { allowed } = errorRateLimiter.check(ip)
+    if (!allowed) {
       return NextResponse.json(
         { error: 'Rate limit exceeded' },
         { status: 429 }
@@ -61,7 +50,7 @@ export async function POST(request: NextRequest) {
     const body: ErrorReportBody = await request.json()
 
     // Validate required fields
-    if (!body.message) {
+    if (!body.message || typeof body.message !== 'string') {
       return NextResponse.json(
         { error: 'Missing required field: message' },
         { status: 400 }
@@ -85,20 +74,27 @@ export async function POST(request: NextRequest) {
       // Ignore auth errors, report as anonymous
     }
 
+    // SECURITY: Sanitize and truncate all inputs
+    const sanitizedMessage = sanitizeString(body.message, 2000)
+    const sanitizedStack = body.error_stack ? sanitizeString(body.error_stack, 5000) : null
+    const sanitizedUrl = body.page_url ? sanitizeString(body.page_url, 500) : null
+    const sanitizedUserAgent = body.user_agent ? sanitizeString(body.user_agent, 500) : null
+    const sanitizedSessionId = body.session_id && isValidUUID(body.session_id) ? body.session_id : null
+
     // Insert error report
     const { error: insertError } = await supabase
       .from('client_errors')
       .insert({
         teacher_id: teacherId,
-        error_message: body.message,
-        error_stack: body.error_stack || null,
-        page_url: body.page_url || null,
-        user_agent: body.user_agent || null,
+        error_message: sanitizedMessage,
+        error_stack: sanitizedStack,
+        page_url: sanitizedUrl,
+        user_agent: sanitizedUserAgent,
         metadata: {
-          error_type: body.error_type || 'unknown',
-          session_id: body.session_id || null,
+          error_type: sanitizeString(body.error_type || 'unknown', 50),
+          session_id: sanitizedSessionId,
           ip_hash: hashIp(ip),
-          ...body.metadata,
+          // SECURITY: Do not spread arbitrary user metadata into DB
         },
       })
 
@@ -119,15 +115,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
-
-function hashIp(ip: string): string {
-  // Simple hash function for IP privacy
-  let hash = 0
-  for (let i = 0; i < ip.length; i++) {
-    const char = ip.charCodeAt(i)
-    hash = (hash << 5) - hash + char
-    hash = hash & hash
-  }
-  return Math.abs(hash).toString(36)
 }

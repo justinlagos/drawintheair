@@ -6,6 +6,12 @@ import { trackingFeatures } from '../../../core/trackingFeatures';
 import { tactileAudioManager } from '../../../core/TactileAudioManager';
 import { isCountdownActive } from '../../../core/countdownService';
 import { pilotAnalytics } from '../../../lib/pilotAnalytics';
+import {
+    getKidIconSprite,
+    isKidIconReady,
+    hasKidIcon,
+    preloadKidIcons,
+} from '../../../components/kid-ui/kidIcons';
 
 export type BinId = string;
 
@@ -412,10 +418,21 @@ export const STAGE_TEMPLATES: StageTemplate[] = [
 ];
 
 // ── Level Progression ────────────────────────────────────────────────────────
-// Defines the ordered sequence of stages for the level progression UI
+// Ordered sequence of stages for the level progression UI.
+// Difficulty curve: visual → categorical → cognitive.
+//   1 Colours        — direct visual sort (warm vs cool)
+//   2 Shapes         — visual classification (curved vs straight)
+//   3 Foods & Toys   — first categorical sort (food vs toys)
+//   4 Animals & Vehicles — categorical sort with more variety
+//   5 Recycle & Trash — categorical sort with abstract concept
+//   6 Letters        — symbolic / cognitive (vowel vs consonant)
+//   7 Numbers        — symbolic / cognitive (odd vs even)
 export const LEVEL_ORDER: string[] = [
     'colors-sort',
     'shapes-sort',
+    'food-vs-toys',
+    'animals-vs-vehicles',
+    'recycle-vs-trash',
     'letters-sort',
     'numbers-sort',
 ];
@@ -423,8 +440,11 @@ export const LEVEL_ORDER: string[] = [
 export const LEVEL_LABELS: Record<string, string> = {
     'colors-sort': 'Level 1 — Colours',
     'shapes-sort': 'Level 2 — Shapes',
-    'letters-sort': 'Level 3 — Letters',
-    'numbers-sort': 'Level 4 — Numbers',
+    'food-vs-toys': 'Level 3 — Foods & Toys',
+    'animals-vs-vehicles': 'Level 4 — Animals & Vehicles',
+    'recycle-vs-trash': 'Level 5 — Recycle & Trash',
+    'letters-sort': 'Level 6 — Letters',
+    'numbers-sort': 'Level 7 — Numbers',
 };
 
 let _currentLevelIndex = 0; // tracks which LEVEL_ORDER stage we're on
@@ -497,6 +517,10 @@ export function startStage(stageIndex?: number) {
     roundComplete = false;
     celebrationTime = 0;
     grabFilter = new OneEuroFilter2D({ minCutoff: 1.5, beta: 0.02, dCutoff: 1.0 });
+
+    // Eager-preload sprite illustrations for the active stage so the first
+    // few frames don't have to fall back to the colour-only ball render.
+    preloadKidIcons(currentStage.items.map(it => ({ key: it.key, color: it.color })));
 }
 
 export function getItems() {
@@ -931,103 +955,75 @@ export const sortAndPlaceLogic = (
         const binH = bin.height * height;
         const bx = binCanvas.x - binW / 2;
         const by = binCanvas.y - binH / 2;
-        const cornerR = 16;
+        const cornerR = 28;
 
+        // ─── Bright Kid-UI drop zone ─────────────────────────────────────
+        // Cream card-stock surface with a soft accent border tinted by the
+        // bin's themed colour. Replaces the old wood-grain treatment.
+
+        // Soft glow halo when hovered with a correct item.
         if (bin.glow) {
             ctx.save();
             ctx.shadowColor = bin.color;
-            ctx.shadowBlur = 30;
-            ctx.globalAlpha = 0.5;
+            ctx.shadowBlur = 36;
+            ctx.globalAlpha = 0.55;
             ctx.fillStyle = bin.color;
             ctx.beginPath();
-            ctx.roundRect(bx - 4, by - 4, binW + 8, binH + 8, cornerR + 4);
+            ctx.roundRect(bx - 6, by - 6, binW + 12, binH + 12, cornerR + 6);
             ctx.fill();
             ctx.restore();
         }
 
+        // Tactile drop shadow underneath.
         ctx.save();
-        ctx.globalAlpha = 0.4;
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.globalAlpha = 0.18;
+        ctx.fillStyle = '#6C3FA4';
         ctx.beginPath();
-        ctx.ellipse(binCanvas.x, by + binH + 8, binW * 0.4, 10, 0, 0, Math.PI * 2);
+        ctx.ellipse(binCanvas.x, by + binH + 10, binW * 0.42, 12, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
 
-        const woodGrad = ctx.createLinearGradient(bx, by, bx, by + binH);
-        woodGrad.addColorStop(0, '#C4956A');
-        woodGrad.addColorStop(0.15, '#A67C52');
-        woodGrad.addColorStop(0.5, '#8B6538');
-        woodGrad.addColorStop(0.85, '#6D4E2D');
-        woodGrad.addColorStop(1, '#5A3E22');
-
-        ctx.fillStyle = woodGrad;
+        // Card-stock surface — cream-white with a subtle vertical gradient
+        // for soft 2.5D feel (top is brighter, bottom slightly tinted).
+        const cardGrad = ctx.createLinearGradient(bx, by, bx, by + binH);
+        cardGrad.addColorStop(0, '#FFFFFF');
+        cardGrad.addColorStop(0.6, '#FBFCFF');
+        cardGrad.addColorStop(1, '#EFF4FA');
+        ctx.fillStyle = cardGrad;
         ctx.beginPath();
         ctx.roundRect(bx, by, binW, binH, cornerR);
         ctx.fill();
 
+        // Top inner highlight — pillowy "lit from above" hint.
         ctx.save();
-        ctx.globalAlpha = 0.08;
-        for (let ly = by + 8; ly < by + binH - 8; ly += 6) {
-            ctx.strokeStyle = ly % 12 === 0 ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(bx + 8, ly);
-            ctx.lineTo(bx + binW - 8, ly);
-            ctx.stroke();
-        }
-        ctx.restore();
-
-        const innerGrad = ctx.createLinearGradient(bx, by, bx, by + binH);
-        innerGrad.addColorStop(0, 'rgba(0,0,0,0.25)');
-        innerGrad.addColorStop(0.5, 'rgba(0,0,0,0.15)');
-        innerGrad.addColorStop(1, 'rgba(0,0,0,0.30)');
-        ctx.fillStyle = innerGrad;
-        ctx.beginPath();
-        ctx.roundRect(bx + 8, by + 8, binW - 16, binH - 16, cornerR - 4);
-        ctx.fill();
-
-        ctx.save();
-        ctx.globalAlpha = 0.2;
-        const topShine = ctx.createLinearGradient(bx, by, bx, by + binH * 0.3);
-        topShine.addColorStop(0, 'rgba(255,255,255,0.6)');
+        ctx.globalAlpha = 0.7;
+        const topShine = ctx.createLinearGradient(bx, by, bx, by + binH * 0.4);
+        topShine.addColorStop(0, 'rgba(255,255,255,0.95)');
         topShine.addColorStop(1, 'rgba(255,255,255,0)');
         ctx.fillStyle = topShine;
         ctx.beginPath();
-        ctx.roundRect(bx + 2, by + 2, binW - 4, binH * 0.3, cornerR);
+        ctx.roundRect(bx + 3, by + 3, binW - 6, binH * 0.4, cornerR - 2);
         ctx.fill();
         ctx.restore();
 
-        ctx.strokeStyle = bin.glow ? bin.color : '#5A3E22';
-        ctx.lineWidth = bin.glow ? 4 : 3;
+        // Outer border — accent colour when glowing, deep plum at rest.
+        ctx.strokeStyle = bin.glow ? bin.color : '#6C3FA4';
+        ctx.globalAlpha = bin.glow ? 1 : 0.18;
+        ctx.lineWidth = bin.glow ? 5 : 3;
         ctx.beginPath();
         ctx.roundRect(bx, by, binW, binH, cornerR);
         ctx.stroke();
+        ctx.globalAlpha = 1;
 
-        ctx.strokeStyle = 'rgba(200, 160, 100, 0.3)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.roundRect(bx + 4, by + 4, binW - 8, binH - 8, cornerR - 2);
-        ctx.stroke();
-
+        // Bin label — Fredoka, charcoal, large and friendly. The legacy
+        // emoji icon (bin.icon) is intentionally not rendered here; the
+        // label alone reads cleanly. Phase 2 swaps icon emojis for SVG.
         ctx.save();
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-        ctx.shadowBlur = 10;
-        ctx.shadowOffsetY = 3;
-        ctx.font = 'bold 44px Arial';
+        ctx.font = `700 ${Math.max(22, Math.round(binH * 0.32))}px Fredoka, "Baloo 2", system-ui, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(bin.icon, binCanvas.x, binCanvas.y - 12);
-        ctx.restore();
-
-        ctx.save();
-        ctx.font = 'bold 20px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.strokeStyle = 'rgba(255, 220, 160, 0.4)';
-        ctx.lineWidth = 2;
-        ctx.strokeText(bin.label, binCanvas.x, binCanvas.y + 28);
-        ctx.fillStyle = 'rgba(255, 240, 210, 0.9)';
-        ctx.fillText(bin.label, binCanvas.x, binCanvas.y + 28);
+        ctx.fillStyle = '#3F4052';
+        ctx.fillText(bin.label, binCanvas.x, binCanvas.y);
         ctx.restore();
     });
 
@@ -1042,84 +1038,80 @@ export const sortAndPlaceLogic = (
 
         ctx.save();
 
+        // Drop shadow underneath — sells the 2.5D depth regardless of sprite/ball.
         ctx.save();
-        ctx.globalAlpha = obj.grabbed ? 0.15 : 0.3;
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.globalAlpha = obj.grabbed ? 0.18 : 0.32;
+        ctx.fillStyle = 'rgba(40, 30, 80, 0.55)';
         ctx.beginPath();
-        ctx.ellipse(cx + 3, cy + r * 0.8, r * 0.6, r * 0.15, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx + 3, cy + r * 0.85, r * 0.7, r * 0.18, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
 
-        const bodyGrad = ctx.createRadialGradient(
-            cx - r * 0.25, cy - r * 0.25, r * 0.05,
-            cx + r * 0.05, cy + r * 0.05, r
-        );
-        bodyGrad.addColorStop(0, obj.color + 'FF');
-        bodyGrad.addColorStop(0.4, obj.color + 'EE');
-        bodyGrad.addColorStop(0.75, obj.color + 'BB');
-        bodyGrad.addColorStop(1, obj.color + '77');
+        // Try to draw a bespoke SVG illustration for this item key. If the
+        // sprite is registered AND parsed, use it. Otherwise fall back to
+        // the glossy coloured ball (still a clean 2.5D look).
+        const sprite = hasKidIcon(obj.key) ? getKidIconSprite(obj.key, obj.color) : null;
+        if (sprite && isKidIconReady(sprite)) {
+            // Match aspect ratio: scale the longer dimension to match 2*r,
+            // preserve the sprite's intrinsic proportions.
+            const aspect = sprite.naturalWidth / sprite.naturalHeight;
+            const drawW = aspect >= 1 ? 2 * r : 2 * r * aspect;
+            const drawH = aspect >= 1 ? 2 * r / aspect : 2 * r;
+            ctx.drawImage(sprite, cx - drawW / 2, cy - drawH / 2, drawW, drawH);
+        } else {
+            // Glossy coloured ball fallback (used for color.*, food.*, etc.
+            // until those sprite categories land in Phase 3).
+            const bodyGrad = ctx.createRadialGradient(
+                cx - r * 0.25, cy - r * 0.25, r * 0.05,
+                cx + r * 0.05, cy + r * 0.05, r,
+            );
+            bodyGrad.addColorStop(0, obj.color + 'FF');
+            bodyGrad.addColorStop(0.4, obj.color + 'EE');
+            bodyGrad.addColorStop(0.75, obj.color + 'BB');
+            bodyGrad.addColorStop(1, obj.color + '88');
 
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = bodyGrad;
-        ctx.fill();
-
-        const rimGrad = ctx.createRadialGradient(
-            cx + r * 0.3, cy + r * 0.3, r * 0.2,
-            cx, cy, r * 1.05
-        );
-        rimGrad.addColorStop(0, 'rgba(0,0,0,0)');
-        rimGrad.addColorStop(0.7, 'rgba(0,0,0,0)');
-        rimGrad.addColorStop(1, 'rgba(255,255,255,0.25)');
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = rimGrad;
-        ctx.fill();
-
-        const specGrad = ctx.createRadialGradient(
-            cx - r * 0.3, cy - r * 0.3, 0,
-            cx - r * 0.3, cy - r * 0.3, r * 0.5
-        );
-        specGrad.addColorStop(0, 'rgba(255,255,255,0.85)');
-        specGrad.addColorStop(0.4, 'rgba(255,255,255,0.3)');
-        specGrad.addColorStop(1, 'rgba(255,255,255,0)');
-        ctx.beginPath();
-        ctx.arc(cx - r * 0.3, cy - r * 0.3, r * 0.5, 0, Math.PI * 2);
-        ctx.fillStyle = specGrad;
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(cx - r * 0.2, cy - r * 0.25, r * 0.08, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255,255,255,0.9)';
-        ctx.fill();
-
-        if (obj.grabbed || obj.placed) {
-            ctx.save();
-            ctx.shadowColor = obj.grabbed ? '#FFD700' : '#00FF88';
-            ctx.shadowBlur = obj.grabbed ? 25 : 18;
-            ctx.strokeStyle = obj.grabbed ? '#FFD700' : '#00FF88';
-            ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.arc(cx, cy, r, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.restore();
-        } else {
-            ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+            ctx.fillStyle = bodyGrad;
+            ctx.fill();
+
+            const specGrad = ctx.createRadialGradient(
+                cx - r * 0.3, cy - r * 0.3, 0,
+                cx - r * 0.3, cy - r * 0.3, r * 0.5,
+            );
+            specGrad.addColorStop(0, 'rgba(255,255,255,0.85)');
+            specGrad.addColorStop(0.4, 'rgba(255,255,255,0.3)');
+            specGrad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.beginPath();
+            ctx.arc(cx - r * 0.3, cy - r * 0.3, r * 0.5, 0, Math.PI * 2);
+            ctx.fillStyle = specGrad;
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(cx - r * 0.2, cy - r * 0.25, r * 0.08, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.fill();
+
+            ctx.strokeStyle = 'rgba(20, 15, 40, 0.18)';
             ctx.lineWidth = 1.5;
             ctx.beginPath();
             ctx.arc(cx, cy, r, 0, Math.PI * 2);
             ctx.stroke();
         }
 
-        ctx.save();
-        ctx.shadowColor = 'rgba(0,0,0,0.4)';
-        ctx.shadowBlur = 6;
-        ctx.shadowOffsetY = 2;
-        ctx.font = `${Math.round(r * 1.1)}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(obj.icon, cx, cy);
-        ctx.restore();
+        // Selection / placement highlight ring — drawn on top of either
+        // the sprite or the ball so it's always visible.
+        if (obj.grabbed || obj.placed) {
+            ctx.save();
+            ctx.shadowColor = obj.grabbed ? '#FFD84D' : '#7ED957';
+            ctx.shadowBlur = obj.grabbed ? 22 : 16;
+            ctx.strokeStyle = obj.grabbed ? '#FFD84D' : '#7ED957';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r * 1.05, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
 
         ctx.restore();
     });
