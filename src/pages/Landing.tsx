@@ -497,35 +497,35 @@ export const Landing: React.FC = () => {
 
       {/* ═══════ NAV ═══════ */}
       <nav
-        className="fixed top-0 left-0 right-0 z-50 dl-nav-blur"
+        className="dl-nav-fixed dl-nav-blur"
         style={{
           background: 'rgba(255, 255, 255, 0.78)',
           borderBottom: '1.5px solid rgba(108, 63, 164, 0.10)',
-          zIndex: 50,
         }}
       >
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="dl-container dl-flex dl-items-center dl-justify-between" style={{ height: 64 }}>
           <a
             href="#top"
             onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-            className="flex items-center gap-3 no-underline group cursor-pointer flex-shrink-0"
+            className="dl-flex dl-items-center dl-gap-3 group cursor-pointer"
+            style={{ textDecoration: 'none', flexShrink: 0 }}
             style={{ color: tokens.colors.charcoal }}
           >
-            <img src="/logo.png" alt="Draw in the Air" className="h-9 w-auto object-contain transition-all duration-300 ease-out group-hover:scale-110 group-hover:-rotate-6" style={{ height: '36px' }} />
+            <img src="/logo.png" alt="Draw in the Air" style={{ height: '36px', width: 'auto', objectFit: 'contain', transition: 'transform 0.3s ease-out' }} />
             <span style={{
               fontFamily: tokens.fontFamily.display,
               fontWeight: 700,
               fontSize: '1.1rem',
               color: tokens.colors.deepPlum,
               letterSpacing: '-0.01em',
-            }} className="hidden sm:inline">Draw in the Air</span>
+            }} className="dl-brand-name">Draw in the Air</span>
           </a>
-          <div className="hidden md:flex items-center gap-7" style={{ fontFamily: tokens.fontFamily.body, fontWeight: 600, color: tokens.colors.charcoal }}>
-            <a href="#how-it-works" onClick={(e) => scrollToSection(e, 'how-it-works')} className="text-sm hover:opacity-70 transition cursor-pointer">How it Works</a>
-            <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="text-sm hover:opacity-70 transition cursor-pointer">Activities</a>
-            <a href="#parents" onClick={(e) => scrollToSection(e, 'parents')} className="text-sm hover:opacity-70 transition cursor-pointer">For Parents</a>
-            <a href="#schools" onClick={(e) => scrollToSection(e, 'schools')} className="text-sm hover:opacity-70 transition cursor-pointer">For Schools</a>
-            <a href="/faq" className="text-sm hover:opacity-70 transition">FAQ</a>
+          <div className="dl-desktop-only dl-items-center" style={{ gap: 28, fontFamily: tokens.fontFamily.body, fontWeight: 600, color: tokens.colors.charcoal }}>
+            <a href="#how-it-works" onClick={(e) => scrollToSection(e, 'how-it-works')} className="dl-nav-link">How it Works</a>
+            <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="dl-nav-link">Activities</a>
+            <a href="#parents" onClick={(e) => scrollToSection(e, 'parents')} className="dl-nav-link">For Parents</a>
+            <a href="#schools" onClick={(e) => scrollToSection(e, 'schools')} className="dl-nav-link">For Schools</a>
+            <a href="/faq" className="dl-nav-link">FAQ</a>
             <KidButton variant="primary" size="md" onClick={() => setTryFreeOpen(true)} style={{ minHeight: '44px', padding: '8px 22px', fontSize: '0.95rem' }}>
               Try Free
             </KidButton>
@@ -534,7 +534,7 @@ export const Landing: React.FC = () => {
             </KidButton>
           </div>
           <button
-            className="md:hidden"
+            className="dl-mobile-only"
             style={{ background: 'none', border: 'none', boxShadow: 'none', color: tokens.colors.deepPlum }}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
@@ -543,13 +543,13 @@ export const Landing: React.FC = () => {
           </button>
         </div>
         {mobileMenuOpen && (
-          <div className="md:hidden px-6 pb-4 pt-2 dl-mobile-drawer" style={{ fontFamily: tokens.fontFamily.body, color: tokens.colors.charcoal }}>
-            <a href="#how-it-works" onClick={(e) => scrollToSection(e, 'how-it-works')} className="block py-2 text-base font-semibold no-underline" style={{ color: tokens.colors.charcoal }}>How it Works</a>
-            <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="block py-2 text-base font-semibold no-underline" style={{ color: tokens.colors.charcoal }}>Activities</a>
-            <a href="#parents" onClick={(e) => scrollToSection(e, 'parents')} className="block py-2 text-base font-semibold no-underline" style={{ color: tokens.colors.charcoal }}>For Parents</a>
-            <a href="#schools" onClick={(e) => scrollToSection(e, 'schools')} className="block py-2 text-base font-semibold no-underline" style={{ color: tokens.colors.charcoal }}>For Schools</a>
-            <a href="/faq" className="block py-2 text-base font-semibold no-underline" style={{ color: tokens.colors.charcoal }}>FAQ</a>
-            <div className="flex flex-col gap-3 mt-3">
+          <div className="dl-mobile-drawer dl-mobile-only-block" style={{ padding: '8px 24px 16px', fontFamily: tokens.fontFamily.body, color: tokens.colors.charcoal }}>
+            <a href="#how-it-works" onClick={(e) => scrollToSection(e, 'how-it-works')} className="dl-mobile-nav-link" style={{ color: tokens.colors.charcoal }}>How it Works</a>
+            <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="dl-mobile-nav-link" style={{ color: tokens.colors.charcoal }}>Activities</a>
+            <a href="#parents" onClick={(e) => scrollToSection(e, 'parents')} className="dl-mobile-nav-link" style={{ color: tokens.colors.charcoal }}>For Parents</a>
+            <a href="#schools" onClick={(e) => scrollToSection(e, 'schools')} className="dl-mobile-nav-link" style={{ color: tokens.colors.charcoal }}>For Schools</a>
+            <a href="/faq" className="dl-mobile-nav-link" style={{ color: tokens.colors.charcoal }}>FAQ</a>
+            <div className="dl-flex-col dl-gap-3" style={{ marginTop: 12 }}>
               <KidButton variant="primary" size="md" onClick={() => { closeMobileMenu(); setTryFreeOpen(true); }} fullWidth>Try Free</KidButton>
               <KidButton variant="secondary" size="md" onClick={() => { closeMobileMenu(); openPilotModal(); }} fullWidth>School Pilot</KidButton>
             </div>
@@ -559,7 +559,7 @@ export const Landing: React.FC = () => {
 
       {/* ═══════ HERO ═══════ */}
       <section style={{ position: 'relative', minHeight: '100vh', paddingTop: '90px', paddingBottom: '40px', zIndex: 1 }}>
-        <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+        <div className="dl-container dl-grid-2-hero">
           <div className="dl-fade-up" style={{ position: 'relative', zIndex: 2 }}>
             <div style={{
               display: 'inline-flex',
@@ -629,7 +629,7 @@ export const Landing: React.FC = () => {
               Draw in the Air turns your child's hands into the controller. No touchscreens. No downloads.
               Just motion, creativity, and play that builds real skills.
             </p>
-            <div className="flex flex-wrap items-center gap-4 mb-6">
+            <div className="dl-flex dl-flex-wrap dl-items-center dl-gap-4" style={{ marginBottom: 24 }}>
               <div className="dl-cta-glow">
                 <KidButton variant="primary" size="lg" onClick={() => setTryFreeOpen(true)}>
                   Play Now. It's Free
@@ -643,7 +643,7 @@ export const Landing: React.FC = () => {
                 See How It Works
               </KidButton>
             </div>
-            <div className="flex items-center gap-3 flex-wrap mt-6" style={{ color: tokens.colors.charcoal, opacity: 0.75 }}>
+            <div className="dl-flex dl-items-center dl-flex-wrap dl-gap-3" style={{ marginTop: 24, color: tokens.colors.charcoal, opacity: 0.75 }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.9rem', fontWeight: 600 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={tokens.colors.meadowGreen} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="10" />
@@ -794,8 +794,8 @@ export const Landing: React.FC = () => {
 
       {/* ═══════ PROBLEM ═══════ */}
       <section style={{ position: 'relative', padding: '90px 0', zIndex: 1 }}>
-        <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-5 gap-12 items-center">
-          <div className="dl-reveal lg:col-span-3">
+        <div className="dl-container dl-grid-3-2">
+          <div className="dl-reveal">
             <h2 style={{
               fontFamily: tokens.fontFamily.display,
               fontWeight: 700,
@@ -830,7 +830,7 @@ export const Landing: React.FC = () => {
               This is active digital play.
             </div>
           </div>
-          <div className="dl-reveal lg:col-span-2" style={{ position: 'relative' }}>
+          <div className="dl-reveal" style={{ position: 'relative' }}>
             <div style={{
               position: 'relative',
               aspectRatio: '1/1',
@@ -852,8 +852,8 @@ export const Landing: React.FC = () => {
 
       {/* ═══════ HOW IT WORKS ═══════ */}
       <section id="how-it-works" style={{ position: 'relative', padding: '90px 0', zIndex: 1 }}>
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center dl-reveal" style={{ marginBottom: tokens.spacing.xxxl }}>
+        <div className="dl-container">
+          <div className="dl-reveal dl-text-center" style={{ marginBottom: tokens.spacing.xxxl }}>
             <h2 style={{
               fontFamily: tokens.fontFamily.display,
               fontWeight: 700,
@@ -869,7 +869,7 @@ export const Landing: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="dl-grid-4">
             {STEPS.map((s, i) => (
               <div
                 key={s.step}
@@ -928,8 +928,8 @@ export const Landing: React.FC = () => {
 
       {/* ═══════ FEATURES ═══════ */}
       <section id="features" style={{ position: 'relative', padding: '90px 0', zIndex: 1 }}>
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center dl-reveal" style={{ marginBottom: tokens.spacing.xxxl }}>
+        <div className="dl-container">
+          <div className="dl-reveal dl-text-center" style={{ marginBottom: tokens.spacing.xxxl }}>
             <h2 style={{
               fontFamily: tokens.fontFamily.display,
               fontWeight: 700,
@@ -945,7 +945,7 @@ export const Landing: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="dl-grid-features">
             {MODE_TILES.map((mode, i) => (
               <div
                 key={mode.id}
@@ -1069,9 +1069,9 @@ export const Landing: React.FC = () => {
 
       {/* ═══════ WHY THIS MATTERS ═══════ */}
       <section style={{ position: 'relative', padding: '90px 0', zIndex: 1 }}>
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="grid lg:grid-cols-5 gap-12 items-start">
-            <div className="dl-reveal lg:col-span-2">
+        <div className="dl-container">
+          <div className="dl-grid-2-3">
+            <div className="dl-reveal">
               <h2 style={{
                 fontFamily: tokens.fontFamily.display,
                 fontWeight: 700,
@@ -1090,7 +1090,7 @@ export const Landing: React.FC = () => {
                 Built by parents and a teacher. Aligned with EYFS Prime Areas of Learning.
               </p>
             </div>
-            <div className="grid sm:grid-cols-2 gap-5 lg:col-span-3">
+            <div className="dl-grid-skills">
               {SKILLS.map((skill, i) => (
                 <div
                   key={skill.title}
@@ -1138,8 +1138,8 @@ export const Landing: React.FC = () => {
 
       {/* ═══════ FOR PARENTS ═══════ */}
       <section id="parents" style={{ position: 'relative', padding: '90px 0', zIndex: 1 }}>
-        <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
-          <div className="dl-reveal order-2 lg:order-1">
+        <div className="dl-container dl-grid-2-hero">
+          <div className="dl-reveal dl-order-2 dl-order-1-lg">
             <div style={{
               background: 'linear-gradient(165deg, #FFFFFF 0%, #F4FAFF 100%)',
               border: '3px solid rgba(108, 63, 164, 0.14)',
@@ -1147,7 +1147,7 @@ export const Landing: React.FC = () => {
               padding: 24,
               boxShadow: tokens.shadow.float,
             }}>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="dl-grid" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 16 }}>
                 {[
                   { label: 'No downloads', color: tokens.colors.coral, bg: '#FFE2E2', icon: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /> },
                   { label: 'No ads', color: tokens.colors.warmOrange, bg: '#FFE9CF', icon: <><circle cx="12" cy="12" r="9" /><path d="M5 5l14 14" /></> },
@@ -1182,7 +1182,7 @@ export const Landing: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="dl-reveal order-1 lg:order-2">
+          <div className="dl-reveal dl-order-1 dl-order-2-lg">
             <h2 style={{
               fontFamily: tokens.fontFamily.display,
               fontWeight: 700,
@@ -1197,7 +1197,7 @@ export const Landing: React.FC = () => {
               Everything runs in the browser. The camera feed never leaves the device. No accounts.
               No tracking. No surprise fees. Just play.
             </p>
-            <div className="flex flex-wrap gap-4">
+            <div className="dl-flex dl-flex-wrap dl-gap-4">
               <KidButton variant="primary" size="lg" onClick={() => setTryFreeOpen(true)}>
                 Start in 10 Seconds
               </KidButton>
@@ -1227,7 +1227,7 @@ export const Landing: React.FC = () => {
 
       {/* ═══════ FOR SCHOOLS ═══════ */}
       <section id="schools" style={{ position: 'relative', padding: '90px 0', zIndex: 1 }}>
-        <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+        <div className="dl-container dl-grid-2-hero">
           <div className="dl-reveal">
             <div style={{
               display: 'inline-flex',
@@ -1264,7 +1264,7 @@ export const Landing: React.FC = () => {
               Free pilot pack: lesson plans, EYFS mapping, classroom poster, and a teacher-facing
               quick-start. Designed with reception teachers in mind.
             </p>
-            <div className="flex flex-wrap gap-4">
+            <div className="dl-flex dl-flex-wrap dl-gap-4">
               <KidButton variant="primary" size="lg" onClick={openPilotModal}>
                 Request Pilot Pack
               </KidButton>
@@ -1351,8 +1351,8 @@ export const Landing: React.FC = () => {
 
       {/* ═══════ TESTIMONIALS ═══════ */}
       <section style={{ position: 'relative', padding: '90px 0', zIndex: 1 }}>
-        <div className="max-w-6xl mx-auto px-6">
-          <h2 className="dl-reveal text-center" style={{
+        <div className="dl-container">
+          <h2 className="dl-reveal dl-text-center" style={{
             fontFamily: tokens.fontFamily.display,
             fontWeight: 700,
             fontSize: 'clamp(2.25rem, 5vw, 3.5rem)',
@@ -1362,7 +1362,7 @@ export const Landing: React.FC = () => {
           }}>
             Loved by families and <span style={{ color: tokens.colors.deepPlum }}>educators</span>.
           </h2>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="dl-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
             {[
               { quote: 'My son struggled to trace letters on paper. This made it click.', author: 'Parent', role: 'Age 4', tint: tokens.colors.coral },
               { quote: 'Best movement-based learning tool I have used in class.', author: 'Reception Teacher', role: 'London', tint: tokens.colors.aqua },
@@ -1403,7 +1403,7 @@ export const Landing: React.FC = () => {
 
       {/* ═══════ TECH CREDIBILITY ═══════ */}
       <section style={{ position: 'relative', padding: '90px 0', zIndex: 1 }}>
-        <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+        <div className="dl-container dl-grid-2-hero">
           <div className="dl-reveal">
             <h2 style={{
               fontFamily: tokens.fontFamily.display,
@@ -1419,7 +1419,7 @@ export const Landing: React.FC = () => {
               Performance matters. Kids notice lag instantly. We built every interaction to feel
               effortless and immediate.
             </p>
-            <div className="flex flex-wrap gap-3">
+            <div className="dl-flex dl-flex-wrap dl-gap-3">
               {['60fps render loop', '30fps hand tracking', 'MediaPipe landmarks', 'One Euro filter', 'Zero frame storage', 'Local-only processing'].map((t) => (
                 <span key={t} className="dl-tech-badge">{t}</span>
               ))}
@@ -1499,8 +1499,8 @@ export const Landing: React.FC = () => {
 
       {/* ═══════ PRIVACY ═══════ */}
       <section style={{ position: 'relative', padding: '90px 0', zIndex: 1 }}>
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="dl-reveal text-center" style={{ marginBottom: tokens.spacing.xxxl }}>
+        <div className="dl-container">
+          <div className="dl-reveal dl-text-center" style={{ marginBottom: tokens.spacing.xxxl }}>
             <h2 style={{
               fontFamily: tokens.fontFamily.display,
               fontWeight: 700,
@@ -1515,7 +1515,7 @@ export const Landing: React.FC = () => {
               Four guarantees. Every session. No fine print.
             </p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="dl-grid-4">
             {[
               { label: 'Camera processed locally', icon: <><rect x="3" y="6" width="14" height="12" rx="2" /><path d="M21 8v8l-4-3v-2l4-3z" /></>, color: tokens.colors.deepPlum },
               { label: 'No recordings ever', icon: <><circle cx="12" cy="12" r="9" /><path d="M5 5l14 14" /></>, color: tokens.colors.coral },
@@ -1549,7 +1549,7 @@ export const Landing: React.FC = () => {
               </div>
             ))}
           </div>
-          <p className="dl-reveal text-center" style={{
+          <p className="dl-reveal dl-text-center" style={{
             fontFamily: tokens.fontFamily.body,
             fontSize: '0.95rem',
             color: tokens.colors.charcoal,
@@ -1572,7 +1572,7 @@ export const Landing: React.FC = () => {
 
       {/* ═══════ FINAL CTA ═══════ */}
       <section id="launch" style={{ position: 'relative', padding: '120px 0 100px', zIndex: 1 }}>
-        <div className="max-w-3xl mx-auto px-6 text-center dl-reveal">
+        <div className="dl-container-narrow dl-text-center dl-reveal">
           <div style={{
             position: 'relative',
             background: 'linear-gradient(180deg, #FFFFFF 0%, #FBFCFF 100%)',
@@ -1623,7 +1623,7 @@ export const Landing: React.FC = () => {
             }}>
               Free forever. Works in any modern browser with a webcam.
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-4">
+            <div className="dl-flex dl-flex-wrap dl-items-center dl-justify-center dl-gap-4">
               <div className="dl-cta-glow">
                 <KidButton variant="primary" size="xl" onClick={() => setTryFreeOpen(true)}>
                   Launch Draw in the Air
@@ -1651,10 +1651,10 @@ export const Landing: React.FC = () => {
         position: 'relative',
         zIndex: 1,
       }}>
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">
+        <div className="dl-container">
+          <div className="dl-grid-4" style={{ gap: 40, marginBottom: 40 }}>
             <div>
-              <div className="flex items-center gap-3 mb-4">
+              <div className="dl-flex dl-items-center dl-gap-3" style={{ marginBottom: 16 }}>
                 <img src="/logo.png" alt="Draw in the Air" style={{ height: 36 }} />
                 <span style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.05rem', color: tokens.colors.deepPlum }}>
                   Draw in the Air
@@ -1666,7 +1666,7 @@ export const Landing: React.FC = () => {
             </div>
             <div>
               <h4 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '0.85rem', color: tokens.colors.deepPlum, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 14 }}>Product</h4>
-              <div className="flex flex-col gap-2.5">
+              <div className="dl-flex-col" style={{ gap: 10 }}>
                 <button onClick={() => setTryFreeOpen(true)} style={{ background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', fontFamily: tokens.fontFamily.body, fontSize: '0.9rem', color: tokens.colors.charcoal, opacity: 0.75 }}>
                   Try Free
                 </button>
@@ -1677,7 +1677,7 @@ export const Landing: React.FC = () => {
             </div>
             <div>
               <h4 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '0.85rem', color: tokens.colors.deepPlum, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 14 }}>Legal</h4>
-              <div className="flex flex-col gap-2.5">
+              <div className="dl-flex-col" style={{ gap: 10 }}>
                 <a href="/privacy" style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.9rem', color: tokens.colors.charcoal, opacity: 0.75, textDecoration: 'none' }}>Privacy Policy</a>
                 <a href="/terms" style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.9rem', color: tokens.colors.charcoal, opacity: 0.75, textDecoration: 'none' }}>Terms of Use</a>
                 <a href="/safeguarding" style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.9rem', color: tokens.colors.charcoal, opacity: 0.75, textDecoration: 'none' }}>Safeguarding</a>
@@ -1687,7 +1687,7 @@ export const Landing: React.FC = () => {
             </div>
             <div>
               <h4 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '0.85rem', color: tokens.colors.deepPlum, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 14 }}>Contact</h4>
-              <div className="flex flex-col gap-2.5">
+              <div className="dl-flex-col" style={{ gap: 10 }}>
                 <a href="mailto:partnership@drawintheair.com" style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.9rem', color: tokens.colors.charcoal, opacity: 0.75, textDecoration: 'none' }}>partnership@drawintheair.com</a>
                 <button onClick={openPilotModal} style={{ background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', fontFamily: tokens.fontFamily.body, fontSize: '0.9rem', color: tokens.colors.charcoal, opacity: 0.75 }}>
                   Request a Demo
@@ -1743,7 +1743,7 @@ export const Landing: React.FC = () => {
               onChange={(e) => setFeedbackEmail(e.target.value)}
               style={{ marginBottom: 16 }}
             />
-            <div className="flex items-center justify-between">
+            <div className="dl-flex dl-items-center dl-justify-between">
               <KidButton variant="primary" size="md" onClick={submitFeedback} disabled={feedbackSending} style={{ minHeight: '48px', padding: '8px 22px', fontSize: '0.95rem' }}>
                 {feedbackSending ? 'Sending...' : 'Send'}
               </KidButton>
@@ -1783,7 +1783,7 @@ export const Landing: React.FC = () => {
         <div className="dl-modal-content">
           {!pilotSent ? (
             <div>
-              <div className="flex items-center justify-between mb-5">
+              <div className="dl-flex dl-items-center dl-justify-between" style={{ marginBottom: 20 }}>
                 <h2 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.4rem', color: tokens.colors.charcoal }}>Request school pilot pack</h2>
                 <button
                   onClick={closePilotModal}
@@ -1811,7 +1811,7 @@ export const Landing: React.FC = () => {
                   <strong>Error:</strong> {pilotSubmitError}
                 </div>
               )}
-              <div className="flex flex-col gap-3.5">
+              <div className="dl-flex-col" style={{ gap: 14 }}>
                 <div>
                   <label className="dl-form-label">Your name *</label>
                   <input type="text" className="dl-form-input" placeholder="Jane Smith" value={pilotName} onChange={(e) => { setPilotName(e.target.value); setPilotErrors((p) => ({ ...p, name: false })); }} style={pilotErrors.name ? { borderColor: tokens.colors.coral } : undefined} />
@@ -1824,7 +1824,7 @@ export const Landing: React.FC = () => {
                   <label className="dl-form-label">School name *</label>
                   <input type="text" className="dl-form-input" placeholder="Elm Park Primary" value={pilotSchool} onChange={(e) => { setPilotSchool(e.target.value); setPilotErrors((p) => ({ ...p, school: false })); }} style={pilotErrors.school ? { borderColor: tokens.colors.coral } : undefined} />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="dl-grid" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
                   <div>
                     <label className="dl-form-label">Your role</label>
                     <select className="dl-form-input" value={pilotRole} onChange={(e) => setPilotRole(e.target.value)}>

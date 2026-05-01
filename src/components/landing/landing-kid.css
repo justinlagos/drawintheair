@@ -696,3 +696,288 @@
         transform: none !important;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   LAYOUT UTILITIES — bespoke replacements for Tailwind classes
+   so the page renders correctly even if the Tailwind JIT scanner
+   misses the file in production builds.
+═══════════════════════════════════════════════════════════════ */
+
+.dl-container {
+    width: 100%;
+    max-width: 1152px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 24px;
+    padding-right: 24px;
+    box-sizing: border-box;
+}
+
+.dl-container-narrow {
+    width: 100%;
+    max-width: 768px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 24px;
+    padding-right: 24px;
+    box-sizing: border-box;
+}
+
+/* Grids — responsive 1 → N columns */
+.dl-grid {
+    display: grid;
+    gap: 24px;
+}
+
+.dl-grid-2,
+.dl-grid-3,
+.dl-grid-4,
+.dl-grid-5,
+.dl-grid-features,
+.dl-grid-skills {
+    display: grid;
+    gap: 24px;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+
+    .dl-grid-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dl-grid-5 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 768px) {
+
+    .dl-grid-3,
+    .dl-grid-features {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+
+    .dl-grid-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 48px;
+    }
+
+    .dl-grid-3,
+    .dl-grid-features {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .dl-grid-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .dl-grid-5 {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 48px;
+    }
+
+    .dl-grid-skills {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    /* Two-column hero / parents / schools sections */
+    .dl-grid-2-hero {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 48px;
+        align-items: center;
+    }
+
+    /* 5-column problem/why-this-matters sections (2:3 split) */
+    .dl-grid-2-3 {
+        display: grid;
+        grid-template-columns: 2fr 3fr;
+        gap: 48px;
+        align-items: center;
+    }
+
+    .dl-grid-3-2 {
+        display: grid;
+        grid-template-columns: 3fr 2fr;
+        gap: 48px;
+        align-items: center;
+    }
+}
+
+/* Below desktop, the 2:3 splits stack */
+.dl-grid-2-hero,
+.dl-grid-2-3,
+.dl-grid-3-2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+    align-items: center;
+}
+
+/* Flex utilities */
+.dl-flex {
+    display: flex;
+}
+
+.dl-flex-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.dl-flex-wrap {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.dl-items-center {
+    align-items: center;
+}
+
+.dl-justify-center {
+    justify-content: center;
+}
+
+.dl-justify-between {
+    justify-content: space-between;
+}
+
+.dl-gap-2 {
+    gap: 8px;
+}
+
+.dl-gap-3 {
+    gap: 12px;
+}
+
+.dl-gap-4 {
+    gap: 16px;
+}
+
+.dl-gap-5 {
+    gap: 20px;
+}
+
+.dl-text-center {
+    text-align: center;
+}
+
+/* Nav: hide on mobile, show on desktop & vice-versa */
+.dl-desktop-only {
+    display: none;
+}
+
+.dl-mobile-only {
+    display: flex;
+}
+
+@media (min-width: 768px) {
+    .dl-desktop-only {
+        display: flex;
+    }
+
+    .dl-mobile-only {
+        display: none;
+    }
+}
+
+/* Section padding helpers */
+.dl-section {
+    position: relative;
+    padding: 90px 0;
+    z-index: 1;
+}
+
+.dl-section-cta {
+    position: relative;
+    padding: 120px 0 100px;
+    z-index: 1;
+}
+
+/* Order utilities for parents-section image/text swap */
+@media (min-width: 1024px) {
+    .dl-order-1-lg {
+        order: 1;
+    }
+
+    .dl-order-2-lg {
+        order: 2;
+    }
+}
+
+.dl-order-1 {
+    order: 1;
+}
+
+.dl-order-2 {
+    order: 2;
+}
+
+/* Mobile drawer nav spacing helper */
+.dl-mobile-drawer-stack {
+    display: flex;
+    flex-direction: column;
+}
+
+.dl-mobile-drawer-stack a {
+    padding: 8px 0;
+}
+
+/* Position helpers */
+.dl-relative {
+    position: relative;
+}
+
+/* Nav-specific helpers */
+.dl-nav-fixed {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+}
+
+.dl-brand-name {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .dl-brand-name {
+        display: inline;
+    }
+}
+
+.dl-nav-link {
+    font-size: 0.95rem;
+    transition: opacity 0.2s ease;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.dl-nav-link:hover {
+    opacity: 0.7;
+}
+
+.dl-mobile-only-block {
+    display: block;
+    border-top: 2px solid rgba(108, 63, 164, 0.12);
+    box-shadow: 0 12px 24px rgba(63, 64, 82, 0.08);
+}
+
+@media (min-width: 768px) {
+    .dl-mobile-only-block {
+        display: none;
+    }
+}
+
+.dl-mobile-nav-link {
+    display: block;
+    padding: 10px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+}
