@@ -862,7 +862,7 @@ export const Landing: React.FC = () => {
         <div className="dl-container dl-flex dl-items-center dl-justify-between" style={{ height: 68 }}>
           <a href="#top" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             className="dl-flex dl-items-center dl-gap-3" style={{ textDecoration: 'none', flexShrink: 0 }}>
-            <img src="/logo.png" alt="Draw in the Air" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
+            <img src="/logo.png" alt="Draw in the Air" width={120} height={36} className="dl-nav-logo" />
             <span style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.1rem', color: tokens.colors.deepPlum }} className="dl-brand-name">Draw in the Air</span>
           </a>
           <div className="dl-desktop-only dl-items-center" style={{ gap: 28, fontFamily: tokens.fontFamily.body, fontWeight: 600, color: tokens.colors.charcoal }}>
@@ -1023,26 +1023,29 @@ export const Landing: React.FC = () => {
             </p>
             <KidButton variant="primary" size="md" onClick={() => setTryFreeOpen(true)}>Explore Activities →</KidButton>
           </div>
-          <div className="dl-reveal" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 16 }}>
-            {MODE_TILES.map((m) => (
-              <div key={m.title} style={{ background: '#FFFFFF', border: `2.5px solid ${m.accent}33`, borderRadius: 24, padding: 18, boxShadow: '0 8px 22px rgba(108,63,164,0.10)' }}>
-                <div style={{ background: m.bg, borderRadius: 18, padding: 12, marginBottom: 14, aspectRatio: '1/1' }}>
-                  {m.illustration}
+          <div>
+            <div className="dl-reveal dl-mode-tiles">
+              {MODE_TILES.map((m) => (
+                <div key={m.title} className="dl-mode-tile" style={{ border: `2.5px solid ${m.accent}33` }}>
+                  <div style={{ background: m.bg, borderRadius: 18, padding: 12, marginBottom: 14, aspectRatio: '1/1' }}>
+                    {m.illustration}
+                  </div>
+                  <span style={{ display: 'inline-block', background: m.accent, color: '#FFFFFF', fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '0.7rem', padding: '2px 10px', borderRadius: 9999, marginBottom: 6 }}>{m.step}</span>
+                  <h3 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.05rem', color: tokens.colors.charcoal, marginBottom: 4 }}>{m.title}</h3>
+                  <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.82rem', color: tokens.colors.charcoal, opacity: 0.7, lineHeight: 1.45 }}>{m.subtitle}</p>
                 </div>
-                <span style={{ display: 'inline-block', background: m.accent, color: '#FFFFFF', fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '0.7rem', padding: '2px 10px', borderRadius: 9999, marginBottom: 6 }}>{m.step}</span>
-                <h3 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.05rem', color: tokens.colors.charcoal, marginBottom: 4 }}>{m.title}</h3>
-                <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.82rem', color: tokens.colors.charcoal, opacity: 0.7, lineHeight: 1.45 }}>{m.subtitle}</p>
+              ))}
+              {/* CTA tile */}
+              <div className="dl-mode-tile" style={{ background: `linear-gradient(165deg, ${tokens.colors.deepPlum} 0%, ${tokens.semantic.primaryHover} 100%)`, border: '3px solid #FFFFFF', padding: 22, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', boxShadow: tokens.shadow.glow }}>
+                <div style={{ width: 56, height: 56, borderRadius: 18, background: 'rgba(255,255,255,0.2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10, border: '2px solid rgba(255,255,255,0.4)' }}>
+                  <svg viewBox="0 0 24 24" width="30" height="30" fill="#FFFFFF"><path d="M5 3l14 9-14 9V3z" /></svg>
+                </div>
+                <h3 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.15rem', marginBottom: 4, color: '#FFFFFF' }}>Try it now</h3>
+                <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.82rem', opacity: 0.95, lineHeight: 1.4, marginBottom: 14, color: '#FFFFFF', fontWeight: 600 }}>Jump in and play in your browser.</p>
+                <KidButton variant="success" size="md" onClick={() => setTryFreeOpen(true)} style={{ minHeight: 40, padding: '6px 16px', fontSize: '0.85rem' }}>Start Playing</KidButton>
               </div>
-            ))}
-            {/* CTA tile */}
-            <div style={{ background: `linear-gradient(165deg, ${tokens.colors.deepPlum} 0%, ${tokens.semantic.primaryHover} 100%)`, border: '3px solid #FFFFFF', borderRadius: 24, padding: 22, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', boxShadow: tokens.shadow.glow }}>
-              <div style={{ width: 56, height: 56, borderRadius: 18, background: 'rgba(255,255,255,0.2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10, border: '2px solid rgba(255,255,255,0.4)' }}>
-                <svg viewBox="0 0 24 24" width="30" height="30" fill="#FFFFFF"><path d="M5 3l14 9-14 9V3z" /></svg>
-              </div>
-              <h3 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.15rem', marginBottom: 4, color: '#FFFFFF' }}>Try it now</h3>
-              <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.82rem', opacity: 0.95, lineHeight: 1.4, marginBottom: 14, color: '#FFFFFF', fontWeight: 600 }}>Jump in and play in your browser.</p>
-              <KidButton variant="success" size="md" onClick={() => setTryFreeOpen(true)} style={{ minHeight: 40, padding: '6px 16px', fontSize: '0.85rem' }}>Start Playing</KidButton>
             </div>
+            <p className="dl-scroll-hint">← swipe to explore →</p>
           </div>
         </div>
       </section>
@@ -1274,7 +1277,7 @@ export const Landing: React.FC = () => {
           <div className="dl-grid-4" style={{ marginBottom: 32 }}>
             <div>
               <div className="dl-flex dl-items-center dl-gap-3" style={{ marginBottom: 12 }}>
-                <img src="/logo.png" alt="Draw in the Air" style={{ height: 32 }} />
+                <img src="/logo.png" alt="Draw in the Air" width={110} height={32} className="dl-footer-logo" />
                 <span style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1rem', color: tokens.colors.deepPlum }}>Draw in the Air</span>
               </div>
               <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.85rem', color: tokens.colors.charcoal, opacity: 0.7, lineHeight: 1.5 }}>

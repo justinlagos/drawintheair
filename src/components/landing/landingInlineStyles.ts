@@ -176,4 +176,84 @@ export const LANDING_INLINE_CSS = `
     .dl-cloud, .dl-spark, .dl-float, .dl-float-2, .dl-float-3, .dl-wobble, .dl-cta-glow::before, .dl-pinch-cursor, .dl-trail-draw, .dl-sun { animation: none !important; }
     .dl-reveal { opacity: 1 !important; transform: none !important; }
 }
+
+/* ─── Logo sizing — bulletproof against global img rules ─── */
+.dl-nav-logo {
+    height: 36px !important;
+    width: auto !important;
+    max-height: 36px !important;
+    max-width: 140px !important;
+    object-fit: contain !important;
+    flex-shrink: 0 !important;
+    display: block !important;
+}
+.dl-footer-logo {
+    height: 32px !important;
+    width: auto !important;
+    max-height: 32px !important;
+    max-width: 140px !important;
+    object-fit: contain !important;
+    flex-shrink: 0 !important;
+    display: block !important;
+}
+
+/* ─── Mode tiles — desktop grid / mobile horizontal scroll ─── */
+.dl-mode-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+.dl-mode-tile {
+    background: #FFFFFF;
+    border-radius: 24px;
+    padding: 18px;
+    box-shadow: 0 8px 22px rgba(108,63,164,0.10);
+}
+@media (max-width: 767px) {
+    .dl-mode-tiles {
+        grid-template-columns: none;
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: visible;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        gap: 14px;
+        padding: 4px 16px 18px;
+        margin: 0 -16px;
+        scrollbar-width: none;
+    }
+    .dl-mode-tiles::-webkit-scrollbar { display: none; }
+    .dl-mode-tile {
+        flex: 0 0 78%;
+        max-width: 78%;
+        scroll-snap-align: center;
+    }
+    /* Hint that there's more to scroll */
+    .dl-mode-tiles::after {
+        content: '';
+        flex: 0 0 8px;
+    }
+}
+
+/* ─── Mobile typography & spacing tightening ─── */
+@media (max-width: 640px) {
+    .dl-section-mobile-tight { padding: 56px 0 !important; }
+    .dl-container { padding-left: 18px; padding-right: 18px; }
+}
+
+/* ─── Scroll-hint chevron for horizontal lists ─── */
+.dl-scroll-hint {
+    display: none;
+    text-align: center;
+    margin-top: 10px;
+    font-family: 'Nunito', system-ui, sans-serif;
+    font-size: 0.78rem;
+    color: #6C3FA4;
+    font-weight: 700;
+    opacity: 0.7;
+}
+@media (max-width: 767px) {
+    .dl-scroll-hint { display: block; }
+}
 `;

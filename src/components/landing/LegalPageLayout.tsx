@@ -42,7 +42,7 @@ export const LegalPageLayout: React.FC<LegalPageLayoutProps> = ({ children, hero
             }}>
                 <div style={{ width: '100%', maxWidth: 1152, margin: '0 auto', padding: '0 24px', height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <a href="/#top" style={{ display: 'inline-flex', alignItems: 'center', gap: 12, textDecoration: 'none', flexShrink: 0 }}>
-                        <img src="/logo.png" alt="Draw in the Air" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
+                        <img src="/logo.png" alt="Draw in the Air" width={120} height={36} className="dl-nav-logo" />
                         <span style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.1rem', color: tokens.colors.deepPlum }} className="lpl-brand">
                             Draw in the Air
                         </span>
@@ -186,7 +186,7 @@ export const LegalPageLayout: React.FC<LegalPageLayoutProps> = ({ children, hero
                     <div className="lpl-footer-grid">
                         <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                                <img src="/logo.png" alt="Draw in the Air" style={{ height: 32 }} />
+                                <img src="/logo.png" alt="Draw in the Air" width={110} height={32} className="dl-footer-logo" />
                                 <span style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1rem', color: tokens.colors.deepPlum }}>Draw in the Air</span>
                             </div>
                             <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.85rem', color: tokens.colors.charcoal, opacity: 0.7, lineHeight: 1.55 }}>
@@ -342,6 +342,26 @@ export const LegalPageLayout: React.FC<LegalPageLayoutProps> = ({ children, hero
                     border-radius: 6px;
                     font-size: 0.92em;
                     font-family: 'SF Mono', monospace;
+                }
+
+                /* Logo sizing — bulletproof against global img rules */
+                .dl-nav-logo {
+                    height: 36px !important;
+                    width: auto !important;
+                    max-height: 36px !important;
+                    max-width: 140px !important;
+                    object-fit: contain !important;
+                    flex-shrink: 0 !important;
+                    display: block !important;
+                }
+                .dl-footer-logo {
+                    height: 32px !important;
+                    width: auto !important;
+                    max-height: 32px !important;
+                    max-width: 140px !important;
+                    object-fit: contain !important;
+                    flex-shrink: 0 !important;
+                    display: block !important;
                 }
             `}</style>
         </div>
