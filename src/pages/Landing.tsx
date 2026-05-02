@@ -1216,8 +1216,6 @@ export const Landing: React.FC = () => {
 
       {/* ═══════ FINAL CTA — purple banner with two kids ═══════ */}
       <section style={{ padding: '80px 0 100px', position: 'relative' }}>
-        {/* Outer soft glow that bleeds into the cream background */}
-        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(108,63,164,0.18) 0%, rgba(108,63,164,0.08) 40%, transparent 70%)' }} />
         <div className="dl-container" style={{ position: 'relative' }}>
           <div className="dl-reveal" style={{
             position: 'relative',
@@ -1225,7 +1223,6 @@ export const Landing: React.FC = () => {
             borderRadius: 44,
             padding: '60px 30px',
             overflow: 'hidden',
-            boxShadow: '0 0 0 8px rgba(108,63,164,0.06), 0 24px 60px -8px rgba(108,63,164,0.45), 0 0 80px rgba(108,63,164,0.20)',
           }}>
             {/* Confetti dots */}
             {Array.from({ length: 24 }).map((_, i) => {
