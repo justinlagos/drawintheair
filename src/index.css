@@ -409,8 +409,19 @@ body.perf-no-blur .glass-panel {
   background: rgba(255, 255, 255, 0.08) !important;
 }
 
-body.perf-tier-low * {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+/* Low-perf tier — no per-element shadow nuke; that was applying a hard
+   box-shadow to *every* descendant of <body>, which made every text
+   span and progress dot render with its own card-like outline on cheap
+   tablets/Chromebooks. Instead, we now opt-out of expensive effects
+   only on elements that explicitly request them. */
+body.perf-tier-low .heavy-shadow {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18) !important;
+}
+body.perf-tier-low .glass-panel,
+body.perf-tier-low .kid-panel {
+  /* Drop backdrop-filter on low-perf to keep paint cost low. */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════
