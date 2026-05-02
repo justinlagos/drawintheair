@@ -1,152 +1,347 @@
+/**
+ * LegalPageLayout — Kid-UI bright sky shell for legal/static pages
+ *
+ * Used by Privacy, Terms, Cookies, Safeguarding, Accessibility, etc.
+ * Replaces the legacy orange/light theme with the bright sky design
+ * language: Fredoka headings, Nunito body, plum accents, cream surfaces,
+ * sky background.
+ */
+
 import React, { useState } from 'react';
+import { tokens } from '../../styles/tokens';
+import { KidButton } from '../kid-ui';
 
 interface LegalPageLayoutProps {
     children: React.ReactNode;
     heroTitle: string;
+    /** Optional kicker shown above the title, e.g. "LEGAL · PRIVACY" */
+    eyebrow?: string;
+    /** Last-updated string. Auto-shown if provided. */
+    lastUpdated?: string;
 }
 
-const platformUrl = import.meta.env.VITE_PLATFORM_URL || 'https://app.drawintheair.com';
-
-export const LegalPageLayout: React.FC<LegalPageLayoutProps> = ({ children, heroTitle }) => {
+export const LegalPageLayout: React.FC<LegalPageLayoutProps> = ({ children, heroTitle, eyebrow, lastUpdated }) => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     return (
-        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f8fafc' }}>
+        <div style={{
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'linear-gradient(180deg, #BEEBFF 0%, #DEF5FF 22%, #FFF6E5 60%, #FFFAEB 100%)',
+            fontFamily: tokens.fontFamily.body,
+            color: tokens.colors.charcoal,
+        }}>
             {/* ═══════ NAV ═══════ */}
-            <nav className="fixed top-0 left-0 right-0 z-50" style={{ background: 'rgba(255,255,255,.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #e2e8f0' }}>
-                <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-                    <a href="/#top" className="flex items-center gap-3 no-underline group cursor-pointer flex-shrink-0">
-                        <img src="/logo.png" alt="Draw in the Air" className="h-8 md:h-9 w-auto object-contain flex-shrink-0 transition-all duration-300 ease-out group-hover:scale-110 group-hover:-rotate-6" style={{ maxHeight: '36px', height: '36px' }} />
+            <nav style={{
+                position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
+                background: 'rgba(255, 255, 255, 0.85)',
+                backdropFilter: 'blur(18px) saturate(1.4)',
+                WebkitBackdropFilter: 'blur(18px) saturate(1.4)',
+                borderBottom: '1.5px solid rgba(108, 63, 164, 0.10)',
+            }}>
+                <div style={{ width: '100%', maxWidth: 1152, margin: '0 auto', padding: '0 24px', height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <a href="/#top" style={{ display: 'inline-flex', alignItems: 'center', gap: 12, textDecoration: 'none', flexShrink: 0 }}>
+                        <img src="/logo.png" alt="Draw in the Air" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
+                        <span style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.1rem', color: tokens.colors.deepPlum }} className="lpl-brand">
+                            Draw in the Air
+                        </span>
                     </a>
-                    <div className="hidden md:flex items-center gap-8 text-sm" style={{ color: '#64748b' }}>
-                        <a href="/#how-it-works" className="hover:text-orange-500 transition-all no-underline cursor-pointer" style={{ color: 'inherit' }}>How It Works</a>
-                        <a href="/#features" className="hover:text-orange-500 transition-all no-underline cursor-pointer" style={{ color: 'inherit' }}>Activities</a>
-                        <a href="/#parents" className="hover:text-orange-500 transition-all no-underline cursor-pointer" style={{ color: 'inherit' }}>For Parents</a>
-                        <a href="/#schools" className="hover:text-orange-500 transition-all no-underline cursor-pointer" style={{ color: 'inherit' }}>For Schools</a>
-                        <a href="/faq" className="hover:text-orange-500 transition-all no-underline" style={{ color: 'inherit' }}>FAQ</a>
-                        <a href="/play" className="text-white font-semibold px-5 py-2 rounded-lg text-sm no-underline" style={{ background: '#f97316' }}>Try Free</a>
+                    <div className="lpl-desktop" style={{ alignItems: 'center', gap: 24, fontFamily: tokens.fontFamily.body, fontWeight: 600, color: tokens.colors.charcoal }}>
+                        <a href="/#how-it-works" className="lpl-nav-link">How it Works</a>
+                        <a href="/#features" className="lpl-nav-link">Activities</a>
+                        <a href="/#parents" className="lpl-nav-link">For Families</a>
+                        <a href="/#schools" className="lpl-nav-link">For Educators</a>
+                        <a href="/faq" className="lpl-nav-link">FAQ</a>
+                        <a href="/play" style={{ textDecoration: 'none' }}>
+                            <KidButton variant="primary" size="md" style={{ minHeight: 44, padding: '8px 22px', fontSize: '0.95rem' }}>Try Free</KidButton>
+                        </a>
                     </div>
-                    <button className="md:hidden" style={{ background: 'none', border: 'none', boxShadow: 'none', color: '#64748b' }} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                        <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+                    <button
+                        className="lpl-mobile-toggle"
+                        style={{ background: 'none', border: 'none', color: tokens.colors.deepPlum, padding: 4 }}
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        aria-label="Toggle menu"
+                    >
+                        <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
                     </button>
                 </div>
                 {mobileMenuOpen && (
-                    <div className="md:hidden px-6 pb-4 space-y-3 text-sm" style={{ color: '#64748b' }}>
-                        <a href="/#how-it-works" className="block py-2 no-underline hover:text-orange-500" style={{ color: 'inherit' }}>How It Works</a>
-                        <a href="/#features" className="block py-2 no-underline hover:text-orange-500" style={{ color: 'inherit' }}>Activities</a>
-                        <a href="/#parents" className="block py-2 no-underline hover:text-orange-500" style={{ color: 'inherit' }}>For Parents</a>
-                        <a href="/#schools" className="block py-2 no-underline hover:text-orange-500" style={{ color: 'inherit' }}>For Schools</a>
-                        <a href="/faq" className="block py-2 no-underline hover:text-orange-500" style={{ color: 'inherit' }}>FAQ</a>
-                        <a href="/play" className="block text-white font-semibold px-5 py-2.5 rounded-lg text-center mt-2 no-underline" style={{ background: '#f97316' }}>Try Free</a>
+                    <div className="lpl-mobile-drawer" style={{ padding: '8px 24px 16px', background: '#FFFFFF', borderTop: '2px solid rgba(108, 63, 164, 0.10)' }}>
+                        <a href="/#how-it-works" className="lpl-mobile-link">How it Works</a>
+                        <a href="/#features" className="lpl-mobile-link">Activities</a>
+                        <a href="/#parents" className="lpl-mobile-link">For Families</a>
+                        <a href="/#schools" className="lpl-mobile-link">For Educators</a>
+                        <a href="/faq" className="lpl-mobile-link">FAQ</a>
+                        <a href="/play" style={{ textDecoration: 'none', display: 'block', marginTop: 12 }}>
+                            <KidButton variant="primary" size="md" fullWidth>Try Free</KidButton>
+                        </a>
                     </div>
                 )}
             </nav>
 
             {/* ═══════ MAIN CONTENT ═══════ */}
-            <main className="flex-grow pt-28 pb-20 relative" style={{ background: '#f8fafc' }}>
-                <div className="max-w-3xl mx-auto px-6">
-                    {/* Hero heading */}
-                    <div className="text-center mb-10">
-                        <h1 className="text-4xl sm:text-5xl font-black tracking-tight" style={{ color: '#0f172a' }}>
-                            {heroTitle}
-                        </h1>
+            <main style={{ flexGrow: 1, paddingTop: 110, paddingBottom: 80, position: 'relative' }}>
+                {/* Decorative sun + clouds in the background */}
+                <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 0 }}>
+                    <div style={{
+                        position: 'absolute',
+                        top: '4%',
+                        right: '6%',
+                        width: 'clamp(120px, 14vw, 180px)',
+                        height: 'clamp(120px, 14vw, 180px)',
+                        borderRadius: '50%',
+                        background: 'radial-gradient(circle at 35% 35%, #FFF1B5 0%, #FFD84D 40%, rgba(255, 216, 77, 0) 100%)',
+                        opacity: 0.7,
+                    }} />
+                    <div style={{ position: 'absolute', top: '14%', left: '-3%', width: 180, height: 50, borderRadius: 9999, background: '#FFFFFF', opacity: 0.85, boxShadow: '40px 8px 0 -8px #FFFFFF, 80px -4px 0 -12px #FFFFFF' }} />
+                    <div style={{ position: 'absolute', top: '40%', left: '70%', width: 140, height: 40, borderRadius: 9999, background: '#FFFFFF', opacity: 0.7, boxShadow: '30px -4px 0 -6px #FFFFFF' }} />
+                </div>
+
+                <div style={{ position: 'relative', maxWidth: 880, margin: '0 auto', padding: '0 24px', zIndex: 1 }}>
+                    {/* Eyebrow + heading */}
+                    <div style={{ textAlign: 'center', marginBottom: 32 }}>
+                        {eyebrow && (
+                            <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                background: '#FFFFFF',
+                                border: '2px solid rgba(108, 63, 164, 0.18)',
+                                borderRadius: 9999,
+                                padding: '6px 14px',
+                                fontFamily: tokens.fontFamily.display,
+                                fontWeight: 700,
+                                fontSize: '0.78rem',
+                                letterSpacing: '0.08em',
+                                textTransform: 'uppercase',
+                                color: tokens.colors.deepPlum,
+                                boxShadow: tokens.shadow.float,
+                                marginBottom: 18,
+                            }}>{eyebrow}</span>
+                        )}
+                        <h1 style={{
+                            fontFamily: tokens.fontFamily.display,
+                            fontWeight: 700,
+                            fontSize: 'clamp(2.4rem, 5.5vw, 3.8rem)',
+                            lineHeight: 1.05,
+                            letterSpacing: '-0.02em',
+                            color: tokens.colors.charcoal,
+                            margin: 0,
+                        }}>{heroTitle}</h1>
+                        {lastUpdated && (
+                            <p style={{
+                                marginTop: 14,
+                                fontFamily: tokens.fontFamily.body,
+                                fontSize: '0.9rem',
+                                color: tokens.colors.charcoal,
+                                opacity: 0.65,
+                                fontWeight: 600,
+                            }}>Last updated: {lastUpdated}</p>
+                        )}
                     </div>
 
                     {/* Content card */}
-                    <div className="legal-content-light rounded-2xl p-8 sm:p-12 shadow-sm relative" style={{
-                        background: '#ffffff',
-                        border: '1px solid #e2e8f0',
+                    <div className="lpl-content" style={{
+                        position: 'relative',
+                        background: 'linear-gradient(180deg, #FFFFFF 0%, #FBFCFF 100%)',
+                        border: '3px solid rgba(108, 63, 164, 0.14)',
+                        borderRadius: 36,
+                        padding: 'clamp(28px, 5vw, 56px)',
+                        boxShadow: '0 24px 60px rgba(108, 63, 164, 0.12), 0 6px 20px rgba(108, 63, 164, 0.08)',
+                        overflow: 'hidden',
                     }}>
-                        <div className="absolute top-0 left-0 w-full h-1 rounded-t-2xl" style={{ background: 'linear-gradient(to right, #f97316, #fb923c)' }}></div>
+                        {/* Rainbow strip at top */}
+                        <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: 6,
+                            background: 'linear-gradient(90deg, #FF6B85 0%, #FFD84D 25%, #7ED957 50%, #55DDE0 75%, #6C3FA4 100%)',
+                        }} />
                         {children}
+                    </div>
+
+                    {/* Bottom CTA */}
+                    <div style={{ marginTop: 40, textAlign: 'center' }}>
+                        <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '1rem', color: tokens.colors.charcoal, opacity: 0.75, marginBottom: 16 }}>
+                            Questions? <a href="mailto:partnership@drawintheair.com" style={{ color: tokens.colors.deepPlum, fontWeight: 700, textDecoration: 'none' }}>Get in touch</a>
+                        </p>
+                        <a href="/" style={{ textDecoration: 'none' }}>
+                            <KidButton variant="secondary" size="md">← Back to home</KidButton>
+                        </a>
                     </div>
                 </div>
             </main>
 
             {/* ═══════ FOOTER ═══════ */}
-            <footer className="py-16 mt-auto" style={{ borderTop: '1px solid #e2e8f0', background: '#ffffff' }}>
-                <div className="max-w-6xl mx-auto px-6">
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+            <footer style={{
+                background: '#FFFFFF',
+                borderTop: '2px solid rgba(108, 63, 164, 0.10)',
+                padding: '48px 0 24px',
+                marginTop: 'auto',
+            }}>
+                <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px' }}>
+                    <div className="lpl-footer-grid">
                         <div>
-                            <div className="flex items-center gap-2 mb-4">
-                                <img src="/logo.png" alt="Draw in the Air" className="h-8 md:h-9 w-auto" style={{ maxHeight: '36px', height: '36px' }} />
-                                <span className="font-bold tracking-widest uppercase" style={{ color: '#0f172a' }}>Draw in the Air</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                                <img src="/logo.png" alt="Draw in the Air" style={{ height: 32 }} />
+                                <span style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1rem', color: tokens.colors.deepPlum }}>Draw in the Air</span>
                             </div>
-                            <p className="text-sm leading-relaxed" style={{ color: '#64748b' }}>Gesture-based learning platform for children aged 3-7. Built with care.</p>
+                            <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.85rem', color: tokens.colors.charcoal, opacity: 0.7, lineHeight: 1.55 }}>
+                                Active learning that moves young minds forward.
+                            </p>
                         </div>
                         <div>
-                            <h4 className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: '#94a3b8' }}>Product</h4>
-                            <div className="space-y-2.5">
-                                <a href="/play" className="block text-sm hover:text-orange-500 transition-colors no-underline" style={{ color: '#64748b' }}>Try Free</a>
-                                <a href="/schools" className="block text-sm hover:text-orange-500 transition-colors no-underline" style={{ color: '#64748b' }}>School Pilot Pack</a>
-                                <a href="/faq" className="block text-sm hover:text-orange-500 transition-colors no-underline" style={{ color: '#64748b' }}>FAQ</a>
-                                <a href={`${platformUrl}/pricing`} className="block text-sm hover:text-orange-500 transition-colors no-underline" style={{ color: '#64748b' }}>Pricing</a>
-                            </div>
+                            <h4 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '0.85rem', color: tokens.colors.deepPlum, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Product</h4>
+                            <a className="lpl-footer-link" href="/play">Try Free</a>
+                            <a className="lpl-footer-link" href="/schools">School Pilot Pack</a>
+                            <a className="lpl-footer-link" href="/faq">FAQ</a>
+                            <a className="lpl-footer-link" href="/pricing">Pricing</a>
                         </div>
                         <div>
-                            <h4 className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: '#94a3b8' }}>Legal</h4>
-                            <div className="space-y-2.5">
-                                <a href="/privacy" className="block text-sm hover:text-orange-500 transition-colors no-underline" style={{ color: '#64748b' }}>Privacy Policy</a>
-                                <a href="/terms" className="block text-sm hover:text-orange-500 transition-colors no-underline" style={{ color: '#64748b' }}>Terms of Use</a>
-                                <a href="/safeguarding" className="block text-sm hover:text-orange-500 transition-colors no-underline" style={{ color: '#64748b' }}>Safeguarding</a>
-                                <a href="/accessibility" className="block text-sm hover:text-orange-500 transition-colors no-underline" style={{ color: '#64748b' }}>Accessibility</a>
-                                <a href="/cookies" className="block text-sm hover:text-orange-500 transition-colors no-underline" style={{ color: '#64748b' }}>Cookie Policy</a>
-                            </div>
+                            <h4 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '0.85rem', color: tokens.colors.deepPlum, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Legal</h4>
+                            <a className="lpl-footer-link" href="/privacy">Privacy Policy</a>
+                            <a className="lpl-footer-link" href="/terms">Terms of Use</a>
+                            <a className="lpl-footer-link" href="/safeguarding">Safeguarding</a>
+                            <a className="lpl-footer-link" href="/accessibility">Accessibility</a>
+                            <a className="lpl-footer-link" href="/cookies">Cookie Policy</a>
                         </div>
                         <div>
-                            <h4 className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: '#94a3b8' }}>Contact</h4>
-                            <div className="space-y-2.5">
-                                <a href="mailto:partnership@drawintheair.com" className="block text-sm hover:text-orange-500 transition-colors no-underline" style={{ color: '#64748b' }}>partnership@drawintheair.com</a>
-                            </div>
+                            <h4 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '0.85rem', color: tokens.colors.deepPlum, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Contact</h4>
+                            <a className="lpl-footer-link" href="mailto:partnership@drawintheair.com">partnership@drawintheair.com</a>
                         </div>
                     </div>
-                    <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderTop: '1px solid #e2e8f0' }}>
-                        <p className="text-xs" style={{ color: '#94a3b8' }}>© 2026 Draw in the Air. All rights reserved.</p>
-                        <p className="text-xs" style={{ color: '#cbd5e1' }}>Made with care for young learners.</p>
+                    <div style={{ borderTop: '1.5px solid rgba(108, 63, 164, 0.10)', paddingTop: 16, marginTop: 32, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                        <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.78rem', color: tokens.colors.charcoal, opacity: 0.6 }}>
+                            © 2026 Draw in the Air. All rights reserved.
+                        </p>
+                        <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.78rem', color: tokens.colors.deepPlum, fontWeight: 700 }}>
+                            Made with care for young learners.
+                        </p>
                     </div>
                 </div>
             </footer>
 
-            {/* Scoped styles for legal content */}
+            {/* Scoped styles */}
             <style>{`
-                .legal-content-light h2 {
-                    font-size: 1.35rem;
-                    font-weight: 700;
-                    color: #0f172a;
-                    margin-top: 2rem;
-                    margin-bottom: 0.75rem;
-                    padding-bottom: 0.5rem;
-                    border-bottom: 2px solid #fed7aa;
+                .lpl-desktop { display: none; }
+                .lpl-mobile-toggle { display: inline-flex; }
+                @media (min-width: 768px) {
+                    .lpl-desktop { display: flex; }
+                    .lpl-mobile-toggle { display: none; }
                 }
-                .legal-content-light h2:first-of-type {
-                    margin-top: 0.5rem;
-                }
-                .legal-content-light p {
-                    color: #475569;
-                    line-height: 1.75;
-                    margin-bottom: 1rem;
+                .lpl-brand { display: none; }
+                @media (min-width: 640px) { .lpl-brand { display: inline; } }
+                .lpl-nav-link {
                     font-size: 0.95rem;
+                    transition: opacity 0.2s ease;
+                    text-decoration: none;
+                    color: inherit;
+                    cursor: pointer;
                 }
-                .legal-content-light strong {
-                    color: #1e293b;
+                .lpl-nav-link:hover { opacity: 0.7; }
+                .lpl-mobile-link {
+                    display: block;
+                    padding: 10px 0;
+                    font-size: 1rem;
                     font-weight: 600;
+                    text-decoration: none;
+                    color: ${tokens.colors.charcoal};
+                    font-family: ${tokens.fontFamily.body};
                 }
-                .legal-content-light a {
-                    color: #ea580c;
-                    text-decoration: underline;
-                    text-underline-offset: 2px;
+                .lpl-footer-grid {
+                    display: grid;
+                    grid-template-columns: 1fr;
+                    gap: 28px;
+                    margin-bottom: 32px;
                 }
-                .legal-content-light a:hover {
-                    color: #c2410c;
+                @media (min-width: 640px) {
+                    .lpl-footer-grid { grid-template-columns: repeat(2, 1fr); }
                 }
-                .legal-content-light ul, .legal-content-light ol {
-                    color: #475569;
-                    padding-left: 1.5rem;
-                    margin-bottom: 1rem;
+                @media (min-width: 1024px) {
+                    .lpl-footer-grid { grid-template-columns: repeat(4, 1fr); }
                 }
-                .legal-content-light li {
-                    margin-bottom: 0.5rem;
+                .lpl-footer-link {
+                    display: block;
+                    font-family: ${tokens.fontFamily.body};
+                    font-size: 0.85rem;
+                    color: ${tokens.colors.charcoal};
+                    opacity: 0.75;
+                    text-decoration: none;
+                    margin-bottom: 8px;
+                    transition: opacity 0.2s ease;
+                }
+                .lpl-footer-link:hover { opacity: 1; color: ${tokens.colors.deepPlum}; }
+
+                /* Content typography — Kid-UI bright sky */
+                .lpl-content h2 {
+                    font-family: ${tokens.fontFamily.display};
+                    font-size: clamp(1.4rem, 2.2vw, 1.8rem);
+                    font-weight: 700;
+                    color: ${tokens.colors.deepPlum};
+                    margin-top: 2rem;
+                    margin-bottom: 0.8rem;
+                    letter-spacing: -0.01em;
+                }
+                .lpl-content h2:first-of-type { margin-top: 0.5rem; }
+                .lpl-content h3 {
+                    font-family: ${tokens.fontFamily.display};
+                    font-size: 1.2rem;
+                    font-weight: 700;
+                    color: ${tokens.colors.charcoal};
+                    margin-top: 1.5rem;
+                    margin-bottom: 0.6rem;
+                }
+                .lpl-content p {
+                    font-family: ${tokens.fontFamily.body};
+                    color: ${tokens.colors.charcoal};
+                    opacity: 0.85;
                     line-height: 1.7;
+                    margin-bottom: 1.1rem;
+                    font-size: 1rem;
+                }
+                .lpl-content strong {
+                    color: ${tokens.colors.charcoal};
+                    font-weight: 700;
+                    opacity: 1;
+                }
+                .lpl-content a {
+                    color: ${tokens.colors.deepPlum};
+                    font-weight: 700;
+                    text-decoration: underline;
+                    text-decoration-color: rgba(108, 63, 164, 0.4);
+                    text-underline-offset: 3px;
+                    transition: text-decoration-color 0.2s ease;
+                }
+                .lpl-content a:hover { text-decoration-color: ${tokens.colors.deepPlum}; }
+                .lpl-content ul, .lpl-content ol {
+                    font-family: ${tokens.fontFamily.body};
+                    color: ${tokens.colors.charcoal};
+                    opacity: 0.85;
+                    padding-left: 1.5rem;
+                    margin-bottom: 1.1rem;
+                }
+                .lpl-content li {
+                    margin-bottom: 0.5rem;
+                    line-height: 1.65;
+                }
+                .lpl-content ul li::marker { color: ${tokens.colors.deepPlum}; }
+                .lpl-content blockquote {
+                    border-left: 4px solid ${tokens.colors.aqua};
+                    background: rgba(85, 221, 224, 0.06);
+                    padding: 14px 18px;
+                    border-radius: 0 14px 14px 0;
+                    margin: 1.5rem 0;
+                }
+                .lpl-content code {
+                    background: rgba(108, 63, 164, 0.08);
+                    color: ${tokens.colors.deepPlum};
+                    padding: 2px 6px;
+                    border-radius: 6px;
+                    font-size: 0.92em;
+                    font-family: 'SF Mono', monospace;
                 }
             `}</style>
         </div>

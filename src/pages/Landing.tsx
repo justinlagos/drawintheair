@@ -530,46 +530,88 @@ const HandTrackingVizSvg = () => (
 // ─── Two waving kids for final CTA ──────────────────────────────────────
 const KidWaving = ({ side }: { side: 'left' | 'right' }) => {
   const flipX = side === 'right' ? -1 : 1;
-  const shirtColor = side === 'left' ? '#FF8B4D' : '#9B6FCF';
-  const hairColor = side === 'left' ? '#7A4A2E' : '#3F4052';
+  const shirtTop = side === 'left' ? '#FFB07A' : '#B589DB';
+  const shirtBottom = side === 'left' ? '#FF6B2A' : '#7E4FB8';
+  const hairTop = side === 'left' ? '#9B6442' : '#5B5C68';
+  const hairBottom = side === 'left' ? '#7A4A2E' : '#3F4052';
+  const id = `kw-${side}`;
   return (
-    <svg viewBox="0 0 200 240" width="100%" height="100%" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 220 280" width="100%" height="100%" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id={`kw-skin-${side}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#FFE2BD" /><stop offset="1" stopColor="#F4C58E" />
+        <linearGradient id={`${id}-skin`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#FFE7C9" /><stop offset="1" stopColor="#F4C58E" />
         </linearGradient>
+        <linearGradient id={`${id}-shirt`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={shirtTop} /><stop offset="1" stopColor={shirtBottom} />
+        </linearGradient>
+        <linearGradient id={`${id}-hair`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={hairTop} /><stop offset="1" stopColor={hairBottom} />
+        </linearGradient>
+        <linearGradient id={`${id}-jeans`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#5BA0E8" /><stop offset="1" stopColor="#3D7DC5" />
+        </linearGradient>
+        <radialGradient id={`${id}-cheek`} cx="0.5" cy="0.5">
+          <stop offset="0" stopColor="#FF9DB5" stopOpacity="0.85" />
+          <stop offset="1" stopColor="#FF9DB5" stopOpacity="0" />
+        </radialGradient>
       </defs>
-      <g transform={`translate(100, 120) scale(${flipX} 1)`}>
+      <g transform={`translate(110, 145) scale(${flipX} 1)`}>
+        {/* Soft ground shadow */}
+        <ellipse cx="0" cy="124" rx="40" ry="6" fill="#000000" opacity="0.18" />
         {/* Legs */}
-        <rect x="-18" y="60" width="14" height="50" rx="7" fill="#3D7DC5" />
-        <rect x="4" y="60" width="14" height="50" rx="7" fill="#3D7DC5" />
-        <ellipse cx="-11" cy="115" rx="10" ry="5" fill="#FFFFFF" stroke="#3F4052" strokeWidth="1.5" />
-        <ellipse cx="11" cy="115" rx="10" ry="5" fill="#FFFFFF" stroke="#3F4052" strokeWidth="1.5" />
-        {/* Body */}
-        <rect x="-26" y="-2" width="52" height="62" rx="14" fill={shirtColor} />
+        <rect x="-22" y="62" width="18" height="62" rx="9" fill={`url(#${id}-jeans)`} />
+        <rect x="4" y="62" width="18" height="62" rx="9" fill={`url(#${id}-jeans)`} />
+        {/* Knees */}
+        <ellipse cx="-13" cy="92" rx="3" ry="2" fill="#FFFFFF" opacity="0.18" />
+        <ellipse cx="13" cy="92" rx="3" ry="2" fill="#FFFFFF" opacity="0.18" />
+        {/* Shoes */}
+        <ellipse cx="-13" cy="126" rx="13" ry="6" fill="#FFFFFF" stroke="#3F4052" strokeWidth="1.6" />
+        <ellipse cx="13" cy="126" rx="13" ry="6" fill="#FFFFFF" stroke="#3F4052" strokeWidth="1.6" />
+        <path d="M-20 126 L-6 126" stroke="#3F4052" strokeWidth="1" opacity="0.4" />
+        <path d="M6 126 L20 126" stroke="#3F4052" strokeWidth="1" opacity="0.4" />
+        {/* Body / shirt with rounded shoulders */}
+        <path d="M-30 -2 Q-30 -10 -22 -10 L22 -10 Q30 -10 30 -2 L30 60 Q30 68 22 68 L-22 68 Q-30 68 -30 60 Z"
+          fill={`url(#${id}-shirt)`} />
+        {/* Shirt highlight */}
+        <path d="M-26 4 Q-26 -6 -16 -6 L16 -6" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" opacity="0.22" fill="none" />
         {/* Left arm down */}
-        <path d="M-24 8 Q-32 30 -28 50" stroke={`url(#kw-skin-${side})`} strokeWidth="11" strokeLinecap="round" fill="none" />
-        <circle cx="-29" cy="52" r="7" fill={`url(#kw-skin-${side})`} stroke="#3F4052" strokeOpacity="0.2" strokeWidth="1" />
-        {/* Right arm raised waving */}
-        <path d="M24 4 Q40 -24 50 -56" stroke={`url(#kw-skin-${side})`} strokeWidth="11" strokeLinecap="round" fill="none" />
-        <g transform="translate(50, -56)">
-          <circle cx="0" cy="0" r="9" fill={`url(#kw-skin-${side})`} stroke="#3F4052" strokeOpacity="0.2" strokeWidth="1.2" />
-          <rect x="-3" y="-12" width="3" height="10" rx="1.5" fill={`url(#kw-skin-${side})`} />
-          <rect x="1" y="-14" width="3" height="12" rx="1.5" fill={`url(#kw-skin-${side})`} />
-          <rect x="5" y="-12" width="3" height="10" rx="1.5" fill={`url(#kw-skin-${side})`} />
+        <path d="M-28 8 Q-38 30 -32 56" stroke={`url(#${id}-skin)`} strokeWidth="13" strokeLinecap="round" fill="none" />
+        <circle cx="-33" cy="58" r="9" fill={`url(#${id}-skin)`} stroke="#3F4052" strokeOpacity="0.25" strokeWidth="1.2" />
+        <ellipse cx="-31" cy="56" rx="3" ry="2" fill="#FFFFFF" opacity="0.4" />
+        {/* Right arm raised waving with bend at elbow */}
+        <path d="M28 8 Q42 -10 46 -38 Q50 -64 60 -78" stroke={`url(#${id}-skin)`} strokeWidth="13" strokeLinecap="round" fill="none" />
+        {/* Right hand waving */}
+        <g transform="translate(60, -78)">
+          <circle cx="0" cy="0" r="10" fill={`url(#${id}-skin)`} stroke="#3F4052" strokeOpacity="0.22" strokeWidth="1.4" />
+          {/* Fingers */}
+          <rect x="-4" y="-14" width="3.5" height="11" rx="1.8" fill={`url(#${id}-skin)`} stroke="#3F4052" strokeOpacity="0.18" strokeWidth="1" />
+          <rect x="0" y="-16" width="3.5" height="13" rx="1.8" fill={`url(#${id}-skin)`} stroke="#3F4052" strokeOpacity="0.18" strokeWidth="1" />
+          <rect x="4" y="-15" width="3.5" height="12" rx="1.8" fill={`url(#${id}-skin)`} stroke="#3F4052" strokeOpacity="0.18" strokeWidth="1" />
+          <rect x="8" y="-13" width="3.5" height="10" rx="1.8" fill={`url(#${id}-skin)`} stroke="#3F4052" strokeOpacity="0.18" strokeWidth="1" />
+          {/* Highlight */}
+          <ellipse cx="-2" cy="-2" rx="3" ry="2" fill="#FFFFFF" opacity="0.4" />
         </g>
-        {/* Head */}
-        <circle cx="0" cy="-22" r="22" fill={`url(#kw-skin-${side})`} stroke="#3F4052" strokeOpacity="0.18" strokeWidth="1.5" />
-        {/* Hair */}
-        <path d="M-22 -28 Q-22 -48 0 -50 Q22 -48 22 -28 Q14 -36 0 -36 Q-14 -36 -22 -28 Z" fill={hairColor} />
-        {/* Eyes */}
-        <circle cx="-7" cy="-22" r="2.4" fill="#3F4052" />
-        <circle cx="7" cy="-22" r="2.4" fill="#3F4052" />
-        {/* Cheeks */}
-        <ellipse cx="-12" cy="-14" rx="3.5" ry="2.2" fill="#FF9DB5" opacity="0.65" />
-        <ellipse cx="12" cy="-14" rx="3.5" ry="2.2" fill="#FF9DB5" opacity="0.65" />
-        {/* Smile */}
-        <path d="M-5 -14 Q0 -10 5 -14" stroke="#3F4052" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+        {/* Neck */}
+        <rect x="-6" y="-12" width="12" height="6" rx="3" fill={`url(#${id}-skin)`} />
+        {/* Head with subtle 3D shading */}
+        <circle cx="0" cy="-30" r="26" fill={`url(#${id}-skin)`} stroke="#3F4052" strokeOpacity="0.18" strokeWidth="1.5" />
+        {/* Hair — fluffier, more defined */}
+        <path d="M-26 -32 Q-30 -54 -16 -58 Q-4 -64 8 -62 Q22 -60 26 -42 Q28 -34 24 -30 Q16 -42 4 -42 Q-6 -44 -14 -42 Q-22 -42 -26 -32 Z"
+          fill={`url(#${id}-hair)`} />
+        <path d="M-22 -38 Q-18 -50 -8 -52" stroke="#FFFFFF" strokeWidth="1.2" opacity="0.25" fill="none" />
+        {/* Cheeks (radial soft) */}
+        <circle cx="-13" cy="-18" r="5" fill={`url(#${id}-cheek)`} />
+        <circle cx="13" cy="-18" r="5" fill={`url(#${id}-cheek)`} />
+        {/* Eyes — bigger, with sparkles */}
+        <ellipse cx="-9" cy="-30" rx="3.2" ry="3.8" fill="#3F4052" />
+        <ellipse cx="9" cy="-30" rx="3.2" ry="3.8" fill="#3F4052" />
+        <circle cx="-7.5" cy="-31.5" r="1.2" fill="#FFFFFF" />
+        <circle cx="10.5" cy="-31.5" r="1.2" fill="#FFFFFF" />
+        {/* Eyebrows */}
+        <path d="M-13 -38 Q-9 -40 -5 -38" stroke={hairBottom} strokeWidth="2" strokeLinecap="round" fill="none" />
+        <path d="M5 -38 Q9 -40 13 -38" stroke={hairBottom} strokeWidth="2" strokeLinecap="round" fill="none" />
+        {/* Big happy smile */}
+        <path d="M-7 -19 Q0 -12 7 -19" stroke="#3F4052" strokeWidth="2.2" strokeLinecap="round" fill="none" />
       </g>
     </svg>
   );
@@ -993,12 +1035,12 @@ export const Landing: React.FC = () => {
               </div>
             ))}
             {/* CTA tile */}
-            <div style={{ background: `linear-gradient(165deg, ${tokens.colors.deepPlum} 0%, ${tokens.semantic.primaryHover} 100%)`, border: '3px solid #FFFFFF', borderRadius: 24, padding: 22, color: '#FFFFFF', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', boxShadow: tokens.shadow.glow }}>
+            <div style={{ background: `linear-gradient(165deg, ${tokens.colors.deepPlum} 0%, ${tokens.semantic.primaryHover} 100%)`, border: '3px solid #FFFFFF', borderRadius: 24, padding: 22, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', boxShadow: tokens.shadow.glow }}>
               <div style={{ width: 56, height: 56, borderRadius: 18, background: 'rgba(255,255,255,0.2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10, border: '2px solid rgba(255,255,255,0.4)' }}>
                 <svg viewBox="0 0 24 24" width="30" height="30" fill="#FFFFFF"><path d="M5 3l14 9-14 9V3z" /></svg>
               </div>
-              <h3 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.15rem', marginBottom: 4 }}>Try it now</h3>
-              <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.78rem', opacity: 0.95, lineHeight: 1.4, marginBottom: 14 }}>Jump in and play in your browser.</p>
+              <h3 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.15rem', marginBottom: 4, color: '#FFFFFF' }}>Try it now</h3>
+              <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.82rem', opacity: 0.95, lineHeight: 1.4, marginBottom: 14, color: '#FFFFFF', fontWeight: 600 }}>Jump in and play in your browser.</p>
               <KidButton variant="success" size="md" onClick={() => setTryFreeOpen(true)} style={{ minHeight: 40, padding: '6px 16px', fontSize: '0.85rem' }}>Start Playing</KidButton>
             </div>
           </div>
@@ -1032,14 +1074,14 @@ export const Landing: React.FC = () => {
           </div>
 
           {/* Screen time guilt-free */}
-          <div className="dl-reveal" style={{ background: 'linear-gradient(165deg, #FFFFFF 0%, #F4FAFF 100%)', border: '2.5px solid rgba(108,63,164,0.14)', borderRadius: 32, padding: 32, boxShadow: tokens.shadow.float, position: 'relative', overflow: 'hidden' }}>
-            <h3 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.6rem', color: tokens.colors.charcoal, marginBottom: 12, position: 'relative', zIndex: 1 }}>
+          <div className="dl-reveal" style={{ background: 'linear-gradient(165deg, #FFFFFF 0%, #F4FAFF 100%)', border: '2.5px solid rgba(108,63,164,0.14)', borderRadius: 32, padding: 32, boxShadow: tokens.shadow.float }}>
+            <h3 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.6rem', color: tokens.colors.charcoal, marginBottom: 12 }}>
               Screen time you don't<br />have to feel <span style={{ color: tokens.colors.deepPlum }}>guilty</span> about
             </h3>
-            <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.95rem', lineHeight: 1.55, color: tokens.colors.charcoal, opacity: 0.8, marginBottom: 18, position: 'relative', zIndex: 1 }}>
+            <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.95rem', lineHeight: 1.55, color: tokens.colors.charcoal, opacity: 0.8, marginBottom: 18 }}>
               Everything your child does stays private on your device. No ads. No tracking. Ever.
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10, marginBottom: 22, position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10, marginBottom: 22 }}>
               {PRIVACY.map((p) => (
                 <div key={p.label} style={{ background: '#FFFFFF', border: '2px solid rgba(108,63,164,0.10)', borderRadius: 14, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ width: 28, height: 28, borderRadius: 9, background: `${p.color}1A`, color: p.color, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{p.icon}</span>
@@ -1047,10 +1089,12 @@ export const Landing: React.FC = () => {
                 </div>
               ))}
             </div>
-            <KidButton variant="primary" size="md" onClick={() => setTryFreeOpen(true)} style={{ position: 'relative', zIndex: 1 }}>Start in 10 Seconds →</KidButton>
-            {/* Kid hugging shield — bottom-right of the card */}
-            <div style={{ position: 'absolute', bottom: -8, right: -16, width: 200, height: 200, pointerEvents: 'none' }}>
-              <KidShield />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+              <KidButton variant="primary" size="md" onClick={() => setTryFreeOpen(true)}>Start in 10 Seconds →</KidButton>
+              {/* Kid+shield sits inline next to the button so it's never clipped */}
+              <div style={{ width: 130, height: 130, flexShrink: 0 }}>
+                <KidShield />
+              </div>
             </div>
           </div>
         </div>
@@ -1171,9 +1215,18 @@ export const Landing: React.FC = () => {
       </section>
 
       {/* ═══════ FINAL CTA — purple banner with two kids ═══════ */}
-      <section style={{ padding: '60px 0', position: 'relative' }}>
-        <div className="dl-container">
-          <div className="dl-reveal" style={{ position: 'relative', background: `linear-gradient(135deg, ${tokens.semantic.primaryHover} 0%, ${tokens.colors.deepPlum} 60%, #5A3290 100%)`, borderRadius: 40, padding: '50px 30px', overflow: 'hidden', boxShadow: '0 30px 60px rgba(108,63,164,0.30)' }}>
+      <section style={{ padding: '80px 0 100px', position: 'relative' }}>
+        {/* Outer soft glow that bleeds into the cream background */}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(108,63,164,0.18) 0%, rgba(108,63,164,0.08) 40%, transparent 70%)' }} />
+        <div className="dl-container" style={{ position: 'relative' }}>
+          <div className="dl-reveal" style={{
+            position: 'relative',
+            background: `linear-gradient(135deg, ${tokens.semantic.primaryHover} 0%, ${tokens.colors.deepPlum} 60%, #5A3290 100%)`,
+            borderRadius: 44,
+            padding: '60px 30px',
+            overflow: 'hidden',
+            boxShadow: '0 0 0 8px rgba(108,63,164,0.06), 0 24px 60px -8px rgba(108,63,164,0.45), 0 0 80px rgba(108,63,164,0.20)',
+          }}>
             {/* Confetti dots */}
             {Array.from({ length: 24 }).map((_, i) => {
               const colors = ['#FFD84D', '#FF6B85', '#7ED957', '#55DDE0', '#FFB14D'];
@@ -1201,15 +1254,16 @@ export const Landing: React.FC = () => {
             </div>
             {/* Center content */}
             <div style={{ position: 'relative', textAlign: 'center', maxWidth: 580, margin: '0 auto' }}>
-              <h2 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: 'clamp(1.8rem, 4.5vw, 3rem)', lineHeight: 1.1, color: '#FFFFFF', marginBottom: 14 }}>
-                Let them draw. Let them move.<br />
+              <h2 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: 'clamp(1.8rem, 4.5vw, 3rem)', lineHeight: 1.15, color: '#FFFFFF', marginBottom: 14 }}>
+                Let them draw.<br />
+                Let them move.<br />
                 Let them <span style={{ color: tokens.colors.sunshine }}>learn</span>.
               </h2>
               <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '1rem', color: '#FFFFFF', opacity: 0.95, marginBottom: 22 }}>
                 Try Draw in the Air now. Free, safe and joyful.
               </p>
               <KidButton variant="success" size="lg" onClick={() => setTryFreeOpen(true)}>Launch Draw in the Air</KidButton>
-              <p style={{ marginTop: 14, fontFamily: tokens.fontFamily.body, fontSize: '0.8rem', color: '#FFFFFF', opacity: 0.85 }}>
+              <p style={{ marginTop: 14, fontFamily: tokens.fontFamily.body, fontSize: '0.85rem', color: '#FFFFFF', opacity: 0.95, fontWeight: 600 }}>
                 Free to try · No downloads · No credit card
               </p>
             </div>
