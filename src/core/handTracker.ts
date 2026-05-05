@@ -19,10 +19,15 @@
 import { FilesetResolver, HandLandmarker, type HandLandmarkerResult } from '@mediapipe/tasks-vision';
 import { trackingFeatures } from './trackingFeatures';
 
-// Pin to the version installed in package.json so the WASM bundle is
-// guaranteed compatible with the JS package. If you bump the package
-// version, bump this string too.
-const TASKS_VISION_VERSION = '0.10.22-rc.20250304';
+// Pin to the version actually resolved in package-lock.json (the
+// installed JS). If we pin to the package.json range instead, the WASM
+// can drift to a different version than the JS — and the JS↔WASM API
+// contract is version-locked, so a mismatch breaks createFromOptions.
+//
+// To verify after a `npm install`:
+//   grep -A1 '"node_modules/@mediapipe/tasks-vision"' package-lock.json
+// and update this constant if the version changed.
+const TASKS_VISION_VERSION = '0.10.32';
 const WASM_BASE_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}/wasm`;
 const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 
