@@ -9,7 +9,7 @@
  * Tracking logic (5 detected horizontal "swipes" → onWake) is unchanged.
  */
 
-import { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { type HandLandmarkerResult } from '@mediapipe/tasks-vision';
 import { tokens } from '../../styles/tokens';
 
@@ -43,6 +43,12 @@ const useResponsiveLayout = () => {
     return layout;
 };
 
+interface TrackerErrorShape {
+    code: 'WASM_LOAD' | 'MODEL_LOAD' | 'GPU_INIT' | 'CPU_INIT' | 'TIMEOUT' | 'UNKNOWN';
+    message: string;
+    triedDelegates: ('GPU' | 'CPU')[];
+}
+
 interface WaveToWakeProps {
     onWake: () => void;
     trackingResults: HandLandmarkerResult | null;
@@ -51,16 +57,17 @@ interface WaveToWakeProps {
     cameraStatus?: 'idle' | 'requesting' | 'running' | 'error';
     cameraErrorCode?: string | null;
     trackerReady?: boolean;
+    trackerError?: TrackerErrorShape | null;
+    trackerDelegate?: 'GPU' | 'CPU' | null;
     visionFps?: number;
+    onRetryTracker?: () => void;
 }
 
-export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorCode, trackerReady, visionFps }: WaveToWakeProps) => {
+export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorCode, trackerReady, trackerError, visionFps, onRetryTracker }: WaveToWakeProps) => {
     const [waveCount, setWaveCount] = useState(0);
     // 'searching' = no hand seen yet, 'detected' = hand recently seen,
     // 'lost' = hand was seen but lost (give the user a hint)
     const [handStatus, setHandStatus] = useState<'searching' | 'detected' | 'lost'>('searching');
-    // Allow tap-to-skip after 8s so the user is never permanently stuck
-    const [showFallback, setShowFallback] = useState(false);
     const prevX = useRef<number | null>(null);
     const wakeThreshold = 4;
     const lastWaveTime = useRef<number>(0);
@@ -70,9 +77,6 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorC
 
     useEffect(() => {
         waveStartTime.current = Date.now();
-        // Show "Tap here if it's not working" after 8 seconds
-        const fallbackTimer = setTimeout(() => setShowFallback(true), 8000);
-        return () => clearTimeout(fallbackTimer);
     }, []);
 
     // Hand-status watchdog: if no hand seen for 1.5s while we're 'detected',
@@ -146,6 +150,16 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorC
     }, [waveCount, onWake]);
 
     const dotSize = isCompact ? 22 : 30;
+
+    // ── Terminal tracker error → show help screen instead of wave UI ──
+    // The wave gate failing while tracking is broken is the *correct*
+    // behaviour: mode-selection, AdultGate, and every game mode all
+    // require working hand tracking. Bypassing the gate would just dump
+    // the kid into a stuck menu. Instead, show the parent a clear error
+    // with retry + help + a way back to the landing page.
+    if (trackerError) {
+        return <TrackerErrorScreen error={trackerError} onRetry={onRetryTracker} isCompact={isCompact} />;
+    }
 
     return (
         <div
@@ -440,37 +454,6 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorC
                             </p>
                         )}
 
-                        {/* Tap-to-skip fallback if camera/wave isn't working */}
-                        {showFallback && waveCount < wakeThreshold && (
-                            <div style={{ marginTop: 18, position: 'relative', zIndex: 1 }}>
-                                <button
-                                    onClick={onWake}
-                                    style={{
-                                        background: '#FFFFFF',
-                                        border: `2.5px solid ${tokens.colors.deepPlum}`,
-                                        borderRadius: 9999,
-                                        padding: '10px 20px',
-                                        fontFamily: tokens.fontFamily.display,
-                                        fontWeight: 700,
-                                        fontSize: '0.9rem',
-                                        color: tokens.colors.deepPlum,
-                                        cursor: 'pointer',
-                                        boxShadow: '0 4px 10px rgba(108, 63, 164, 0.12)',
-                                    }}
-                                >
-                                    Skip — let me in
-                                </button>
-                                <p style={{
-                                    marginTop: 8,
-                                    fontFamily: tokens.fontFamily.body,
-                                    fontSize: '0.78rem',
-                                    color: tokens.colors.charcoal,
-                                    opacity: 0.6,
-                                }}>
-                                    Camera not working? Tap above to continue.
-                                </p>
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
@@ -691,3 +674,256 @@ const WavingHand = ({ size }: { size: number }) => (
         </svg>
     </span>
 );
+
+// ─── Tracker error help screen ──────────────────────────────────────
+// Shown when handTracker.initialize() fails after CPU fallback + timeout.
+// Cannot bypass — every screen after this requires hand tracking. Instead
+// we explain what's wrong, offer a retry, list common fixes, and provide
+// a way back to the landing page.
+
+interface TrackerErrorScreenProps {
+    error: TrackerErrorShape;
+    onRetry?: () => void;
+    isCompact: boolean;
+}
+
+const TrackerErrorScreen: React.FC<TrackerErrorScreenProps> = ({ error, onRetry, isCompact }) => {
+    const [retrying, setRetrying] = useState(false);
+
+    const headline = (() => {
+        switch (error.code) {
+            case 'WASM_LOAD': return "We couldn't load the hand-tracking engine.";
+            case 'MODEL_LOAD': return "We couldn't load the hand-tracking model.";
+            case 'GPU_INIT': return "Your device's graphics couldn't start hand tracking.";
+            case 'CPU_INIT': return "Hand tracking couldn't start on this device.";
+            case 'TIMEOUT': return "Hand tracking is taking too long to start.";
+            default: return "Hand tracking isn't available right now.";
+        }
+    })();
+
+    const fixes: string[] = (() => {
+        switch (error.code) {
+            case 'WASM_LOAD':
+            case 'MODEL_LOAD':
+            case 'TIMEOUT':
+                return [
+                    'Check your internet connection.',
+                    'Disable any ad-blocker or VPN that might block CDN files.',
+                    'Try a different network (a school firewall may block the model).',
+                    'Reload the page.',
+                ];
+            case 'GPU_INIT':
+            case 'CPU_INIT':
+                return [
+                    'Try Chrome, Edge, or Safari (latest version).',
+                    'Make sure hardware acceleration is enabled in your browser settings.',
+                    "If you're on a low-end Chromebook or older tablet, this device may not support hand tracking yet.",
+                ];
+            default:
+                return [
+                    'Try Chrome, Edge, or Safari.',
+                    'Reload the page.',
+                    'Try a different device.',
+                ];
+        }
+    })();
+
+    const handleRetry = async () => {
+        if (!onRetry) return;
+        setRetrying(true);
+        onRetry();
+        // Re-enable button after 2s in case the retry fails again
+        setTimeout(() => setRetrying(false), 2000);
+    };
+
+    const handleFeedback = () => {
+        const subject = encodeURIComponent('Hand tracking not working');
+        const body = encodeURIComponent(
+            `Hi Draw in the Air team,\n\n` +
+            `Hand tracking didn't start on my device.\n\n` +
+            `Error: ${error.code} — ${error.message}\n` +
+            `Tried delegates: ${error.triedDelegates.join(', ') || 'none'}\n` +
+            `User-agent: ${typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'}\n` +
+            `URL: ${typeof window !== 'undefined' ? window.location.href : 'unknown'}\n\n` +
+            `What I was doing:\n[describe here]\n`,
+        );
+        window.location.href = `mailto:partnership@drawintheair.com?subject=${subject}&body=${body}`;
+    };
+
+    return (
+        <div
+            style={{
+                position: 'absolute',
+                top: 0, left: 0, width: '100%', height: '100%',
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                zIndex: 100,
+                background: 'linear-gradient(180deg, #BEEBFF 0%, #DEF5FF 35%, #FFF6E5 75%, #FFFAEB 100%)',
+                fontFamily: tokens.fontFamily.body,
+                padding: isCompact ? '24px 16px' : '40px',
+                overflow: 'auto',
+            }}
+        >
+            {/* Card */}
+            <div
+                style={{
+                    width: '100%',
+                    maxWidth: isCompact ? '94%' : 580,
+                    background: 'linear-gradient(180deg, #FFFFFF 0%, #FBFCFF 60%, #F4FAFF 100%)',
+                    border: '3px solid rgba(108, 63, 164, 0.16)',
+                    borderRadius: isCompact ? 28 : 36,
+                    padding: isCompact ? '28px 24px' : '40px 48px',
+                    boxShadow: '0 24px 60px rgba(108, 63, 164, 0.18), 0 6px 20px rgba(108, 63, 164, 0.10)',
+                    textAlign: 'left',
+                }}
+            >
+                {/* Sad-camera icon */}
+                <div style={{
+                    width: 72, height: 72,
+                    margin: '0 auto 18px',
+                    borderRadius: 22,
+                    background: 'linear-gradient(165deg, #FFE2EC 0%, #FFD2DD 100%)',
+                    border: '2px solid rgba(255, 107, 107, 0.4)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={tokens.colors.coral} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="6" width="14" height="12" rx="2" />
+                        <path d="M21 8v8l-4-3v-2l4-3z" />
+                        <path d="M2 2l20 20" />
+                    </svg>
+                </div>
+
+                <h1 style={{
+                    fontFamily: tokens.fontFamily.display,
+                    fontWeight: 700,
+                    fontSize: isCompact ? '1.45rem' : '1.85rem',
+                    lineHeight: 1.15,
+                    color: tokens.colors.charcoal,
+                    margin: 0,
+                    textAlign: 'center',
+                }}>
+                    {headline}
+                </h1>
+                <p style={{
+                    marginTop: 10,
+                    fontFamily: tokens.fontFamily.body,
+                    fontSize: isCompact ? '0.95rem' : '1.05rem',
+                    color: tokens.colors.charcoal,
+                    opacity: 0.78,
+                    textAlign: 'center',
+                    lineHeight: 1.5,
+                }}>
+                    Draw in the Air needs hand tracking to play.
+                    Here's what you can try:
+                </p>
+
+                {/* Fix list */}
+                <ul style={{
+                    margin: '20px 0 24px',
+                    padding: 0,
+                    listStyle: 'none',
+                    fontFamily: tokens.fontFamily.body,
+                    fontSize: isCompact ? '0.9rem' : '0.98rem',
+                    color: tokens.colors.charcoal,
+                    lineHeight: 1.55,
+                }}>
+                    {fixes.map((fix, i) => (
+                        <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
+                            <span style={{
+                                width: 22, height: 22, borderRadius: '50%',
+                                background: tokens.colors.deepPlum + '1A',
+                                color: tokens.colors.deepPlum,
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                fontFamily: tokens.fontFamily.display,
+                                fontWeight: 700, fontSize: '0.78rem', flexShrink: 0,
+                            }}>{i + 1}</span>
+                            <span style={{ paddingTop: 2 }}>{fix}</span>
+                        </li>
+                    ))}
+                </ul>
+
+                {/* Buttons */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
+                    {onRetry && (
+                        <button
+                            onClick={handleRetry}
+                            disabled={retrying}
+                            style={{
+                                background: 'linear-gradient(180deg, #7E4FB8 0%, #6C3FA4 100%)',
+                                border: 'none',
+                                color: '#FFFFFF',
+                                fontFamily: tokens.fontFamily.display,
+                                fontWeight: 700,
+                                fontSize: '1rem',
+                                padding: '12px 24px',
+                                borderRadius: 9999,
+                                cursor: retrying ? 'wait' : 'pointer',
+                                boxShadow: '0 6px 14px rgba(108, 63, 164, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.4)',
+                                opacity: retrying ? 0.7 : 1,
+                            }}
+                        >
+                            {retrying ? 'Retrying…' : 'Try again'}
+                        </button>
+                    )}
+                    <button
+                        onClick={() => { window.location.href = '/'; }}
+                        style={{
+                            background: '#FFFFFF',
+                            border: `2.5px solid ${tokens.colors.deepPlum}`,
+                            color: tokens.colors.deepPlum,
+                            fontFamily: tokens.fontFamily.display,
+                            fontWeight: 700,
+                            fontSize: '1rem',
+                            padding: '10px 22px',
+                            borderRadius: 9999,
+                            cursor: 'pointer',
+                        }}
+                    >
+                        Back to home
+                    </button>
+                    <button
+                        onClick={handleFeedback}
+                        style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: tokens.colors.deepPlum,
+                            fontFamily: tokens.fontFamily.body,
+                            fontWeight: 700,
+                            fontSize: '0.92rem',
+                            padding: '10px 14px',
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                            textUnderlineOffset: 3,
+                        }}
+                    >
+                        Tell us what happened
+                    </button>
+                </div>
+
+                {/* Technical detail (small, for adults / support) */}
+                <details style={{
+                    marginTop: 22,
+                    fontFamily: tokens.fontFamily.body,
+                    fontSize: '0.78rem',
+                    color: tokens.colors.charcoal,
+                    opacity: 0.6,
+                }}>
+                    <summary style={{ cursor: 'pointer', fontWeight: 700 }}>Technical details</summary>
+                    <pre style={{
+                        marginTop: 10,
+                        padding: 10,
+                        background: 'rgba(108, 63, 164, 0.06)',
+                        borderRadius: 10,
+                        fontSize: '0.72rem',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                    }}>
+{`code: ${error.code}
+message: ${error.message}
+tried: ${error.triedDelegates.join(', ') || 'none'}`}
+                    </pre>
+                </details>
+            </div>
+        </div>
+    );
+};

@@ -299,7 +299,10 @@ function App() {
                   cameraStatus={diagnostics.cameraStatus}
                   cameraErrorCode={diagnostics.cameraErrorCode}
                   trackerReady={diagnostics.trackerReady}
+                  trackerError={diagnostics.trackerError}
+                  trackerDelegate={diagnostics.trackerDelegate}
                   visionFps={diagnostics.visionFps}
+                  onRetryTracker={diagnostics.retryTracker}
                 />
               )}
 

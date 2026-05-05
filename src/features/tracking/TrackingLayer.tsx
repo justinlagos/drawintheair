@@ -9,7 +9,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { DrawingUtils, type HandLandmarkerResult, type NormalizedLandmark } from '@mediapipe/tasks-vision';
-import { handTracker } from '../../core/handTracker';
+import { handTracker, type HandTrackerError } from '../../core/handTracker';
 import { interactionStateManager, type InteractionState } from '../../core/InteractionState';
 import { perf } from '../../core/perf';
 import { trackingFeatures } from '../../core/trackingFeatures';
@@ -71,7 +71,13 @@ export interface TrackingDiagnostics {
     cameraStatus: 'idle' | 'requesting' | 'running' | 'error';
     cameraErrorCode: string | null;
     trackerReady: boolean;
+    /** Set when tracker init failed terminally (after CPU fallback + timeout). */
+    trackerError: HandTrackerError | null;
+    /** Which delegate succeeded ('GPU' / 'CPU') or null while loading. */
+    trackerDelegate: 'GPU' | 'CPU' | null;
     visionFps: number;
+    /** Force a re-initialisation of the tracker (used by retry button). */
+    retryTracker: () => void;
 }
 
 interface TrackingLayerProps {
@@ -145,28 +151,55 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
     const TOO_CLOSE_HAND_SCALE = 0.16;
     const [cameraNotification, setCameraNotification] = useState<string | null>(null);
 
-    // HandLandmarker tracker readiness
+    // HandLandmarker tracker readiness + error state.
     const [trackerReady, setTrackerReady] = useState(false);
+    const [trackerError, setTrackerError] = useState<HandTrackerError | null>(null);
+    const [trackerDelegate, setTrackerDelegate] = useState<'GPU' | 'CPU' | null>(null);
+    // Bumping this counter triggers a fresh init attempt (Retry button).
+    const [trackerInitNonce, setTrackerInitNonce] = useState(0);
+    const retryTracker = useCallback(() => {
+        handTracker.close();
+        setTrackerReady(false);
+        setTrackerError(null);
+        setTrackerDelegate(null);
+        setTrackerInitNonce(n => n + 1);
+    }, []);
 
     // Vision loop enabled only when camera is live AND tracker is ready
     const visionEnabled = cameraState.status === 'running' && cameraState.streamActive && trackerReady;
 
     // ------------------------------------------------------------------
-    // Initialise HandLandmarker once
+    // Initialise HandLandmarker. Re-runs when retryTracker bumps nonce.
     // ------------------------------------------------------------------
     useEffect(() => {
-        // Skip if already initialized by asset preloader
+        let cancelled = false;
+
+        // Skip if already initialised (e.g. by asset preloader).
         if (handTracker.isReady()) {
             setTrackerReady(true);
+            setTrackerError(null);
+            setTrackerDelegate(handTracker.getActiveDelegate());
             return;
         }
 
         handTracker.initialize()
-            .then(() => setTrackerReady(true))
-            .catch(err => {
-                if (CAMERA_DEBUG) console.error('[HandTracker] init failed:', err);
+            .then(() => {
+                if (cancelled) return;
+                setTrackerReady(true);
+                setTrackerError(null);
+                setTrackerDelegate(handTracker.getActiveDelegate());
+            })
+            .catch(() => {
+                if (cancelled) return;
+                // Surface the error to the diagnostics object so the UI can
+                // show a real error message (NOT a silent log). Always.
+                setTrackerReady(false);
+                setTrackerError(handTracker.getLastError());
+                setTrackerDelegate(null);
             });
-    }, []);
+
+        return () => { cancelled = true; };
+    }, [trackerInitNonce]);
 
     // ------------------------------------------------------------------
     // Start camera once on mount
@@ -520,7 +553,10 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                 cameraStatus: cameraState.status as TrackingDiagnostics['cameraStatus'],
                 cameraErrorCode: cameraState.errorCode,
                 trackerReady,
+                trackerError,
+                trackerDelegate,
                 visionFps: cameraState.fpsVision,
+                retryTracker,
             }) : children}
 
             {/* DEBUG: active interaction bounds */}
