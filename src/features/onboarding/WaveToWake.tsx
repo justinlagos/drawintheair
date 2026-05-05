@@ -50,16 +50,38 @@ interface WaveToWakeProps {
 
 export const WaveToWake = ({ onWake, trackingResults }: WaveToWakeProps) => {
     const [waveCount, setWaveCount] = useState(0);
+    // 'searching' = no hand seen yet, 'detected' = hand recently seen,
+    // 'lost' = hand was seen but lost (give the user a hint)
+    const [handStatus, setHandStatus] = useState<'searching' | 'detected' | 'lost'>('searching');
+    // Allow tap-to-skip after 8s so the user is never permanently stuck
+    const [showFallback, setShowFallback] = useState(false);
     const prevX = useRef<number | null>(null);
-    const wakeThreshold = 5;
+    const wakeThreshold = 4;
     const lastWaveTime = useRef<number>(0);
-    // Initialise to 0; the first effect mounts the real "now" timestamp once.
-    // Direct Date.now() during render is impure and the React lint forbids it.
+    const lastHandSeenAt = useRef<number>(0);
     const waveStartTime = useRef<number>(0);
     const hasTrackedView = useRef<boolean>(false);
 
     useEffect(() => {
         waveStartTime.current = Date.now();
+        // Show "Tap here if it's not working" after 8 seconds
+        const fallbackTimer = setTimeout(() => setShowFallback(true), 8000);
+        return () => clearTimeout(fallbackTimer);
+    }, []);
+
+    // Hand-status watchdog: if no hand seen for 1.5s while we're 'detected',
+    // flip to 'lost' so the user gets a hint to come back into frame.
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const ms = Date.now() - lastHandSeenAt.current;
+            setHandStatus((prev) => {
+                if (lastHandSeenAt.current === 0) return 'searching';
+                if (ms < 1500) return 'detected';
+                if (prev === 'detected') return 'lost';
+                return prev;
+            });
+        }, 500);
+        return () => clearInterval(interval);
     }, []);
 
     const layout = useResponsiveLayout();
@@ -72,13 +94,20 @@ export const WaveToWake = ({ onWake, trackingResults }: WaveToWakeProps) => {
     /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         if (trackingResults && trackingResults.landmarks && trackingResults.landmarks.length > 0) {
+            // Mark hand as seen for the status indicator
+            lastHandSeenAt.current = Date.now();
+            setHandStatus('detected');
+
             const hand = trackingResults.landmarks[0];
             const tip = hand[8]; // Index tip
 
             if (prevX.current !== null) {
                 const dx = tip.x - prevX.current;
                 const now = Date.now();
-                if (Math.abs(dx) > 0.05 && now - lastWaveTime.current > 300) {
+                // Lowered threshold from 0.05 → 0.025 so slower waves register;
+                // tightened debounce from 300ms → 220ms so a vigorous wave
+                // doesn't get rate-limited.
+                if (Math.abs(dx) > 0.025 && now - lastWaveTime.current > 220) {
                     setWaveCount((c) => c + 1);
                     lastWaveTime.current = now;
                 }
@@ -317,6 +346,93 @@ export const WaveToWake = ({ onWake, trackingResults }: WaveToWakeProps) => {
                         >
                             Show me your hand and wave it side to side
                         </p>
+
+                        {/* Hand-detection status indicator */}
+                        <div
+                            style={{
+                                marginTop: isCompact ? 16 : 22,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                padding: '8px 16px',
+                                borderRadius: 9999,
+                                background:
+                                    handStatus === 'detected'
+                                        ? 'rgba(126, 217, 87, 0.18)'
+                                        : handStatus === 'lost'
+                                            ? 'rgba(255, 177, 77, 0.18)'
+                                            : 'rgba(85, 221, 224, 0.18)',
+                                border:
+                                    handStatus === 'detected'
+                                        ? '2px solid rgba(126, 217, 87, 0.55)'
+                                        : handStatus === 'lost'
+                                            ? '2px solid rgba(255, 177, 77, 0.55)'
+                                            : '2px solid rgba(85, 221, 224, 0.55)',
+                                fontFamily: tokens.fontFamily.body,
+                                fontWeight: 700,
+                                fontSize: isCompact ? '0.82rem' : '0.92rem',
+                                color: tokens.colors.charcoal,
+                                position: 'relative',
+                                zIndex: 1,
+                                transition: 'all 0.3s ease',
+                            }}
+                        >
+                            <span
+                                style={{
+                                    width: 10,
+                                    height: 10,
+                                    borderRadius: '50%',
+                                    background:
+                                        handStatus === 'detected'
+                                            ? tokens.colors.meadowGreen
+                                            : handStatus === 'lost'
+                                                ? tokens.colors.warmOrange
+                                                : tokens.colors.aqua,
+                                    boxShadow:
+                                        handStatus === 'detected'
+                                            ? `0 0 0 4px ${tokens.colors.meadowGreen}33`
+                                            : 'none',
+                                    animation: handStatus !== 'detected' ? 'wtw-pulse 1.4s ease-in-out infinite' : 'none',
+                                }}
+                            />
+                            {handStatus === 'detected'
+                                ? '✋ Got it! Now wave!'
+                                : handStatus === 'lost'
+                                    ? '👀 Come back into the picture'
+                                    : 'Looking for your hand…'}
+                        </div>
+
+                        {/* Tap-to-skip fallback if camera/wave isn't working */}
+                        {showFallback && waveCount < wakeThreshold && (
+                            <div style={{ marginTop: 18, position: 'relative', zIndex: 1 }}>
+                                <button
+                                    onClick={onWake}
+                                    style={{
+                                        background: '#FFFFFF',
+                                        border: `2.5px solid ${tokens.colors.deepPlum}`,
+                                        borderRadius: 9999,
+                                        padding: '10px 20px',
+                                        fontFamily: tokens.fontFamily.display,
+                                        fontWeight: 700,
+                                        fontSize: '0.9rem',
+                                        color: tokens.colors.deepPlum,
+                                        cursor: 'pointer',
+                                        boxShadow: '0 4px 10px rgba(108, 63, 164, 0.12)',
+                                    }}
+                                >
+                                    Skip — let me in
+                                </button>
+                                <p style={{
+                                    marginTop: 8,
+                                    fontFamily: tokens.fontFamily.body,
+                                    fontSize: '0.78rem',
+                                    color: tokens.colors.charcoal,
+                                    opacity: 0.6,
+                                }}>
+                                    Camera not working? Tap above to continue.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -337,6 +453,10 @@ export const WaveToWake = ({ onWake, trackingResults }: WaveToWakeProps) => {
                 @keyframes wtw-wave-hand {
                     0%, 100% { transform: rotate(-12deg); }
                     50% { transform: rotate(18deg); }
+                }
+                @keyframes wtw-pulse {
+                    0%, 100% { opacity: 1; transform: scale(1); }
+                    50% { opacity: 0.5; transform: scale(0.85); }
                 }
                 @media (prefers-reduced-motion: reduce) {
                     .wtw-cloud, .wtw-sun, .wtw-hand { animation: none !important; }
