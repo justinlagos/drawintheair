@@ -46,9 +46,15 @@ const useResponsiveLayout = () => {
 interface WaveToWakeProps {
     onWake: () => void;
     trackingResults: HandLandmarkerResult | null;
+    /** Camera state, passed in from TrackingLayer diagnostics. Optional for
+     *  backwards-compat with older test harnesses. */
+    cameraStatus?: 'idle' | 'requesting' | 'running' | 'error';
+    cameraErrorCode?: string | null;
+    trackerReady?: boolean;
+    visionFps?: number;
 }
 
-export const WaveToWake = ({ onWake, trackingResults }: WaveToWakeProps) => {
+export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorCode, trackerReady, visionFps }: WaveToWakeProps) => {
     const [waveCount, setWaveCount] = useState(0);
     // 'searching' = no hand seen yet, 'detected' = hand recently seen,
     // 'lost' = hand was seen but lost (give the user a hint)
@@ -347,60 +353,92 @@ export const WaveToWake = ({ onWake, trackingResults }: WaveToWakeProps) => {
                             Show me your hand and wave it side to side
                         </p>
 
-                        {/* Hand-detection status indicator */}
-                        <div
-                            style={{
-                                marginTop: isCompact ? 16 : 22,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 8,
-                                padding: '8px 16px',
-                                borderRadius: 9999,
-                                background:
-                                    handStatus === 'detected'
-                                        ? 'rgba(126, 217, 87, 0.18)'
-                                        : handStatus === 'lost'
-                                            ? 'rgba(255, 177, 77, 0.18)'
-                                            : 'rgba(85, 221, 224, 0.18)',
-                                border:
-                                    handStatus === 'detected'
-                                        ? '2px solid rgba(126, 217, 87, 0.55)'
-                                        : handStatus === 'lost'
-                                            ? '2px solid rgba(255, 177, 77, 0.55)'
-                                            : '2px solid rgba(85, 221, 224, 0.55)',
+                        {/* Real-status indicator — derived from camera + tracker + hand */}
+                        {(() => {
+                            // Decide which message to show, in priority order
+                            let statusKey: 'cam-error' | 'cam-loading' | 'tracker-loading' | 'hand-detected' | 'hand-lost' | 'hand-searching';
+                            if (cameraStatus === 'error') statusKey = 'cam-error';
+                            else if (cameraStatus === 'idle' || cameraStatus === 'requesting') statusKey = 'cam-loading';
+                            else if (trackerReady === false) statusKey = 'tracker-loading';
+                            else if (handStatus === 'detected') statusKey = 'hand-detected';
+                            else if (handStatus === 'lost') statusKey = 'hand-lost';
+                            else statusKey = 'hand-searching';
+
+                            const messages: Record<typeof statusKey, { msg: string; tone: 'aqua' | 'green' | 'orange' | 'red' }> = {
+                                'cam-error': {
+                                    msg: cameraErrorCode === 'PERMISSION_DENIED'
+                                        ? '🚫 Camera blocked. Allow it in your browser settings.'
+                                        : cameraErrorCode === 'NO_DEVICE'
+                                            ? '🚫 No camera found on this device.'
+                                            : cameraErrorCode === 'DEVICE_BUSY'
+                                                ? '⚠️ Camera in use by another app. Close it and refresh.'
+                                                : `⚠️ Camera error (${cameraErrorCode || 'unknown'})`,
+                                    tone: 'red',
+                                },
+                                'cam-loading': { msg: '📷 Starting camera…', tone: 'aqua' },
+                                'tracker-loading': { msg: '🤖 Loading hand tracker…', tone: 'aqua' },
+                                'hand-detected': { msg: '✋ Got it! Now wave!', tone: 'green' },
+                                'hand-lost': { msg: '👀 Come back into the picture', tone: 'orange' },
+                                'hand-searching': { msg: 'Looking for your hand…', tone: 'aqua' },
+                            };
+                            const { msg, tone } = messages[statusKey];
+                            const colors = {
+                                aqua: { bg: 'rgba(85, 221, 224, 0.18)', border: 'rgba(85, 221, 224, 0.55)', dot: tokens.colors.aqua },
+                                green: { bg: 'rgba(126, 217, 87, 0.18)', border: 'rgba(126, 217, 87, 0.55)', dot: tokens.colors.meadowGreen },
+                                orange: { bg: 'rgba(255, 177, 77, 0.18)', border: 'rgba(255, 177, 77, 0.55)', dot: tokens.colors.warmOrange },
+                                red: { bg: 'rgba(255, 107, 107, 0.18)', border: 'rgba(255, 107, 107, 0.55)', dot: tokens.colors.coral },
+                            }[tone];
+
+                            return (
+                                <div
+                                    style={{
+                                        marginTop: isCompact ? 16 : 22,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 8,
+                                        padding: '8px 16px',
+                                        borderRadius: 9999,
+                                        background: colors.bg,
+                                        border: `2px solid ${colors.border}`,
+                                        fontFamily: tokens.fontFamily.body,
+                                        fontWeight: 700,
+                                        fontSize: isCompact ? '0.82rem' : '0.92rem',
+                                        color: tokens.colors.charcoal,
+                                        position: 'relative',
+                                        zIndex: 1,
+                                        transition: 'all 0.3s ease',
+                                        maxWidth: '90%',
+                                    }}
+                                >
+                                    <span
+                                        style={{
+                                            width: 10,
+                                            height: 10,
+                                            borderRadius: '50%',
+                                            flexShrink: 0,
+                                            background: colors.dot,
+                                            boxShadow: tone === 'green' ? `0 0 0 4px ${colors.dot}33` : 'none',
+                                            animation: tone !== 'green' ? 'wtw-pulse 1.4s ease-in-out infinite' : 'none',
+                                        }}
+                                    />
+                                    {msg}
+                                </div>
+                            );
+                        })()}
+
+                        {/* Tiny FPS readout (only when running, helps debug perf) */}
+                        {visionFps !== undefined && visionFps > 0 && (
+                            <p style={{
+                                marginTop: 8,
                                 fontFamily: tokens.fontFamily.body,
-                                fontWeight: 700,
-                                fontSize: isCompact ? '0.82rem' : '0.92rem',
+                                fontSize: '0.72rem',
                                 color: tokens.colors.charcoal,
-                                position: 'relative',
-                                zIndex: 1,
-                                transition: 'all 0.3s ease',
-                            }}
-                        >
-                            <span
-                                style={{
-                                    width: 10,
-                                    height: 10,
-                                    borderRadius: '50%',
-                                    background:
-                                        handStatus === 'detected'
-                                            ? tokens.colors.meadowGreen
-                                            : handStatus === 'lost'
-                                                ? tokens.colors.warmOrange
-                                                : tokens.colors.aqua,
-                                    boxShadow:
-                                        handStatus === 'detected'
-                                            ? `0 0 0 4px ${tokens.colors.meadowGreen}33`
-                                            : 'none',
-                                    animation: handStatus !== 'detected' ? 'wtw-pulse 1.4s ease-in-out infinite' : 'none',
-                                }}
-                            />
-                            {handStatus === 'detected'
-                                ? '✋ Got it! Now wave!'
-                                : handStatus === 'lost'
-                                    ? '👀 Come back into the picture'
-                                    : 'Looking for your hand…'}
-                        </div>
+                                opacity: 0.45,
+                                fontWeight: 600,
+                            }}>
+                                Tracking · {visionFps} fps
+                            </p>
+                        )}
 
                         {/* Tap-to-skip fallback if camera/wave isn't working */}
                         {showFallback && waveCount < wakeThreshold && (

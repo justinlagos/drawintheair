@@ -65,6 +65,15 @@ export interface TrackingFrameData {
     detectionLatencyMs?: number;
 }
 
+/** Diagnostic info exposed to children so they can show meaningful UX
+ *  about why tracking might not be working. */
+export interface TrackingDiagnostics {
+    cameraStatus: 'idle' | 'requesting' | 'running' | 'error';
+    cameraErrorCode: string | null;
+    trackerReady: boolean;
+    visionFps: number;
+}
+
 interface TrackingLayerProps {
     onFrame?: (
         ctx: CanvasRenderingContext2D,
@@ -73,7 +82,10 @@ interface TrackingLayerProps {
         height: number,
         drawingUtils: DrawingUtils | null,
     ) => void;
-    children?: React.ReactNode | ((frameDataRef: React.MutableRefObject<TrackingFrameData>) => React.ReactNode);
+    children?: React.ReactNode | ((
+        frameDataRef: React.MutableRefObject<TrackingFrameData>,
+        diagnostics: TrackingDiagnostics,
+    ) => React.ReactNode);
 }
 
 // ---------------------------------------------------------------------------
@@ -242,7 +254,7 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                 notification = '\u2728 Step back a little \u2014 you\u2019re doing great!';
             }
         }
-        setCameraNotification(_prev => notification);
+        setCameraNotification(notification);
 
         // Build frame data
         const frameData = convertToFrameData(interactionState);
@@ -461,17 +473,24 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
             overflow: 'hidden',
             boxSizing: 'border-box',
         }}>
-            {/* Hidden video element — off-screen, no size attributes */}
+            {/* Camera video element — kept on-screen at 1×1 px / opacity 0.
+                Critical: do NOT use visibility:hidden, display:none, or
+                contain:strict — Safari, iOS Chrome, and several Android
+                browsers pause the video decoder for elements that are
+                "fully" hidden, which starves MediaPipe of frames and
+                makes hand tracking silently fail. Keeping a 1×1 visible
+                pixel guarantees the decoder keeps running. */}
             <video
                 ref={videoRef}
                 style={{
-                    position: 'absolute',
-                    top: '-9999px',
-                    left: '-9999px',
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '1px',
+                    height: '1px',
                     opacity: 0,
-                    visibility: 'hidden',
-                    // Use CSS contain so the browser doesn't allocate a visible surface
-                    contain: 'strict',
+                    pointerEvents: 'none',
+                    zIndex: 0,
                 }}
                 playsInline
                 muted
@@ -496,8 +515,13 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                 }}
             />
 
-            {/* Children receive frame data via render-prop or as static children */}
-            {typeof children === 'function' ? children(lastFrameDataRef) : children}
+            {/* Children receive frame data + diagnostics via render-prop. */}
+            {typeof children === 'function' ? children(lastFrameDataRef, {
+                cameraStatus: cameraState.status as TrackingDiagnostics['cameraStatus'],
+                cameraErrorCode: cameraState.errorCode,
+                trackerReady,
+                visionFps: cameraState.fpsVision,
+            }) : children}
 
             {/* DEBUG: active interaction bounds */}
             {showDebugBounds && (

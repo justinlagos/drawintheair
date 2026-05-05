@@ -260,7 +260,7 @@ function App() {
       <MessageCardOverlay />
       <CountdownOverlay />
       <TrackingLayer onFrame={activeLogic}>
-        {(frameRef) => {
+        {(frameRef, diagnostics) => {
           return (
             <>
               {/* Mode Background — unified toy world on every screen */}
@@ -296,6 +296,10 @@ function App() {
                 <WaveToWake
                   trackingResults={frameRef.current.results}
                   onWake={handleWake}
+                  cameraStatus={diagnostics.cameraStatus}
+                  cameraErrorCode={diagnostics.cameraErrorCode}
+                  trackerReady={diagnostics.trackerReady}
+                  visionFps={diagnostics.visionFps}
                 />
               )}
 
