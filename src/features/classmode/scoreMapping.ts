@@ -89,16 +89,16 @@ export function rawToStars(mode: GameModeId, rawScore: number): number {
 /**
  * Human-friendly labels for modes.
  */
-export const MODE_LABELS: Record<GameModeId, { title: string; icon: string }> = {
-  'calibration':      { title: 'Bubble Pop', icon: '🫧' },
-  'free':             { title: 'Free Paint', icon: '🎨' },
-  'pre-writing':      { title: 'Tracing', icon: '✏️' },
-  'sort-and-place':   { title: 'Sort & Place', icon: '🗂️' },
-  'word-search':      { title: 'Word Search', icon: '🔍' },
-  'colour-builder':   { title: 'Colour Builder', icon: '🎨' },
-  'balloon-math':     { title: 'Balloon Math', icon: '🎈' },
-  'rainbow-bridge':   { title: 'Rainbow Bridge', icon: '🌈' },
-  'gesture-spelling': { title: 'Spelling Stars', icon: '✍️' },
+export const MODE_LABELS: Record<GameModeId, { title: string; icon: string; subtitle: string }> = {
+  'calibration':      { title: 'Bubble Pop',     icon: '🫧',  subtitle: 'Warm up your hands' },
+  'free':             { title: 'Free Paint',     icon: '🎨',  subtitle: 'Create anything' },
+  'pre-writing':      { title: 'Tracing',        icon: '✏️',  subtitle: 'Follow the path' },
+  'sort-and-place':   { title: 'Sort & Place',   icon: '🗂️',  subtitle: 'Think and sort' },
+  'word-search':      { title: 'Word Search',    icon: '🔍',  subtitle: 'Find the words' },
+  'colour-builder':   { title: 'Colour Builder', icon: '🎨',  subtitle: 'Mix the colours' },
+  'balloon-math':     { title: 'Balloon Math',   icon: '🎈',  subtitle: 'Pop the right number' },
+  'rainbow-bridge':   { title: 'Rainbow Bridge', icon: '🌈',  subtitle: 'Match the colours' },
+  'gesture-spelling': { title: 'Spelling Stars', icon: '✍️',  subtitle: 'Spell the word' },
 };
 
 /** All modes that support competitive scoring in Class Mode */

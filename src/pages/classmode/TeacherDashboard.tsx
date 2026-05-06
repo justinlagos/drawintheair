@@ -175,14 +175,16 @@ export default function TeacherDashboard() {
           {SCOREABLE_MODES.map((modeId) => {
             const mode = MODE_LABELS[modeId];
             return (
-              <div
+              <button
                 key={modeId}
+                type="button"
                 className={`cm-activity-card${selectedActivity === modeId ? ' selected' : ''}`}
                 onClick={() => setSelectedActivity(modeId)}
               >
-                <span className="cm-activity-icon">{mode.icon}</span>
-                <span className="cm-activity-name">{mode.title}</span>
-              </div>
+                <div className="cm-activity-icon" aria-hidden>{mode.icon}</div>
+                <div className="cm-activity-name">{mode.title}</div>
+                <div className="cm-activity-subtitle">{mode.subtitle}</div>
+              </button>
             );
           })}
         </div>

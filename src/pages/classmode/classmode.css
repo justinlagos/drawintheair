@@ -274,47 +274,83 @@
 
 .cm-activity-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
+  /* Match the general game-menu rhythm: 4 columns on desktop, 2 on
+     tablet, 1 on mobile. minmax 220px keeps tiles square-ish. */
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
   margin: 24px 0 40px;
 }
 
 .cm-activity-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+  gap: 10px;
   background: #FFFFFF;
   border: 2.5px solid var(--cm-border);
   border-radius: 24px;
-  padding: 22px 18px;
-  text-align: center;
+  padding: 28px 18px 22px;
   cursor: pointer;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.25s ease;
   font-family: 'Nunito', system-ui, sans-serif;
   box-shadow: var(--cm-shadow-panel);
+  /* Reset native button styles so this works as a real <button> */
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  min-height: 200px;
+  color: inherit;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.25s ease,
+              border-color 0.25s ease;
 }
 
-.cm-activity-card:hover {
+.cm-activity-card:hover,
+.cm-activity-card:focus-visible {
   transform: translateY(-4px);
   border-color: var(--cm-deep-plum);
   box-shadow: var(--cm-shadow-float);
+  outline: none;
+}
+
+.cm-activity-card.selected {
+  border-color: var(--cm-deep-plum);
+  background: linear-gradient(180deg, #FFFFFF 0%, #F4FAFF 100%);
+  box-shadow: 0 0 0 4px rgba(108, 63, 164, 0.18), var(--cm-shadow-float);
+  transform: translateY(-4px);
 }
 
 .cm-activity-icon {
-  width: 56px;
-  height: 56px;
-  margin: 0 auto 12px;
-  border-radius: 18px;
-  background: linear-gradient(165deg, var(--cm-soft-lavender) 0%, var(--cm-bg-tinted) 100%);
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.8rem;
+  width: 88px;
+  height: 88px;
+  border-radius: 22px;
+  background: linear-gradient(165deg, var(--cm-soft-lavender) 0%, var(--cm-bg-tinted) 100%);
   border: 2px solid var(--cm-border);
+  font-size: 2.6rem;
+  line-height: 1;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
 .cm-activity-name {
   font-family: 'Fredoka', 'Baloo 2', system-ui, sans-serif;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.1rem;
+  line-height: 1.2;
   color: var(--cm-charcoal);
+  margin: 0;
+}
+
+.cm-activity-subtitle {
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--cm-charcoal-soft);
   margin: 0;
 }
 
