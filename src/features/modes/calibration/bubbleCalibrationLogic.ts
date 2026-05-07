@@ -507,7 +507,7 @@ export const bubbleCalibrationLogic = (
     const currentGoal = config.targetScore;
     if (score >= currentGoal && !milestoneReached) {
         milestoneReached = true;
-        const totalDurationMs = gameStartTime > 0 ? now - gameStartTime : null;
+        const totalDurationMs = gameStartTime !== null && gameStartTime > 0 ? now - gameStartTime : null;
         logEvent('mode_completed', { game_mode: 'calibration', stage_id: `level-${currentLevel}` });
         logEvent('stage_completed', {
             game_mode: 'calibration',

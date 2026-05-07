@@ -637,7 +637,7 @@ function setupPageListeners(): void {
 
     window.addEventListener('popstate', () => {
         logEvent('nav_back', {
-            page: typeof window !== 'undefined' ? window.location.pathname : null,
+            page: typeof window !== 'undefined' ? window.location.pathname : undefined,
         });
     });
 }

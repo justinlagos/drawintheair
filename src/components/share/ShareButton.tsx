@@ -267,7 +267,7 @@ export function ShareButton({ gameMode, variant = 'inline' }: ShareButtonProps) 
         onClick={() => {
           logEvent('share_button_clicked', {
             component: 'ShareButton',
-            meta: { activity_slug: activitySlug, variant },
+            meta: { activity_slug: gameMode, variant },
           });
           setOpen(true);
         }}
