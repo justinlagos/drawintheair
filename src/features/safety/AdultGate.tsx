@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { perf, type PerformanceOverride } from '../../core/perf';
 import { KidPanel, KidButton } from '../../components/kid-ui';
 import { tokens } from '../../styles/tokens';
+import { logEvent } from '../../lib/analytics';
 
 // Responsive hook
 const useResponsiveLayout = () => {
@@ -67,6 +68,10 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
     const startHold = () => {
         setIsHolding(true);
         holdStartTime.current = Date.now();
+        // Adult gate analytics: every kid-friendly hold attempt is a
+        // tiny safety event — important for the privacy story and for
+        // detecting accidental presses (gate_failed share will tell us).
+        logEvent('adult_gate_attempt');
 
         const updateProgress = () => {
             if (holdStartTime.current) {
@@ -78,6 +83,9 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                     setShowMenu(true);
                     setIsHolding(false);
                     holdStartTime.current = null;
+                    logEvent('adult_gate_passed', {
+                        value_number: HOLD_DURATION,
+                    });
                 } else {
                     animationRef.current = requestAnimationFrame(updateProgress);
                 }
@@ -88,6 +96,17 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
     };
 
     const endHold = () => {
+        // If we exited the hold before completing, log a fail with the
+        // duration so we can spot accidental presses vs deliberate.
+        if (holdStartTime.current !== null) {
+            const heldFor = Date.now() - holdStartTime.current;
+            // Don't log on the success path — startHold already fired
+            // adult_gate_passed and reset holdStartTime to null there.
+            logEvent('adult_gate_failed', {
+                value_number: heldFor,
+                meta: { progress_pct: Math.round((heldFor / HOLD_DURATION) * 100) },
+            });
+        }
         setIsHolding(false);
         holdStartTime.current = null;
         if (animationRef.current) {

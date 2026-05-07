@@ -112,6 +112,13 @@ function App() {
   }, []);
 
   const handleModeSelect = useCallback((mode: GameMode) => {
+    // Detect mode-switching (kid bounced back to the menu and picked a
+    // different mode without ever closing the session). This pattern is
+    // a strong "what's hooking them" signal — far more useful than just
+    // counting independent mode_started events.
+    const wasInGame = appState === 'game';
+    const previousMode = gameMode;
+
     setGameMode(mode);
     setAppState('game');
     // Enable flags for this mode
@@ -119,6 +126,12 @@ function App() {
 
     // Fire game_selected event for pilot analytics
     if (hasActiveSession()) {
+      if (wasInGame && previousMode !== mode) {
+        logEvent('mode_switched', {
+          game_mode: mode,
+          meta: { from_mode: previousMode, to_mode: mode },
+        });
+      }
       logEvent('mode_selected', { game_mode: mode });
       logEvent('mode_started', { game_mode: mode, stage_id: 'initial' });
     }
@@ -152,9 +165,16 @@ function App() {
   const handleExitToMenu = useCallback(() => {
     setAppState('menu');
     drawingEngine.clear();
-    // Fire events for pilot analytics
+    // Fire events for pilot analytics. We treat every menu-button exit
+    // as `mode_abandoned` — the per-stage `mode_completed` events from
+    // inside the game logic are the source of truth for "actually
+    // finished a stage". Using mode_completed here was a lie that made
+    // every exit look like a win.
     if (hasActiveSession()) {
-      logEvent('mode_completed', { game_mode: gameMode, stage_id: 'exit' });
+      logEvent('mode_abandoned', {
+        game_mode: gameMode,
+        meta: { reason: 'exit_to_menu' },
+      });
       logEvent('menu_opened');
     }
   }, [gameMode]);

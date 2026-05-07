@@ -23,6 +23,29 @@ import { TryFreeModal } from '../components/TryFreeModal';
 import { submitFormData } from '../lib/formSubmission';
 import { KidButton } from '../components/kid-ui';
 import { tokens } from '../styles/tokens';
+import { logEvent } from '../lib/analytics';
+
+/**
+ * One canonical helper so every Try Free CTA (we have seven of them)
+ * fires the same `cta_click` event with a `meta.source` discriminator.
+ * Without this, A/B'ing CTA copy or position is impossible because
+ * every click collapses into one indistinguishable funnel entry.
+ */
+type CtaSource =
+  | 'nav'
+  | 'mobile_menu'
+  | 'hero'
+  | 'activities'
+  | 'mode_tile'
+  | 'privacy_section'
+  | 'final_banner';
+
+function trackCtaClick(source: CtaSource, label: string): void {
+    logEvent('cta_click', {
+        component: 'Landing',
+        meta: { source, label, target: 'try_free_modal' },
+    });
+}
 import { LANDING_INLINE_CSS } from '../components/landing/landingInlineStyles';
 import '../components/landing/landing-kid.css';
 
@@ -873,7 +896,7 @@ export const Landing: React.FC = () => {
             ))}
           </div>
           <div className="dl-desktop-only dl-items-center" style={{ gap: 12 }}>
-            <KidButton variant="primary" size="md" onClick={() => setTryFreeOpen(true)} style={{ minHeight: 44, padding: '8px 22px', fontSize: '0.95rem' }}>Try Free</KidButton>
+            <KidButton variant="primary" size="md" onClick={() => { trackCtaClick('nav', 'Try Free'); setTryFreeOpen(true); }} style={{ minHeight: 44, padding: '8px 22px', fontSize: '0.95rem' }}>Try Free</KidButton>
             <KidButton variant="secondary" size="md" onClick={openPilotModal} style={{ minHeight: 44, padding: '8px 20px', fontSize: '0.95rem' }}>Book a Demo</KidButton>
           </div>
           <button className="dl-mobile-only" style={{ background: 'none', border: 'none', color: tokens.colors.deepPlum }} onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Menu">
@@ -888,7 +911,7 @@ export const Landing: React.FC = () => {
               <a key={l.id} href={`#${l.id}`} onClick={(e) => scrollTo(e, l.id)} className="dl-mobile-nav-link" style={{ color: tokens.colors.charcoal }}>{l.label}</a>
             ))}
             <div className="dl-flex-col dl-gap-3" style={{ marginTop: 12 }}>
-              <KidButton variant="primary" size="md" fullWidth onClick={() => { closeMobileMenu(); setTryFreeOpen(true); }}>Try Free</KidButton>
+              <KidButton variant="primary" size="md" fullWidth onClick={() => { trackCtaClick('mobile_menu', 'Try Free'); closeMobileMenu(); setTryFreeOpen(true); }}>Try Free</KidButton>
               <KidButton variant="secondary" size="md" fullWidth onClick={() => { closeMobileMenu(); openPilotModal(); }}>Book a Demo</KidButton>
             </div>
           </div>
@@ -917,7 +940,7 @@ export const Landing: React.FC = () => {
             </p>
             <div className="dl-flex dl-flex-wrap dl-items-center dl-gap-4" style={{ marginBottom: 22 }}>
               <div className="dl-cta-glow">
-                <KidButton variant="primary" size="lg" onClick={() => setTryFreeOpen(true)}>Try Draw in the Air. It's Free</KidButton>
+                <KidButton variant="primary" size="lg" onClick={() => { trackCtaClick('hero', "Try Draw in the Air. It's Free"); setTryFreeOpen(true); }}>Try Draw in the Air. It's Free</KidButton>
               </div>
               <KidButton variant="secondary" size="lg" onClick={(e) => scrollTo(e as unknown as React.MouseEvent<HTMLAnchorElement>, 'how-it-works')}>See How It Works</KidButton>
             </div>
@@ -1021,7 +1044,7 @@ export const Landing: React.FC = () => {
             <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '1.05rem', lineHeight: 1.6, color: tokens.colors.charcoal, opacity: 0.85, marginBottom: 24, maxWidth: 360 }}>
               Playful activities that turn movement into meaningful learning.
             </p>
-            <KidButton variant="primary" size="md" onClick={() => setTryFreeOpen(true)}>Explore Activities →</KidButton>
+            <KidButton variant="primary" size="md" onClick={() => { trackCtaClick('activities', 'Explore Activities'); setTryFreeOpen(true); }}>Explore Activities →</KidButton>
           </div>
           <div>
             <div className="dl-reveal dl-mode-tiles">
@@ -1042,7 +1065,7 @@ export const Landing: React.FC = () => {
                 </div>
                 <h3 style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.15rem', marginBottom: 4, color: '#FFFFFF' }}>Try it now</h3>
                 <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.82rem', opacity: 0.95, lineHeight: 1.4, marginBottom: 14, color: '#FFFFFF', fontWeight: 600 }}>Jump in and play in your browser.</p>
-                <KidButton variant="success" size="md" onClick={() => setTryFreeOpen(true)} style={{ minHeight: 40, padding: '6px 16px', fontSize: '0.85rem' }}>Start Playing</KidButton>
+                <KidButton variant="success" size="md" onClick={() => { trackCtaClick('mode_tile', 'Start Playing'); setTryFreeOpen(true); }} style={{ minHeight: 40, padding: '6px 16px', fontSize: '0.85rem' }}>Start Playing</KidButton>
               </div>
             </div>
             <p className="dl-scroll-hint">← swipe to explore →</p>
@@ -1093,7 +1116,7 @@ export const Landing: React.FC = () => {
               ))}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-              <KidButton variant="primary" size="md" onClick={() => setTryFreeOpen(true)}>Start in 10 Seconds →</KidButton>
+              <KidButton variant="primary" size="md" onClick={() => { trackCtaClick('privacy_section', 'Start in 10 Seconds'); setTryFreeOpen(true); }}>Start in 10 Seconds →</KidButton>
               {/* Kid+shield sits inline next to the button so it's never clipped */}
               <div style={{ width: 130, height: 130, flexShrink: 0 }}>
                 <KidShield />
@@ -1262,7 +1285,7 @@ export const Landing: React.FC = () => {
               <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '1rem', color: '#FFFFFF', opacity: 0.95, marginBottom: 22 }}>
                 Try Draw in the Air now. Free, safe and joyful.
               </p>
-              <KidButton variant="success" size="lg" onClick={() => setTryFreeOpen(true)}>Launch Draw in the Air</KidButton>
+              <KidButton variant="success" size="lg" onClick={() => { trackCtaClick('final_banner', 'Launch Draw in the Air'); setTryFreeOpen(true); }}>Launch Draw in the Air</KidButton>
               <p style={{ marginTop: 14, fontFamily: tokens.fontFamily.body, fontSize: '0.85rem', color: '#FFFFFF', opacity: 0.95, fontWeight: 600 }}>
                 Free to try · No downloads · No credit card
               </p>
