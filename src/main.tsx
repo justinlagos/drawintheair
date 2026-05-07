@@ -49,6 +49,10 @@ const ShareLandingPage = React.lazy(() => import('./pages/seo/ShareLandingPage.t
 // Admin — internal analytics insights (auth-gated, allow-list)
 const InsightsDashboard = React.lazy(() => import('./pages/admin/InsightsDashboard.tsx'));
 
+// Setup guides — idiot-proof quick-start, print-optimised for A4.
+const TeacherSetupGuide = React.lazy(() => import('./pages/setup/TeacherSetupGuide.tsx'));
+const ParentSetupGuide  = React.lazy(() => import('./pages/setup/ParentSetupGuide.tsx'));
+
 // Class Mode v2 — conductor model. One persistent surface per role.
 //   /class            → TeacherClassConsole  (replaces TeacherDashboard +
 //                       LobbyScreen + LiveRoundScreen + ResultsScreen)
@@ -116,6 +120,10 @@ function getRouteFromPath(path: string, hash: string): string {
   // Education audience pages
   if (path === '/for-teachers') return 'for-teachers';
   if (path === '/for-parents') return 'for-parents';
+
+  // Setup guides — quick-start
+  if (path === '/teachers/setup') return 'teacher-setup';
+  if (path === '/parents/setup') return 'parent-setup';
 
   // /stem-learning — redirect to ai-learning-tools-for-kids (same audience, avoids 404)
   if (path === '/stem-learning') return 'usecase';
@@ -321,6 +329,22 @@ function Root() {
     return (
       <React.Suspense fallback={<DemoLoader />}>
         <ForParentsPage />
+      </React.Suspense>
+    );
+  }
+
+  if (route === 'teacher-setup') {
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <TeacherSetupGuide />
+      </React.Suspense>
+    );
+  }
+
+  if (route === 'parent-setup') {
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <ParentSetupGuide />
       </React.Suspense>
     );
   }

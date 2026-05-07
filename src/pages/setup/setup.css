@@ -1,0 +1,446 @@
+/* ════════════════════════════════════════════════════════════════════
+   Setup guides — teachers + parents.
+
+   Design intent: idiot-proof. Big numbers, short sentences, one
+   thought per line. Looks great in browser AND prints to A4 cleanly
+   (Cmd+P → Save as PDF / Print). The "Print this guide" button just
+   calls window.print().
+
+   Brand tokens: matches the Kid-UI palette (plum / sunshine / aqua /
+   cream) so it feels like the same product as the rest of the app.
+   ════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --sg-bg:           #F7F5FB;
+  --sg-cream:        linear-gradient(180deg, #FFFAEB 0%, #FFF6E5 100%);
+  --sg-sky:          linear-gradient(180deg, #BEEBFF 0%, #DEF5FF 100%);
+  --sg-panel:        #FFFFFF;
+  --sg-line:         rgba(63, 64, 82, 0.10);
+  --sg-line-soft:    rgba(63, 64, 82, 0.06);
+  --sg-ink:          #3F4052;
+  --sg-ink-soft:     #6B6F84;
+  --sg-plum:         #6C3FA4;
+  --sg-plum-soft:    rgba(108, 63, 164, 0.08);
+  --sg-plum-line:    rgba(108, 63, 164, 0.20);
+  --sg-sunshine:     #FFD84D;
+  --sg-sunshine-soft:rgba(255, 216, 77, 0.30);
+  --sg-aqua:         #55DDE0;
+  --sg-aqua-soft:    rgba(85, 221, 224, 0.18);
+  --sg-coral:        #FF6B6B;
+  --sg-meadow:       #7ED957;
+  --sg-good-bg:      rgba(126, 217, 87, 0.18);
+  --sg-warn-bg:      rgba(255, 177, 77, 0.18);
+  --sg-display:      "Fredoka", system-ui, -apple-system, sans-serif;
+  --sg-body:         "Nunito", system-ui, -apple-system, sans-serif;
+}
+
+/* ── Page shell ─────────────────────────────────────────────── */
+.sg-page {
+  background: var(--sg-bg);
+  min-height: 100vh;
+  color: var(--sg-ink);
+  font-family: var(--sg-body);
+  font-size: 16px;
+  line-height: 1.55;
+}
+.sg-wrap {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 56px 28px 80px;
+}
+
+/* ── Hero ─────────────────────────────────────────────────────── */
+.sg-hero {
+  position: relative;
+  background: var(--sg-cream);
+  border: 3px solid rgba(108, 63, 164, 0.16);
+  border-radius: 36px;
+  padding: 44px 48px 40px;
+  box-shadow: 0 24px 60px rgba(108, 63, 164, 0.10);
+  margin-bottom: 36px;
+  overflow: hidden;
+}
+.sg-hero::before {
+  content: '';
+  position: absolute;
+  top: -28px;
+  right: -28px;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #FFF1B5 0%, var(--sg-sunshine) 50%, rgba(255, 216, 77, 0) 100%);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.sg-hero-eyebrow {
+  font-family: var(--sg-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sg-plum);
+  margin: 0 0 10px;
+}
+.sg-hero h1 {
+  margin: 0 0 8px;
+  font-family: var(--sg-display);
+  font-weight: 700;
+  font-size: clamp(2rem, 4.5vw, 2.8rem);
+  letter-spacing: -0.01em;
+  color: var(--sg-ink);
+}
+.sg-hero p {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--sg-ink-soft);
+  max-width: 56ch;
+}
+.sg-hero-actions {
+  margin-top: 22px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────── */
+.sg-btn {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  font-family: var(--sg-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 10px 22px;
+  border-radius: 999px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.sg-btn-primary {
+  background: linear-gradient(180deg, #7E4FB8 0%, var(--sg-plum) 100%);
+  color: #FFFFFF;
+  box-shadow: 0 6px 16px rgba(108, 63, 164, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.sg-btn-primary:hover { transform: translateY(-1px); }
+.sg-btn-secondary {
+  background: #FFFFFF;
+  color: var(--sg-plum);
+  border: 2px solid var(--sg-plum);
+}
+.sg-btn-secondary:hover { background: var(--sg-plum-soft); }
+
+/* ── Sections ─────────────────────────────────────────────────── */
+.sg-section {
+  background: var(--sg-panel);
+  border: 1px solid var(--sg-line);
+  border-radius: 24px;
+  padding: 28px 32px;
+  margin-bottom: 18px;
+  box-shadow: 0 1px 2px rgba(63, 64, 82, 0.03);
+}
+.sg-section h2 {
+  margin: 0 0 18px;
+  font-family: var(--sg-display);
+  font-weight: 700;
+  font-size: 1.45rem;
+  color: var(--sg-ink);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sg-section h2 .sg-h-emoji {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+.sg-section h3 {
+  margin: 18px 0 6px;
+  font-family: var(--sg-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--sg-ink);
+}
+.sg-section p { margin: 0 0 10px; }
+.sg-section p:last-child { margin-bottom: 0; }
+.sg-section a { color: var(--sg-plum); font-weight: 600; }
+
+/* ── Step list (the big-numbered "60-second" list) ────────────── */
+.sg-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: sg-step;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.sg-steps > li {
+  counter-increment: sg-step;
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 16px;
+  padding: 16px 18px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FBFCFF 100%);
+  border: 1px solid var(--sg-plum-line);
+  border-radius: 16px;
+  align-items: start;
+}
+.sg-steps > li::before {
+  content: counter(sg-step);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--sg-display);
+  font-weight: 700;
+  font-size: 1.6rem;
+  background: var(--sg-plum);
+  color: #FFFFFF;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(108, 63, 164, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.sg-step-title {
+  font-family: var(--sg-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--sg-ink);
+  margin: 4px 0 4px;
+}
+.sg-step-body {
+  color: var(--sg-ink-soft);
+  font-size: 0.95rem;
+  margin: 0;
+}
+.sg-step-body code {
+  background: var(--sg-plum-soft);
+  color: var(--sg-plum);
+  padding: 1px 8px;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.92em;
+  font-weight: 600;
+}
+.sg-step-body strong { color: var(--sg-ink); font-weight: 700; }
+
+/* ── Checklist ────────────────────────────────────────────────── */
+.sg-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+.sg-checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #FBFCFF;
+  border: 1px solid var(--sg-line);
+  border-radius: 12px;
+  font-size: 0.95rem;
+}
+.sg-checklist li::before {
+  content: '✓';
+  color: var(--sg-meadow);
+  font-weight: 700;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  background: var(--sg-good-bg);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+/* ── Transport / control list (in-class teacher controls) ──── */
+.sg-transport {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.sg-transport li {
+  background: var(--sg-aqua-soft);
+  border: 1px solid rgba(85, 221, 224, 0.45);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+.sg-transport-icon {
+  font-size: 1.4rem;
+  margin-bottom: 4px;
+  display: block;
+}
+.sg-transport-title {
+  font-family: var(--sg-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--sg-ink);
+}
+.sg-transport-desc {
+  color: var(--sg-ink-soft);
+  font-size: 0.85rem;
+  margin-top: 2px;
+}
+
+/* ── Troubleshooting / FAQ ───────────────────────────────────── */
+.sg-faq {
+  margin: 0;
+  padding: 0;
+}
+.sg-faq dt {
+  font-family: var(--sg-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--sg-ink);
+  margin-top: 14px;
+}
+.sg-faq dt::before {
+  content: '↳ ';
+  color: var(--sg-plum);
+  margin-right: 4px;
+}
+.sg-faq dd {
+  margin: 4px 0 0 18px;
+  color: var(--sg-ink-soft);
+  font-size: 0.95rem;
+}
+
+/* ── Callout (privacy / encouragement) ───────────────────────── */
+.sg-callout {
+  background: var(--sg-sky);
+  border: 2px solid rgba(85, 221, 224, 0.40);
+  border-radius: 18px;
+  padding: 18px 22px;
+  margin: 14px 0;
+}
+.sg-callout-title {
+  font-family: var(--sg-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--sg-ink);
+  margin: 0 0 4px;
+}
+
+/* ── Distribution loop block (bottom of page) ────────────────── */
+.sg-share {
+  background: var(--sg-cream);
+  border: 2px dashed rgba(108, 63, 164, 0.30);
+  border-radius: 20px;
+  padding: 24px 28px;
+  margin-top: 28px;
+  text-align: center;
+}
+.sg-share h2 {
+  margin: 0 0 6px;
+  font-family: var(--sg-display);
+  color: var(--sg-plum);
+  font-size: 1.25rem;
+}
+.sg-share p {
+  margin: 0 0 14px;
+  color: var(--sg-ink-soft);
+  font-size: 0.95rem;
+}
+.sg-share-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ── Footer ──────────────────────────────────────────────────── */
+.sg-footer {
+  text-align: center;
+  margin-top: 32px;
+  font-size: 13px;
+  color: var(--sg-ink-soft);
+}
+.sg-footer a { color: var(--sg-plum); }
+
+/* ════════════════════════════════════════════════════════════════
+   Print styles — A4 staffroom poster.
+
+   Hides nav / footer / share block; tightens type; forces page
+   breaks before "If something goes wrong" so the troubleshooting
+   bit lands on its own page.
+   ════════════════════════════════════════════════════════════════ */
+@media print {
+  html, body { background: #FFFFFF !important; }
+  .sg-page { background: #FFFFFF !important; }
+  .sg-wrap { padding: 12mm 14mm !important; max-width: 100% !important; }
+
+  /* Hide everything that's not part of the printed guide */
+  .sg-no-print, header, nav, footer { display: none !important; }
+  .sg-share { display: none !important; }
+
+  .sg-hero {
+    background: #FFFFFF !important;
+    border: 2px solid #6C3FA4 !important;
+    box-shadow: none !important;
+    padding: 16px 20px !important;
+    margin-bottom: 14px !important;
+  }
+  .sg-hero::before { display: none !important; }
+  .sg-hero h1 { font-size: 1.7rem !important; }
+  .sg-hero p { font-size: 0.95rem !important; }
+  .sg-hero-actions { display: none !important; }
+
+  .sg-section {
+    background: #FFFFFF !important;
+    border: 1px solid #DDDDDD !important;
+    box-shadow: none !important;
+    padding: 14px 18px !important;
+    margin-bottom: 10px !important;
+    break-inside: avoid;
+  }
+  .sg-section h2 { font-size: 1.1rem !important; margin-bottom: 10px !important; }
+  .sg-section h3 { font-size: 0.95rem !important; }
+
+  .sg-steps > li {
+    background: #FFFFFF !important;
+    border: 1px solid #CCCCCC !important;
+    padding: 10px 12px !important;
+    grid-template-columns: 38px 1fr;
+    gap: 10px;
+    break-inside: avoid;
+  }
+  .sg-steps > li::before {
+    width: 36px; height: 36px;
+    font-size: 1.1rem;
+    box-shadow: none !important;
+  }
+  .sg-step-title { font-size: 1rem !important; }
+  .sg-step-body { font-size: 0.85rem !important; }
+
+  .sg-checklist { gap: 6px; }
+  .sg-checklist li { padding: 6px 8px; font-size: 0.85rem; }
+
+  .sg-transport li { padding: 8px 10px; }
+  .sg-transport-title { font-size: 0.85rem; }
+  .sg-transport-desc { font-size: 0.78rem; }
+
+  .sg-faq dt { font-size: 0.92rem; margin-top: 8px; }
+  .sg-faq dd { font-size: 0.85rem; }
+
+  .sg-callout {
+    background: #FFFFFF !important;
+    border: 1px dashed #6C3FA4 !important;
+    padding: 10px 14px !important;
+  }
+
+  /* Page break before troubleshooting if needed */
+  .sg-section.sg-section-break { break-before: page; }
+}
+
+@page {
+  size: A4 portrait;
+  margin: 12mm;
+}
