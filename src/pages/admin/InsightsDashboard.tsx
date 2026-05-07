@@ -15,7 +15,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getSupabaseUrl, getAccessToken } from '../../lib/supabase';
+import { getSupabaseUrl, getAccessToken, getAnonKey } from '../../lib/supabase';
 import { tokens } from '../../styles/tokens';
 import { KidButton } from '../../components/kid-ui';
 import { SEOMeta } from '../../seo/SEOMeta';
@@ -185,14 +185,17 @@ const truncate = (s: string | undefined | null, n: number): string => {
 };
 
 // ── RPC client ──────────────────────────────────────────────────────
+// The `apikey` header MUST be the project's anon key — using the
+// user's JWT here gets a 401 'Invalid API key' from PostgREST. The
+// user JWT goes on Authorization: Bearer so RLS can see who's
+// asking, even though our SECURITY DEFINER RPCs don't need it.
 async function callRpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T> {
     const url = `${getSupabaseUrl()}/rest/v1/rpc/${fn}`;
-    const token = getAccessToken();
     const res = await fetch(url, {
         method: 'POST',
         headers: {
-            apikey: token,
-            Authorization: `Bearer ${token}`,
+            apikey: getAnonKey(),
+            Authorization: `Bearer ${getAccessToken()}`,
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(args),

@@ -97,6 +97,16 @@ export function getAccessToken(): string {
   return currentSession?.access_token ?? SUPABASE_ANON_KEY;
 }
 
+/**
+ * The project's public anon key. Use this in the `apikey` header on
+ * any direct fetch to PostgREST or Edge Functions — the `apikey`
+ * header MUST be the anon (or service_role) key, NEVER a user JWT.
+ * Pass the user JWT only via `Authorization: Bearer` if needed.
+ */
+export function getAnonKey(): string {
+  return SUPABASE_ANON_KEY;
+}
+
 export function onAuthStateChange(callback: (user: SupabaseUser | null) => void): () => void {
   authListeners.push(callback);
   return () => {
