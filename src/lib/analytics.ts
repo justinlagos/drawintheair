@@ -334,7 +334,19 @@ async function flush(): Promise<void> {
     try {
         // dbInsert accepts a single row OR an array. PostgREST does bulk
         // insert when the body is a JSON array.
-        const { error } = await dbInsert('analytics_events', batch as unknown as Record<string, unknown>);
+        //
+        // CRITICAL: returning: false sends `Prefer: return=minimal`. With
+        // the default (return=representation) PostgREST executes an
+        // implicit SELECT after the INSERT to return the new rows, and
+        // the SELECT side runs under RLS. Our SELECT policy only allows
+        // the `authenticated` role, so anon-role inserts get rolled back
+        // with 42501 even though the INSERT policy is wide open. We
+        // don't need the inserted rows back — fire-and-forget telemetry.
+        const { error } = await dbInsert(
+            'analytics_events',
+            batch as unknown as Record<string, unknown>,
+            { returning: false },
+        );
         if (error) {
             // Put the batch back at the front of the queue and retry next tick
             eventQueue = [...batch, ...eventQueue];
