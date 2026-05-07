@@ -38,20 +38,22 @@ const BADGE_STYLE: CSSProperties = {
  * Snaps a display state once per second — no per-frame rerenders.
  */
 export function CameraDebugBadge({ state }: { state: CameraState }): ReactElement | null {
-    if (!CAMERA_DEBUG) return null;
-
-    // Always keep a ref to the latest state so the interval can snapshot it.
+    // Hooks must be called in the same order on every render (rules-of-hooks).
+    // Move them above the early-return and gate the rendered output instead.
     const latestRef = useRef(state);
     latestRef.current = state;
 
     const [display, setDisplay] = useState<CameraState>(state);
 
     useEffect(() => {
+        if (!CAMERA_DEBUG) return;
         const id = setInterval(() => {
             setDisplay({ ...latestRef.current });
         }, 1000);
         return () => clearInterval(id);
     }, []);
+
+    if (!CAMERA_DEBUG) return null;
 
     const { status, streamActive, videoWidth, videoHeight, fpsCapture, fpsVision, qualityTier } = display;
 

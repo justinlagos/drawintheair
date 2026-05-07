@@ -62,30 +62,36 @@ const getInitialState = (): { appState: AppState; gameMode: GameMode } => {
   return { appState: 'onboarding', gameMode: 'free' };
 };
 
-function App() {
-  // Version marker - v2.0 with all updates
-  if (typeof window !== 'undefined') {
-    (window as any).__DRAW_IN_AIR_VERSION__ = '2.0.0-updated';
-    if (isDebugModeEnabled()) {
-      console.log('🎨 Draw in the Air v2.0.0 - Updated version loaded');
-      console.log("[TrackingAudit] Files touched:", [
-        "src/core/InteractionState.ts",
-        "src/core/filters/OneEuroFilter.ts",
-        "src/core/tracking/DynamicResolution.ts",
-        "src/features/tracking/TrackingLayer.tsx",
-        "src/App.tsx",
-        "src/core/perf.ts",
-        "src/core/flags/TrackingFlags.ts",
-        "src/components/HandGuidanceOverlay.tsx",
-        "src/core/tracking/PinchLogic.ts",
-        "scripts/tracking-smoke-test.ts"
-      ]);
-    }
-  }
+// Window-level version marker. Lives at module scope (not inside the
+// component body) so the new react-hooks/immutability rule doesn't
+// flag it as a forbidden side-effect during render.
+if (typeof window !== 'undefined') {
+  (window as { __DRAW_IN_AIR_VERSION__?: string }).__DRAW_IN_AIR_VERSION__ = '2.0.0-updated';
+}
 
+function App() {
   const [appState, setAppState] = useState<AppState>(() => getInitialState().appState);
   const [gameMode, setGameMode] = useState<GameMode>(() => getInitialState().gameMode);
   const [flags, setFlags] = useState(featureFlags.getFlags());
+
+  // One-time debug noise on mount, gated by the debug flag. Moved out
+  // of the function body for the same reason as the version marker.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !isDebugModeEnabled()) return;
+    console.log('🎨 Draw in the Air v2.0.0 - Updated version loaded');
+    console.log('[TrackingAudit] Files touched:', [
+      'src/core/InteractionState.ts',
+      'src/core/filters/OneEuroFilter.ts',
+      'src/core/tracking/DynamicResolution.ts',
+      'src/features/tracking/TrackingLayer.tsx',
+      'src/App.tsx',
+      'src/core/perf.ts',
+      'src/core/flags/TrackingFlags.ts',
+      'src/components/HandGuidanceOverlay.tsx',
+      'src/core/tracking/PinchLogic.ts',
+      'scripts/tracking-smoke-test.ts',
+    ]);
+  }, []);
 
   // Subscribe to feature flag changes to ensure reactive updates
   useEffect(() => {
@@ -116,11 +122,12 @@ function App() {
     // different mode without ever closing the session). This pattern is
     // a strong "what's hooking them" signal — far more useful than just
     // counting independent mode_started events.
-    const wasInGame = appState === 'game';
-    const previousMode = gameMode;
-
-    setGameMode(mode);
-    setAppState('game');
+    // Read previous values from state via the functional updater forms
+    // so this callback does not need appState/gameMode in its deps.
+    let wasInGame = false;
+    let previousMode: GameMode = mode;
+    setAppState((prev) => { wasInGame = prev === 'game'; return 'game'; });
+    setGameMode((prev) => { previousMode = prev; return mode; });
     // Enable flags for this mode
     featureFlags.enableForMode(mode as FeatureGameMode);
 
