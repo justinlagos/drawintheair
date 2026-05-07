@@ -2,6 +2,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import type { CameraState, CameraConstraintsProfile } from './types';
 import { CAMERA_PROFILES } from './constants';
 import { CAMERA_DEBUG } from './debug';
+import { logEvent } from '../lib/analytics';
 
 const INITIAL_STATE: CameraState = {
     status: 'idle',
@@ -55,6 +56,12 @@ export function useCameraController(): UseCameraControllerResult {
         isRequestingRef.current = true;
         lastOptionsRef.current = options;
         setState(prev => ({ ...prev, status: 'requesting', errorCode: null }));
+
+        // Activation funnel: a single camera_requested event per startCamera
+        // call. Profile fallbacks below are an internal retry — they don't
+        // count as separate user-facing requests.
+        const cameraRequestedAt = Date.now();
+        logEvent('camera_requested', { meta: { profile_id: options.profileId ?? 'auto' } });
 
         const facingMode = options.preferredFacingMode ?? 'user';
 
@@ -137,6 +144,16 @@ export function useCameraController(): UseCameraControllerResult {
                 if (CAMERA_DEBUG) {
                     console.log(`[Camera] started profile="${profile.id}" ${settings.width}x${settings.height}@${settings.frameRate}fps`);
                 }
+
+                logEvent('camera_granted', {
+                    value_number: Date.now() - cameraRequestedAt,
+                    meta: {
+                        profile_id: profile.id,
+                        width: (settings.width as number) || video.videoWidth,
+                        height: (settings.height as number) || video.videoHeight,
+                        frame_rate: (settings.frameRate as number) || profile.frameRate,
+                    },
+                });
                 return; // success
 
             } catch (err) {
@@ -146,16 +163,19 @@ export function useCameraController(): UseCameraControllerResult {
                     if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
                         isRequestingRef.current = false;
                         setState({ ...INITIAL_STATE, status: 'error', errorCode: 'PERMISSION_DENIED' });
+                        logEvent('camera_denied', { meta: { code: 'PERMISSION_DENIED', name: err.name } });
                         return;
                     }
                     if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
                         isRequestingRef.current = false;
                         setState({ ...INITIAL_STATE, status: 'error', errorCode: 'NO_DEVICE' });
+                        logEvent('camera_denied', { meta: { code: 'NO_DEVICE', name: err.name } });
                         return;
                     }
                     if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
                         isRequestingRef.current = false;
                         setState({ ...INITIAL_STATE, status: 'error', errorCode: 'DEVICE_BUSY' });
+                        logEvent('camera_denied', { meta: { code: 'DEVICE_BUSY', name: err.name } });
                         return;
                     }
                     // OverconstrainedError / ConstraintNotSatisfiedError → try next profile
@@ -170,7 +190,16 @@ export function useCameraController(): UseCameraControllerResult {
         // All profiles exhausted
         isRequestingRef.current = false;
         const supported = typeof navigator.mediaDevices?.getUserMedia === 'function';
-        setState({ ...INITIAL_STATE, status: 'error', errorCode: supported ? 'UNKNOWN' : 'NOT_SUPPORTED' });
+        const finalCode = supported ? 'UNKNOWN' : 'NOT_SUPPORTED';
+        setState({ ...INITIAL_STATE, status: 'error', errorCode: finalCode });
+        logEvent('camera_denied', {
+            meta: {
+                code: finalCode,
+                name: lastError instanceof Error ? lastError.name : 'unknown',
+                message: lastError instanceof Error ? lastError.message : String(lastError ?? ''),
+                profiles_tried: profiles.length,
+            },
+        });
         if (CAMERA_DEBUG) {
             console.error('[Camera] all profiles failed', lastError);
         }

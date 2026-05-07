@@ -18,6 +18,7 @@
 
 import { FilesetResolver, HandLandmarker, type HandLandmarkerResult } from '@mediapipe/tasks-vision';
 import { trackingFeatures } from './trackingFeatures';
+import { logEvent } from '../lib/analytics';
 
 // Pin to the version actually resolved in package-lock.json (the
 // installed JS). If we pin to the package.json range instead, the WASM
@@ -73,6 +74,12 @@ export class HandTracker {
 
         const tried: HandTrackerDelegate[] = [];
 
+        // Activation funnel: kicked off the MediaPipe init pipeline.
+        // Captured here so we can compute init_duration_ms for the
+        // succeeded/failed events below.
+        const initStartedAt = Date.now();
+        logEvent('tracker_init_started', { meta: { num_hands: numHands } });
+
         // Step 1: Load WASM. This is shared across delegate attempts.
         let vision: Awaited<ReturnType<typeof FilesetResolver.forVisionTasks>>;
         try {
@@ -89,6 +96,15 @@ export class HandTracker {
                 triedDelegates: [],
             };
             console.error('[HandTracker]', this.lastError);
+            logEvent('tracker_init_failed', {
+                value_number: Date.now() - initStartedAt,
+                meta: {
+                    code: this.lastError.code,
+                    message: this.lastError.message,
+                    tried_delegates: this.lastError.triedDelegates,
+                    stage: 'wasm_load',
+                },
+            });
             throw err;
         }
 
@@ -111,6 +127,14 @@ export class HandTracker {
             this.initialized = true;
             this.lastError = null;
             console.log(`[HandTracker] initialised (delegate=GPU, numHands=${numHands})`);
+            logEvent('tracker_init_succeeded', {
+                value_number: Date.now() - initStartedAt,
+                meta: {
+                    delegate: 'GPU',
+                    num_hands: numHands,
+                    tried_delegates: ['GPU'],
+                },
+            });
             return;
         } catch (gpuErr) {
             tried.push('GPU');
@@ -136,6 +160,15 @@ export class HandTracker {
             this.initialized = true;
             this.lastError = null;
             console.log(`[HandTracker] initialised (delegate=CPU fallback, numHands=${numHands})`);
+            logEvent('tracker_init_succeeded', {
+                value_number: Date.now() - initStartedAt,
+                meta: {
+                    delegate: 'CPU',
+                    num_hands: numHands,
+                    tried_delegates: tried,
+                    fell_back_from_gpu: true,
+                },
+            });
             return;
         } catch (cpuErr) {
             tried.push('CPU');
@@ -146,6 +179,15 @@ export class HandTracker {
                 triedDelegates: tried,
             };
             console.error('[HandTracker] both GPU and CPU init failed:', this.lastError);
+            logEvent('tracker_init_failed', {
+                value_number: Date.now() - initStartedAt,
+                meta: {
+                    code: this.lastError.code,
+                    message: this.lastError.message,
+                    tried_delegates: tried,
+                    stage: 'create_from_options',
+                },
+            });
             throw cpuErr;
         }
     }

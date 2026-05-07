@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { startSession, type AgeBand as PilotAgeBand } from '../lib/analytics';
+import { logEvent, startSession, type AgeBand as PilotAgeBand } from '../lib/analytics';
 import './tryFreeModal.css';
 
 const AGE_BANDS: { value: PilotAgeBand; label: string }[] = [
@@ -42,7 +42,17 @@ export const TryFreeModal: React.FC<TryFreeModalProps> = ({ open, onClose }) => 
     const handleStart = useCallback(() => {
         if (!ageBand) return;
 
-        // Start pilot analytics session
+        // Activation funnel: the kid has committed to a band. This event
+        // fires _before_ startSession so it lands under the previous
+        // session_id (or none) — important so we can count age-band
+        // commits even when the session row doesn't materialise (e.g. if
+        // the navigation aborts before the next page boots analytics).
+        logEvent('age_band_selected', {
+            meta: { age_band: ageBand, has_school_code: schoolCode.trim().length > 0 },
+        });
+
+        // Start the analytics session — generates a fresh UUID and sets
+        // the age_band context that all subsequent events inherit.
         startSession({ ageBand, schoolId: schoolCode.trim(), classId: classCode.trim() });
 
         // Log the demo_try_click for the existing analytics too
@@ -76,6 +86,14 @@ export const TryFreeModal: React.FC<TryFreeModalProps> = ({ open, onClose }) => 
         window.addEventListener('keydown', handleKey);
         return () => window.removeEventListener('keydown', handleKey);
     }, [open, onClose]);
+
+    // Activation funnel: log try_free_clicked exactly once each time the
+    // modal opens. We instrument here (not at the seven landing CTAs)
+    // because it gives us one canonical event regardless of which CTA
+    // the user used.
+    useEffect(() => {
+        if (open) logEvent('try_free_clicked');
+    }, [open]);
 
     if (!open) return null;
 

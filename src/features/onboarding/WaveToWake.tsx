@@ -12,6 +12,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { type HandLandmarkerResult } from '@mediapipe/tasks-vision';
 import { tokens } from '../../styles/tokens';
+import { logEvent } from '../../lib/analytics';
 
 const useResponsiveLayout = () => {
     const [layout, setLayout] = useState(() => {
@@ -74,6 +75,9 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorC
     const lastHandSeenAt = useRef<number>(0);
     const waveStartTime = useRef<number>(0);
     const hasTrackedView = useRef<boolean>(false);
+    // Activation-funnel guard: fire wave_first_hand_seen exactly once per
+    // mount, not every frame the hand stays in view.
+    const hasLoggedFirstHand = useRef<boolean>(false);
 
     useEffect(() => {
         waveStartTime.current = Date.now();
@@ -108,6 +112,16 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorC
             lastHandSeenAt.current = Date.now();
             setHandStatus('detected');
 
+            // Activation funnel: very first MediaPipe landmark since this
+            // screen mounted. value_number captures time-to-detect from
+            // when the wave gate was shown.
+            if (!hasLoggedFirstHand.current) {
+                hasLoggedFirstHand.current = true;
+                logEvent('wave_first_hand_seen', {
+                    value_number: Date.now() - waveStartTime.current,
+                });
+            }
+
             const hand = trackingResults.landmarks[0];
             const tip = hand[8]; // Index tip
 
@@ -127,24 +141,22 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorC
     }, [trackingResults]);
     /* eslint-enable react-hooks/set-state-in-effect */
 
-    // Analytics: log view once
+    // Analytics: log wave-screen view exactly once per mount.
     useEffect(() => {
-        if (!hasTrackedView.current && typeof window !== 'undefined' && (window as { analytics?: { logEvent: (name: string, props?: Record<string, unknown>) => void } }).analytics) {
+        if (!hasTrackedView.current) {
             hasTrackedView.current = true;
-            const analytics = (window as { analytics?: { logEvent: (name: string, props?: Record<string, unknown>) => void } }).analytics;
-            analytics?.logEvent('demo_wave_screen_view', { camera_permission: 'granted' });
+            logEvent('wave_screen_view');
         }
     }, []);
 
     // Wake when threshold reached
     useEffect(() => {
         if (waveCount >= wakeThreshold) {
-            if (typeof window !== 'undefined' && (window as { analytics?: { logEvent: (name: string, props?: Record<string, unknown>) => void } }).analytics) {
-                const analytics = (window as { analytics?: { logEvent: (name: string, props?: Record<string, unknown>) => void } }).analytics;
-                const timeToWave = Date.now() - waveStartTime.current;
-                analytics?.logEvent('demo_wave_success', { time_to_wave_ms: timeToWave });
-                analytics?.logEvent('demo_mode_select_view');
-            }
+            const timeToWave = Date.now() - waveStartTime.current;
+            logEvent('wave_completed', {
+                value_number: timeToWave,
+                meta: { wave_count: waveCount, threshold: wakeThreshold },
+            });
             onWake();
         }
     }, [waveCount, onWake]);
