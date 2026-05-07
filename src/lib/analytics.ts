@@ -332,17 +332,28 @@ async function flush(): Promise<void> {
     persistQueue();
 
     try {
-        const { error } = await dbInsert('analytics_events', batch);
+        // dbInsert accepts a single row OR an array. PostgREST does bulk
+        // insert when the body is a JSON array.
+        const { error } = await dbInsert('analytics_events', batch as unknown as Record<string, unknown>);
         if (error) {
             // Put the batch back at the front of the queue and retry next tick
             eventQueue = [...batch, ...eventQueue];
             persistQueue();
-            // Don't log noisily — analytics failures shouldn't spam the console
+            // Surface the failure — analytics has been silently broken
+            // for too long. We can quiet this back down once the pipeline
+            // is stable.
+            // eslint-disable-next-line no-console
+            console.warn('[analytics] flush failed:', error.code, error.message, '| queued:', eventQueue.length);
+        } else {
+            // eslint-disable-next-line no-console
+            console.debug('[analytics] flushed', batch.length, 'events; remaining:', eventQueue.length);
         }
-    } catch {
+    } catch (e) {
         // Network down or Supabase unreachable — keep events for retry
         eventQueue = [...batch, ...eventQueue];
         persistQueue();
+        // eslint-disable-next-line no-console
+        console.warn('[analytics] flush threw:', (e as Error).message, '| queued:', eventQueue.length);
     } finally {
         flushing = false;
     }
