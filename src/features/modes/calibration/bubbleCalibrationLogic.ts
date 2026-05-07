@@ -21,6 +21,7 @@ import { tactileAudioManager } from '../../../core/TactileAudioManager';
 import { isCountdownActive } from '../../../core/countdownService';
 import { LANDSCAPE_BACKGROUNDS, type LandscapeBackground } from './landscapeBackgrounds';
 import { renderLandscapeBackground } from './renderLandscape';
+import { logEvent } from '../../../lib/analytics';
 
 interface Bubble {
     id: number;
@@ -279,6 +280,16 @@ export const startBubbleGame = (level: BubbleLevel | undefined = 1, startAt: num
     milestoneCelebrated = false;
     bubbleHits = 0;
     bubbleMisses = 0;
+
+    // Tier B/C analytics: per-level start.
+    logEvent('stage_started', {
+        game_mode: 'calibration',
+        stage_id: `level-${actualLevel}`,
+        meta: {
+            stage_index: actualLevel,
+            target_score: LEVEL_CONFIGS[actualLevel].targetScore,
+        },
+    });
     
     // Reset difficulty controller if enabled
     const dds = getDifficultyController();
@@ -496,6 +507,23 @@ export const bubbleCalibrationLogic = (
     const currentGoal = config.targetScore;
     if (score >= currentGoal && !milestoneReached) {
         milestoneReached = true;
+        const totalDurationMs = gameStartTime > 0 ? now - gameStartTime : null;
+        logEvent('mode_completed', { game_mode: 'calibration', stage_id: `level-${currentLevel}` });
+        logEvent('stage_completed', {
+            game_mode: 'calibration',
+            stage_id: `level-${currentLevel}`,
+            value_number: totalDurationMs ?? undefined,
+            meta: {
+                stage_index: currentLevel,
+                target_score: currentGoal,
+                hits: bubbleHits,
+                misses: bubbleMisses,
+                accuracy_pct: bubbleHits + bubbleMisses > 0
+                    ? Math.round((bubbleHits / (bubbleHits + bubbleMisses)) * 100)
+                    : null,
+                time_to_complete_ms: totalDurationMs,
+            },
+        });
     }
 
     // End game if time expired
@@ -731,7 +759,17 @@ export const bubbleCalibrationLogic = (
                 bubble.lastPopAttempt = now;
                 score++;
                 bubbleHits++;
-                
+
+                // Calibration is the warm-up — no per-bubble mistake
+                // patterns to record (every pop is correct), but the
+                // bubblepop_round_complete + reach-target events are
+                // useful for "did the kid even hit the warm-up score".
+                logEvent('bubblepop_round_complete', {
+                    game_mode: 'calibration',
+                    stage_id: `level-${currentLevel}`,
+                    meta: { score, target: LEVEL_CONFIGS[currentLevel].targetScore },
+                });
+
                 // Play success audio if enabled
                 if (flags.enableTactileAudio) {
                     tactileAudioManager.playSuccess('bubble');

@@ -13,6 +13,7 @@
 import type { DrawingUtils } from '@mediapipe/tasks-vision';
 import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import { normalizedToCanvas } from '../../../core/coordinateUtils';
+import { logEvent } from '../../../lib/analytics';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Colour definitions
@@ -87,6 +88,9 @@ function shuffle<T>(arr: T[]): T[] {
     return a;
 }
 
+// Tier B/C analytics: per-stage timing.
+let stageStartedAt = 0;
+
 function buildLevel(): void {
     const patternLength = LEVEL_LENGTHS[Math.min(levelIndex, LEVEL_LENGTHS.length - 1)];
     // Pick random colour sequence (no immediate repeats)
@@ -104,6 +108,16 @@ function buildLevel(): void {
     arcs = [];
     levelComplete = false;
     celebrationTime = 0;
+    stageStartedAt = Date.now();
+    logEvent('stage_started', {
+        game_mode: 'rainbow-bridge',
+        stage_id: `level-${levelIndex + 1}`,
+        meta: {
+            stage_index: levelIndex,
+            pattern_length: patternLength,
+            pattern: pattern.map(p => p.id),
+        },
+    });
 
     // Build stones: one per unique colour in pattern + a couple of distractors
     const patternColourIds = new Set(pattern.map(c => c.id));
@@ -382,14 +396,57 @@ export const rainbowBridgeLogic = (
                         // ✅ Correct
                         arcs.push({ colourId: stone.colourId, step: currentStep });
                         currentStep++;
+                        // Mirror into learning_attempts. item_key is the
+                        // *colour* the kid had to pick.
+                        logEvent('item_dropped', {
+                            game_mode: 'rainbow-bridge',
+                            stage_id: `level-${levelIndex + 1}`,
+                            meta: {
+                                itemKey: stone.colourId,
+                                isCorrect: true,
+                                expected_color: targetColourId,
+                                actual_color: stone.colourId,
+                                action_duration_ms: DWELL_MS,
+                                step: currentStep,
+                            },
+                        });
+                        logEvent('rainbowbridge_match_made', {
+                            game_mode: 'rainbow-bridge',
+                            stage_id: `level-${levelIndex + 1}`,
+                            meta: { colour: stone.colourId, step: currentStep },
+                        });
                         if (currentStep >= pattern.length) {
                             levelComplete = true;
                             celebrationTime = now;
+                            const totalDurationMs = stageStartedAt > 0 ? now - stageStartedAt : null;
+                            logEvent('mode_completed', { game_mode: 'rainbow-bridge', stage_id: `level-${levelIndex + 1}` });
+                            logEvent('stage_completed', {
+                                game_mode: 'rainbow-bridge',
+                                stage_id: `level-${levelIndex + 1}`,
+                                value_number: totalDurationMs ?? undefined,
+                                meta: {
+                                    stage_index: levelIndex,
+                                    pattern_length: pattern.length,
+                                    time_to_complete_ms: totalDurationMs,
+                                },
+                            });
                         }
                     } else {
                         // ❌ Wrong — bounce
                         stone.bouncing = true;
                         stone.bounceStart = now;
+                        logEvent('item_dropped', {
+                            game_mode: 'rainbow-bridge',
+                            stage_id: `level-${levelIndex + 1}`,
+                            meta: {
+                                itemKey: targetColourId,
+                                isCorrect: false,
+                                expected_color: targetColourId,
+                                actual_color: stone.colourId,
+                                action_duration_ms: DWELL_MS,
+                                step: currentStep,
+                            },
+                        });
                     }
                 }
             } else {

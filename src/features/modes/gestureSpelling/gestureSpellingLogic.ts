@@ -13,6 +13,7 @@
 import type { DrawingUtils } from '@mediapipe/tasks-vision';
 import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import { normalizedToCanvas } from '../../../core/coordinateUtils';
+import { logEvent } from '../../../lib/analytics';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Word list (picture + word pairs)
@@ -232,6 +233,9 @@ function buildTiles(word: SpellingWord): LetterTile[] {
 // Public API
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Tier B/C analytics: per-word timing.
+let wordStartedAt = 0;
+
 export function initGestureSpelling(): void {
     wordsSpelled = 0;
     usedWordIndices = [];
@@ -240,6 +244,12 @@ export function initGestureSpelling(): void {
     typedSoFar = [];
     wordComplete = false;
     celebrationTime = 0;
+    wordStartedAt = Date.now();
+    logEvent('stage_started', {
+        game_mode: 'gesture-spelling',
+        stage_id: currentWord.word,
+        meta: { word: currentWord.word, length: currentWord.word.length },
+    });
 }
 
 export function getSpellingCurrentWord(): SpellingWord { return currentWord; }
@@ -255,6 +265,12 @@ export function advanceToNextWord(): void {
     typedSoFar = [];
     wordComplete = false;
     celebrationTime = 0;
+    wordStartedAt = Date.now();
+    logEvent('stage_started', {
+        game_mode: 'gesture-spelling',
+        stage_id: currentWord.word,
+        meta: { word: currentWord.word, length: currentWord.word.length, words_spelled: wordsSpelled },
+    });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -464,14 +480,56 @@ export const gestureSpellingLogic = (
                     if (tile.letter === nextExpected) {
                         tile.status = 'correct';
                         typedSoFar.push(tile.letter);
+                        // Per-letter mastery row.
+                        logEvent('item_dropped', {
+                            game_mode: 'gesture-spelling',
+                            stage_id: word,
+                            meta: {
+                                itemKey: tile.letter,
+                                isCorrect: true,
+                                expected_letter: nextExpected,
+                                actual_letter: tile.letter,
+                                action_duration_ms: DWELL_MS,
+                                position: typedSoFar.length - 1,
+                                word: word,
+                            },
+                        });
 
                         if (typedSoFar.length >= word.length) {
                             wordComplete = true;
                             celebrationTime = now;
+                            const totalDurationMs = wordStartedAt > 0 ? now - wordStartedAt : null;
+                            logEvent('spellingstars_word_complete', {
+                                game_mode: 'gesture-spelling',
+                                stage_id: word,
+                                value_number: totalDurationMs ?? undefined,
+                                meta: { word, time_to_complete_ms: totalDurationMs },
+                            });
+                            logEvent('mode_completed', { game_mode: 'gesture-spelling', stage_id: word });
+                            logEvent('stage_completed', {
+                                game_mode: 'gesture-spelling',
+                                stage_id: word,
+                                value_number: totalDurationMs ?? undefined,
+                                meta: { word, length: word.length, time_to_complete_ms: totalDurationMs },
+                            });
                         }
                     } else {
                         tile.status = 'wrong';
                         tile.wrongTime = now;
+                        // Mistake-pattern row: which letter did they confuse with the right one?
+                        logEvent('item_dropped', {
+                            game_mode: 'gesture-spelling',
+                            stage_id: word,
+                            meta: {
+                                itemKey: nextExpected,
+                                isCorrect: false,
+                                expected_letter: nextExpected,
+                                actual_letter: tile.letter,
+                                action_duration_ms: DWELL_MS,
+                                position: typedSoFar.length,
+                                word: word,
+                            },
+                        });
                         // Reset wrong status after animation
                         setTimeout(() => { tile.status = 'idle'; }, WRONG_FLASH_MS + 50);
                     }

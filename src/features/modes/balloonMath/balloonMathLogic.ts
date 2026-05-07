@@ -13,6 +13,7 @@
 import type { DrawingUtils } from '@mediapipe/tasks-vision';
 import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import { normalizedToCanvas } from '../../../core/coordinateUtils';
+import { logEvent } from '../../../lib/analytics';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Interfaces
@@ -143,6 +144,9 @@ function buildBalloons(cfg: BalloonMathLevel): MathBalloon[] {
 // Public API
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Tier B/C analytics: per-stage start time for time-to-complete.
+let stageStartedAt = 0;
+
 export function initBalloonMath(startLevel = 0): void {
     levelIndex = Math.min(startLevel, LEVEL_CONFIGS.length - 1);
     score = 0;
@@ -153,6 +157,16 @@ export function initBalloonMath(startLevel = 0): void {
     const cfg = LEVEL_CONFIGS[levelIndex];
     pickTarget(cfg);
     balloons = buildBalloons(cfg);
+    stageStartedAt = Date.now();
+    logEvent('stage_started', {
+        game_mode: 'balloon-math',
+        stage_id: cfg.name,
+        meta: {
+            stage_index: levelIndex,
+            target_number: targetNumber,
+            pops_needed: popsNeeded,
+        },
+    });
 }
 
 export function getBalloonMathScore(): number { return score; }
@@ -381,9 +395,45 @@ export const balloonMathLogic = (
                         score++;
                         popsThisLevel++;
 
+                        // Mirror into learning_attempts via item_dropped.
+                        // item_key = the *target* (what they had to pop),
+                        // not the equation, so the mastery panel groups
+                        // by which numbers kids reliably recognise.
+                        logEvent('item_dropped', {
+                            game_mode: 'balloon-math',
+                            stage_id: cfg.name,
+                            meta: {
+                                itemKey: String(targetNumber),
+                                isCorrect: true,
+                                expected_value: String(targetNumber),
+                                actual_value: String(b.number),
+                                action_duration_ms: DWELL_MS,
+                                equation_a: equationA,
+                                equation_b: equationB,
+                            },
+                        });
+                        logEvent('balloonmath_balloon_popped', {
+                            game_mode: 'balloon-math',
+                            stage_id: cfg.name,
+                            meta: { number: b.number, target: targetNumber, isCorrect: true },
+                        });
+
                         if (popsThisLevel >= popsNeeded) {
                             levelComplete = true;
                             celebrationTime = now;
+                            const totalDurationMs = stageStartedAt > 0 ? now - stageStartedAt : null;
+                            logEvent('mode_completed', { game_mode: 'balloon-math', stage_id: cfg.name });
+                            logEvent('stage_completed', {
+                                game_mode: 'balloon-math',
+                                stage_id: cfg.name,
+                                value_number: totalDurationMs ?? undefined,
+                                meta: {
+                                    stage_index: levelIndex,
+                                    pops_needed: popsNeeded,
+                                    pops_made: popsThisLevel,
+                                    time_to_complete_ms: totalDurationMs,
+                                },
+                            });
                         } else {
                             // New target
                             pickTarget(cfg);
@@ -395,6 +445,21 @@ export const balloonMathLogic = (
                         b.shaking = true;
                         b.shakeTime = now;
                         b.dwellStart = null;
+                        // Mistake-pattern row: which number did they
+                        // confuse with the target?
+                        logEvent('item_dropped', {
+                            game_mode: 'balloon-math',
+                            stage_id: cfg.name,
+                            meta: {
+                                itemKey: String(targetNumber),
+                                isCorrect: false,
+                                expected_value: String(targetNumber),
+                                actual_value: String(b.number),
+                                action_duration_ms: DWELL_MS,
+                                equation_a: equationA,
+                                equation_b: equationB,
+                            },
+                        });
                     }
                 }
             } else {

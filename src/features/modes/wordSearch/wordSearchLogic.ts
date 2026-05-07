@@ -43,6 +43,13 @@ export interface WordSearchState {
  */
 export function createWordSearchState(settings: WordSearchSettings): WordSearchState {
     const now = Date.now();
+    const chapter = settings.chapter || 1;
+    // Tier B/C analytics: stage_started so we can compute time-to-clear.
+    logEvent('stage_started', {
+        game_mode: 'word-search',
+        stage_id: chapter.toString(),
+        meta: { chapter, theme: settings.theme },
+    });
     return {
         grid: null,
         selectionState: {
@@ -69,7 +76,7 @@ export function createWordSearchState(settings: WordSearchSettings): WordSearchS
             lastHintTime: 0,
             hintCooldown: 0
         },
-        chapter: settings.chapter || 1,
+        chapter,
         lastHoverTileId: null,
         lastHoverTime: now
     };
@@ -167,7 +174,25 @@ export function processWordSearchFrame(
         const result = checkWordMatch(state);
 
         // Log the drop (did they find a word or not?)
-        logEvent('item_dropped', { game_mode: 'word-search', stage_id: state.chapter.toString(), meta: { itemKey: result.wordFound || 'unknown_word', itemInstanceId: state.selectionState.selectionPath.join(','), isCorrect: !!result.wordFound } });
+        logEvent('item_dropped', {
+            game_mode: 'word-search',
+            stage_id: state.chapter.toString(),
+            meta: {
+                itemKey: result.wordFound || 'unknown_word',
+                itemInstanceId: state.selectionState.selectionPath.join(','),
+                isCorrect: !!result.wordFound,
+                expected_word: result.wordFound || null,
+                actual_word: result.wordFound || null,
+                path_length: state.selectionState.selectionPath.length,
+            },
+        });
+        if (result.wordFound) {
+            logEvent('wordsearch_word_found', {
+                game_mode: 'word-search',
+                stage_id: state.chapter.toString(),
+                meta: { word: result.wordFound, chapter: state.chapter },
+            });
+        }
 
         state.selectionState = {
             anchorTileId: null,
