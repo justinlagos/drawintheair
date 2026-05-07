@@ -79,6 +79,7 @@ export type EventName =
     | 'item_grabbed'                // generic across Sort&Place, Colour Builder, Word Search
     | 'item_dropped'                // meta.{ isCorrect, itemKey, binId, expected_*, actual_*, action_duration_ms }
     | 'hint_shown'                  // any in-game hint surfaced (bounce-back, glow, etc.)
+    | 'stuck_detected'              // 30s of no productive action mid-stage; meta.idle_ms, .stage_id
     | 'bubblepop_round_complete'
     | 'wordsearch_word_found'
     | 'wordsearch_level_complete'
@@ -109,7 +110,13 @@ export type EventName =
     | 'school_pack_form_view'
     | 'school_pack_form_submit'
     | 'feedback_widget_opened'
-    | 'feedback_submitted';
+    | 'feedback_submitted'
+    | 'pilot_pack_downloaded'       // PDF pack download (link click)
+    | 'demo_request_form_view'
+    | 'demo_request_form_submit'
+    | 'for_teachers_page_view'
+    | 'for_parents_page_view'
+    | 'share_button_clicked';       // social share / colleague share
 
 export type AgeBand = '4-5' | '6-7' | '8-9' | '10-11' | '12+';
 
@@ -238,6 +245,58 @@ function resetActionTimings(): void { actionTimings.length = 0; }
 // ── Per-flag exposure dedupe ─────────────────────────────────────
 // feature_flag_exposed should fire at most once per session per flag.
 const exposedFlags = new Set<string>();
+
+// ── Stuck-detection watcher ─────────────────────────────────────
+// The strongest "this isn't working for the kid" signal is "30s of
+// no productive action". Each mode logic file calls
+// noteProductiveAction() on every grab / drop / pop / hit, and the
+// watcher fires stuck_detected once at 30s of silence (then again
+// every 60s if they keep idling). Resets on next action.
+const STUCK_THRESHOLD_MS = 30_000;
+const STUCK_REPEAT_MS = 60_000;
+let stuckCtx: { gameMode: string | null; stageId: string | null; lastActionAt: number; firedCount: number } | null = null;
+let stuckTimer: ReturnType<typeof setInterval> | null = null;
+
+function startStuckWatcher(): void {
+    if (stuckTimer) return;
+    stuckTimer = setInterval(() => {
+        if (!stuckCtx) return;
+        const idle = Date.now() - stuckCtx.lastActionAt;
+        const threshold = stuckCtx.firedCount === 0 ? STUCK_THRESHOLD_MS : STUCK_REPEAT_MS * stuckCtx.firedCount;
+        if (idle >= threshold) {
+            const c = stuckCtx;  // snapshot for the log call below
+            c.firedCount += 1;
+            logEvent('stuck_detected', {
+                game_mode: c.gameMode ?? undefined,
+                stage_id: c.stageId ?? undefined,
+                value_number: idle,
+                meta: { idle_ms: idle, fired_count: c.firedCount },
+            });
+        }
+    }, 5_000);
+}
+
+/**
+ * Call from a mode logic file when a productive action happens
+ * (grab, drop, pop, hit, place). Resets the idle clock and (re)arms
+ * the stuck-detection watcher. Pass the current game_mode + stage_id
+ * so the resulting event has context.
+ */
+export function noteProductiveAction(gameMode: string, stageId?: string): void {
+    stuckCtx = {
+        gameMode,
+        stageId: stageId ?? null,
+        lastActionAt: Date.now(),
+        firedCount: 0,
+    };
+    startStuckWatcher();
+}
+
+/** Called when a stage/round ends so we don't keep ticking idle on
+ *  the celebration screen or after navigation away. */
+export function clearStuckWatcher(): void {
+    stuckCtx = null;
+}
 
 function generateUUID(): string {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -594,6 +653,27 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
         const dur = (opts.meta?.action_duration_ms as number | undefined);
         if (typeof dur === 'number') recordActionTiming(dur);
     }
+
+    // Side-effect: any of these "productive action" events resets
+    // the stuck-detection idle clock. Mode logic files don't have
+    // to call noteProductiveAction explicitly when they're already
+    // firing one of these.
+    if (name === 'item_grabbed' || name === 'item_dropped'
+        || name === 'bubblepop_round_complete' || name === 'wordsearch_word_found'
+        || name === 'tracing_letter_completed' || name === 'colourbuilder_match_made'
+        || name === 'balloonmath_balloon_popped' || name === 'rainbowbridge_match_made'
+        || name === 'spellingstars_word_complete') {
+        if (opts.game_mode) {
+            noteProductiveAction(opts.game_mode, opts.stage_id);
+        }
+    }
+    // stage_started arms the watcher; stage_completed disarms it.
+    if (name === 'stage_started' && opts.game_mode) {
+        noteProductiveAction(opts.game_mode, opts.stage_id);
+    }
+    if (name === 'stage_completed' || name === 'mode_completed' || name === 'mode_abandoned') {
+        clearStuckWatcher();
+    }
     eventQueue.push(buildRow(name, opts));
     persistQueue();
 
@@ -743,6 +823,7 @@ export function endSession(reason: string = 'unspecified'): void {
 
     if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
     if (flushTimer) { clearInterval(flushTimer); flushTimer = null; }
+    if (stuckTimer) { clearInterval(stuckTimer); stuckTimer = null; }
 
     persistSession(null);
     session = null;
@@ -751,6 +832,7 @@ export function endSession(reason: string = 'unspecified'): void {
     exposedFlags.clear();
     grabTimers.clear();
     attemptCounters.clear();
+    clearStuckWatcher();
 }
 
 export function hasActiveSession(): boolean {
@@ -793,6 +875,7 @@ export function initAnalytics(): void {
     (window as { dita_analytics?: unknown }).dita_analytics = {
         logEvent, startSession, endSession, hasActiveSession, getSessionId,
         markGrab, elapsedSinceGrab, noteTwoHandsSeen, exposeFeatureFlag,
+        noteProductiveAction, clearStuckWatcher,
         getQueueSize: () => eventQueue.length,
         getDeviceId: getOrCreateDeviceId,
         getActionTimings: () => [...actionTimings],
@@ -816,5 +899,7 @@ export const analytics = {
     elapsedSinceGrab,
     noteTwoHandsSeen,
     exposeFeatureFlag,
+    noteProductiveAction,
+    clearStuckWatcher,
     getDeviceId: getOrCreateDeviceId,
 };
