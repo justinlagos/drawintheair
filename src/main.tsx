@@ -46,6 +46,9 @@ const UseCasePage = React.lazy(() => import('./pages/seo/UseCasePage.tsx'));
 // Growth Engine — Share Landing Page
 const ShareLandingPage = React.lazy(() => import('./pages/seo/ShareLandingPage.tsx'));
 
+// Admin — internal analytics insights (auth-gated, allow-list)
+const InsightsDashboard = React.lazy(() => import('./pages/admin/InsightsDashboard.tsx'));
+
 // Class Mode — Teacher + Student screens
 const TeacherDashboard = React.lazy(() => import('./pages/classmode/TeacherDashboard.tsx'));
 const LobbyScreen = React.lazy(() => import('./pages/classmode/LobbyScreen.tsx'));
@@ -72,6 +75,7 @@ function getRouteFromPath(path: string, hash: string): string {
   if (path === '/join') return 'student-join';
   if (path === '/join/play') return 'student-game';
 
+  if (path === '/admin/insights') return 'admin-insights';
   if (path === '/admin') return 'admin';
   if (path === '/demo') return 'demo';
   if (path === '/play' || path === '/onboarding') return 'play';
@@ -236,6 +240,14 @@ function Root() {
 
   if (route === 'admin') {
     return <Admin />;
+  }
+
+  if (route === 'admin-insights') {
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <InsightsDashboard />
+      </React.Suspense>
+    );
   }
 
   if (route === 'qa') {
