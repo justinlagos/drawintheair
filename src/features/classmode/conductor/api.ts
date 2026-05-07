@@ -90,4 +90,12 @@ export const conductorApi = {
             in_session_id: sessionId,
             in_visible: visible,
         }),
+
+    deleteSession: (sessionId: string) =>
+        rpc<{ session_id: string; deleted: boolean }>('class_delete_session', {
+            in_session_id: sessionId,
+        }),
+
+    endStaleSessions: () =>
+        rpc<{ ended_count: number }>('class_end_stale_sessions', {}),
 };

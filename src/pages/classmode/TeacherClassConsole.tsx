@@ -81,13 +81,24 @@ export default function TeacherClassConsole() {
         return () => { cancelled = true; };
     }, [user]);
 
+    const reloadRecent = useCallback(async () => {
+        if (!user) return;
+        const { data } = await dbSelect<SessionRow[]>(
+            'sessions',
+            `teacher_id=eq.${user.id}&order=created_at.desc&limit=20`,
+        );
+        if (data) setRecent(data);
+    }, [user]);
+
     const handleStartClass = useCallback(async () => {
         if (!user) return;
         setCreating(true);
         setError(null);
         const activeCount = recent.filter((s) => s.class_state !== 'ended').length;
         if (activeCount >= FREE_TIER_CLASSROOM_CAP) {
-            setError(`You already have ${activeCount} class${activeCount === 1 ? '' : 'es'} in progress. End that one first, or upgrade for multi-classroom support.`);
+            setError(
+                `You already have ${activeCount} class${activeCount === 1 ? '' : 'es'} in progress. End that one first, or upgrade for multi-classroom support.`,
+            );
             setCreating(false);
             return;
         }
@@ -101,7 +112,6 @@ export default function TeacherClassConsole() {
                 status: 'lobby',
                 round: 1,
                 timer_seconds: 90,
-                activity: null,
             },
             { single: true },
         );
@@ -113,6 +123,24 @@ export default function TeacherClassConsole() {
         if (data) setActiveSession(data);
         setCreating(false);
     }, [user, recent]);
+
+    const handleDeleteSession = useCallback(async (sessionId: string) => {
+        try {
+            await conductorApi.deleteSession(sessionId);
+            setRecent((cur) => cur.filter((s) => s.id !== sessionId));
+        } catch (e) {
+            setError((e as Error).message);
+        }
+    }, []);
+
+    const handleEndStale = useCallback(async () => {
+        try {
+            await conductorApi.endStaleSessions();
+            await reloadRecent();
+        } catch (e) {
+            setError((e as Error).message);
+        }
+    }, [reloadRecent]);
 
     // ── Loading / sign-in gates ────────────────────────────────────
     if (loading) {
@@ -176,27 +204,45 @@ export default function TeacherClassConsole() {
                 {/* Recent sessions — quick-resume for ones still in lobby/in_activity */}
                 {recent.length > 0 && (
                     <div className="cm-history">
-                        <h3>Recent classes</h3>
+                        <div className="cd-history-header">
+                            <h3>Recent classes</h3>
+                            {recent.filter((s) => s.class_state !== 'ended' && s.class_state !== 'in_activity').length > 1 && (
+                                <button className="cm-btn-secondary" onClick={handleEndStale} style={{ padding: '6px 14px', fontSize: '0.8rem' }}>
+                                    End all stale
+                                </button>
+                            )}
+                        </div>
                         <div className="cm-history-list">
                             {recent.map((s) => {
                                 const date = new Date(s.created_at).toLocaleDateString('en-GB', {
                                     day: 'numeric', month: 'short',
                                 });
+                                const isLive = s.class_state !== 'ended';
                                 return (
-                                    <div key={s.id} className="cm-history-item">
-                                        <div>
+                                    <div key={s.id} className="cm-history-item cd-history-row">
+                                        <div className="cd-history-name">
                                             <strong>{s.class_name || `Class · ${s.code}`}</strong>
                                         </div>
-                                        <div className="cm-history-meta">
+                                        <div className="cm-history-meta cd-history-meta">
                                             <span className={`cd-state-badge cd-state-${s.class_state}`}>
                                                 {s.class_state === 'ended' ? 'finished' : s.class_state.replace('_', ' ')}
                                             </span>
-                                            <span>{date}</span>
-                                            {s.class_state !== 'ended' && (
-                                                <button className="cm-btn-secondary" onClick={() => setActiveSession(s)} style={{ padding: '4px 10px', fontSize: '0.8rem' }}>
+                                            <span className="cd-history-date">{date}</span>
+                                            {isLive && (
+                                                <button className="cm-btn-secondary" onClick={() => setActiveSession(s)} style={{ padding: '4px 12px', fontSize: '0.8rem' }}>
                                                     Resume
                                                 </button>
                                             )}
+                                            <button
+                                                className="cd-history-delete"
+                                                aria-label={`Delete ${s.class_name || `Class · ${s.code}`}`}
+                                                title="Delete class"
+                                                onClick={() => {
+                                                    if (window.confirm(isLive ? 'Delete this class in progress? Students will be removed.' : 'Delete this finished class permanently?')) {
+                                                        handleDeleteSession(s.id);
+                                                    }
+                                                }}
+                                            >🗑</button>
                                         </div>
                                     </div>
                                 );

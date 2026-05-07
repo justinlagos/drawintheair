@@ -521,6 +521,44 @@
 
 .cd-start-cta { font-size: 17px; padding: 14px 36px; }
 
+/* Recent classes list — header + per-row delete affordance */
+.cd-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.cd-history-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.cd-history-name { flex: 1; min-width: 0; }
+.cd-history-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+.cd-history-date { color: var(--cd-ink-soft); font-size: 12.5px; }
+.cd-history-delete {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--cd-ink-soft);
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+}
+.cd-history-delete:hover {
+  background: var(--cd-bad-bg);
+  color: var(--cd-bad);
+}
+
 /* ── Student-side ────────────────────────────────────────────── */
 .cd-student-shell {
   min-height: 100vh;
