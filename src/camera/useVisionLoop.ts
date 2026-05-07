@@ -4,6 +4,7 @@ import { handTracker } from '../core/handTracker';
 import { VISION_FPS_TARGET } from './constants';
 import { computeQualityTier } from './quality';
 import { CAMERA_DEBUG } from './debug';
+import { logEvent, noteTwoHandsSeen, hasActiveSession } from '../lib/analytics';
 
 export interface VisionLoopResult {
     handLandmarkerResult: HandLandmarkerResult | null;
@@ -66,6 +67,15 @@ export function useVisionLoop({
             detectionIdxRef.current++;
             if (detectionFilledRef.current < 30) detectionFilledRef.current++;
 
+            // Two-hands detection (analytics): MediaPipe is configured
+            // for numHands=1 by default, but if enableTwoHandMode is on
+            // and a parent enters the frame we want to capture that as
+            // a "doing it together" engagement signal. analytics dedupes
+            // to once per session.
+            if (result !== null && result.landmarks.length > 1 && hasActiveSession()) {
+                noteTwoHandsSeen();
+            }
+
             // Deliver results immediately — hot path, no state update
             onResultsRef.current({ handLandmarkerResult: result, timestamp: loopStart });
             frameCountRef.current++;
@@ -78,6 +88,27 @@ export function useVisionLoop({
             fpsBuckets.current[fpsBucketIdxRef.current % 5] = fps;
             fpsBucketIdxRef.current++;
             if (fpsBucketFilledRef.current < 5) fpsBucketFilledRef.current++;
+
+            // Tracker quality sample (1Hz): tied to the FPS bucket flip
+            // so it costs nothing extra. Only fires while a session is
+            // active (no point polluting marketing-page traffic). The
+            // `meta.missing_pct` is the share of frames in the last 30
+            // detection-loop ticks where MediaPipe found no hand.
+            if (hasActiveSession()) {
+                let missing = 0;
+                const wsz = detectionFilledRef.current;
+                for (let i = 0; i < wsz; i++) if (detectionWindow.current[i] === 0) missing++;
+                const missingPct = wsz > 0 ? Math.round((missing / wsz) * 100) : 0;
+                logEvent('tracker_quality_sample', {
+                    value_number: fps,
+                    meta: {
+                        fps,
+                        missing_pct: missingPct,
+                        window_size: wsz,
+                    },
+                });
+            }
+
             frameCountRef.current = 0;
             bucketStartRef.current = loopStart;
         }

@@ -5,7 +5,7 @@ import { OneEuroFilter2D } from '../../../core/filters/OneEuroFilter';
 import { trackingFeatures } from '../../../core/trackingFeatures';
 import { tactileAudioManager } from '../../../core/TactileAudioManager';
 import { isCountdownActive } from '../../../core/countdownService';
-import { logEvent } from '../../../lib/analytics';
+import { logEvent, markGrab, elapsedSinceGrab } from '../../../lib/analytics';
 import {
     getKidIconSprite,
     isKidIconReady,
@@ -517,11 +517,30 @@ export function startStage(stageIndex?: number) {
     roundComplete = false;
     celebrationTime = 0;
     grabFilter = new OneEuroFilter2D({ minCutoff: 1.5, beta: 0.02, dCutoff: 1.0 });
+    stageStartedAt = Date.now();
+    timeToFirstCorrectMs = 0;
 
     // Eager-preload sprite illustrations for the active stage so the first
     // few frames don't have to fall back to the colour-only ball render.
     preloadKidIcons(currentStage.items.map(it => ({ key: it.key, color: it.color })));
+
+    // Tier A analytics: per-stage granularity. Without this, nine
+    // distinct sort-and-place stages all collapse into "sort-and-place".
+    logEvent('stage_started', {
+        game_mode: 'sort-and-place',
+        stage_id: currentStage.id,
+        meta: {
+            stage_index: currentStageIndex,
+            total_objects: totalObjects,
+            template_id: currentStageTemplate.id,
+        },
+    });
 }
+
+// Tier B analytics: per-stage timing buffers, kept module-local so the
+// stage_completed event can include time_to_first_correct_ms etc.
+let stageStartedAt = 0;
+let timeToFirstCorrectMs = 0;
 
 export function getItems() {
     return currentStage?.items || [];
@@ -575,7 +594,19 @@ export function releaseItem(itemId: string, x: number, y: number) {
 
     if (result === 'none') {
         obj.grabbed = false;
-        logEvent('item_dropped', { game_mode: 'sort-and-place', stage_id: currentStage.id, meta: { itemKey: itemId, itemInstanceId: obj.id, isCorrect: false } });
+        logEvent('item_dropped', {
+            game_mode: 'sort-and-place',
+            stage_id: currentStage.id,
+            meta: {
+                itemKey: itemId,
+                itemInstanceId: obj.id,
+                isCorrect: false,
+                drop_zone: 'none',
+                expected_bin_id: obj.binId,
+                actual_bin_id: null,
+                action_duration_ms: elapsedSinceGrab(obj.id),
+            },
+        });
         return;
     }
 
@@ -605,8 +636,23 @@ export function releaseItem(itemId: string, x: number, y: number) {
         obj.vy = 0;
         obj.rotation = 0;
         score++;
+        if (timeToFirstCorrectMs === 0 && stageStartedAt > 0) {
+            timeToFirstCorrectMs = Date.now() - stageStartedAt;
+        }
 
-        logEvent('item_dropped', { game_mode: 'sort-and-place', stage_id: currentStage.id, meta: { itemKey: itemId, itemInstanceId: obj.id, binId: dropBinId || undefined, isCorrect: true } });
+        logEvent('item_dropped', {
+            game_mode: 'sort-and-place',
+            stage_id: currentStage.id,
+            meta: {
+                itemKey: itemId,
+                itemInstanceId: obj.id,
+                binId: dropBinId || undefined,
+                isCorrect: true,
+                expected_bin_id: obj.binId,
+                actual_bin_id: dropBinId,
+                action_duration_ms: elapsedSinceGrab(obj.id),
+            },
+        });
 
         return;
     } else {
@@ -614,7 +660,19 @@ export function releaseItem(itemId: string, x: number, y: number) {
         obj.vy = (obj.y - y) * 0.015;
         obj.grabbed = false;
 
-        logEvent('item_dropped', { game_mode: 'sort-and-place', stage_id: currentStage.id, meta: { itemKey: itemId, itemInstanceId: obj.id, binId: dropBinId || undefined, isCorrect: false } });
+        logEvent('item_dropped', {
+            game_mode: 'sort-and-place',
+            stage_id: currentStage.id,
+            meta: {
+                itemKey: itemId,
+                itemInstanceId: obj.id,
+                binId: dropBinId || undefined,
+                isCorrect: false,
+                expected_bin_id: obj.binId,
+                actual_bin_id: dropBinId,
+                action_duration_ms: elapsedSinceGrab(obj.id),
+            },
+        });
 
         return;
     }
@@ -710,6 +768,9 @@ export const sortAndPlaceLogic = (
                 if (grabFilter) {
                     grabFilter.reset();
                 }
+                // Tier B: stamp grab time so the matching item_dropped
+                // can report action_duration_ms.
+                markGrab(nearest.id);
                 if (currentStage) {
                     logEvent('item_grabbed', { game_mode: 'sort-and-place', stage_id: currentStage.id, meta: { itemKey: nearest.key, itemInstanceId: nearest.id } });
                 }
@@ -917,7 +978,22 @@ export const sortAndPlaceLogic = (
                             tactileAudioManager.playSuccess('sorting');
                         }
 
-                        logEvent('item_dropped', { game_mode: 'sort-and-place', stage_id: currentStage.id, meta: { itemKey: grabbed.key, itemInstanceId: grabbed.id, binId: bin.id, isCorrect: true } });
+                        if (timeToFirstCorrectMs === 0 && stageStartedAt > 0) {
+                            timeToFirstCorrectMs = Date.now() - stageStartedAt;
+                        }
+                        logEvent('item_dropped', {
+                            game_mode: 'sort-and-place',
+                            stage_id: currentStage.id,
+                            meta: {
+                                itemKey: grabbed.key,
+                                itemInstanceId: grabbed.id,
+                                binId: bin.id,
+                                isCorrect: true,
+                                expected_bin_id: grabbed.binId,
+                                actual_bin_id: bin.id,
+                                action_duration_ms: elapsedSinceGrab(grabbed.id),
+                            },
+                        });
                     } else {
                         grabbed.vx = (grabbed.x - bin.x) * 0.015;
                         grabbed.vy = (grabbed.y - bin.y) * 0.015;
@@ -944,7 +1020,22 @@ export const sortAndPlaceLogic = (
         celebrationTime = Date.now();
         isTransitioning = true;
 
+        const totalDurationMs = stageStartedAt > 0 ? Date.now() - stageStartedAt : 0;
+        // Keep the legacy mode_completed event firing AND emit the new
+        // richer stage_completed alongside it.
         logEvent('mode_completed', { game_mode: 'sort-and-place', stage_id: currentStage.id });
+        logEvent('stage_completed', {
+            game_mode: 'sort-and-place',
+            stage_id: currentStage.id,
+            value_number: totalDurationMs,
+            meta: {
+                stage_index: currentStageIndex,
+                template_id: currentStageTemplate?.id,
+                time_to_first_correct_ms: timeToFirstCorrectMs,
+                time_to_all_correct_ms: totalDurationMs,
+                total_objects: totalObjects,
+            },
+        });
     }
 
     if (!currentStage) return;

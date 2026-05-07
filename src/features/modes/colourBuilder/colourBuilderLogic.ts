@@ -3,7 +3,7 @@ import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import { normalizedToCanvas } from '../../../core/coordinateUtils';
 import { OneEuroFilter2D } from '../../../core/filters/OneEuroFilter';
 import { isCountdownActive } from '../../../core/countdownService';
-import { logEvent } from '../../../lib/analytics';
+import { logEvent, markGrab, elapsedSinceGrab } from '../../../lib/analytics';
 import type { StageConfig, SlotConfig, ColourId } from './ColourBuilderStages';
 import { STAGES, ColorPalette } from './ColourBuilderStages';
 
@@ -82,6 +82,19 @@ export function startStage(stageIndex: number = 0) {
     grabbedBlock = null;
 
     grabFilter = new OneEuroFilter2D({ minCutoff: 1.5, beta: 0.02, dCutoff: 1.0 });
+
+    // Tier A analytics: emit stage_started at the top of the round so
+    // we can compute time-to-first-correct and time-to-all-correct
+    // from the gap between this and the matching stage_completed /
+    // mode_completed events.
+    logEvent('stage_started', {
+        game_mode: 'colour-builder',
+        stage_id: currentStage.id,
+        meta: {
+            stage_index: currentStageIndex,
+            total_blocks: totalBlocks,
+        },
+    });
 }
 
 export function validateDrop(block: BlockItem, dropSlot: SlotConfig | null) {
@@ -137,6 +150,9 @@ export function colourBuilderLogic(
                 grabbedBlock = nearest;
                 nearest.state = "grabbed";
                 grabFilter?.reset();
+                // Tier B analytics: stamp grab time so the matching
+                // item_dropped event can attach action_duration_ms.
+                markGrab(nearest.id);
                 if (currentStage) {
                     logEvent('item_grabbed', { game_mode: 'colour-builder', stage_id: currentStage.id, meta: { itemKey: nearest.colorId, itemInstanceId: nearest.id } });
                 }
@@ -173,6 +189,7 @@ export function colourBuilderLogic(
             }
 
             const result = validateDrop(grabbedBlock, nearestSlot);
+            const actionDurationMs = elapsedSinceGrab(grabbedBlock.id);
             if (result === 'correct' && nearestSlot) {
                 grabbedBlock.state = "placed";
                 grabbedBlock.slotId = nearestSlot.id;
@@ -189,16 +206,50 @@ export function colourBuilderLogic(
                 // For canvas: we will dispatch an event or handle it in Mode component
                 window.dispatchEvent(new CustomEvent('colour-builder-burst', { detail: { x: nearestSlot.pos.x, y: nearestSlot.pos.y } }));
 
-                logEvent('item_dropped', { game_mode: 'colour-builder', stage_id: currentStage.id, meta: { itemKey: grabbedBlock.colorId, itemInstanceId: grabbedBlock.id, binId: nearestSlot.id, isCorrect: true } });
+                logEvent('item_dropped', {
+                    game_mode: 'colour-builder',
+                    stage_id: currentStage.id,
+                    meta: {
+                        itemKey: grabbedBlock.colorId,
+                        itemInstanceId: grabbedBlock.id,
+                        binId: nearestSlot.id,
+                        isCorrect: true,
+                        // Tier B mistake-pattern fields. Always present
+                        // so the dashboard can sum confusions cleanly.
+                        expected_color: nearestSlot.colorId,
+                        actual_color: grabbedBlock.colorId,
+                        action_duration_ms: actionDurationMs,
+                        streak,
+                    },
+                });
 
             } else {
                 grabbedBlock.state = "idle";
                 if (currentStage.difficulty.wrongDropRule.includes('bounceBack')) {
                     grabbedBlock.bounceBack = true;
+                    // Surface the bounceBack as the implicit "hint" the
+                    // physics engine gives the kid.
+                    logEvent('hint_shown', {
+                        game_mode: 'colour-builder',
+                        stage_id: currentStage.id,
+                        meta: { hint_type: 'bounceBack', itemKey: grabbedBlock.colorId },
+                    });
                 }
                 streak = 0;
 
-                logEvent('item_dropped', { game_mode: 'colour-builder', stage_id: currentStage.id, meta: { itemKey: grabbedBlock.colorId, itemInstanceId: grabbedBlock.id, binId: nearestSlot?.id || undefined, isCorrect: false } });
+                logEvent('item_dropped', {
+                    game_mode: 'colour-builder',
+                    stage_id: currentStage.id,
+                    meta: {
+                        itemKey: grabbedBlock.colorId,
+                        itemInstanceId: grabbedBlock.id,
+                        binId: nearestSlot?.id || undefined,
+                        isCorrect: false,
+                        expected_color: nearestSlot?.colorId,
+                        actual_color: grabbedBlock.colorId,
+                        action_duration_ms: actionDurationMs,
+                    },
+                });
             }
             grabbedBlock = null;
         }
@@ -207,7 +258,23 @@ export function colourBuilderLogic(
     if (blocks.filter(b => b.state === 'placed').length === totalBlocks && !roundComplete) {
         roundComplete = true;
         celebrationTime = Date.now();
+        const totalDurationMs = Date.now() - stageStartTime;
+        // Keep the legacy mode_completed event firing (dashboards
+        // already query it) AND emit the new richer stage_completed
+        // alongside.
         logEvent('mode_completed', { game_mode: 'colour-builder', stage_id: currentStage.id });
+        logEvent('stage_completed', {
+            game_mode: 'colour-builder',
+            stage_id: currentStage.id,
+            value_number: totalDurationMs,
+            meta: {
+                stage_index: currentStageIndex,
+                time_to_first_correct_ms: timeToFirstMatch,
+                time_to_all_correct_ms: totalDurationMs,
+                max_streak: maxStreak,
+                total_blocks: totalBlocks,
+            },
+        });
     }
 
     // DRAWING
