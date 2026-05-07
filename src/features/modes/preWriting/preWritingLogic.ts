@@ -29,6 +29,33 @@ let onPathStreak = 0;
 let celebrationTime = 0;
 let completeCallback: (() => void) | null = null;
 
+// Tier B analytics: per-stage timing + path-deviation proxy.
+// onPathFrames + offPathFrames accumulate since the current letter
+// started. accuracy_pct = onPathFrames / (onPathFrames + offPathFrames)
+// at completion → "how steadily the kid traced".
+let stageStartedAt = 0;
+let onPathFrames = 0;
+let offPathFrames = 0;
+let stageStartLogged = false;
+function emitStageStartedIfNeeded(): void {
+    if (stageStartLogged) return;
+    const cur = ALL_PATHS[currentPathIndex];
+    if (!cur) return;
+    stageStartLogged = true;
+    stageStartedAt = Date.now();
+    onPathFrames = 0;
+    offPathFrames = 0;
+    logEvent('stage_started', {
+        game_mode: 'pre-writing',
+        stage_id: cur.name,
+        meta: {
+            stage_index: currentPathIndex,
+            is_letter: cur.isLetter,
+            path_segments: cur.points.length,
+        },
+    });
+}
+
 const PATH_TOLERANCE_PX = 30; // Pixels - converted from normalized based on canvas size
 const PROGRESS_THRESHOLD = 0.02;
 
@@ -48,6 +75,13 @@ export const resetPath = () => {
     progress = 0;
     onPathStreak = 0;
     celebrationTime = 0;
+    // Reset Tier B per-stage counters and re-arm stage_started for the
+    // next time the kid actually starts tracing (we don't fire it on
+    // reset alone — fire on the first on-path frame).
+    stageStartedAt = 0;
+    onPathFrames = 0;
+    offPathFrames = 0;
+    stageStartLogged = false;
 };
 
 export const resetAllPaths = () => {
@@ -390,6 +424,8 @@ export const preWritingLogic = (
 
             if (onPath) {
                 onPathStreak++;
+                onPathFrames++;
+                emitStageStartedIfNeeded();
 
                 // Update progress if moving forward
                 if (t > progress + PROGRESS_THRESHOLD * 0.5 && t < progress + 0.15) {
@@ -426,6 +462,7 @@ export const preWritingLogic = (
                 }
             } else {
                 onPathStreak = 0;
+                if (stageStartLogged) offPathFrames++;
 
                 // Off-path feedback — coral nudge ring (gentle, not punitive)
                 ctx.save();
@@ -473,7 +510,57 @@ export const preWritingLogic = (
     // Check completion - trigger callback instead of drawing on canvas
     if (progress >= 0.95 && celebrationTime === 0) {
         celebrationTime = Date.now();
+        const totalFrames = onPathFrames + offPathFrames;
+        const accuracyPct = totalFrames > 0 ? Math.round((onPathFrames / totalFrames) * 100) : null;
+        const totalDurationMs = stageStartedAt > 0 ? Date.now() - stageStartedAt : null;
+
+        // Keep the legacy mode_completed event for the existing
+        // dashboards. Add stage_completed with timing + accuracy and
+        // a tracing_letter_completed event for the per-letter mastery
+        // panel. The item_dropped mirror feeds learning_attempts so
+        // every traced letter shows up in mastery + curriculum panels.
         logEvent('mode_completed', { game_mode: 'pre-writing', stage_id: currentPath.name });
+        logEvent('stage_completed', {
+            game_mode: 'pre-writing',
+            stage_id: currentPath.name,
+            value_number: totalDurationMs ?? undefined,
+            meta: {
+                stage_index: currentPathIndex,
+                is_letter: currentPath.isLetter,
+                time_to_complete_ms: totalDurationMs,
+                accuracy_pct: accuracyPct,
+                on_path_frames: onPathFrames,
+                off_path_frames: offPathFrames,
+            },
+        });
+        logEvent('tracing_letter_completed', {
+            game_mode: 'pre-writing',
+            stage_id: currentPath.name,
+            value_number: totalDurationMs ?? undefined,
+            meta: {
+                letter: currentPath.name,
+                accuracy_pct: accuracyPct,
+            },
+        });
+        // Mirror into learning_attempts via item_dropped. Tracing
+        // doesn't have a strict "wrong" outcome — completing a letter
+        // is always was_correct=true. expected_letter / actual_letter
+        // are identical (mistake patterns aren't meaningful here),
+        // but the row still feeds per-letter time + accuracy
+        // aggregates on the mastery panel.
+        logEvent('item_dropped', {
+            game_mode: 'pre-writing',
+            stage_id: currentPath.name,
+            meta: {
+                itemKey: currentPath.name,
+                isCorrect: true,
+                expected_letter: currentPath.name,
+                actual_letter: currentPath.name,
+                action_duration_ms: totalDurationMs,
+                accuracy_pct: accuracyPct,
+                is_letter: currentPath.isLetter,
+            },
+        });
         if (completeCallback) {
             completeCallback();
         }
