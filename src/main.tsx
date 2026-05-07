@@ -49,13 +49,15 @@ const ShareLandingPage = React.lazy(() => import('./pages/seo/ShareLandingPage.t
 // Admin — internal analytics insights (auth-gated, allow-list)
 const InsightsDashboard = React.lazy(() => import('./pages/admin/InsightsDashboard.tsx'));
 
-// Class Mode — Teacher + Student screens
-const TeacherDashboard = React.lazy(() => import('./pages/classmode/TeacherDashboard.tsx'));
-const LobbyScreen = React.lazy(() => import('./pages/classmode/LobbyScreen.tsx'));
-const LiveRoundScreen = React.lazy(() => import('./pages/classmode/LiveRoundScreen.tsx'));
-const ResultsScreen = React.lazy(() => import('./pages/classmode/ResultsScreen.tsx'));
-const StudentJoin = React.lazy(() => import('./pages/classmode/StudentJoin.tsx'));
-const StudentGameScreen = React.lazy(() => import('./pages/classmode/StudentGameScreen.tsx'));
+// Class Mode v2 — conductor model. One persistent surface per role.
+//   /class            → TeacherClassConsole  (replaces TeacherDashboard +
+//                       LobbyScreen + LiveRoundScreen + ResultsScreen)
+//   /join             → StudentClassClient   (replaces StudentJoin +
+//                       StudentGameScreen)
+// The legacy lobby/round/results/join-play routes are kept as redirects
+// to avoid breaking any in-the-wild bookmarks.
+const TeacherClassConsole = React.lazy(() => import('./pages/classmode/TeacherClassConsole.tsx'));
+const StudentClassClient  = React.lazy(() => import('./pages/classmode/StudentClassClient.tsx'));
 
 // Helper function to determine route from pathname
 function getRouteFromPath(path: string, hash: string): string {
@@ -67,13 +69,14 @@ function getRouteFromPath(path: string, hash: string): string {
     }
   }
 
-  // Class Mode routes
-  if (path === '/class') return 'class-dashboard';
-  if (path === '/class/lobby') return 'class-lobby';
-  if (path === '/class/round') return 'class-round';
-  if (path === '/class/results') return 'class-results';
-  if (path === '/join') return 'student-join';
-  if (path === '/join/play') return 'student-game';
+  // Class Mode routes — all collapse to the two new persistent screens.
+  // Legacy paths still resolve so old bookmarks don't 404.
+  if (path === '/class' || path === '/class/lobby' || path === '/class/round' || path === '/class/results') {
+    return 'class-console';
+  }
+  if (path === '/join' || path === '/join/play') {
+    return 'student-client';
+  }
 
   if (path === '/admin/insights') return 'admin-insights';
   if (path === '/admin') return 'admin';
@@ -254,52 +257,20 @@ function Root() {
     return <QAPage />;
   }
 
-  // ── Class Mode routes ──────────────────────────────────────────────────────
-  if (route === 'class-dashboard') {
+  // ── Class Mode routes (conductor v1) ──────────────────────────────────────
+  if (route === 'class-console') {
     return (
       <React.Suspense fallback={<DemoLoader />}>
-        <TeacherDashboard />
+        <TeacherClassConsole />
       </React.Suspense>
     );
   }
 
-  if (route === 'class-lobby') {
-    return (
-      <React.Suspense fallback={<DemoLoader />}>
-        <LobbyScreen />
-      </React.Suspense>
-    );
-  }
-
-  if (route === 'class-round') {
-    return (
-      <React.Suspense fallback={<DemoLoader />}>
-        <LiveRoundScreen />
-      </React.Suspense>
-    );
-  }
-
-  if (route === 'class-results') {
-    return (
-      <React.Suspense fallback={<DemoLoader />}>
-        <ResultsScreen />
-      </React.Suspense>
-    );
-  }
-
-  if (route === 'student-join') {
-    return (
-      <React.Suspense fallback={<DemoLoader />}>
-        <StudentJoin />
-      </React.Suspense>
-    );
-  }
-
-  if (route === 'student-game') {
+  if (route === 'student-client') {
     return (
       <ErrorBoundary>
         <React.Suspense fallback={<DemoLoader />}>
-          <StudentGameScreen />
+          <StudentClassClient />
         </React.Suspense>
       </ErrorBoundary>
     );
