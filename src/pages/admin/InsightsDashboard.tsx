@@ -310,7 +310,11 @@ const SignInGate: React.FC = () => {
                     Sign in with Google to view live analytics for drawintheair.com.
                 </p>
                 {configured ? (
-                    <KidButton variant="primary" size="md" onClick={signIn}>
+                    <KidButton
+                        variant="primary"
+                        size="md"
+                        onClick={() => signIn('/admin/insights')}
+                    >
                         Sign in with Google
                     </KidButton>
                 ) : (

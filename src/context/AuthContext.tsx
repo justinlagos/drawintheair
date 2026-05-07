@@ -13,7 +13,9 @@ interface AuthContextValue {
   user: SupabaseUser | null;
   loading: boolean;
   configured: boolean;
-  signIn: () => void;
+  /** Kick off Google OAuth. Pass an internal path to land on after
+   *  auth (e.g. '/admin/insights'); defaults to '/class'. */
+  signIn: (returnTo?: string) => void;
   signOut: () => Promise<void>;
 }
 

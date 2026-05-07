@@ -105,7 +105,25 @@ export function onAuthStateChange(callback: (user: SupabaseUser | null) => void)
   };
 }
 
-export function signInWithGoogle() {
+/**
+ * Kick off Google OAuth.
+ *
+ * Supabase's allow-list only contains specific redirect URLs (we
+ * registered https://drawintheair.com/class), so we keep
+ * redirect_to=/class and instead stash where the caller actually
+ * wants to land in sessionStorage. handleAuthCallback() reads it
+ * back on the next page load and navigates accordingly.
+ *
+ * @param returnTo  optional path the caller wants to land on after
+ *                  auth completes (e.g. '/admin/insights'). Defaults
+ *                  to '/class' (back-compat with teacher dashboard).
+ */
+export function signInWithGoogle(returnTo?: string) {
+  if (returnTo) {
+    try {
+      sessionStorage.setItem('sb-return-to', returnTo);
+    } catch { /* private mode etc. */ }
+  }
   const redirectTo = `${window.location.origin}/class`;
   const url = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}&flow_type=implicit`;
   window.location.href = url;
@@ -157,6 +175,21 @@ export async function handleAuthCallback(): Promise<SupabaseUser | null> {
         notifyAuthListeners(user);
         // Clean URL hash
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
+
+        // Honour any return-to path stashed by signInWithGoogle.
+        // Allow-list internal paths only (must start with '/') so a
+        // hostile redirect_to can't bounce the user off-domain.
+        try {
+          const returnTo = sessionStorage.getItem('sb-return-to');
+          if (returnTo) {
+            sessionStorage.removeItem('sb-return-to');
+            if (returnTo.startsWith('/') && returnTo !== window.location.pathname) {
+              window.location.replace(returnTo);
+              return user; // navigation in progress
+            }
+          }
+        } catch { /* ignore */ }
+
         return user;
       }
     } catch { /* fall through */ }
