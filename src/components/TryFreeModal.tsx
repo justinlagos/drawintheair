@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { startSession, type PilotAgeBand } from '../lib/pilotAnalytics';
+import { startSession, type AgeBand as PilotAgeBand } from '../lib/analytics';
 import './tryFreeModal.css';
 
 const AGE_BANDS: { value: PilotAgeBand; label: string }[] = [
@@ -43,7 +43,7 @@ export const TryFreeModal: React.FC<TryFreeModalProps> = ({ open, onClose }) => 
         if (!ageBand) return;
 
         // Start pilot analytics session
-        startSession(ageBand, schoolCode.trim(), classCode.trim());
+        startSession({ ageBand, schoolId: schoolCode.trim(), classId: classCode.trim() });
 
         // Log the demo_try_click for the existing analytics too
         if (typeof window !== 'undefined') {

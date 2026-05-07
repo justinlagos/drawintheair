@@ -5,7 +5,7 @@ import { OneEuroFilter2D } from '../../../core/filters/OneEuroFilter';
 import { trackingFeatures } from '../../../core/trackingFeatures';
 import { tactileAudioManager } from '../../../core/TactileAudioManager';
 import { isCountdownActive } from '../../../core/countdownService';
-import { pilotAnalytics } from '../../../lib/pilotAnalytics';
+import { logEvent } from '../../../lib/analytics';
 import {
     getKidIconSprite,
     isKidIconReady,
@@ -575,7 +575,7 @@ export function releaseItem(itemId: string, x: number, y: number) {
 
     if (result === 'none') {
         obj.grabbed = false;
-        pilotAnalytics.logEvent('item_dropped', { gameId: 'sortAndPlace', stageId: currentStage.id, itemKey: itemId, itemInstanceId: obj.id, isCorrect: false });
+        logEvent('item_dropped', { game_mode: 'sort-and-place', stage_id: currentStage.id, meta: { itemKey: itemId, itemInstanceId: obj.id, isCorrect: false } });
         return;
     }
 
@@ -606,7 +606,7 @@ export function releaseItem(itemId: string, x: number, y: number) {
         obj.rotation = 0;
         score++;
 
-        pilotAnalytics.logEvent('item_dropped', { gameId: 'sortAndPlace', stageId: currentStage.id, itemKey: itemId, itemInstanceId: obj.id, binId: dropBinId || undefined, isCorrect: true });
+        logEvent('item_dropped', { game_mode: 'sort-and-place', stage_id: currentStage.id, meta: { itemKey: itemId, itemInstanceId: obj.id, binId: dropBinId || undefined, isCorrect: true } });
 
         return;
     } else {
@@ -614,7 +614,7 @@ export function releaseItem(itemId: string, x: number, y: number) {
         obj.vy = (obj.y - y) * 0.015;
         obj.grabbed = false;
 
-        pilotAnalytics.logEvent('item_dropped', { gameId: 'sortAndPlace', stageId: currentStage.id, itemKey: itemId, itemInstanceId: obj.id, binId: dropBinId || undefined, isCorrect: false });
+        logEvent('item_dropped', { game_mode: 'sort-and-place', stage_id: currentStage.id, meta: { itemKey: itemId, itemInstanceId: obj.id, binId: dropBinId || undefined, isCorrect: false } });
 
         return;
     }
@@ -711,7 +711,7 @@ export const sortAndPlaceLogic = (
                     grabFilter.reset();
                 }
                 if (currentStage) {
-                    pilotAnalytics.logEvent('item_grabbed', { gameId: 'sortAndPlace', stageId: currentStage.id, itemKey: nearest.key, itemInstanceId: nearest.id });
+                    logEvent('item_grabbed', { game_mode: 'sort-and-place', stage_id: currentStage.id, meta: { itemKey: nearest.key, itemInstanceId: nearest.id } });
                 }
             }
         } else if (grabbedObject) {
@@ -917,7 +917,7 @@ export const sortAndPlaceLogic = (
                             tactileAudioManager.playSuccess('sorting');
                         }
 
-                        pilotAnalytics.logEvent('item_dropped', { gameId: 'sortAndPlace', stageId: currentStage.id, itemKey: grabbed.key, itemInstanceId: grabbed.id, binId: bin.id, isCorrect: true });
+                        logEvent('item_dropped', { game_mode: 'sort-and-place', stage_id: currentStage.id, meta: { itemKey: grabbed.key, itemInstanceId: grabbed.id, binId: bin.id, isCorrect: true } });
                     } else {
                         grabbed.vx = (grabbed.x - bin.x) * 0.015;
                         grabbed.vy = (grabbed.y - bin.y) * 0.015;
@@ -944,7 +944,7 @@ export const sortAndPlaceLogic = (
         celebrationTime = Date.now();
         isTransitioning = true;
 
-        pilotAnalytics.logEvent('stage_completed', { gameId: 'sortAndPlace', stageId: currentStage.id });
+        logEvent('mode_completed', { game_mode: 'sort-and-place', stage_id: currentStage.id });
     }
 
     if (!currentStage) return;

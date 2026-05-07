@@ -1,335 +1,504 @@
 /**
- * Analytics Client
- * Privacy-respecting analytics for product insight
+ * Analytics — single source of truth for product telemetry.
+ *
+ * Writes events to the Supabase analytics_events table via dbInsert.
+ * Replaces the previous three-system mess:
+ *   • The dead /api/track POST queue (endpoint never existed in prod)
+ *   • The Google-Sheets-backed pilotAnalytics
+ *   • Ad-hoc gtag calls scattered across components
+ *
+ * gtag and Microsoft Clarity remain in index.html for the marketing
+ * funnel (pageviews, heatmaps), but product-level events route here.
+ *
+ * Privacy: no PII ever. session_id is a per-browser-tab UUID, never
+ * tied to identity. age_band is a coarse 4-year bucket. Every field
+ * is documented in docs/ANALYTICS_PLAN.md.
+ *
+ * Usage:
+ *   import { analytics } from '@/lib/analytics';
+ *
+ *   analytics.logEvent('mode_started', { game_mode: 'tracing' });
+ *   analytics.startSession({ ageBand: '4-5', schoolId: '', classId: '' });
+ *   analytics.endSession('back_to_landing');
  */
 
-type EventName = 
-  | 'landing_view'
-  | 'nav_click'
-  | 'cta_click'
-  | 'demo_try_click'
-  | 'demo_loading_view'
-  | 'demo_loading_complete'
-  | 'demo_wave_screen_view'
-  | 'demo_wave_success'
-  | 'demo_mode_select_view'
-  | 'mode_start'
-  | 'mode_exit'
-  | 'mode_chapter_complete'
-  | 'mode_level_up'
-  | 'bubblepop_round_start'
-  | 'bubblepop_balloon_popped'
-  | 'bubblepop_round_complete'
-  | 'bubblepop_auto_advance'
-  | 'wordsearch_level_start'
-  | 'wordsearch_word_found'
-  | 'wordsearch_hint_shown'
-  | 'wordsearch_level_complete'
-  | 'wordsearch_world_transition'
-  | 'session_heartbeat'
-  | 'session_idle'
-  | 'session_resume'
-  | 'school_pack_form_view'
-  | 'school_pack_form_submit'
-  | 'system_error'
-  | 'camera_permission_denied'
-  | 'camera_permission_granted';
+import { dbInsert } from './supabase';
 
-interface EventMeta {
-  [key: string]: any;
-  viewport_w?: number;
-  viewport_h?: number;
-  device_type?: 'desktop' | 'mobile' | 'tablet';
-  connection_type?: string;
-  browser?: string;
-  browser_version?: string;
-  country?: string;
-  referrer?: string;
-  utm_source?: string;
-  utm_medium?: string;
-  utm_campaign?: string;
-  time_on_page?: number;
-  demo_session_duration?: number;
-  mode_chosen?: string;
-  error_type?: string;
-  camera_permission_outcome?: 'granted' | 'denied' | 'prompt';
+// ════════════════════════════════════════════════════════════════════
+// Event vocabulary
+// ════════════════════════════════════════════════════════════════════
+
+/**
+ * The full canonical list of events. Adding new events: add to this
+ * union, document below, instrument at the call site. Do not introduce
+ * new event-tracking systems — funnel everything through this.
+ */
+export type EventName =
+    // ── Acquisition / landing ──
+    | 'landing_view'
+    | 'nav_click'
+    | 'cta_click'
+
+    // ── Activation funnel (every kid passes through this) ──
+    | 'try_free_clicked'        // TryFreeModal opens
+    | 'age_band_selected'       // Age picker submitted
+    | 'demo_loading_view'
+    | 'demo_loading_complete'
+    | 'camera_requested'        // getUserMedia called
+    | 'camera_granted'
+    | 'camera_denied'
+    | 'tracker_init_started'    // handTracker.initialize() invoked
+    | 'tracker_init_succeeded'  // meta: { delegate, init_duration_ms }
+    | 'tracker_init_failed'     // meta: { code, message, tried_delegates }
+    | 'wave_screen_view'
+    | 'wave_first_hand_seen'    // First MediaPipe landmark detected
+    | 'wave_completed'          // Wave gate cleared
+
+    // ── Menu + game start ──
+    | 'menu_opened'
+    | 'mode_selected'           // game_mode: which game picked
+    | 'mode_started'            // First frame of gameplay
+    | 'mode_completed'          // Stage / round / chapter cleared
+    | 'mode_abandoned'          // Exit before completion
+    | 'chapter_unlocked'
+
+    // ── Per-game events ──
+    | 'item_grabbed'                // generic across Sort&Place, Colour Builder, Word Search
+    | 'item_dropped'                // meta: { isCorrect, itemKey, binId }
+    | 'bubblepop_round_complete'
+    | 'wordsearch_word_found'
+    | 'wordsearch_level_complete'
+    | 'tracing_letter_completed'
+    | 'colourbuilder_match_made'
+    | 'balloonmath_balloon_popped'
+    | 'rainbowbridge_match_made'
+    | 'spellingstars_word_complete'
+
+    // ── Reliability / error stream ──
+    | 'system_error'                // Uncaught exception
+    | 'csp_violation'               // securitypolicyviolation event
+    | 'tracker_low_confidence'      // hasHand=false sustained >5s
+
+    // ── Session lifecycle ──
+    | 'session_started'
+    | 'session_heartbeat'
+    | 'session_ended'
+
+    // ── Conversion (B2B) ──
+    | 'school_pack_form_view'
+    | 'school_pack_form_submit'
+    | 'feedback_widget_opened'
+    | 'feedback_submitted';
+
+export type AgeBand = '4-5' | '6-7' | '8-9' | '10-11' | '12+';
+
+/** Optional fields on every event. Anything not in this shape goes in `meta`. */
+export interface EventOptions {
+    page?: string;
+    component?: string;
+    game_mode?: string;
+    stage_id?: string;
+    chapter?: number;
+    level?: number;
+    value_number?: number;
+    meta?: Record<string, unknown>;
 }
 
-interface AnalyticsEvent {
-  event_id: string;
-  session_id: string;
-  created_at: string;
-  event_name: EventName;
-  page: string;
-  component?: string;
-  mode?: string;
-  chapter?: number;
-  level?: number;
-  value_number?: number;
-  value_string?: string;
-  meta: EventMeta;
+interface EventRow {
+    session_id: string;
+    occurred_at: string;
+    event_name: EventName;
+    page: string | null;
+    component: string | null;
+    game_mode: string | null;
+    stage_id: string | null;
+    chapter: number | null;
+    level: number | null;
+    age_band: string | null;
+    school_id: string | null;
+    class_id: string | null;
+    build_version: string | null;
+    device_type: string | null;
+    browser: string | null;
+    browser_version: string | null;
+    viewport_w: number | null;
+    viewport_h: number | null;
+    utm_source: string | null;
+    utm_medium: string | null;
+    utm_campaign: string | null;
+    referrer: string | null;
+    value_number: number | null;
+    meta: Record<string, unknown>;
 }
 
-class AnalyticsClient {
-  private sessionId: string;
-  private eventQueue: AnalyticsEvent[] = [];
-  private flushInterval: number | null = null;
-  private heartbeatInterval: number | null = null;
-  private readonly FLUSH_INTERVAL_MS = 10000; // 10 seconds
-  private readonly FLUSH_BATCH_SIZE = 10;
-  private readonly HEARTBEAT_INTERVAL_MS = 15000; // 15 seconds
+// ════════════════════════════════════════════════════════════════════
+// Session state — UUID per tab, persisted in sessionStorage
+// ════════════════════════════════════════════════════════════════════
 
-  constructor() {
-    this.sessionId = this.getOrCreateSessionId();
-    this.startHeartbeat();
-    this.startFlushInterval();
-    this.setupBeforeUnload();
-    this.trackLandingView();
-  }
+interface SessionContext {
+    sessionId: string;
+    ageBand: AgeBand | null;
+    schoolId: string;
+    classId: string;
+    startedAt: string;
+}
 
-  private getOrCreateSessionId(): string {
-    if (typeof window === 'undefined') return '';
-    
-    const stored = sessionStorage.getItem('analytics_session_id');
-    if (stored) return stored;
+const SESSION_KEY = 'dita_analytics_session';
+const QUEUE_KEY = 'dita_analytics_queue';
+const FLUSH_INTERVAL_MS = 5_000;
+const HEARTBEAT_INTERVAL_MS = 30_000;
+const FLUSH_BATCH_SIZE = 20;
 
-    const newId = this.generateUUID();
-    sessionStorage.setItem('analytics_session_id', newId);
-    return newId;
-  }
+let session: SessionContext | null = null;
+let eventQueue: EventRow[] = [];
+let flushTimer: ReturnType<typeof setInterval> | null = null;
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+let flushing = false;
 
-  private generateUUID(): string {
+function generateUUID(): string {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0;
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
     });
-  }
+}
 
-  private getDeviceType(): 'desktop' | 'mobile' | 'tablet' {
-    if (typeof window === 'undefined') return 'desktop';
-    const width = window.innerWidth;
-    if (width < 768) return 'mobile';
-    if (width < 1024) return 'tablet';
-    return 'desktop';
-  }
-
-  private getBrowserInfo(): { browser: string; version: string } {
-    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
-      return { browser: 'unknown', version: 'unknown' };
+function loadSession(): SessionContext | null {
+    if (typeof window === 'undefined') return null;
+    try {
+        const raw = sessionStorage.getItem(SESSION_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw) as SessionContext;
+    } catch {
+        return null;
     }
+}
 
+function persistSession(s: SessionContext | null): void {
+    if (typeof window === 'undefined') return;
+    if (s) sessionStorage.setItem(SESSION_KEY, JSON.stringify(s));
+    else sessionStorage.removeItem(SESSION_KEY);
+}
+
+function getOrCreateSession(): SessionContext {
+    if (session) return session;
+    const restored = loadSession();
+    if (restored) {
+        session = restored;
+        return session;
+    }
+    session = {
+        sessionId: generateUUID(),
+        ageBand: null,
+        schoolId: '',
+        classId: '',
+        startedAt: new Date().toISOString(),
+    };
+    persistSession(session);
+    return session;
+}
+
+// ════════════════════════════════════════════════════════════════════
+// Context capture (browser, device, UTM, etc.)
+// ════════════════════════════════════════════════════════════════════
+
+interface BrowserInfo {
+    browser: string;
+    version: string;
+}
+
+function detectBrowser(): BrowserInfo {
+    if (typeof navigator === 'undefined') return { browser: 'unknown', version: 'unknown' };
     const ua = navigator.userAgent;
-    let browser = 'unknown';
-    let version = 'unknown';
-
-    if (ua.includes('Chrome') && !ua.includes('Edg')) {
-      browser = 'Chrome';
-      const match = ua.match(/Chrome\/(\d+)/);
-      version = match ? match[1] : 'unknown';
-    } else if (ua.includes('Firefox')) {
-      browser = 'Firefox';
-      const match = ua.match(/Firefox\/(\d+)/);
-      version = match ? match[1] : 'unknown';
-    } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
-      browser = 'Safari';
-      const match = ua.match(/Version\/(\d+)/);
-      version = match ? match[1] : 'unknown';
-    } else if (ua.includes('Edg')) {
-      browser = 'Edge';
-      const match = ua.match(/Edg\/(\d+)/);
-      version = match ? match[1] : 'unknown';
+    if (ua.includes('Edg')) {
+        const m = ua.match(/Edg\/(\d+)/);
+        return { browser: 'Edge', version: m ? m[1] : 'unknown' };
     }
+    if (ua.includes('Chrome')) {
+        const m = ua.match(/Chrome\/(\d+)/);
+        return { browser: 'Chrome', version: m ? m[1] : 'unknown' };
+    }
+    if (ua.includes('Firefox')) {
+        const m = ua.match(/Firefox\/(\d+)/);
+        return { browser: 'Firefox', version: m ? m[1] : 'unknown' };
+    }
+    if (ua.includes('Safari')) {
+        const m = ua.match(/Version\/(\d+)/);
+        return { browser: 'Safari', version: m ? m[1] : 'unknown' };
+    }
+    return { browser: 'unknown', version: 'unknown' };
+}
 
-    return { browser, version };
-  }
+function detectDeviceType(): string {
+    if (typeof window === 'undefined') return 'unknown';
+    const w = window.innerWidth;
+    if (w < 768) return 'mobile';
+    if (w < 1024) return 'tablet';
+    if (w >= 1920) return 'desktop-large';
+    return 'desktop';
+}
 
-  private getCountry(): string | undefined {
-    // Only use if available from request headers or existing service
-    // Do not make new API calls for privacy
-    // This would typically come from server-side headers
-    return undefined;
-  }
-
-  private getUTMParams(): { utm_source?: string; utm_medium?: string; utm_campaign?: string } {
-    if (typeof window === 'undefined') return {};
+function getUTMParams(): { utm_source: string | null; utm_medium: string | null; utm_campaign: string | null } {
+    if (typeof window === 'undefined') {
+        return { utm_source: null, utm_medium: null, utm_campaign: null };
+    }
     const params = new URLSearchParams(window.location.search);
     return {
-      utm_source: params.get('utm_source') || undefined,
-      utm_medium: params.get('utm_medium') || undefined,
-      utm_campaign: params.get('utm_campaign') || undefined,
+        utm_source: params.get('utm_source'),
+        utm_medium: params.get('utm_medium'),
+        utm_campaign: params.get('utm_campaign'),
     };
-  }
+}
 
-  private getMeta(additionalMeta: EventMeta = {}): EventMeta {
-    const browserInfo = this.getBrowserInfo();
-    const utmParams = this.getUTMParams();
-    
+function getBuildVersion(): string {
+    return (import.meta.env.VITE_BUILD_VERSION as string) || 'dev';
+}
+
+// ════════════════════════════════════════════════════════════════════
+// Event row construction
+// ════════════════════════════════════════════════════════════════════
+
+function buildRow(name: EventName, opts: EventOptions = {}): EventRow {
+    const ctx = getOrCreateSession();
+    const { browser, version } = detectBrowser();
+    const utm = getUTMParams();
     return {
-      viewport_w: typeof window !== 'undefined' ? window.innerWidth : undefined,
-      viewport_h: typeof window !== 'undefined' ? window.innerHeight : undefined,
-      device_type: this.getDeviceType(),
-      connection_type: (navigator as any).connection?.effectiveType,
-      browser: browserInfo.browser,
-      browser_version: browserInfo.version,
-      country: this.getCountry(),
-      referrer: typeof document !== 'undefined' ? (document.referrer || undefined) : undefined,
-      ...utmParams,
-      ...additionalMeta,
+        session_id: ctx.sessionId,
+        occurred_at: new Date().toISOString(),
+        event_name: name,
+        page: opts.page || (typeof window !== 'undefined' ? window.location.pathname : null),
+        component: opts.component || null,
+        game_mode: opts.game_mode || null,
+        stage_id: opts.stage_id || null,
+        chapter: opts.chapter ?? null,
+        level: opts.level ?? null,
+        age_band: ctx.ageBand,
+        school_id: ctx.schoolId || null,
+        class_id: ctx.classId || null,
+        build_version: getBuildVersion(),
+        device_type: detectDeviceType(),
+        browser,
+        browser_version: version,
+        viewport_w: typeof window !== 'undefined' ? window.innerWidth : null,
+        viewport_h: typeof window !== 'undefined' ? window.innerHeight : null,
+        utm_source: utm.utm_source,
+        utm_medium: utm.utm_medium,
+        utm_campaign: utm.utm_campaign,
+        referrer: typeof document !== 'undefined' ? (document.referrer || null) : null,
+        value_number: opts.value_number ?? null,
+        meta: opts.meta || {},
     };
-  }
+}
 
-  logEvent(
-    eventName: EventName,
-    meta: EventMeta = {},
-    options: {
-      page?: string;
-      component?: string;
-      mode?: string;
-      chapter?: number;
-      level?: number;
-      value_number?: number;
-      value_string?: string;
-    } = {}
-  ): void {
-    const event: AnalyticsEvent = {
-      event_id: this.generateUUID(),
-      session_id: this.sessionId,
-      created_at: new Date().toISOString(),
-      event_name: eventName,
-      page: options.page || window.location.pathname,
-      component: options.component,
-      mode: options.mode,
-      chapter: options.chapter,
-      level: options.level,
-      value_number: options.value_number,
-      value_string: options.value_string,
-      meta: this.getMeta(meta),
-    };
+// ════════════════════════════════════════════════════════════════════
+// Queue + flush
+// ════════════════════════════════════════════════════════════════════
 
-    this.eventQueue.push(event);
-
-    // Flush if queue is large enough
-    if (this.eventQueue.length >= this.FLUSH_BATCH_SIZE) {
-      this.flush();
+function loadQueueFromStorage(): EventRow[] {
+    if (typeof window === 'undefined') return [];
+    try {
+        const raw = localStorage.getItem(QUEUE_KEY);
+        return raw ? (JSON.parse(raw) as EventRow[]) : [];
+    } catch {
+        return [];
     }
-  }
+}
 
-  private startFlushInterval(): void {
-    if (this.flushInterval) return;
-    this.flushInterval = window.setInterval(() => {
-      if (this.eventQueue.length > 0) {
-        this.flush();
-      }
-    }, this.FLUSH_INTERVAL_MS);
-  }
+function persistQueue(): void {
+    if (typeof window === 'undefined') return;
+    try {
+        // Cap at 200 events to avoid runaway storage growth offline
+        const capped = eventQueue.slice(-200);
+        localStorage.setItem(QUEUE_KEY, JSON.stringify(capped));
+    } catch {
+        // Storage full — drop oldest
+        if (eventQueue.length > 50) {
+            eventQueue = eventQueue.slice(-50);
+            try { localStorage.setItem(QUEUE_KEY, JSON.stringify(eventQueue)); } catch { /* give up */ }
+        }
+    }
+}
 
-  private startHeartbeat(): void {
-    if (this.heartbeatInterval) return;
-    this.heartbeatInterval = window.setInterval(() => {
-      const activeScreen = this.getActiveScreen();
-      this.logEvent('session_heartbeat', {
-        active_screen: activeScreen,
-      });
-    }, this.HEARTBEAT_INTERVAL_MS);
-  }
+async function flush(): Promise<void> {
+    if (flushing || eventQueue.length === 0) return;
+    flushing = true;
 
-  private getActiveScreen(): string {
-    const path = window.location.pathname;
-    if (path === '/demo') return 'demo_loading';
-    if (path === '/play' || path === '/onboarding') return 'wave_screen';
-    if (path === '/app') return 'mode_selection';
-    if (path.startsWith('/')) return 'game';
-    return 'landing';
-  }
+    // Take a snapshot — anything that arrives during the network call
+    // remains in eventQueue and flushes on the next tick.
+    const batch = eventQueue.splice(0, FLUSH_BATCH_SIZE);
+    persistQueue();
 
-  private setupBeforeUnload(): void {
+    try {
+        const { error } = await dbInsert('analytics_events', batch);
+        if (error) {
+            // Put the batch back at the front of the queue and retry next tick
+            eventQueue = [...batch, ...eventQueue];
+            persistQueue();
+            // Don't log noisily — analytics failures shouldn't spam the console
+        }
+    } catch {
+        // Network down or Supabase unreachable — keep events for retry
+        eventQueue = [...batch, ...eventQueue];
+        persistQueue();
+    } finally {
+        flushing = false;
+    }
+}
+
+function startFlushTimer(): void {
+    if (flushTimer) return;
+    flushTimer = setInterval(() => {
+        if (eventQueue.length > 0) flush();
+    }, FLUSH_INTERVAL_MS);
+}
+
+function startHeartbeat(): void {
+    if (heartbeatTimer) return;
+    heartbeatTimer = setInterval(() => {
+        logEvent('session_heartbeat');
+    }, HEARTBEAT_INTERVAL_MS);
+}
+
+function setupBeforeUnload(): void {
     if (typeof window === 'undefined') return;
     window.addEventListener('beforeunload', () => {
-      this.flush(true);
+        // Use sendBeacon for reliable last-gasp delivery during page unload.
+        // dbInsert won't work here because the page is being torn down.
+        if (eventQueue.length === 0 || typeof navigator.sendBeacon !== 'function') return;
+        const url = (import.meta.env.VITE_SUPABASE_URL as string) || '';
+        const key = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || '';
+        if (!url || !key) return;
+        const body = new Blob([JSON.stringify(eventQueue)], { type: 'application/json' });
+        try {
+            navigator.sendBeacon(
+                `${url}/rest/v1/analytics_events?apikey=${encodeURIComponent(key)}`,
+                body,
+            );
+            eventQueue = [];
+            persistQueue();
+        } catch { /* best effort */ }
     });
-  }
+}
 
-  private async flush(sync = false): Promise<void> {
-    if (this.eventQueue.length === 0) return;
+// ════════════════════════════════════════════════════════════════════
+// CSP-violation listener (catches bugs like the May 2026 regression)
+// ════════════════════════════════════════════════════════════════════
 
-    const events = [...this.eventQueue];
-    this.eventQueue = [];
+function setupCSPListener(): void {
+    if (typeof document === 'undefined') return;
+    document.addEventListener('securitypolicyviolation', (e) => {
+        logEvent('csp_violation', {
+            meta: {
+                blocked_uri: e.blockedURI,
+                violated_directive: e.violatedDirective,
+                source_file: e.sourceFile,
+                line_number: e.lineNumber,
+            },
+        });
+    });
+}
 
-    const flushFn = async () => {
-      try {
-        // In production, this would POST to /api/track
-        // For now, we'll store in sessionStorage as fallback
-        const stored = JSON.parse(sessionStorage.getItem('analytics_events') || '[]');
-        stored.push(...events);
-        sessionStorage.setItem('analytics_events', JSON.stringify(stored.slice(-1000))); // Keep last 1000
+// ════════════════════════════════════════════════════════════════════
+// Public API
+// ════════════════════════════════════════════════════════════════════
 
-        // Try to send to API
-        if (typeof fetch !== 'undefined') {
-          await fetch('/api/track', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ events }),
-            keepalive: true,
-          }).catch(() => {
-            // Silently fail - events are stored in sessionStorage
-          });
-        }
-      } catch (error) {
-        console.error('Analytics flush error:', error);
-      }
+/** Log an event. Fire-and-forget — flushes asynchronously. */
+export function logEvent(name: EventName, opts: EventOptions = {}): void {
+    eventQueue.push(buildRow(name, opts));
+    persistQueue();
+    if (eventQueue.length >= FLUSH_BATCH_SIZE) flush();
+}
+
+/**
+ * Start a session and capture the age-band context that subsequent
+ * events should inherit. Called from TryFreeModal.handleStart().
+ */
+export function startSession(input: { ageBand: AgeBand; schoolId?: string; classId?: string }): string {
+    session = {
+        sessionId: generateUUID(),
+        ageBand: input.ageBand,
+        schoolId: input.schoolId ?? '',
+        classId: input.classId ?? '',
+        startedAt: new Date().toISOString(),
     };
+    persistSession(session);
+    startFlushTimer();
+    startHeartbeat();
+    logEvent('session_started');
+    return session.sessionId;
+}
 
-    if (sync) {
-      // Use sendBeacon for beforeunload
-      if (navigator.sendBeacon) {
-        const blob = new Blob([JSON.stringify({ events })], { type: 'application/json' });
-        navigator.sendBeacon('/api/track', blob);
-      } else {
-        await flushFn();
-      }
-    } else {
-      flushFn();
-    }
-  }
+/** End the current session with a reason. Flushes immediately. */
+export function endSession(reason: string = 'unspecified'): void {
+    if (!session) session = loadSession();
+    if (!session) return;
 
-  private trackLandingView(): void {
+    const durationMs = Date.now() - new Date(session.startedAt).getTime();
+    logEvent('session_ended', {
+        meta: { reason },
+        value_number: durationMs,
+    });
+
+    flush();
+
+    if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+    if (flushTimer) { clearInterval(flushTimer); flushTimer = null; }
+
+    persistSession(null);
+    session = null;
+}
+
+export function hasActiveSession(): boolean {
+    return session !== null || loadSession() !== null;
+}
+
+export function getSessionId(): string | null {
+    if (session) return session.sessionId;
+    const restored = loadSession();
+    return restored?.sessionId ?? null;
+}
+
+// ════════════════════════════════════════════════════════════════════
+// Initialise on import (browser only)
+// ════════════════════════════════════════════════════════════════════
+
+export function initAnalytics(): void {
     if (typeof window === 'undefined') return;
-    if (window.location.pathname === '/' || window.location.pathname === '') {
-      this.logEvent('landing_view', {
-        path: window.location.pathname,
-      });
-    }
-  }
 
-  // Public method to manually flush
-  flushNow(): void {
-    this.flush();
-  }
+    // Restore a session from sessionStorage if one survived a navigation.
+    session = loadSession();
 
-  // Get current session ID (for admin dashboard)
-  getSessionId(): string {
-    return this.sessionId;
-  }
+    // Restore any unsent events from a prior tab.
+    eventQueue = loadQueueFromStorage();
+
+    startFlushTimer();
+    if (session) startHeartbeat();
+
+    setupBeforeUnload();
+    setupCSPListener();
+
+    // Expose a lightweight global for one-off debugging from devtools.
+    // Not used by gtag — that lives in index.html and runs independently.
+    (window as { dita_analytics?: unknown }).dita_analytics = {
+        logEvent, startSession, endSession, hasActiveSession, getSessionId,
+        getQueueSize: () => eventQueue.length,
+        flushNow: flush,
+    };
 }
 
-// Create singleton instance
-let analyticsInstance: AnalyticsClient | null = null;
-
-export const initAnalytics = (): AnalyticsClient => {
-  if (!analyticsInstance && typeof window !== 'undefined') {
-    analyticsInstance = new AnalyticsClient();
-    (window as any).analytics = analyticsInstance;
-  }
-  return analyticsInstance!;
-};
-
-export const getAnalytics = (): AnalyticsClient | null => {
-  return analyticsInstance;
-};
-
-// Auto-initialize on import in browser
+// Auto-initialise when imported in a browser context.
 if (typeof window !== 'undefined') {
-  initAnalytics();
+    initAnalytics();
 }
 
+// Convenience namespaced export for `import { analytics } from '@/lib/analytics'`.
+export const analytics = {
+    logEvent,
+    startSession,
+    endSession,
+    hasActiveSession,
+    getSessionId,
+};

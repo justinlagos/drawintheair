@@ -7,7 +7,7 @@
 import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import type { Grid, Tile, SelectionState, DwellState, WordSearchSettings, HintState } from './wordSearchTypes';
 import { DWELL_TIME_MS, STABLE_FRAMES, HINT_TIMINGS } from './wordSearchConstants';
-import { pilotAnalytics } from '../../../lib/pilotAnalytics';
+import { logEvent } from '../../../lib/analytics';
 
 /**
  * Word Search Logic Function (for onFrame callback)
@@ -161,13 +161,13 @@ export function processWordSearchFrame(
 
         // Log item grab (when they click on the anchor tile)
         if (state.selectionState.anchorTileId) {
-            pilotAnalytics.logEvent('item_grabbed', { gameId: 'wordSearch', stageId: state.chapter.toString(), itemInstanceId: state.selectionState.anchorTileId });
+            logEvent('item_grabbed', { game_mode: 'word-search', stage_id: state.chapter.toString(), meta: { itemInstanceId: state.selectionState.anchorTileId } });
         }
 
         const result = checkWordMatch(state);
 
         // Log the drop (did they find a word or not?)
-        pilotAnalytics.logEvent('item_dropped', { gameId: 'wordSearch', stageId: state.chapter.toString(), itemKey: result.wordFound || 'unknown_word', itemInstanceId: state.selectionState.selectionPath.join(','), isCorrect: !!result.wordFound });
+        logEvent('item_dropped', { game_mode: 'word-search', stage_id: state.chapter.toString(), meta: { itemKey: result.wordFound || 'unknown_word', itemInstanceId: state.selectionState.selectionPath.join(','), isCorrect: !!result.wordFound } });
 
         state.selectionState = {
             anchorTileId: null,
@@ -540,7 +540,7 @@ function checkWordMatch(
             const allFound = state.grid?.words.every(w => w.found) ?? false;
 
             if (allFound) {
-                pilotAnalytics.logEvent('stage_completed', { gameId: 'wordSearch', stageId: state.chapter.toString() });
+                logEvent('mode_completed', { game_mode: 'word-search', stage_id: state.chapter.toString() });
             }
 
             return {
@@ -572,7 +572,7 @@ function checkWordMatch(
                 const allFound = state.grid?.words.every(w => w.found) ?? false;
 
                 if (allFound) {
-                    pilotAnalytics.logEvent('stage_completed', { gameId: 'wordSearch', stageId: state.chapter.toString() });
+                    logEvent('mode_completed', { game_mode: 'word-search', stage_id: state.chapter.toString() });
                 }
 
                 return {

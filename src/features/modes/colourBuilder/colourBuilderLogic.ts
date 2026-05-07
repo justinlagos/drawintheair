@@ -3,7 +3,7 @@ import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import { normalizedToCanvas } from '../../../core/coordinateUtils';
 import { OneEuroFilter2D } from '../../../core/filters/OneEuroFilter';
 import { isCountdownActive } from '../../../core/countdownService';
-import { pilotAnalytics } from '../../../lib/pilotAnalytics';
+import { logEvent } from '../../../lib/analytics';
 import type { StageConfig, SlotConfig, ColourId } from './ColourBuilderStages';
 import { STAGES, ColorPalette } from './ColourBuilderStages';
 
@@ -138,7 +138,7 @@ export function colourBuilderLogic(
                 nearest.state = "grabbed";
                 grabFilter?.reset();
                 if (currentStage) {
-                    pilotAnalytics.logEvent('item_grabbed', { gameId: 'colourBuilder', stageId: currentStage.id, itemKey: nearest.colorId, itemInstanceId: nearest.id });
+                    logEvent('item_grabbed', { game_mode: 'colour-builder', stage_id: currentStage.id, meta: { itemKey: nearest.colorId, itemInstanceId: nearest.id } });
                 }
             }
         } else if (grabbedBlock) {
@@ -189,7 +189,7 @@ export function colourBuilderLogic(
                 // For canvas: we will dispatch an event or handle it in Mode component
                 window.dispatchEvent(new CustomEvent('colour-builder-burst', { detail: { x: nearestSlot.pos.x, y: nearestSlot.pos.y } }));
 
-                pilotAnalytics.logEvent('item_dropped', { gameId: 'colourBuilder', stageId: currentStage.id, itemKey: grabbedBlock.colorId, itemInstanceId: grabbedBlock.id, binId: nearestSlot.id, isCorrect: true });
+                logEvent('item_dropped', { game_mode: 'colour-builder', stage_id: currentStage.id, meta: { itemKey: grabbedBlock.colorId, itemInstanceId: grabbedBlock.id, binId: nearestSlot.id, isCorrect: true } });
 
             } else {
                 grabbedBlock.state = "idle";
@@ -198,7 +198,7 @@ export function colourBuilderLogic(
                 }
                 streak = 0;
 
-                pilotAnalytics.logEvent('item_dropped', { gameId: 'colourBuilder', stageId: currentStage.id, itemKey: grabbedBlock.colorId, itemInstanceId: grabbedBlock.id, binId: nearestSlot?.id || undefined, isCorrect: false });
+                logEvent('item_dropped', { game_mode: 'colour-builder', stage_id: currentStage.id, meta: { itemKey: grabbedBlock.colorId, itemInstanceId: grabbedBlock.id, binId: nearestSlot?.id || undefined, isCorrect: false } });
             }
             grabbedBlock = null;
         }
@@ -207,7 +207,7 @@ export function colourBuilderLogic(
     if (blocks.filter(b => b.state === 'placed').length === totalBlocks && !roundComplete) {
         roundComplete = true;
         celebrationTime = Date.now();
-        pilotAnalytics.logEvent('stage_completed', { gameId: 'colourBuilder', stageId: currentStage.id });
+        logEvent('mode_completed', { game_mode: 'colour-builder', stage_id: currentStage.id });
     }
 
     // DRAWING

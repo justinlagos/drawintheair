@@ -36,7 +36,7 @@ import { type GameMode as FeatureGameMode } from './core/featureFlags';
 import { interactionStateManager } from './core/InteractionState';
 import { getTrackingFlag, isDebugModeEnabled } from './core/flags/TrackingFlags';
 import type { FilterProfileMode } from './core/filters/OneEuroFilter';
-import { logEvent, hasActiveSession, endSession } from './lib/pilotAnalytics';
+import { logEvent, hasActiveSession, endSession } from './lib/analytics';
 import './App.css';
 import { startCountdown } from './core/countdownService';
 
@@ -119,8 +119,8 @@ function App() {
 
     // Fire game_selected event for pilot analytics
     if (hasActiveSession()) {
-      logEvent('game_selected', { gameId: mode });
-      logEvent('stage_started', { gameId: mode, stageId: 'initial' });
+      logEvent('mode_selected', { game_mode: mode });
+      logEvent('mode_started', { game_mode: mode, stage_id: 'initial' });
     }
 
     // Map game mode to filter profile mode (Part E)
@@ -154,7 +154,7 @@ function App() {
     drawingEngine.clear();
     // Fire events for pilot analytics
     if (hasActiveSession()) {
-      logEvent('stage_completed', { gameId: gameMode, stageId: 'exit' });
+      logEvent('mode_completed', { game_mode: gameMode, stage_id: 'exit' });
       logEvent('menu_opened');
     }
   }, [gameMode]);

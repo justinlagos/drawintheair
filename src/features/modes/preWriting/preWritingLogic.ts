@@ -3,7 +3,7 @@ import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import { LETTER_PATHS, getAvailableLetters, type PathPoint } from './letterPaths';
 import { normalizedToCanvas } from '../../../core/coordinateUtils';
 import { isCountdownActive } from '../../../core/countdownService';
-import { pilotAnalytics } from '../../../lib/pilotAnalytics';
+import { logEvent } from '../../../lib/analytics';
 
 // Start with shapes, then move to letters
 const SHAPES: Array<{ name: string; points: PathPoint[] }> = [
@@ -473,7 +473,7 @@ export const preWritingLogic = (
     // Check completion - trigger callback instead of drawing on canvas
     if (progress >= 0.95 && celebrationTime === 0) {
         celebrationTime = Date.now();
-        pilotAnalytics.logEvent('stage_completed', { gameId: 'preWriting', stageId: currentPath.name });
+        logEvent('mode_completed', { game_mode: 'pre-writing', stage_id: currentPath.name });
         if (completeCallback) {
             completeCallback();
         }
