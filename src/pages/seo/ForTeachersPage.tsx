@@ -1,12 +1,14 @@
+import { useEffect } from 'react';
 import { SeoLayout, Breadcrumb, FAQItem, PageHero, Section, navigate } from './SeoLayout';
 import { SEOMeta } from '../../seo/SEOMeta';
 import { PAGE_META, buildFAQSchema, buildBreadcrumbSchema, SITE } from '../../seo/seo-config';
+import { logEvent } from '../../lib/analytics';
 
 const FAQ = [
   { q: 'Does Draw in the Air require student accounts?', a: 'No. Draw in the Air requires zero accounts, logins, or registrations for students or teachers. Simply visit the website and start — making it ideal for any classroom environment.' },
   { q: 'Does it work on school Chromebooks?', a: 'Yes! Draw in the Air is built as a browser-based web app and works on all modern browsers including Chrome on Chromebooks. It requires only camera access, which most school Chromebooks support. No installation or admin approval needed in most school networks.' },
   { q: 'Can I use it on an interactive whiteboard?', a: 'Absolutely. Draw in the Air can be displayed on an interactive whiteboard through any connected laptop. The teacher can demonstrate gestures to the whole class while students follow along on individual devices.' },
-  { q: 'Is student data collected?', a: 'No student data is collected. The app runs entirely in the browser with no backend data collection. There are no cookies, no analytics tied to individual students, and no personal data stored. It\'s fully GDPR and COPPA compliant in this regard.' },
+  { q: 'Is student data collected?', a: 'No personally-identifying student data is collected — no names, emails, faces, audio, or video. The camera feed never leaves the device. We do collect anonymised, aggregated usage analytics (which game modes are popular, whether hand tracking started successfully, which letters were practised) tied to a randomly-generated browser identifier, never to a real child. Anonymised analytics are auto-deleted after 365 days. See our Privacy Policy for the full detail. The platform is designed to be GDPR and COPPA compliant for children.' },
   { q: 'Which curriculum frameworks does it support?', a: 'Draw in the Air supports Early Years Foundation Stage (EYFS) in the UK, Common Core early learning standards in the US, and general pre-school/kindergarten readiness frameworks globally. Letter and number tracing are aligned with typical curriculum sequences.' },
   { q: 'Can the whole class use it simultaneously?', a: 'Yes! Each student uses Draw in the Air independently on their own device. There\'s no multi-user setup required — just have every student open the website on their Chromebook or computer.' },
   { q: 'Can I embed it on our school website?', a: 'Yes! Visit drawintheair.com/embed to get the free embed code. Paste it into any school website or blog and it runs directly in the page — great for homework pages or classroom portals.' },
@@ -26,6 +28,9 @@ export default function ForTeachersPage() {
     buildFAQSchema(FAQ),
     buildBreadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'For Teachers', path: '/for-teachers' }]),
   ];
+
+  // B2B funnel: page-view event fires once per mount.
+  useEffect(() => { logEvent('for_teachers_page_view', { page: '/for-teachers' }); }, []);
 
   return (
     <SeoLayout>

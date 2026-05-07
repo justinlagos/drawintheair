@@ -847,6 +847,9 @@ export const Landing: React.FC = () => {
   const openPilotModal = useCallback(() => {
     setPilotOpen(true); setPilotSent(false); setPilotErrors({}); setPilotSubmitError('');
     document.body.style.overflow = 'hidden';
+    // B2B funnel — every modal-open is an intent signal.
+    logEvent('demo_request_form_view', { component: 'Landing' });
+    logEvent('school_pack_form_view', { component: 'Landing' });
   }, []);
 
   const submitPilot = useCallback(() => {
@@ -864,6 +867,16 @@ export const Landing: React.FC = () => {
       setPilotSent(true); setPilotSending(false);
       setPilotName(''); setPilotEmail(''); setPilotSchool('');
       setPilotRole(''); setPilotYear(''); setPilotDevice(''); setPilotNotes('');
+      // B2B funnel — paired with demo_request_form_view above so we can
+      // compute conversion rate. The form fields themselves contain
+      // PII (name + email + school), but those go to the Apps Script
+      // backend, NOT into analytics_events. We only log that someone
+      // submitted, with role/yearGroup/device for segmentation.
+      logEvent('demo_request_form_submit', {
+        component: 'Landing',
+        meta: { role: pilotRole || null, year_group: pilotYear || null, device_type: pilotDevice || null },
+      });
+      logEvent('school_pack_form_submit', { component: 'Landing' });
     }).catch((err: { message?: string }) => {
       setPilotSubmitError(err.message ?? 'Something went wrong. Please try again.');
       setPilotSending(false);

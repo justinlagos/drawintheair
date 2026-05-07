@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { SeoLayout, Breadcrumb, FAQItem, PageHero, Section, navigate } from './SeoLayout';
 import { SEOMeta } from '../../seo/SEOMeta';
 import { PAGE_META, buildFAQSchema, buildBreadcrumbSchema, SITE } from '../../seo/seo-config';
+import { logEvent } from '../../lib/analytics';
 
 const FAQ = [
   { q: 'Is Draw in the Air safe for my child?', a: 'Yes. The webcam feed is processed locally in the browser using Google\'s MediaPipe AI. No video is ever recorded, stored, or transmitted to any server. No personal data or accounts are required. Your child\'s safety and privacy are our absolute top priority.' },
@@ -27,6 +29,9 @@ export default function ForParentsPage() {
     buildFAQSchema(FAQ),
     buildBreadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'For Parents', path: '/for-parents' }]),
   ];
+
+  // Conversion funnel: page-view event fires once per mount.
+  useEffect(() => { logEvent('for_parents_page_view', { page: '/for-parents' }); }, []);
 
   return (
     <SeoLayout>

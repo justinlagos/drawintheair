@@ -8,6 +8,7 @@
 // Usage: drop <ShareButton activitySlug="letter-tracing" /> anywhere in the app.
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { logEvent } from '../../lib/analytics';
 
 // ── Activity slug → share metadata ────────────────────────────────────────────
 interface ShareMeta { label: string; emoji: string; description: string }
@@ -263,7 +264,13 @@ export function ShareButton({ gameMode, variant = 'inline' }: ShareButtonProps) 
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          logEvent('share_button_clicked', {
+            component: 'ShareButton',
+            meta: { activity_slug: activitySlug, variant },
+          });
+          setOpen(true);
+        }}
         style={buttonStyles[variant]}
         aria-label="Share this activity with a colleague"
       >
