@@ -50,6 +50,14 @@ export type EventName =
     | 'tracker_init_started'        // handTracker.initialize() invoked
     | 'tracker_init_succeeded'      // meta: { delegate, init_duration_ms }
     | 'tracker_init_failed'         // meta: { code, message, tried_delegates }
+
+    // ── Camera permission flow (A/B experiment camera_explainer_v1) ──
+    | 'camera_explainer_shown'      // Pre-prompt rendered (treatment arm only)
+    | 'camera_explainer_continue'   // User tapped "Allow camera"
+    | 'camera_explainer_dismissed'  // User tapped "Tell me more first"
+    | 'camera_recovery_shown'       // Error-state recovery screen rendered; meta.cause/browser/os
+    | 'camera_recovery_retry'       // User tapped "Try again" on recovery screen
+    | 'camera_recovery_dismissed'   // User tapped "Back to home" on recovery screen
     | 'wave_screen_view'
     | 'wave_first_hand_seen'        // First MediaPipe landmark detected
     | 'wave_completed'              // Wave gate cleared

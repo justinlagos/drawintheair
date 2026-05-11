@@ -7,7 +7,7 @@
  * independently.
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { DrawingUtils, type HandLandmarkerResult, type NormalizedLandmark } from '@mediapipe/tasks-vision';
 import { handTracker, type HandTrackerError } from '../../core/handTracker';
 import { interactionStateManager, type InteractionState } from '../../core/InteractionState';
@@ -22,6 +22,10 @@ import { useCameraController } from '../../camera/useCameraController';
 import { useVisionLoop } from '../../camera/useVisionLoop';
 import { CameraDebugBadge, CAMERA_DEBUG } from '../../camera/debug';
 import type { VisionLoopResult } from '../../camera/useVisionLoop';
+import { flag, exposeOnce } from '../../lib/featureFlags';
+import { CameraExplainer } from '../onboarding/CameraExplainer';
+import { CameraRecovery } from '../onboarding/CameraRecovery';
+import type { CameraCause } from '../../lib/cameraHelp';
 
 // ---------------------------------------------------------------------------
 // Mirror helpers (front-facing camera — natural left/right orientation)
@@ -115,7 +119,7 @@ const EMPTY_FRAME: TrackingFrameData = {
 };
 
 export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
-    const { videoRef, state: cameraState, startCamera, updateVisionMetrics } = useCameraController();
+    const { videoRef, state: cameraState, startCamera, restartCamera, updateVisionMetrics } = useCameraController();
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     // Latest frame stored in a ref — avoids per-frame React re-renders
@@ -202,11 +206,43 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
     }, [trackerInitNonce]);
 
     // ------------------------------------------------------------------
-    // Start camera once on mount
+    // Camera permission flow (A/B experiment camera_explainer_v1)
+    //
+    // Treatment arm: render the CameraExplainer pre-prompt first; only
+    //                call startCamera() after the parent taps Continue.
+    // Control arm:    start the camera immediately, as we have always
+    //                done. This is the unchanged baseline path.
+    //
+    // The variant is deterministic per device_id (see lib/featureFlags),
+    // so a reload keeps the user in the same arm and a single SQL query
+    // computes lift across arms on funnel events.
     // ------------------------------------------------------------------
+    const cameraVariant = useMemo(
+        () => flag('camera_explainer_v1', { treatment: 50, control: 50 }),
+        [],
+    );
+    const [explainerDone, setExplainerDone] = useState(cameraVariant === 'control');
+
     useEffect(() => {
-        startCamera();
-    }, [startCamera]);
+        exposeOnce('camera_explainer_v1', String(cameraVariant));
+    }, [cameraVariant]);
+
+    useEffect(() => {
+        if (explainerDone) startCamera();
+    }, [explainerDone, startCamera]);
+
+    const handleExplainerContinue = useCallback(() => setExplainerDone(true), []);
+
+    // Map cameraState.errorCode (CameraState union) onto CameraCause for
+    // the recovery screen. Unknown codes fall through to 'UNKNOWN'.
+    const recoveryCause: CameraCause | null = (() => {
+        if (cameraState.status !== 'error') return null;
+        const c = cameraState.errorCode;
+        if (c === 'PERMISSION_DENIED' || c === 'NO_DEVICE' || c === 'DEVICE_BUSY' || c === 'NOT_SUPPORTED') {
+            return c;
+        }
+        return 'UNKNOWN';
+    })();
 
     // ------------------------------------------------------------------
     // Initialise dynamic resolution manager when flags are loaded
@@ -632,6 +668,18 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
 
             {/* Camera debug badge (visible only with ?debug=camera) */}
             <CameraDebugBadge state={cameraState} />
+
+            {/* Camera permission flow — treatment arm pre-prompt + per-cause */}
+            {/* recovery. Recovery takes precedence when an error is active.   */}
+            {recoveryCause && (
+                <CameraRecovery
+                    cause={recoveryCause}
+                    onRetry={restartCamera}
+                />
+            )}
+            {!recoveryCause && cameraVariant === 'treatment' && !explainerDone && (
+                <CameraExplainer onContinue={handleExplainerContinue} />
+            )}
         </div>
     );
 };
