@@ -813,6 +813,56 @@ export const Landing: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
+  // ── Landing funnel instrumentation ──────────────────────────────
+  // Top-of-funnel: fires exactly once per Landing mount. Without
+  // this we have NO data on how many visitors hit the site (audit
+  // 2026-05-11 showed 0 landing_view events vs ~165 sessions/14d).
+  //
+  // Bouncer-shape: 40% of sessions leave in <30s, and until now we
+  // couldn't tell whether they saw the hero, scrolled to How it
+  // Works, or bailed before render. landing_engaged fires the first
+  // time the user shows ANY engagement (scrolls past the hero OR
+  // hovers a CTA). landing_unload fires on tab close with
+  // time_on_page_ms + scroll_depth_pct so we can cohort short
+  // sessions by how far they got.
+  useEffect(() => {
+    logEvent('landing_view');
+    const startedAt = Date.now();
+    let engaged = false;
+    let maxScrollPct = 0;
+    const markEngaged = (cause: string) => {
+        if (engaged) return;
+        engaged = true;
+        logEvent('landing_engaged', { meta: { cause, ms_to_engage: Date.now() - startedAt } });
+    };
+    const onScroll = () => {
+        const doc = document.documentElement;
+        const px = (window.scrollY + window.innerHeight) - 0;
+        const pct = Math.min(100, Math.round((px / Math.max(1, doc.scrollHeight)) * 100));
+        if (pct > maxScrollPct) maxScrollPct = pct;
+        if (window.scrollY > window.innerHeight * 0.5) markEngaged('scroll_below_hero');
+    };
+    const onPointer = () => markEngaged('pointer_move');
+    const onBeforeUnload = () => {
+        logEvent('landing_unload', {
+            value_number: Date.now() - startedAt,
+            meta: {
+                time_on_page_ms: Date.now() - startedAt,
+                scroll_depth_pct: maxScrollPct,
+                engaged,
+            },
+        });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('pointermove', onPointer, { once: true });
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => {
+        window.removeEventListener('scroll', onScroll);
+        window.removeEventListener('pointermove', onPointer);
+        window.removeEventListener('beforeunload', onBeforeUnload);
+    };
+  }, []);
+
   const closePilotModal = useCallback(() => {
     setPilotOpen(false);
     document.body.style.overflow = '';

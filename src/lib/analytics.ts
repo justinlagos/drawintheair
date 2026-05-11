@@ -35,7 +35,9 @@ import { dbInsert } from './supabase';
  */
 export type EventName =
     // ── Acquisition / landing ──
-    | 'landing_view'
+    | 'landing_view'                // Landing route mounted (top-of-funnel)
+    | 'landing_engaged'             // First meaningful engagement: scroll past hero OR CTA hover
+    | 'landing_unload'              // meta.time_on_page_ms, .scroll_depth_pct — to see WHERE bouncers leave
     | 'nav_click'
     | 'cta_click'                   // meta.source: 'hero' | 'nav' | 'final_banner' | 'mobile_menu' | 'activities' | 'mode_tile' | 'privacy_section'
 
@@ -99,6 +101,7 @@ export type EventName =
 
     // ── Motor / tracking quality (sampled) ──
     | 'tracker_quality_sample'      // 1Hz sample: fps, missing_frame_pct, viewport_quadrant
+    | 'tracker_warmup_timing'       // meta.camera_to_hand_ms — diagnoses slow-tracker vs out-of-frame
     | 'two_hands_detected'          // First time MediaPipe reports >1 landmark set in a session
 
     // ── Reliability / error stream ──

@@ -78,10 +78,21 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorC
     // Activation-funnel guard: fire wave_first_hand_seen exactly once per
     // mount, not every frame the hand stays in view.
     const hasLoggedFirstHand = useRef<boolean>(false);
+    // Capture the moment trackerReady first flips true so we can split
+    // "slow tracker init" from "out-of-frame user" — surfaced by the
+    // 2026-05-11 audit (8 sessions granted camera but never saw a
+    // hand; without this we can't tell which side the latency lived).
+    const trackerReadyAt = useRef<number>(0);
 
     useEffect(() => {
         waveStartTime.current = Date.now();
     }, []);
+
+    useEffect(() => {
+        if (trackerReady && trackerReadyAt.current === 0) {
+            trackerReadyAt.current = Date.now();
+        }
+    }, [trackerReady]);
 
     // Hand-status watchdog: if no hand seen for 1.5s while we're 'detected',
     // flip to 'lost' so the user gets a hint to come back into frame.
@@ -117,8 +128,26 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorC
             // when the wave gate was shown.
             if (!hasLoggedFirstHand.current) {
                 hasLoggedFirstHand.current = true;
+                const now = Date.now();
+                const sinceMount = now - waveStartTime.current;
+                const sinceTrackerReady = trackerReadyAt.current > 0
+                    ? now - trackerReadyAt.current
+                    : null;
                 logEvent('wave_first_hand_seen', {
-                    value_number: Date.now() - waveStartTime.current,
+                    value_number: sinceMount,
+                });
+                // tracker_warmup_timing decomposes that latency: how
+                // much was tracker init vs how much was the user
+                // getting into frame. Sessions where trackerReadyAt
+                // never fires never log this event — which is itself
+                // a signal that tracker init never completed.
+                logEvent('tracker_warmup_timing', {
+                    value_number: sinceTrackerReady ?? sinceMount,
+                    meta: {
+                        camera_to_hand_ms: sinceTrackerReady,
+                        screen_to_hand_ms: sinceMount,
+                        tracker_was_ready: trackerReadyAt.current > 0,
+                    },
                 });
             }
 

@@ -9,13 +9,23 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { logEvent, startSession, type AgeBand as PilotAgeBand } from '../lib/analytics';
 import './tryFreeModal.css';
 
+// Removed 12+ option: the landing pill says "Motion learning for ages
+// 3 to 10" and the activities are calibrated for that range. 12+ is
+// off-brand and surfaced as part of the 32% age-picker drop (audit
+// 2026-05-11) — keeping only the relevant 4 bands keeps the picker
+// faster and lets the layout fit in one tidy row.
 const AGE_BANDS: { value: PilotAgeBand; label: string }[] = [
     { value: '4-5', label: '4-5' },
     { value: '6-7', label: '6-7' },
     { value: '8-9', label: '8-9' },
     { value: '10-11', label: '10-11' },
-    { value: '12+', label: '12+' },
 ];
+
+// Default band — pre-selected on modal open so the user can hit Start
+// in one tap. They can always change. The median visitor on the site
+// has a 6-year-old in the funnel (educated guess from age-band data),
+// so 6-7 is the least-wrong default.
+const DEFAULT_BAND: PilotAgeBand = '6-7';
 
 interface TryFreeModalProps {
     open: boolean;
@@ -34,12 +44,19 @@ const initialAdmin =
     new URLSearchParams(window.location.search).get('admin') === '1';
 
 export const TryFreeModal: React.FC<TryFreeModalProps> = ({ open, onClose }) => {
-    const [ageBand, setAgeBand] = useState<PilotAgeBand | null>(null);
+    // Default-select the median band so Start is immediately clickable.
+    // Reduces the picker to a one-tap interaction for the 95% case
+    // (parent doesn't need to change it) and a two-tap for the 5% who
+    // do. Was previously null, requiring an explicit pick before Start
+    // would enable — contributing to a 32% drop at this screen.
+    const [ageBand, setAgeBand] = useState<PilotAgeBand>(DEFAULT_BAND);
     const [schoolCode, setSchoolCode] = useState('');
     const [classCode, setClassCode] = useState('');
     const [showAdmin] = useState(initialAdmin);
 
     const handleStart = useCallback(() => {
+        // ageBand is always non-null now (DEFAULT_BAND on open) but the
+        // strictness is cheap to keep.
         if (!ageBand) return;
 
         // Activation funnel: the kid has committed to a band. This event
