@@ -173,18 +173,26 @@ export function processWordSearchFrame(
 
         const result = checkWordMatch(state);
 
-        // Log the drop (did they find a word or not?)
+        // Log the drop. The mastery dashboard buckets attempts by
+        // item_key — so for an unsuccessful selection we leave
+        // itemKey undefined (NOT 'unknown_word' as before). When
+        // itemKey is missing the analytics layer skips mirroring
+        // into the learning_attempts table, keeping the mastery
+        // view clean while still capturing timing + path data.
+        const droppedMeta: Record<string, unknown> = {
+            itemInstanceId: state.selectionState.selectionPath.join(','),
+            isCorrect: !!result.wordFound,
+            expected_word: result.wordFound || null,
+            actual_word: result.wordFound || null,
+            path_length: state.selectionState.selectionPath.length,
+        };
+        if (result.wordFound) {
+            droppedMeta.itemKey = result.wordFound;
+        }
         logEvent('item_dropped', {
             game_mode: 'word-search',
             stage_id: state.chapter.toString(),
-            meta: {
-                itemKey: result.wordFound || 'unknown_word',
-                itemInstanceId: state.selectionState.selectionPath.join(','),
-                isCorrect: !!result.wordFound,
-                expected_word: result.wordFound || null,
-                actual_word: result.wordFound || null,
-                path_length: state.selectionState.selectionPath.length,
-            },
+            meta: droppedMeta,
         });
         if (result.wordFound) {
             logEvent('wordsearch_word_found', {
