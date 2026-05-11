@@ -7,7 +7,7 @@
 import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import type { Grid, Tile, SelectionState, DwellState, WordSearchSettings, HintState } from './wordSearchTypes';
 import { DWELL_TIME_MS, STABLE_FRAMES, HINT_TIMINGS } from './wordSearchConstants';
-import { logEvent } from '../../../lib/analytics';
+import { logEvent, markGrab, elapsedSinceGrab } from '../../../lib/analytics';
 
 /**
  * Word Search Logic Function (for onFrame callback)
@@ -144,7 +144,11 @@ export function processWordSearchFrame(
     const pinchJustEnded = !pinchActive && state.lastPinchState;
     state.lastPinchState = pinchActive;
 
-    // Handle pinch start
+    // Handle pinch start — this is the *actual* grab moment. We log
+    // item_grabbed here (not on pinch-end like before) and seed the
+    // grab-timer so the matching item_dropped on pinch-end can attach
+    // action_duration_ms — without this, the mastery dashboard shows
+    // avg_ms: null for every word-search row.
     if (pinchJustStarted && filteredPoint) {
         const tile = getTileAtPoint(state.grid, filteredPoint);
         if (tile) {
@@ -159,17 +163,18 @@ export function processWordSearchFrame(
                 startTime: timestamp,
                 stableFrames: 1
             };
+            markGrab(tile.id);
+            logEvent('item_grabbed', {
+                game_mode: 'word-search',
+                stage_id: state.chapter.toString(),
+                meta: { itemInstanceId: tile.id },
+            });
             return { wordFound: null, roundComplete: false, needsRender: true, hintPhase: 0, hintWordIndex: null, hintTileIds: [] };
         }
     }
 
     // Handle pinch end
     if (pinchJustEnded && state.selectionState.isActive) {
-
-        // Log item grab (when they click on the anchor tile)
-        if (state.selectionState.anchorTileId) {
-            logEvent('item_grabbed', { game_mode: 'word-search', stage_id: state.chapter.toString(), meta: { itemInstanceId: state.selectionState.anchorTileId } });
-        }
 
         const result = checkWordMatch(state);
 
@@ -179,12 +184,16 @@ export function processWordSearchFrame(
         // itemKey is missing the analytics layer skips mirroring
         // into the learning_attempts table, keeping the mastery
         // view clean while still capturing timing + path data.
+        // action_duration_ms = elapsed between pinch-start (markGrab
+        // on the anchor tile) and pinch-end here.
+        const anchorId = state.selectionState.anchorTileId;
         const droppedMeta: Record<string, unknown> = {
             itemInstanceId: state.selectionState.selectionPath.join(','),
             isCorrect: !!result.wordFound,
             expected_word: result.wordFound || null,
             actual_word: result.wordFound || null,
             path_length: state.selectionState.selectionPath.length,
+            action_duration_ms: anchorId ? elapsedSinceGrab(anchorId) : undefined,
         };
         if (result.wordFound) {
             droppedMeta.itemKey = result.wordFound;

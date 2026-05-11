@@ -379,13 +379,27 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
         catch (e) { setError((e as Error).message); }
     }, [session.id]);
 
+    // If pause/resume errors with "no active activity" the server has
+    // already lost the active row — clear it client-side so the UI flips
+    // back to the launcher instead of leaving the user staring at a
+    // broken panel.
+    const clearStaleOnNoActive = useCallback((e: Error) => {
+        const msg = e.message ?? '';
+        if (msg.includes('no active activity')) {
+            setCurrentActivity(null);
+        }
+        setError(msg);
+    }, []);
+
     const handlePause = useCallback(async () => {
-        try { await conductorApi.pauseActivity(session.id); } catch (e) { setError((e as Error).message); }
-    }, [session.id]);
+        try { await conductorApi.pauseActivity(session.id); }
+        catch (e) { clearStaleOnNoActive(e as Error); }
+    }, [session.id, clearStaleOnNoActive]);
 
     const handleResume = useCallback(async () => {
-        try { await conductorApi.resumeActivity(session.id); } catch (e) { setError((e as Error).message); }
-    }, [session.id]);
+        try { await conductorApi.resumeActivity(session.id); }
+        catch (e) { clearStaleOnNoActive(e as Error); }
+    }, [session.id, clearStaleOnNoActive]);
 
     const handleEndActivity = useCallback(async () => {
         try { await conductorApi.endActivity(session.id); } catch (e) { setError((e as Error).message); }
@@ -495,9 +509,18 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
                     )}
                 </aside>
 
-                {/* Right: activity console */}
+                {/* Right: activity console
+                 *
+                 * Belt-and-braces gating: only render the NowPlaying panel when
+                 * BOTH the local currentActivity state and the authoritative
+                 * session.class_state agree we're in an activity. This prevents
+                 * the panel from getting stuck on a stale "playing" view when a
+                 * realtime UPDATE event for session_activities is dropped but
+                 * the sessions row arrives correctly — surfaced by the live
+                 * classroom test on 2026-05-11 (code 1823, see migration
+                 * 20260511_conductor_pause_selfheal for the DB-side hotfix). */}
                 <section className="cd-stage">
-                    {currentActivity ? (
+                    {currentActivity && session.class_state === 'in_activity' ? (
                         <ActivityNowPlaying
                             activity={currentActivity}
                             onPause={handlePause}

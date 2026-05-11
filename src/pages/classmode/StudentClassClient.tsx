@@ -449,7 +449,7 @@ function ClassroomGame({ student, avatar, session, activity }: {
     return (
         <div className="App">
             <TrackingLayer onFrame={activeLogic}>
-                {(frameRef) => (
+                {(frameRef, diagnostics) => (
                     <>
                         <ModeBackground modeId={activity.activity} />
                         <MagicCursor
@@ -464,12 +464,19 @@ function ClassroomGame({ student, avatar, session, activity }: {
                             <span>{student.name}</span>
                         </div>
 
+                        {/* Freeze the round timer until the kid's camera is
+                         *  actually running. The Phase B camera explainer can
+                         *  sit on screen for 10–30 s before they tap Allow,
+                         *  and during that time we shouldn't be burning round
+                         *  time on them — surfaced by the 2026-05-11 test
+                         *  where Balloon Math read 0:21 on the explainer.   */}
                         <ClassModeGameWrapper
                             sessionId={session.id}
                             studentId={student.id}
                             activity={activity.activity}
                             round={1}
                             timerSeconds={session.timer_seconds}
+                            freeze={diagnostics.cameraStatus !== 'running'}
                             onRoundEnd={noop}
                         >
                             {activity.activity === 'calibration' && <BubbleCalibration onComplete={noop} onExit={noop} />}

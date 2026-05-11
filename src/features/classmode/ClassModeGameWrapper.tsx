@@ -17,6 +17,11 @@ interface ClassModeGameWrapperProps {
   timerSeconds: number;
   children: React.ReactNode;
   onRoundEnd: (stars: number) => void;
+  /** Pause the countdown — used while the camera explainer is on
+   *  screen or the camera is still being acquired so the kid doesn't
+   *  burn 20 seconds of round time before they can even play.
+   *  Surfaced by the live classroom test on 2026-05-11. */
+  freeze?: boolean;
 }
 
 export default function ClassModeGameWrapper({
@@ -27,6 +32,7 @@ export default function ClassModeGameWrapper({
   timerSeconds,
   children,
   onRoundEnd,
+  freeze = false,
 }: ClassModeGameWrapperProps) {
   const [timeLeft, setTimeLeft] = useState(timerSeconds > 0 ? timerSeconds : 0);
   const [submitted, setSubmitted] = useState(false);
@@ -41,9 +47,12 @@ export default function ClassModeGameWrapper({
     return () => clearInterval(poll);
   }, [activity]);
 
-  // Countdown timer
+  // Countdown timer — held while `freeze` is true so the timer doesn't
+  // burn down while the camera explainer or recovery screen covers the
+  // game.
   useEffect(() => {
     if (timerSeconds <= 0) return;
+    if (freeze) return;
 
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
@@ -59,7 +68,7 @@ export default function ClassModeGameWrapper({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [timerSeconds]);
+  }, [timerSeconds, freeze]);
 
   // Listen for session status change (teacher ends round)
   useEffect(() => {
