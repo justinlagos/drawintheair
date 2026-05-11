@@ -718,14 +718,12 @@ export const bubbleCalibrationLogic = (
     if (filteredPoint && isActive && !countdownActive) {
         const fingerCanvas = normalizedToCanvas(filteredPoint, width, height);
 
-        // Draw finger indicator
-        ctx.beginPath();
-        ctx.arc(fingerCanvas.x, fingerCanvas.y, 22, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255,255,255,0.9)';
-        ctx.fill();
-        ctx.strokeStyle = '#00FFFF';
-        ctx.lineWidth = 4;
-        ctx.stroke();
+        // Finger indicator removed 2026-05-11: the canvas-drawn cursor
+        // here sat at the raw fingertip while the global <MagicCursor>
+        // overlay sat at the smoothed fingertip, producing a visible
+        // offset between two cursors. MagicCursor is now the only
+        // on-screen cursor. fingerCanvas remains for bubble hit-testing
+        // below.
 
         // Check collision with each bubble
         bubbles.forEach(bubble => {

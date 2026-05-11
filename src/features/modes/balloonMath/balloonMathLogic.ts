@@ -501,13 +501,9 @@ export const balloonMathLogic = (
     balloons = balloons.filter(b => !b.popping || now - b.popTime < POP_DURATION_MS);
 
     // ── Finger cursor ─────────────────────────────────────────────────────────
-    if (fingerCanvas) {
-        ctx.beginPath();
-        ctx.arc(fingerCanvas.x, fingerCanvas.y, 18, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255,255,255,0.85)';
-        ctx.fill();
-        ctx.strokeStyle = '#00FFFF';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-    }
+    // Removed 2026-05-11: the canvas-drawn cursor sat at the raw landmark
+    // position while the global <MagicCursor> overlay sat at the smoothed
+    // position, producing a visible 60–80 px offset between two cursors.
+    // MagicCursor is now the only on-screen cursor. fingerCanvas above
+    // is still computed for balloon hit-testing.
 };

@@ -11,55 +11,79 @@ npx tsc -b
 git add \
   src/features/modes/gestureSpelling/gestureSpellingLogic.ts \
   src/features/modes/tracing/tracingLogicV2.ts \
+  src/features/modes/balloonMath/balloonMathLogic.ts \
+  src/features/modes/rainbowBridge/rainbowBridgeLogic.ts \
+  src/features/modes/sortAndPlace/sortAndPlaceLogic.ts \
+  src/features/modes/calibration/bubbleCalibrationLogic.ts \
+  src/features/modes/preWriting/preWritingLogic.ts \
   scripts/push-cursor-fix.sh
 
-git commit -m "fix(cursor): one cursor, no offset — remove duplicate canvas finger cursor in spelling + tracing
+git commit -m "fix(cursor): one cursor across all 7 modes — remove duplicate canvas finger cursors
 
-Reported 2026-05-11: in Spelling Stars and Tracing the small blue
-dot (canvas-drawn at the raw fingertip position) sat ~60–80 px
-above the bigger MagicCursor glow. Users couldn't tell which one
-their hand controlled.
+Reported 2026-05-11 (Spelling Stars + Tracing): the small blue dot
+(canvas-drawn at the raw fingertip) sat ~60–80 px above the bigger
+MagicCursor glow. Users couldn't tell which one their hand controlled.
+Same root cause exists in every mode that draws its own finger cursor
+on the canvas, so this commit fixes them all in one pass.
 
 Root cause
-  Two cursor renderings ran simultaneously:
+  Two cursor renderings ran simultaneously in every mode:
    1. The global <MagicCursor> HTML overlay at the smoothed fingertip
-      position (adaptive smoothing + canvas-mapper CSS size).
-   2. A per-mode canvas-drawn aqua circle at the raw fingertip via
+      via its own adaptive smoothing + canvas-mapper CSS size.
+   2. A per-mode canvas-drawn circle at the raw fingertip via
       normalizedToCanvas — device-pixel canvas space, no smoothing.
-  Coordinate pipelines don't share a frame; smoothing also adds lag.
-  Net effect: a visible vertical offset, worst on mobile.
+  Different coordinate frames + smoothing lag = visible offset.
 
-Fix (Option 3 — concentric, one cursor)
-  Remove the canvas-drawn finger cursor in both modes. MagicCursor
-  already renders concentric ring + inner dot from a single position
-  — that becomes the only on-screen cursor. The green tile-frame
-  still shows which letter Spelling Stars is hovering, and the
-  tracing path itself glows + advances progress when the finger is
-  on-path, so no semantic information is lost.
+Fix (Option 3 — one concentric cursor)
+  Remove the canvas-drawn finger cursor in every mode. MagicCursor
+  already renders concentric ring + inner dot from a single
+  position — that becomes the only on-screen cursor. Each mode's
+  game-specific feedback (hit-test, on-path glow, balloon pop, etc.)
+  is preserved because it doesn't depend on the cursor visual.
 
-Files
+Files touched (all 7 modes)
+
   src/features/modes/gestureSpelling/gestureSpellingLogic.ts
-    Removed the 'Finger cursor' canvas block. fingerCanvas is still
-    computed for tile hit-testing.
+    Removed 'Finger cursor' canvas block. fingerCanvas still computed
+    for tile hit-testing.
 
   src/features/modes/tracing/tracingLogicV2.ts
-    Removed drawFingerFeedback() call + the function definition.
-    Left a comment pointing to git history and noting that on-path
-    colour feedback, if re-introduced, should drive MagicCursor's
-    'state' prop rather than a second canvas-drawn dot.
+    Removed drawFingerFeedback() call AND its function definition.
+    Path itself glows + progress advances when on-path; no info lost.
 
-NOT TOUCHED YET
-  balloonMath, rainbowBridge, sortAndPlace, preWriting, and
-  calibration each have similar canvas-drawn cursors. Audit
-  whether they're visibly offset and, if so, ship a follow-up that
-  removes them too — the symptom + cure is mechanical. Skipped
-  here because the user only flagged tracing + spelling.
+  src/features/modes/balloonMath/balloonMathLogic.ts
+    Removed 'Finger cursor' canvas block. fingerCanvas still computed
+    for balloon hit-testing.
+
+  src/features/modes/rainbowBridge/rainbowBridgeLogic.ts
+    Removed 'Finger cursor' canvas block. fingerCanvas still computed
+    for stone hit-testing.
+
+  src/features/modes/sortAndPlace/sortAndPlaceLogic.ts
+    Removed the dual-ring cursor (which also signalled pinchActive
+    via gold colouring). Follow-up: route pinchActive through
+    MagicCursor's existing 'active' state class so the cursor lights
+    up when the kid is pinching to grab. Not done here to keep this
+    commit purely mechanical.
+
+  src/features/modes/calibration/bubbleCalibrationLogic.ts
+    Removed the finger indicator. fingerCanvas still computed for
+    bubble hit-test + pop detection.
+
+  src/features/modes/preWriting/preWritingLogic.ts
+    Removed the on-path aqua brush + white highlight blob AND the
+    off-path coral nudge ring around the fingertip. KEPT the
+    off-path directional arrow (it's a 'where to go' hint, not a
+    cursor) and the on-path fire-streak emoji (progress feedback).
 
 VERIFIED
-  - tsc -b           clean
-  - check-csp        passes"
+  - tsc -b            clean
+  - check-csp         passes
+  - Every fingerCanvas usage for hit-testing still works"
 
 git push origin master
 
 echo ""
-echo "Cursor fix shipped. Re-walk Spelling Stars + Tracing on mobile to confirm one cursor only."
+echo "Cursor fix shipped across all 7 modes."
+echo "Re-walk Spelling Stars, Tracing, Balloon Math, Rainbow Bridge,"
+echo "Sort & Place, Calibration, and Pre-Writing once Vercel deploys."

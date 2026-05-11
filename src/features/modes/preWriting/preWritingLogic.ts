@@ -434,26 +434,14 @@ export const preWritingLogic = (
                     // Moved backward significantly - ignore
                 }
 
-                // On-path feedback — tactile aqua brush with halo + highlight
-                ctx.save();
-                ctx.shadowColor = 'rgba(85, 221, 224, 0.7)';
-                ctx.shadowBlur = 18;
-                const onGrad = ctx.createRadialGradient(
-                    fingerCanvas.x - 6, fingerCanvas.y - 6, 2,
-                    fingerCanvas.x, fingerCanvas.y, 20,
-                );
-                onGrad.addColorStop(0, '#E8FBFC');
-                onGrad.addColorStop(0.6, '#55DDE0');
-                onGrad.addColorStop(1, '#3FA8AC');
-                ctx.fillStyle = onGrad;
-                ctx.beginPath();
-                ctx.arc(fingerCanvas.x, fingerCanvas.y, 20, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-                ctx.beginPath();
-                ctx.ellipse(fingerCanvas.x - 6, fingerCanvas.y - 6, 5, 3, -0.4, 0, Math.PI * 2);
-                ctx.fill();
+                // On-path cursor visuals (aqua brush + white highlight)
+                // removed 2026-05-11: they overlapped with the global
+                // <MagicCursor> at a different smoothed coordinate,
+                // producing a visible offset. MagicCursor is the only
+                // cursor; the path itself glows when on-path and
+                // progress advances, which is the on-path feedback.
+                // If we want richer on-path tinting we should drive
+                // MagicCursor's `state` prop instead of a 2nd dot.
 
                 if (onPathStreak > 20) {
                     ctx.font = '700 22px Fredoka, "Baloo 2", system-ui, sans-serif';
@@ -464,16 +452,13 @@ export const preWritingLogic = (
                 onPathStreak = 0;
                 if (stageStartLogged) offPathFrames++;
 
-                // Off-path feedback — coral nudge ring (gentle, not punitive)
-                ctx.save();
-                ctx.shadowColor = 'rgba(255, 107, 107, 0.55)';
-                ctx.shadowBlur = 14;
-                ctx.strokeStyle = '#FF6B6B';
-                ctx.lineWidth = 4;
-                ctx.beginPath();
-                ctx.arc(fingerCanvas.x, fingerCanvas.y, 20, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.restore();
+                // Off-path nudge ring removed 2026-05-11: it sat at the
+                // raw fingertip while <MagicCursor> sat at the smoothed
+                // fingertip — visible offset between two cursors. The
+                // directional arrow below stays: it's not a cursor, it's
+                // a "where to go" hint, and it visually originates from
+                // the same approximate region so the user reads it as
+                // pointing FROM their hand TO the path.
 
                 // Arrow pointing to the nearest path point
                 const nearestPoint = getPointOnPath(pathPoints, t);

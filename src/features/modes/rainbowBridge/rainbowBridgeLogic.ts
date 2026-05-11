@@ -472,13 +472,9 @@ export const rainbowBridgeLogic = (
     });
 
     // ── Finger cursor ─────────────────────────────────────────────────────────
-    if (fingerCanvas) {
-        ctx.beginPath();
-        ctx.arc(fingerCanvas.x, fingerCanvas.y, 16, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255,255,255,0.9)';
-        ctx.fill();
-        ctx.strokeStyle = '#00FFFF';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-    }
+    // Removed 2026-05-11: the canvas-drawn cursor sat at the raw landmark
+    // position while the global <MagicCursor> overlay sat at the smoothed
+    // position, producing a visible offset between two cursors. MagicCursor
+    // is now the only on-screen cursor. fingerCanvas above remains for
+    // stone hit-testing.
 };

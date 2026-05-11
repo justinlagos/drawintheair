@@ -1207,23 +1207,14 @@ export const sortAndPlaceLogic = (
         ctx.restore();
     });
 
-    if (filteredPoint) {
-        const fingerCanvas = normalizedToCanvas(filteredPoint, width, height);
-
-        ctx.beginPath();
-        ctx.arc(fingerCanvas.x, fingerCanvas.y, 28, 0, Math.PI * 2);
-        ctx.strokeStyle = pinchActive ? '#FFD700' : 'rgba(0, 255, 255, 0.6)';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(fingerCanvas.x, fingerCanvas.y, pinchActive ? 18 : 12, 0, Math.PI * 2);
-        ctx.fillStyle = pinchActive ? '#FFD700' : 'rgba(255, 255, 255, 0.9)';
-        ctx.shadowColor = pinchActive ? '#FFD700' : '#00FFFF';
-        ctx.shadowBlur = pinchActive ? 20 : 10;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-    }
+    // Finger cursor removed 2026-05-11: the canvas-drawn double-ring
+    // cursor (which also signalled pinchActive via gold colouring)
+    // sat at the raw fingertip while the global <MagicCursor> overlay
+    // sat at the smoothed fingertip, producing a visible offset
+    // between two cursors. MagicCursor is now the only on-screen
+    // cursor. Follow-up if needed: route pinchActive through
+    // MagicCursor's `state` prop so the existing 'active' CSS class
+    // can light up the cursor when a kid is pinching to grab.
 };
 
 if (!CanvasRenderingContext2D.prototype.roundRect) {
