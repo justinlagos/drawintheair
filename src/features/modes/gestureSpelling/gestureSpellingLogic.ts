@@ -576,18 +576,16 @@ export const gestureSpellingLogic = (
         ctx.restore();
     }
 
-    // ── Finger cursor — aqua circle, deep plum stroke (visible on bright sky)
-    if (fingerCanvas) {
-        ctx.save();
-        ctx.shadowColor = 'rgba(108, 63, 164, 0.30)';
-        ctx.shadowBlur = 8;
-        ctx.beginPath();
-        ctx.arc(fingerCanvas.x, fingerCanvas.y, 17, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(85, 221, 224, 0.85)'; // aqua
-        ctx.fill();
-        ctx.strokeStyle = '#6C3FA4'; // deep plum
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        ctx.restore();
-    }
+    // ── Finger cursor ──────────────────────────────────────────────
+    // Intentionally NOT drawn here. The global <MagicCursor> component
+    // renders the cursor as an HTML overlay (an outer aqua ring with a
+    // concentric inner pearl) at the smoothed/filtered fingertip
+    // position. Drawing a separate canvas dot here at the raw
+    // landmark used to produce a visible 60–80 px offset between the
+    // two indicators, because the canvas mapper and MagicCursor's CSS
+    // smoothing pipeline don't share a coordinate frame. Reported
+    // 2026-05-11 ("the small blue dot should be in the bigger
+    // glowing circle"). MagicCursor is now the only on-screen
+    // cursor in this mode; the green tile-frame still shows which
+    // letter the cursor is hovering over.
 };

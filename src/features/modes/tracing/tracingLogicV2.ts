@@ -624,8 +624,16 @@ export const tracingLogicV2 = (
     // Note: Assist is visual only - doesn't affect progress calculation
     // Progress only advances when actually on the path and moving forward
     
-    // Draw finger feedback with quality settings
-    drawFingerFeedback(ctx, fingerPos, width, height, onPath, perfConfig);
+    // Finger cursor intentionally not drawn here. The global
+    // <MagicCursor> overlay handles the cursor at the smoothed
+    // fingertip position; drawing a separate canvas dot here at the
+    // raw fingerPos produced a visible offset from MagicCursor
+    // (reported 2026-05-11). The path itself communicates on/off-path
+    // state: it glows when traced and progress advances only when the
+    // finger is on it, so the dual cursor wasn't carrying unique
+    // information. drawFingerFeedback() remains defined below in case
+    // we want to re-introduce on-path color feedback via MagicCursor
+    // tinting in a future commit.
     
     // Add sparkle trail particles when on-path
     if (onPath && frameData.pinchActive) {
@@ -1009,37 +1017,15 @@ const drawEndTarget = (
     ctx.restore();
 };
 
-// Draw finger feedback (quality-aware)
-const drawFingerFeedback = (
-    ctx: CanvasRenderingContext2D,
-    fingerPos: { x: number; y: number },
-    width: number,
-    height: number,
-    onPath: boolean,
-    perfConfig: { visualQuality: 'high' | 'low'; shadowBlurScale: number }
-): void => {
-    ctx.save();
-    const size = 16; // Reduced from 22
-    const color = onPath ? '#00F5D4' : '#FFD93D';
-    
-    // High quality glow (more subtle)
-    if (perfConfig.visualQuality === 'high' && onPath) {
-        ctx.shadowBlur = 6 * perfConfig.shadowBlurScale;
-        ctx.shadowColor = `rgba(0, 245, 212, 0.5)`; // More subtle
-    } else if (perfConfig.visualQuality === 'high') {
-        ctx.shadowBlur = 4 * perfConfig.shadowBlurScale;
-        ctx.shadowColor = `rgba(255, 217, 61, 0.4)`; // More subtle
-    }
-    
-    ctx.beginPath();
-    ctx.arc(fingerPos.x * width, fingerPos.y * height, size, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255, 255, 255, ${onPath ? 0.9 : 0.75})`; // Slightly more transparent
-    ctx.fill();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2.5; // Reduced from 4
-    ctx.stroke();
-    ctx.restore();
-};
+// drawFingerFeedback was removed 2026-05-11 to fix the dual-cursor
+// offset reported in tracing + spelling: the canvas-drawn finger cursor
+// and the global MagicCursor were rendered ~60–80 px apart because they
+// used different coordinate pipelines. MagicCursor is now the sole
+// on-screen cursor in this mode. If on-path / off-path colour feedback
+// needs to come back, the right place to add it is a MagicCursor tint
+// driven via its `state` prop (idle / hover / active / success / lost),
+// not a second canvas-drawn dot. See git history for the previous
+// implementation if needed.
 
 // Draw off-path hint (gentle, no punishment) — Fredoka + brand palette
 const drawOffPathHint = (
