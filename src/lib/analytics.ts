@@ -48,7 +48,8 @@ export type EventName =
     | 'demo_loading_complete'
     | 'camera_requested'            // getUserMedia called
     | 'camera_granted'
-    | 'camera_denied'
+    | 'camera_denied'               // Fired at most once per session — first denial
+    | 'camera_retry_failed'         // Subsequent denials in the same session (Retry button or auto-restart loop)
     | 'tracker_init_started'        // handTracker.initialize() invoked
     | 'tracker_init_succeeded'      // meta: { delegate, init_duration_ms }
     | 'tracker_init_failed'         // meta: { code, message, tried_delegates }
@@ -657,8 +658,33 @@ function setupPageListeners(): void {
 // Public API
 // ════════════════════════════════════════════════════════════════════
 
+// Once-per-session event guard. Some events (camera_denied being the
+// first) only carry meaning the first time they fire in a session — a
+// browser with permission permanently set to "Block" can otherwise
+// generate dozens of identical denial events through the
+// CameraRecovery "Try again" loop or page-visibility re-fires. We rewrite
+// those subsequent fires to a distinct event name so the primary metric
+// stays clean while we still keep the retry signal.
+const oncePerSessionFired = new Set<EventName>();
+const ONCE_PER_SESSION: Readonly<Record<string, EventName>> = {
+    camera_denied: 'camera_retry_failed',
+};
+
 /** Log an event. Fire-and-forget — flushes asynchronously. */
 export function logEvent(name: EventName, opts: EventOptions = {}): void {
+    // Dedupe once-per-session events to avoid the alert-storm pattern
+    // we saw 2026-05-12 (single device fired 46 camera_denied events
+    // in 9 minutes via Retry-button retry loop). After the first fire,
+    // subsequent attempts log under the *_retry_failed name instead.
+    const dedupTo = ONCE_PER_SESSION[name];
+    if (dedupTo) {
+        if (oncePerSessionFired.has(name)) {
+            name = dedupTo;
+        } else {
+            oncePerSessionFired.add(name);
+        }
+    }
+
     // Side-effect: harvest action timing for fatigue analysis.
     if (name === 'item_dropped') {
         const dur = (opts.meta?.action_duration_ms as number | undefined);
@@ -808,6 +834,7 @@ export function startSession(input: { ageBand: AgeBand; schoolId?: string; class
     exposedFlags.clear();
     grabTimers.clear();
     attemptCounters.clear();
+    oncePerSessionFired.clear();
     startFlushTimer();
     startHeartbeat();
     logEvent('session_started');

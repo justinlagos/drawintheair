@@ -1,0 +1,460 @@
+/* =====================================================================
+   Insights v2 — responsive grid + print stylesheet
+   ===================================================================== */
+
+/* ── App shell ───────────────────────────────────────────────────────── */
+.iv-shell {
+    --plum: #6C3FA4;
+    --plum-soft: rgba(108, 63, 164, 0.10);
+    --plum-bd:   rgba(108, 63, 164, 0.16);
+    --aqua: #55DDE0;
+    --good: #1f7a3a;
+    --good-soft: rgba(126, 217, 87, 0.18);
+    --bad:  #C13A3A;
+    --bad-soft: rgba(255, 107, 107, 0.15);
+    --flat: #6B6F84;
+    --flat-soft: rgba(63, 64, 82, 0.08);
+    --paper: #FAFAFD;
+    --card:  #FFFFFF;
+    --line:  rgba(63, 64, 82, 0.10);
+    --ink:   #1A1B2E;
+
+    min-height: 100vh;
+    background: var(--paper);
+    color: var(--ink);
+    font: 14px/1.5 Nunito, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── Top bar ─────────────────────────────────────────────────────────── */
+.iv-topbar {
+    position: sticky; top: 0; z-index: 30;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: saturate(180%) blur(10px);
+    border-bottom: 1px solid var(--line);
+}
+
+.iv-topbar-inner {
+    max-width: 1440px; margin: 0 auto;
+    padding: 14px 24px;
+    display: flex; flex-wrap: wrap; gap: 12px;
+    align-items: center;
+}
+
+.iv-brand {
+    display: flex; align-items: center; gap: 10px;
+}
+.iv-brand-mark {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: linear-gradient(135deg, #6C3FA4, #55DDE0);
+}
+.iv-brand-name {
+    font: 700 15px Fredoka, system-ui, sans-serif;
+    color: var(--plum);
+}
+.iv-brand-sub {
+    font-size: 11px; color: var(--flat);
+    margin-top: 1px;
+}
+
+.iv-live {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--good-soft);
+    color: var(--good);
+    padding: 3px 10px;
+    border-radius: 999px;
+    font: 700 11.5px Nunito, system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.04em;
+}
+.iv-live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #2EAE52;
+    animation: ivPulse 1.5s ease-in-out infinite;
+}
+@keyframes ivPulse { 50% { opacity: 0.35; } }
+
+.iv-topbar-spacer { flex: 1; }
+
+.iv-topbar-actions {
+    display: flex; gap: 8px; align-items: center;
+    flex-wrap: wrap;
+}
+.iv-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 999px;
+    font: 700 12px Nunito, system-ui, sans-serif;
+    background: var(--card); color: var(--ink);
+    border: 1px solid var(--line);
+    cursor: pointer; user-select: none;
+}
+.iv-btn:hover { background: var(--paper); }
+.iv-btn-primary {
+    background: linear-gradient(180deg, #7E4FB8, #6C3FA4);
+    color: #fff; border-color: transparent;
+    box-shadow: 0 2px 6px rgba(108, 63, 164, 0.20);
+}
+.iv-btn-primary:hover { background: linear-gradient(180deg, #6C3FA4, #5A2F8C); }
+.iv-btn-ghost { background: transparent; border-color: transparent; color: var(--flat); }
+.iv-btn-sm { padding: 4px 10px; font-size: 11px; }
+
+/* ── Filter bar ──────────────────────────────────────────────────────── */
+.iv-filterbar {
+    max-width: 1440px; margin: 0 auto;
+    padding: 12px 24px 0;
+    display: flex; flex-wrap: wrap; gap: 8px;
+    align-items: center;
+}
+.iv-filter-group {
+    display: inline-flex; background: var(--card);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px;
+}
+.iv-filter-pill {
+    background: transparent; border: none;
+    padding: 5px 12px; border-radius: 999px;
+    font: 700 12px Nunito, system-ui, sans-serif;
+    color: var(--flat); cursor: pointer;
+}
+.iv-filter-pill.is-active {
+    background: var(--plum); color: #fff;
+}
+
+/* ── Tab strip ───────────────────────────────────────────────────────── */
+.iv-tabstrip {
+    max-width: 1440px; margin: 0 auto;
+    padding: 8px 24px 0;
+    display: flex; gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.iv-tabstrip::-webkit-scrollbar { display: none; }
+.iv-tab {
+    background: transparent; border: none;
+    padding: 10px 16px;
+    border-radius: 10px 10px 0 0;
+    font: 700 13px Nunito, system-ui, sans-serif;
+    color: var(--flat); cursor: pointer;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+}
+.iv-tab:hover { color: var(--ink); }
+.iv-tab.is-active {
+    color: var(--plum);
+    border-bottom-color: var(--plum);
+    background: rgba(108, 63, 164, 0.04);
+}
+
+/* ── Main grid ───────────────────────────────────────────────────────── */
+.iv-main {
+    max-width: 1440px; margin: 0 auto;
+    padding: 16px 24px 64px;
+    display: grid; gap: 16px;
+    grid-template-columns: repeat(12, 1fr);
+}
+
+.iv-row {
+    grid-column: 1 / -1;
+    display: grid; gap: 16px;
+    grid-template-columns: repeat(12, 1fr);
+}
+
+.iv-col-3  { grid-column: span 3; }
+.iv-col-4  { grid-column: span 4; }
+.iv-col-6  { grid-column: span 6; }
+.iv-col-8  { grid-column: span 8; }
+.iv-col-12 { grid-column: span 12; }
+
+/* ── Card / panel ────────────────────────────────────────────────────── */
+.iv-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px 18px;
+    box-shadow: 0 1px 2px rgba(63, 64, 82, 0.03);
+    display: flex; flex-direction: column;
+    min-width: 0;
+}
+.iv-card-head {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 14px;
+}
+.iv-card-title {
+    margin: 0;
+    font: 700 12.5px Fredoka, system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--plum);
+}
+.iv-card-tier {
+    font: 700 10px Fredoka, system-ui, sans-serif;
+    letter-spacing: 0.08em;
+    background: #FFD84D; color: #1A1B2E;
+    padding: 2px 7px; border-radius: 999px;
+}
+.iv-card-meta {
+    margin-left: auto;
+    text-transform: none; letter-spacing: 0;
+    font: 500 11.5px Nunito, system-ui, sans-serif;
+    color: var(--flat);
+}
+
+/* ── KPI cards ───────────────────────────────────────────────────────── */
+.iv-kpi-grid {
+    display: grid; gap: 14px;
+    grid-template-columns: repeat(4, 1fr);
+}
+.iv-kpi {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 10px;
+    min-width: 0;
+}
+.iv-kpi-label {
+    font: 700 10.5px Nunito, system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--flat);
+}
+.iv-kpi-value {
+    font: 700 30px Fredoka, system-ui, sans-serif;
+    line-height: 1.0; color: var(--ink);
+    letter-spacing: -0.01em;
+}
+.iv-kpi-value-sub {
+    font-size: 13px; color: var(--flat);
+    margin-top: 4px;
+}
+.iv-kpi-foot {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    gap: 10px; margin-top: auto;
+}
+.iv-delta {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px; border-radius: 999px;
+    font: 700 11.5px Nunito, system-ui, sans-serif;
+}
+.iv-delta-good { background: var(--good-soft); color: var(--good); }
+.iv-delta-bad  { background: var(--bad-soft);  color: var(--bad); }
+.iv-delta-flat { background: var(--flat-soft); color: var(--flat); }
+
+.iv-spark { width: 64px; height: 22px; flex-shrink: 0; }
+
+/* ── Tables ──────────────────────────────────────────────────────────── */
+.iv-table-wrap {
+    position: relative;
+    overflow-x: auto;
+    margin: 0 -2px;
+}
+.iv-table-wrap::after {
+    /* shadow indicator that the table scrolls */
+    content: '';
+    position: absolute; top: 0; right: 0; bottom: 0;
+    width: 24px;
+    background: linear-gradient(to left, rgba(255, 255, 255, 0.9), transparent);
+    pointer-events: none;
+}
+.iv-table {
+    width: 100%; min-width: 100%;
+    border-collapse: collapse;
+    font: 13px Nunito, system-ui, sans-serif;
+}
+.iv-table th {
+    text-align: left;
+    font: 700 10.5px Nunito, system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--flat);
+    padding: 8px 10px;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+    position: sticky; top: 0;
+}
+.iv-table td {
+    padding: 10px;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+    vertical-align: middle;
+}
+.iv-table tr:last-child td { border-bottom: none; }
+.iv-table tr:hover td { background: var(--paper); }
+
+.iv-tag {
+    display: inline-block;
+    font: 700 11px Nunito, system-ui, sans-serif;
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+.iv-tag-plum  { background: var(--plum-soft);  color: var(--plum); }
+.iv-tag-green { background: var(--good-soft);  color: var(--good); }
+.iv-tag-coral { background: var(--bad-soft);   color: var(--bad);  }
+.iv-tag-gray  { background: var(--flat-soft);  color: var(--flat); }
+.iv-tag-aqua  { background: rgba(85, 221, 224, 0.18); color: #1c7e80; }
+
+/* ── Bar inside a row ────────────────────────────────────────────────── */
+.iv-bar {
+    height: 8px; background: var(--flat-soft); border-radius: 999px; overflow: hidden;
+    min-width: 60px;
+}
+.iv-bar > i {
+    display: block; height: 100%;
+    background: linear-gradient(90deg, var(--aqua), var(--plum));
+    border-radius: 999px;
+}
+
+/* ── Funnel viz ──────────────────────────────────────────────────────── */
+.iv-funnel { display: flex; flex-direction: column; gap: 6px; }
+.iv-funnel-row {
+    display: grid;
+    grid-template-columns: minmax(140px, 200px) 1fr 90px 70px;
+    align-items: center; gap: 12px;
+    padding: 6px 0;
+}
+.iv-funnel-label {
+    font: 600 12.5px Nunito, system-ui, sans-serif;
+    color: var(--ink);
+}
+.iv-funnel-bar {
+    background: var(--plum-soft);
+    height: 22px; border-radius: 6px; overflow: hidden;
+    position: relative;
+}
+.iv-funnel-bar > i {
+    display: block; height: 100%;
+    background: linear-gradient(90deg, #7E4FB8, #6C3FA4);
+}
+.iv-funnel-n     { font: 700 13px Fredoka, system-ui, sans-serif; text-align: right; }
+.iv-funnel-pct   { font: 600 12px Nunito, system-ui, sans-serif; color: var(--flat); text-align: right; }
+
+/* ── Cohort curves ───────────────────────────────────────────────────── */
+.iv-curves-wrap { position: relative; width: 100%; }
+.iv-curves-legend {
+    display: flex; flex-wrap: wrap; gap: 14px;
+    margin-top: 10px;
+    font: 600 11.5px Nunito, system-ui, sans-serif;
+}
+.iv-curves-legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; margin-right: 4px; }
+
+/* ── A/B card ────────────────────────────────────────────────────────── */
+.iv-ab-grid {
+    display: grid; gap: 14px;
+    grid-template-columns: 1fr 1fr;
+}
+.iv-ab-arm {
+    border: 1px solid var(--line);
+    border-radius: 12px; padding: 14px;
+}
+.iv-ab-arm-title {
+    font: 700 12px Nunito, system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 8px;
+}
+.iv-ab-arm-rate {
+    font: 700 28px Fredoka, system-ui, sans-serif;
+}
+.iv-ab-arm-sub {
+    font-size: 12px; color: var(--flat); margin-top: 2px;
+}
+.iv-ab-verdict {
+    margin-top: 12px;
+    padding: 10px 14px; border-radius: 10px;
+    font: 700 12.5px Nunito, system-ui, sans-serif;
+    text-align: center;
+}
+.iv-ab-verdict-good { background: var(--good-soft); color: var(--good); }
+.iv-ab-verdict-bad  { background: var(--bad-soft);  color: var(--bad);  }
+.iv-ab-verdict-flat { background: var(--flat-soft); color: var(--flat); }
+
+/* ── Empty state ─────────────────────────────────────────────────────── */
+.iv-empty {
+    padding: 24px 16px;
+    text-align: center; color: var(--flat);
+    font: 500 13px Nunito, system-ui, sans-serif;
+}
+.iv-empty strong { color: var(--ink); font-weight: 700; }
+
+/* ── Spinner ─────────────────────────────────────────────────────────── */
+.iv-skeleton {
+    height: 90px; border-radius: 12px;
+    background:
+        linear-gradient(90deg,
+            rgba(63,64,82,0.04),
+            rgba(63,64,82,0.10),
+            rgba(63,64,82,0.04));
+    background-size: 200% 100%;
+    animation: ivShimmer 1.6s ease-in-out infinite;
+}
+@keyframes ivShimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ── Sign-in gate ────────────────────────────────────────────────────── */
+.iv-gate {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--paper);
+    padding: 24px;
+}
+.iv-gate-card {
+    max-width: 420px; width: 100%;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 32px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(63, 64, 82, 0.06);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+    .iv-kpi-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 860px) {
+    .iv-main { padding: 12px 16px 48px; gap: 12px; }
+    .iv-topbar-inner { padding: 12px 16px; }
+    .iv-filterbar    { padding: 12px 16px 0; }
+    .iv-tabstrip     { padding: 8px 16px 0; }
+    .iv-kpi-grid {
+        grid-template-columns: 84% 84% 84% 84% 84% 84% 84% 84%;
+        grid-auto-flow: column;
+        grid-auto-columns: 84%;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scroll-padding: 12px;
+        margin: 0 -16px;
+        padding: 0 16px;
+        scrollbar-width: none;
+    }
+    .iv-kpi-grid::-webkit-scrollbar { display: none; }
+    .iv-kpi { scroll-snap-align: start; }
+    .iv-row { grid-template-columns: 1fr; }
+    .iv-col-3, .iv-col-4, .iv-col-6, .iv-col-8, .iv-col-12 { grid-column: 1 / -1; }
+    .iv-ab-grid { grid-template-columns: 1fr; }
+    .iv-funnel-row {
+        grid-template-columns: 1fr 70px 60px;
+    }
+    .iv-funnel-bar { grid-column: 1 / -1; }
+    .iv-funnel-label { grid-column: 1; }
+}
+
+/* ── Print: one-page executive summary ───────────────────────────────── */
+@media print {
+    @page { size: A4 portrait; margin: 12mm; }
+    .iv-shell { background: #fff; }
+    .iv-topbar, .iv-filterbar, .iv-tabstrip, .iv-btn,
+    .iv-no-print { display: none !important; }
+    .iv-main {
+        padding: 0; max-width: none; gap: 8px;
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .iv-card {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #e5e7eb;
+    }
+    .iv-kpi-grid { grid-template-columns: repeat(4, 1fr) !important; }
+    .iv-kpi-value { font-size: 22px; }
+    .iv-table th { background: transparent; }
+}
