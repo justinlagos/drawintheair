@@ -85,6 +85,84 @@ export interface CohortCurvesData {
     cohorts: CohortCurve[];
 }
 
+// ── Engagement-deep RPC ───────────────────────────────────────────────
+export interface EngagementDailyPoint { day: string; n: number; }
+export interface EngagementModeRow {
+    game_mode: string;
+    started: number;
+    completed: number;
+    abandoned: number;
+    stuck: number;
+    median_seconds: number;
+    p90_seconds: number;
+    distinct_devices: number;
+    is_open_ended: boolean;
+    completion_rate_pct: number | null;
+    stuck_rate_pct: number;
+    abandon_rate_pct: number;
+    daily: EngagementDailyPoint[];
+}
+export interface EngagementDeepData {
+    days: number;
+    as_of: string;
+    modes: EngagementModeRow[];
+}
+
+// ── Mastery summary RPC ──────────────────────────────────────────────
+export interface MasteryItemSummary {
+    game_mode: string;
+    item_key: string;
+    strong: number;
+    practising: number;
+    new: number;
+    total_devices: number;
+    mean_acc_pct: number | null;
+    median_acc_pct: number | null;
+    mean_attempts: number;
+}
+export interface MasteryStrugglingRow {
+    game_mode: string; item_key: string;
+    total_devices: number; median_acc_pct: number;
+    mean_attempts: number;
+}
+export interface MasteryStrongRow {
+    game_mode: string; item_key: string;
+    strong: number; total_devices: number;
+    mean_acc_pct: number;
+}
+export interface MasterySummaryData {
+    days: number; as_of: string;
+    totals: {
+        items_with_mastery: number;
+        total_strong: number;
+        total_practising: number;
+        total_new: number;
+        distinct_items: number;
+        distinct_modes: number;
+    };
+    items: MasteryItemSummary[];
+    struggling: MasteryStrugglingRow[];
+    top_strong: MasteryStrongRow[];
+}
+
+// ── Retention deep RPC ───────────────────────────────────────────────
+export interface RetentionDailyRow {
+    day: string; active: number; new_devices: number; returning: number;
+}
+export interface RetentionHook { game_mode: string; devices: number; }
+export interface RetentionHeatmapCell { w: number; pct: number | null; active: number; }
+export interface RetentionHeatmapRow {
+    cohort_week: string; cohort_size: number; cells: RetentionHeatmapCell[];
+}
+export interface RetentionDeepData {
+    as_of: string;
+    daily: RetentionDailyRow[];
+    dau: number; wau: number; mau: number;
+    stickiness_dau_mau: number;
+    returning_hooks: RetentionHook[];
+    cohort_heatmap: RetentionHeatmapRow[];
+}
+
 // ── Live indicator RPC ────────────────────────────────────────────────
 export interface LiveSessionRow {
     session_id: string;

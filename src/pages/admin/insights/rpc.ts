@@ -9,6 +9,7 @@
 import { getSupabaseUrl, getAccessToken, getAnonKey } from '../../../lib/supabase';
 import type {
     ExecutiveData, AbData, CohortCurvesData, LiveData,
+    EngagementDeepData, MasterySummaryData, RetentionDeepData,
     TodayData, FunnelData, TrackerData, ModesData, ErrorsData,
     CohortData, MasteryData, CurriculumData, MilestonesData, SessionsData,
 } from './types';
@@ -43,6 +44,15 @@ export const fetchCohortCurves = (weeks = 6) =>
 
 export const fetchLive       = () =>
     callRpc<LiveData>('dashboard_live', {});
+
+export const fetchEngagementDeep = (days: number) =>
+    callRpc<EngagementDeepData>('dashboard_engagement_deep', { in_days: days });
+
+export const fetchMasterySummary = (days = 30) =>
+    callRpc<MasterySummaryData>('dashboard_mastery_summary', { in_days: days });
+
+export const fetchRetentionDeep = () =>
+    callRpc<RetentionDeepData>('dashboard_retention_deep', {});
 
 // Existing v1 RPCs (preserved) ───────────────────────────────────────────
 export const fetchToday      = () => callRpc<TodayData>('dashboard_today', {});

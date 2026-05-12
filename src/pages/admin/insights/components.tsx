@@ -218,3 +218,124 @@ export const CohortCurves: React.FC<{
 export const InlineBar: React.FC<{ pct: number }> = ({ pct }) => (
     <div className="iv-bar"><i style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} /></div>
 );
+
+// ── Stacked strength bar (strong / practising / new) ────────────────
+export const StrengthBar: React.FC<{
+    strong: number; practising: number; newCount: number;
+}> = ({ strong, practising, newCount }) => {
+    const total = strong + practising + newCount;
+    if (total === 0) return <div className="iv-strength" aria-hidden />;
+    const s = (strong / total) * 100;
+    const p = (practising / total) * 100;
+    const n = (newCount / total) * 100;
+    return (
+        <div className="iv-strength" role="img"
+             aria-label={`${strong} strong, ${practising} practising, ${newCount} new`}>
+            {s > 0 && <i className="iv-strength-strong" style={{ width: `${s}%` }} />}
+            {p > 0 && <i className="iv-strength-practising" style={{ width: `${p}%` }} />}
+            {n > 0 && <i className="iv-strength-new" style={{ width: `${n}%` }} />}
+        </div>
+    );
+};
+
+export const StrengthKey: React.FC = () => (
+    <div className="iv-strength-key">
+        <span><i style={{ background: 'linear-gradient(90deg, #7ED957, #2EAE52)' }} />Strong (≥5 attempts, ≥80% accuracy)</span>
+        <span><i style={{ background: 'linear-gradient(90deg, #FFD84D, #FFB14D)' }} />Practising (≥3 attempts, ≥50%)</span>
+        <span><i style={{ background: 'linear-gradient(90deg, #C8C8D2, #9B9DAE)' }} />New / still learning</span>
+    </div>
+);
+
+// ── Cohort retention heatmap ────────────────────────────────────────
+// A simple W0..W6 grid coloured by % returning.
+export const Heatmap: React.FC<{
+    rows: Array<{ cohort_week: string; cohort_size: number; cells: Array<{ w: number; pct: number | null }> }>;
+}> = ({ rows }) => {
+    if (!rows.length) return <Empty message="Not enough cohort data yet." />;
+    const colorFor = (pct: number | null): string => {
+        if (pct == null || pct === 0) return 'var(--flat-soft)';
+        // Plum gradient: low pct = pale, high pct = saturated
+        const a = Math.min(0.85, 0.10 + (pct / 100) * 0.75);
+        return `rgba(108, 63, 164, ${a.toFixed(2)})`;
+    };
+    const textColorFor = (pct: number | null): string => (pct != null && pct >= 50) ? '#fff' : 'var(--ink)';
+
+    return (
+        <div className="iv-heatmap">
+            <div className="iv-heatmap-h">Cohort</div>
+            {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="iv-heatmap-h">W{i}</div>
+            ))}
+            {rows.map(r => (
+                <React.Fragment key={r.cohort_week}>
+                    <div className="iv-heatmap-row-label">
+                        {new Date(r.cohort_week).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        <small>· {r.cohort_size}</small>
+                    </div>
+                    {r.cells.map(c => (
+                        <div key={c.w} className="iv-heatmap-cell"
+                             style={{ background: colorFor(c.pct), color: textColorFor(c.pct) }}
+                             title={`W${c.w}: ${c.pct == null ? 'n/a' : `${c.pct}%`}`}>
+                            {c.pct == null ? '—' : `${c.pct.toFixed(0)}%`}
+                        </div>
+                    ))}
+                </React.Fragment>
+            ))}
+        </div>
+    );
+};
+
+// ── Two-series area chart (new vs returning) ───────────────────────
+export const DualAreaChart: React.FC<{
+    points: Array<{ day: string; new_devices: number; returning: number; active?: number }>;
+    height?: number;
+}> = ({ points, height = 180 }) => {
+    if (points.length < 2) return <Empty message="Not enough days yet." />;
+    const W = 720;
+    const H = height;
+    const padL = 36, padR = 8, padT = 10, padB = 26;
+    const innerW = W - padL - padR;
+    const innerH = H - padT - padB;
+    const maxY = Math.max(...points.map(p => (p.new_devices + p.returning)), 1);
+    const stepX = innerW / Math.max(1, points.length - 1);
+    const yFor = (n: number) => padT + innerH - (n / maxY) * innerH;
+
+    // Stacked: returning at bottom (positive baseline), new on top
+    const bottomPath = points.map((p, i) => {
+        const x = padL + i * stepX;
+        return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${yFor(p.returning).toFixed(1)}`;
+    }).join(' ');
+    const topPath = points.map((p, i) => {
+        const x = padL + i * stepX;
+        return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${yFor(p.returning + p.new_devices).toFixed(1)}`;
+    }).join(' ');
+    const baselineY = padT + innerH;
+
+    return (
+        <div className="iv-curves-wrap">
+            <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet"
+                 style={{ width: '100%', height: 'auto' }}>
+                {[0, 0.25, 0.5, 0.75, 1].map(t => (
+                    <g key={t}>
+                        <line x1={padL} x2={W - padR} y1={yFor(maxY * (1 - t))} y2={yFor(maxY * (1 - t))}
+                              stroke="rgba(63,64,82,0.08)" strokeDasharray="3 3" />
+                        <text x={padL - 6} y={yFor(maxY * (1 - t)) + 3} textAnchor="end"
+                              fontSize="9.5" fill="#6B6F84" fontFamily="Nunito, system-ui">
+                            {Math.round(maxY * (1 - t))}
+                        </text>
+                    </g>
+                ))}
+                {/* Returning area (plum) */}
+                <path d={`${bottomPath} L${padL + (points.length - 1) * stepX},${baselineY} L${padL},${baselineY} Z`}
+                      fill="rgba(108, 63, 164, 0.35)" stroke="#6C3FA4" strokeWidth={1.4} />
+                {/* New on top (aqua) */}
+                <path d={`${topPath} ${bottomPath.split(' ').reverse().map(s => s.replace(/^[ML]/, 'L')).join(' ')} Z`}
+                      fill="rgba(85, 221, 224, 0.35)" stroke="#55DDE0" strokeWidth={1.4} />
+            </svg>
+            <div className="iv-curves-legend">
+                <span><i style={{ background: '#6C3FA4' }} />Returning devices</span>
+                <span><i style={{ background: '#55DDE0' }} />New devices</span>
+            </div>
+        </div>
+    );
+};

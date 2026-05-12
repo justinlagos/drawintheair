@@ -23,6 +23,7 @@ import { LearningTab } from './insights/tabs/LearningTab';
 import { RetentionTab } from './insights/tabs/RetentionTab';
 import { SessionsTab } from './insights/tabs/SessionsTab';
 import { ErrorsTab } from './insights/tabs/ErrorsTab';
+import { PrintReport } from './insights/PrintReport';
 import './insights/insights.css';
 
 // Allow-list. Add more emails here when other admins need access.
@@ -108,10 +109,20 @@ const AuthenticatedDashboard: React.FC<{ email: string; onSignOut: () => Promise
     const [filter, setFilter] = useFilter();
     const live = useRpc(() => fetchLive(), [], { intervalMs: 15_000 });
     const [shareMode] = useState(() => new URLSearchParams(window.location.search).get('share') === '1');
+    const [reportMode] = useState(() => new URLSearchParams(window.location.search).get('report') === '1');
 
-    // Print: trigger from the top-bar button
-    const handlePrint = () => window.print();
+    // Print: open the dedicated paper-shaped report view in a new tab.
+    // The view auto-fires window.print() once data is loaded.
+    const handlePrint = () => {
+        const url = `/admin/insights?report=1&range=${filter.range}`;
+        window.open(url, '_blank');
+    };
     const handleShare = () => copyShareLink(filter);
+
+    // Dedicated report view — auto-prints once loaded.
+    if (reportMode) {
+        return <PrintReport range={filter.range} email={email} />;
+    }
 
     // Keyboard shortcuts for power use
     useEffect(() => {
@@ -136,9 +147,13 @@ const AuthenticatedDashboard: React.FC<{ email: string; onSignOut: () => Promise
             <header className="iv-topbar">
                 <div className="iv-topbar-inner">
                     <div className="iv-brand">
-                        <div className="iv-brand-mark" />
+                        <img
+                            src="/logo.png"
+                            alt="Draw in the Air"
+                            className="iv-brand-logo"
+                        />
                         <div>
-                            <div className="iv-brand-name">Draw in the Air · Insights</div>
+                            <div className="iv-brand-name">Insights</div>
                             <div className="iv-brand-sub">
                                 {shareMode ? 'Share view · read-only' : email}
                                 {live.refreshedAt && ` · refreshed ${fmtRelative(live.refreshedAt.toISOString())}`}

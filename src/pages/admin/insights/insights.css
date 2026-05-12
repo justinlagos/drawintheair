@@ -44,9 +44,9 @@
 .iv-brand {
     display: flex; align-items: center; gap: 10px;
 }
-.iv-brand-mark {
-    width: 28px; height: 28px; border-radius: 8px;
-    background: linear-gradient(135deg, #6C3FA4, #55DDE0);
+.iv-brand-logo {
+    height: 32px; width: auto; display: block;
+    filter: drop-shadow(0 1px 2px rgba(63, 64, 82, 0.08));
 }
 .iv-brand-name {
     font: 700 15px Fredoka, system-ui, sans-serif;
@@ -366,6 +366,99 @@
 .iv-ab-verdict-bad  { background: var(--bad-soft);  color: var(--bad);  }
 .iv-ab-verdict-flat { background: var(--flat-soft); color: var(--flat); }
 
+/* ── Mode card (engagement) ─────────────────────────────────────────── */
+.iv-mode-card {
+    border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px; background: var(--card);
+    display: flex; flex-direction: column; gap: 10px;
+    min-width: 0;
+}
+.iv-mode-card-head {
+    display: flex; align-items: center; gap: 8px;
+}
+.iv-mode-card-title {
+    font: 700 13px Fredoka, system-ui, sans-serif;
+    color: var(--ink);
+}
+.iv-mode-card-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+}
+.iv-mode-stat-label {
+    font: 600 9.5px Nunito, system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--flat);
+}
+.iv-mode-stat-value {
+    font: 700 15px Fredoka, system-ui, sans-serif;
+    color: var(--ink); line-height: 1.1;
+}
+
+/* ── Mastery strength bar (3-segment stacked) ──────────────────────── */
+.iv-strength {
+    display: flex; height: 14px; border-radius: 999px; overflow: hidden;
+    background: var(--flat-soft); min-width: 80px;
+}
+.iv-strength > i {
+    display: block; height: 100%;
+}
+.iv-strength-strong     { background: linear-gradient(90deg, #7ED957, #2EAE52); }
+.iv-strength-practising { background: linear-gradient(90deg, #FFD84D, #FFB14D); }
+.iv-strength-new        { background: linear-gradient(90deg, #C8C8D2, #9B9DAE); }
+.iv-strength-key {
+    display: flex; gap: 14px; flex-wrap: wrap;
+    font: 600 11.5px Nunito, system-ui, sans-serif;
+    color: var(--flat); margin-top: 10px;
+}
+.iv-strength-key span { display: inline-flex; align-items: center; gap: 6px; }
+.iv-strength-key i {
+    width: 10px; height: 10px; border-radius: 3px; display: inline-block;
+}
+
+/* ── Cohort heatmap ─────────────────────────────────────────────────── */
+.iv-heatmap {
+    display: grid; gap: 4px; overflow-x: auto;
+    grid-template-columns: minmax(80px, 110px) repeat(7, minmax(36px, 1fr));
+    min-width: 360px;
+}
+.iv-heatmap-h {
+    font: 700 10.5px Nunito, system-ui, sans-serif;
+    color: var(--flat);
+    text-align: center; padding: 4px 0;
+    text-transform: uppercase; letter-spacing: 0.05em;
+}
+.iv-heatmap-row-label {
+    display: flex; align-items: center;
+    font: 600 11.5px Nunito, system-ui, sans-serif;
+    color: var(--ink); padding-left: 4px;
+}
+.iv-heatmap-row-label small {
+    color: var(--flat); margin-left: 4px;
+}
+.iv-heatmap-cell {
+    display: flex; align-items: center; justify-content: center;
+    height: 32px; border-radius: 6px;
+    font: 700 11px Nunito, system-ui, sans-serif;
+}
+
+/* ── Stickiness card ────────────────────────────────────────────────── */
+.iv-sticky-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    margin-top: 8px;
+}
+.iv-sticky-stat {
+    text-align: center; padding: 12px 8px;
+    background: var(--paper); border-radius: 10px;
+}
+.iv-sticky-stat-value {
+    font: 700 22px Fredoka, system-ui, sans-serif; color: var(--ink);
+    line-height: 1.0;
+}
+.iv-sticky-stat-label {
+    font: 600 10.5px Nunito, system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--flat); margin-top: 4px;
+}
+
 /* ── Empty state ─────────────────────────────────────────────────────── */
 .iv-empty {
     padding: 24px 16px;
@@ -439,22 +532,128 @@
     .iv-funnel-label { grid-column: 1; }
 }
 
-/* ── Print: one-page executive summary ───────────────────────────────── */
-@media print {
-    @page { size: A4 portrait; margin: 12mm; }
-    .iv-shell { background: #fff; }
-    .iv-topbar, .iv-filterbar, .iv-tabstrip, .iv-btn,
-    .iv-no-print { display: none !important; }
-    .iv-main {
-        padding: 0; max-width: none; gap: 8px;
-        grid-template-columns: repeat(2, 1fr);
-    }
-    .iv-card {
-        break-inside: avoid;
-        box-shadow: none;
-        border: 1px solid #e5e7eb;
-    }
-    .iv-kpi-grid { grid-template-columns: repeat(4, 1fr) !important; }
-    .iv-kpi-value { font-size: 22px; }
-    .iv-table th { background: transparent; }
+/* ──────────────────────────────────────────────────────────────────── */
+/* DEDICATED REPORT VIEW (?report=1)                                    */
+/* Linear, paper-shaped, auto-print. Designed FOR A4 not retrofit for it.*/
+/* ──────────────────────────────────────────────────────────────────── */
+.iv-report {
+    --paper-w: 794px;   /* A4 portrait at 96 dpi */
+    background: #ECEEF4;
+    min-height: 100vh;
+    font: 14px/1.5 Nunito, system-ui, sans-serif;
+    color: var(--ink);
+    padding: 24px 0;
 }
+.iv-report-page {
+    background: #fff;
+    width: var(--paper-w);
+    max-width: 100%;
+    min-height: calc(var(--paper-w) * 1.414);    /* A4 aspect */
+    margin: 0 auto 24px;
+    box-shadow: 0 10px 40px rgba(63, 64, 82, 0.12);
+    padding: 48px 56px;
+    box-sizing: border-box;
+    break-after: page;
+    page-break-after: always;
+    position: relative;
+    display: flex; flex-direction: column;
+}
+.iv-report-page:last-child { break-after: auto; page-break-after: auto; }
+.iv-report-page-head {
+    display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 18px; margin-bottom: 28px;
+}
+.iv-report-page-head img { height: 28px; }
+.iv-report-page-head h1 {
+    margin: 0; font: 700 18px Fredoka, system-ui, sans-serif;
+    color: var(--plum);
+}
+.iv-report-page-head .meta {
+    margin-left: auto; font: 600 11.5px Nunito;
+    color: var(--flat);
+}
+.iv-report-page-foot {
+    margin-top: auto; padding-top: 24px;
+    display: flex; justify-content: space-between;
+    font: 600 10px Nunito;
+    color: var(--flat);
+    border-top: 1px solid var(--line);
+}
+.iv-report-cover {
+    align-items: flex-start;
+    justify-content: center;
+    padding: 96px 56px;
+}
+.iv-report-cover img { height: 64px; margin-bottom: 32px; }
+.iv-report-cover h1 {
+    margin: 0; font: 700 40px Fredoka, system-ui, sans-serif;
+    color: var(--ink); line-height: 1.05;
+}
+.iv-report-cover h2 {
+    margin: 8px 0 0; font: 600 18px Nunito;
+    color: var(--plum);
+}
+.iv-report-cover .period {
+    margin-top: 64px;
+    font: 700 14px Nunito;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--flat);
+}
+.iv-report-cover .stamp {
+    margin-top: 6px;
+    font: 700 30px Fredoka;
+    color: var(--ink);
+}
+.iv-report-cover .gen {
+    margin-top: 36px;
+    font: 500 12px Nunito; color: var(--flat);
+}
+.iv-report-section { margin-bottom: 24px; }
+.iv-report-section-title {
+    font: 700 11px Nunito; text-transform: uppercase;
+    letter-spacing: 0.10em; color: var(--plum);
+    margin: 0 0 12px;
+}
+.iv-report-kpi-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+}
+.iv-report-kpi {
+    border: 1px solid var(--line); border-radius: 10px; padding: 14px;
+}
+.iv-report-kpi-label {
+    font: 700 10.5px Nunito; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--flat);
+}
+.iv-report-kpi-value {
+    font: 700 26px Fredoka; color: var(--ink); line-height: 1.05;
+    margin-top: 8px;
+}
+.iv-report-kpi-sub {
+    font-size: 12px; color: var(--flat); margin-top: 4px;
+}
+.iv-report-table {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+}
+.iv-report-table th, .iv-report-table td {
+    text-align: left; padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+}
+.iv-report-table th {
+    font: 700 10px Nunito; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--flat);
+}
+
+@media print {
+    @page { size: A4 portrait; margin: 0; }
+    body { background: #fff; }
+    .iv-report { background: #fff; padding: 0; }
+    .iv-report-page {
+        margin: 0; box-shadow: none;
+        page-break-after: always; break-after: page;
+        min-height: 100vh;
+    }
+    .iv-report-page:last-child { page-break-after: auto; }
+    .iv-no-print { display: none !important; }
+}
+
