@@ -383,13 +383,44 @@ export const PrintReport: React.FC<{ range: Range; email: string }> = ({ range, 
                 <div className="iv-report-section">
                     <h3 className="iv-report-section-title">Methodology</h3>
                     <p style={{ fontSize: 11.5, color: '#6B6F84', lineHeight: 1.6 }}>
-                        Sessions are de-duplicated by a stable browser-side session UUID. Devices are
-                        de-duplicated by a per-browser localStorage UUID — no PII is collected. Cohorts
-                        are bucketed by ISO week of first observation. "Mastery" is defined as ≥5
-                        attempts at an item with ≥80% accuracy; "Practising" is ≥3 attempts at ≥50%.
-                        All percentages are calculated server-side via PostgreSQL functions exposed
-                        as Supabase RPCs. Camera grant rate counts the first denial per session only
-                        (subsequent retries count as a separate <code>camera_retry_failed</code> event).
+                        <strong style={{ color: '#1A1B2E' }}>Identity.</strong> Sessions are
+                        de-duplicated by a stable browser-side session UUID. Devices are
+                        de-duplicated by a per-browser localStorage UUID — no PII is collected.
+                        Cohorts are bucketed by ISO week of first observation.
+                    </p>
+                    <p style={{ fontSize: 11.5, color: '#6B6F84', lineHeight: 1.6, marginTop: 8 }}>
+                        <strong style={{ color: '#1A1B2E' }}>Time on task.</strong>{' '}
+                        <em>Median session</em> (Executive tab) is the median of
+                        <code> max(occurred_at) − min(occurred_at)</code> across <strong>every</strong>
+                        session — short bounces included (camera denials, age-band drops, instant
+                        back-clicks). <em> Avg time-on-task</em> (Engagement tab) is the median of
+                        per-mode play duration, computed only over sessions that actually reached a
+                        mode. The gap between them (e.g. 41 s vs 1 m 6 s) is the weight of the
+                        bounce tail: when kids do get into a mode they spend ~1 m on it, but a large
+                        share of sessions never reach that point.
+                    </p>
+                    <p style={{ fontSize: 11.5, color: '#6B6F84', lineHeight: 1.6, marginTop: 8 }}>
+                        <strong style={{ color: '#1A1B2E' }}>Stuck &amp; abandon.</strong>{' '}
+                        A <em>stuck moment</em> is any 30 s+ window inside a single stage with no
+                        forward progress event (no <code>item_dropped</code>, no
+                        <code> stage_progressed</code>). <em>Abandon rate</em> is the share of
+                        <em>mode_started</em> events not followed by <em>mode_completed</em>
+                        within the same session. Sandbox modes (Free Paint) have no goal, so the
+                        abandon metric is not surfaced for them — kids leaving an open-ended canvas
+                        is not a difficulty signal.
+                    </p>
+                    <p style={{ fontSize: 11.5, color: '#6B6F84', lineHeight: 1.6, marginTop: 8 }}>
+                        <strong style={{ color: '#1A1B2E' }}>Mastery.</strong>{' '}
+                        "Mastered" is ≥5 attempts at an item with ≥80% accuracy. "Practising" is
+                        ≥3 attempts at ≥50%. Anything below that is "still learning." All
+                        percentages are computed server-side via PostgreSQL functions exposed as
+                        Supabase RPCs.
+                    </p>
+                    <p style={{ fontSize: 11.5, color: '#6B6F84', lineHeight: 1.6, marginTop: 8 }}>
+                        <strong style={{ color: '#1A1B2E' }}>Camera grant.</strong>{' '}
+                        Camera grant rate counts the first denial per session only — subsequent
+                        retries fire <code>camera_retry_failed</code> separately so the same
+                        session doesn't get double-counted as a denial.
                     </p>
                 </div>
 

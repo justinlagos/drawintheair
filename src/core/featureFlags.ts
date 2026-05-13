@@ -46,7 +46,12 @@ const DEFAULT_FLAGS: FeatureFlags = {
     toyModeTheme: false,
     stickerRewards: false,
     tracingStreak: false,
-    narrator: false,
+    // narrator default flipped to true on 2026-05-13. Scaffolding intervention
+    // in Rainbow Bridge requires audio cues ("Find the purple") to land. The
+    // narrator module enforces a 3 s global cooldown and a friendly-voice
+    // fallback, so the surface area is small. Set this to false to silence
+    // ALL voice cues across the app.
+    narrator: true,
     // Free Paint Pro - AIR PAINT PRO (default OFF as per requirements)
     airPaintEnabled: false,  // Phase 1-5: All changes behind flag, default OFF
     layersEnabled: false,    // Phase 5: Layered canvas system, default OFF

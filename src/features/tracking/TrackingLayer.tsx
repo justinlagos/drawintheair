@@ -26,6 +26,7 @@ import { flag, exposeOnce } from '../../lib/featureFlags';
 import { CameraExplainer } from '../onboarding/CameraExplainer';
 import { CameraRecovery } from '../onboarding/CameraRecovery';
 import type { CameraCause } from '../../lib/cameraHelp';
+import { ParentTransparencyBanner } from './ParentTransparencyBanner';
 
 // ---------------------------------------------------------------------------
 // Mirror helpers (front-facing camera — natural left/right orientation)
@@ -594,6 +595,14 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                 visionFps: cameraState.fpsVision,
                 retryTracker,
             }) : children}
+
+            {/* Parent-trust badge — visible whenever the camera is live.
+                Click expands a modal showing the live preview so anyone
+                can verify the no-upload claim. */}
+            <ParentTransparencyBanner
+                videoRef={videoRef}
+                cameraActive={cameraState.status === 'running' && cameraState.streamActive}
+            />
 
             {/* DEBUG: active interaction bounds */}
             {showDebugBounds && (

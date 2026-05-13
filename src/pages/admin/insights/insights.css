@@ -537,13 +537,44 @@
 /* Linear, paper-shaped, auto-print. Designed FOR A4 not retrofit for it.*/
 /* ──────────────────────────────────────────────────────────────────── */
 .iv-report {
+    /* Design tokens MUST live here too — the report bypasses .iv-shell,
+       so without these every var(--plum|--ink|--flat|--line) below
+       fell back to the site-wide dark-theme inherits and the printed
+       report rendered as white-on-white. Keep these in sync with the
+       .iv-shell block above. */
+    --plum:      #6C3FA4;
+    --plum-soft: rgba(108, 63, 164, 0.10);
+    --plum-bd:   rgba(108, 63, 164, 0.16);
+    --aqua:      #55DDE0;
+    --good:      #1f7a3a;
+    --good-soft: rgba(126, 217, 87, 0.18);
+    --bad:       #C13A3A;
+    --bad-soft:  rgba(255, 107, 107, 0.15);
+    --flat:      #6B6F84;
+    --flat-soft: rgba(63, 64, 82, 0.08);
+    --paper:     #FAFAFD;
+    --card:      #FFFFFF;
+    --line:      rgba(63, 64, 82, 0.18);
+    --ink:       #1A1B2E;
+
     --paper-w: 794px;   /* A4 portrait at 96 dpi */
     background: #ECEEF4;
     min-height: 100vh;
     font: 14px/1.5 Nunito, system-ui, sans-serif;
     color: var(--ink);
     padding: 24px 0;
+    /* Opt out of the site-wide dark color-scheme so headings, table
+       borders, and labels print with the intended palette regardless
+       of OS / browser dark-mode settings. */
+    color-scheme: light;
+    forced-color-adjust: none;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
 }
+/* `.iv-report { color: var(--ink) }` above is enough — every child without
+   its own `color:` rule inherits ink, and the specific rules below (plum
+   titles, grey labels) win at their own specificity. The earlier bug was
+   variables being undefined here, not inheritance. */
 .iv-report-page {
     background: #fff;
     width: var(--paper-w);
@@ -646,7 +677,16 @@
 
 @media print {
     @page { size: A4 portrait; margin: 0; }
-    body { background: #fff; }
+    /* App.css applies a light gradient to `body:has(.App)` with !important.
+       Override it so the printed page is plain white and the report ink
+       reads cleanly on every printer / PDF engine. */
+    html, body {
+        background: #fff !important;
+        color: #1A1B2E !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-scheme: light !important;
+    }
     .iv-report { background: #fff; padding: 0; }
     .iv-report-page {
         margin: 0; box-shadow: none;
@@ -655,5 +695,16 @@
     }
     .iv-report-page:last-child { page-break-after: auto; }
     .iv-no-print { display: none !important; }
+
+    /* When printing the LIVE dashboard share view (?share=1 + Cmd+P)
+       rather than the dedicated report, force the same light palette so
+       the dark playroom theme from index.css doesn't make text vanish.
+       This block is only safe inside @media print — outside print, the
+       live app must stay in its own theme. */
+    .iv-shell {
+        background: #fff !important;
+        color: #1A1B2E !important;
+    }
+    .iv-topbar { backdrop-filter: none !important; background: #fff !important; }
 }
 

@@ -24,6 +24,8 @@ import { DifficultyController } from '../../../core/DifficultyController';
 import { tactileAudioManager } from '../../../core/TactileAudioManager';
 import { featureFlags } from '../../../core/featureFlags';
 import { isCountdownActive } from '../../../core/countdownService';
+import { recordProgress as recordStuckProgress, tick as stuckTick, resetStage as resetStuckStage, type RecoveryLevel } from '../../../core/stuckRecovery';
+import { narrate } from '../../../core/narrator';
 
 export interface TracingState {
     path: TracingPath | null;
@@ -56,6 +58,13 @@ export interface TracingState {
     streakStartTime: number | null; // When current streak started
     lastStreakUpdateTime: number; // Last time streak was updated
     streakActive: boolean; // Whether currently building streak
+    // ── Any-direction tracing ────────────────────────────────────────────
+    // We let the kid start tracing from either end of the path. At first
+    // valid on-path contact we look at overallT — if it's in the back
+    // half, we treat the kid's *starting* end as the end of the points
+    // array. Once locked, the direction stays fixed for this attempt.
+    reverseDirection: boolean;
+    directionLocked: boolean;
 }
 
 // Module-level state (refs pattern, no React state)
@@ -89,7 +98,10 @@ let tracingState: TracingState = {
     streakMeter: 0,
     streakStartTime: null,
     lastStreakUpdateTime: 0,
-    streakActive: false
+    streakActive: false,
+    // Any-direction tracing — see interface for rationale.
+    reverseDirection: false,
+    directionLocked: false
 };
 
 // Completion callback
@@ -151,13 +163,28 @@ const loadCurrentPath = (): void => {
     tracingState.lastIdleCheckTime = 0;
     tracingState.lastOffPathHintTime = 0;
     tracingState.sparkleParticles = [];
-    
+
+    // Any-direction tracing — unlock so the next attempt can pick its
+    // own starting end.
+    tracingState.reverseDirection = false;
+    tracingState.directionLocked = false;
+
+    // Reset cross-mode stuck-recovery state so a new path starts the idle
+    // clock fresh — the shared service uses this both for in-product help
+    // and for the `stuck_moment` analytics event.
+    resetStuckStage('tracing');
+    lastSpokenRecoveryLevel = 'NONE';
+
     // Reset difficulty controller if enabled
     const dds = getDifficultyController();
     if (dds) {
         dds.reset();
     }
 };
+
+// Tracks the previous-frame recovery level so we can fire one-shot effects
+// (voice cue) on transitions without depending on stuckRecovery internals.
+let lastSpokenRecoveryLevel: RecoveryLevel = 'NONE';
 
 // Export loadCurrentPath so it can be called when advancing levels
 export const reloadCurrentPath = (): void => {
@@ -291,11 +318,26 @@ export const tracingLogicV2 = (
     const offPathDecayRate = 0.0005; // Small backward drift per frame when off-path
     const toleranceMultiplier = path.pack <= 2 ? 1.15 : 1.0; // +15% tolerance for Pack 1-2
     
-    // Draw path with quality settings
-    drawPath(ctx, path, width, height, tracingState.progress, tracingState.onPath, perfConfig);
-    
+    // Draw path with quality settings. Pass the reverse flag so the fill
+    // animates from whichever end the kid started at.
+    drawPath(ctx, path, width, height, tracingState.progress, tracingState.onPath, perfConfig, tracingState.reverseDirection);
+
     // Handle pause/resume with grace window
     const now = frameData.timestamp;
+
+    // ── Stuck-recovery scaffolding ─────────────────────────────────────────
+    // When the kid hasn't progressed in a while, render a glowing ghost
+    // trail along the next portion of the path showing exactly where to
+    // go next, and (at MEDIUM) speak the idle narrator cue once. The
+    // recovery service owns the timer; we just render the response.
+    const recoveryLevel = stuckTick('tracing', now);
+    if (recoveryLevel !== 'NONE' && !tracingState.isCompleted) {
+        drawGhostAhead(ctx, path, tracingState.progress, width, height, recoveryLevel, now);
+    }
+    if (recoveryLevel === 'MEDIUM' && lastSpokenRecoveryLevel !== 'MEDIUM') {
+        narrate('idle');
+    }
+    lastSpokenRecoveryLevel = recoveryLevel;
     const countdownActive = isCountdownActive(now);
     const isPinching = frameData.pinchActive;
     
@@ -435,6 +477,22 @@ export const tracingLogicV2 = (
     // Check if on path (with dynamic tolerance and forgiveness corridor)
     const onPath = distance <= forgivenessTolerancePx;
     tracingState.onPath = onPath;
+
+    // ── Any-direction tracing: lock starting direction on first contact ──
+    // The kid can start at either end of the path. If their first valid
+    // on-path contact is in the back half of the path (overallT > 0.5),
+    // we treat the end of the path as their starting point and traverse
+    // it in reverse. This is enormous for letters where the "correct"
+    // formation direction is taught later, not on first encounter.
+    if (!tracingState.directionLocked && onPath && tracingState.progress === 0) {
+        tracingState.reverseDirection = overallT > 0.5;
+        tracingState.directionLocked = true;
+    }
+
+    // effectiveT is overallT in the *kid's start* frame of reference —
+    // always grows from 0 (kid's start) toward 1 (kid's end), regardless
+    // of which end of the original path they began from.
+    const effectiveT = tracingState.reverseDirection ? 1 - overallT : overallT;
     
     // Streak system - build on-path, decay off-path (non-punitive) - only if enabled
     if (featureFlags.getFlag('tracingStreak')) {
@@ -562,8 +620,10 @@ export const tracingLogicV2 = (
     }
     tracingState.lastTimestamp = frameData.timestamp;
     
-    // Calculate forward movement along path
-    const forwardMovementOnPath = overallT - tracingState.lastPathPosition;
+    // Calculate forward movement along path — in *kid's-start* coords,
+    // so that "forward" means the kid's chosen direction (forward or
+    // reversed) regardless of the path's underlying point order.
+    const forwardMovementOnPath = effectiveT - tracingState.lastPathPosition;
     
     // Apply off-path decay if off-path for too long (but not if already completed/near completion)
     if (!onPath && tracingState.offPathStartTime !== null && tracingState.progress < path.completionPercent * 0.95) {
@@ -588,37 +648,42 @@ export const tracingLogicV2 = (
         (now - tracingState.pinchLostTime) <= pinchGraceWindowMs);
     
     const timeSinceLastProgress = now - tracingState.lastProgressUpdateTime;
-    const canUpdateProgress = 
+    const canUpdateProgress =
         effectivePinchActive && // Pinching (with grace window)
         onPath && // On path
         fingerMovedPx >= minPhysicalMovementPx && // Has moved (adaptive threshold)
         forwardMovementOnPath > minForwardMovement && // Moving forward along path
-        overallT > tracingState.progress && // Ahead of current progress
+        effectiveT > tracingState.progress && // Ahead of current progress (kid's-start coords)
         timeSinceLastProgress >= minTimeBetweenProgressMs; // Rate limiting
-    
+
     if (canUpdateProgress) {
         // Base progress update - ensure we don't skip ahead
         const maxAllowedProgress = tracingState.progress + maxProgressPerFrame;
-        let newProgress = Math.min(overallT, maxAllowedProgress);
+        let newProgress = Math.min(effectiveT, maxAllowedProgress);
         
         // Look-ahead is DISABLED - progress only advances with actual finger movement
         // No look-ahead boost applied to prevent skipping
         
         // Only update if we're actually making progress forward
         // CRITICAL: Ensure we don't skip ahead of actual finger position
-        // Progress must be <= overallT (actual finger position on path)
-        if (newProgress > tracingState.progress && newProgress <= overallT) {
+        // Progress must be <= effectiveT (actual finger position on path,
+        // expressed in kid's-start coordinates)
+        if (newProgress > tracingState.progress && newProgress <= effectiveT) {
             // Additional safety: ensure progress doesn't jump too far
             const progressDelta = newProgress - tracingState.progress;
             if (progressDelta <= maxProgressPerFrame * 1.5) { // Allow small overshoot for rounding
                 tracingState.progress = newProgress;
-                tracingState.lastPathPosition = overallT;
+                tracingState.lastPathPosition = effectiveT;
                 tracingState.lastProgressUpdateTime = now;
+                // Forward progress made — reset the cross-mode idle clock so the
+                // recovery service doesn't escalate while the kid is actively
+                // tracing.
+                recordStuckProgress('tracing', now);
             }
         }
     } else if (onPath) {
         // Update last path position even if not advancing progress (for tracking)
-        tracingState.lastPathPosition = overallT;
+        tracingState.lastPathPosition = effectiveT;
     }
     
     // Note: Assist is visual only - doesn't affect progress calculation
@@ -753,8 +818,161 @@ export const tracingLogicV2 = (
         tactileAudioManager.updatePinchState(frameData.pinchActive);
         tactileAudioManager.updateMovement(fingerPos, frameData.timestamp);
     }
-    
+
+    // ── Draggable follow-ball — last to render so it sits on top of the
+    // path + scaffolding overlays. Reads as the physical object the kid
+    // is moving through the tube. Hidden while the mode is paused so it
+    // doesn't ghost when the kid lifts their hand.
+    if (fingerPos && !tracingState.isCompleted) {
+        drawFollowBall(ctx, fingerPos, tracingState.onPath, tracingState.isPaused, width, height, now);
+    }
+
     tracingState.lastFingerPos = fingerPos;
+};
+
+// ═══════════════════════════════════════════════
+// FOLLOW BALL — a glowing orb the kid feels they're dragging.
+// Sits at the finger position, scales/glows brighter when on-path so the
+// child gets immediate tactile feedback that something is in their hand.
+// Rendered ABOVE the path so it always reads as "the thing I'm moving."
+// ═══════════════════════════════════════════════
+const drawFollowBall = (
+    ctx: CanvasRenderingContext2D,
+    pos: { x: number; y: number },
+    onPath: boolean,
+    isPaused: boolean,
+    width: number,
+    height: number,
+    now: number,
+): void => {
+    if (isPaused) return;
+    const cx = pos.x * width;
+    const cy = pos.y * height;
+    const baseR = Math.min(width, height) * 0.022; // ~24px on a 1080p screen
+    const pulse = 0.5 + 0.5 * Math.sin(now * 0.005);
+    const r = baseR * (onPath ? 1 + 0.08 * pulse : 0.88);
+
+    // Outer glow halo — softer when off-path so the kid knows to return.
+    ctx.save();
+    ctx.shadowBlur = onPath ? 28 : 14;
+    ctx.shadowColor = onPath ? 'rgba(0, 245, 212, 0.9)' : 'rgba(255, 184, 48, 0.5)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 1.7, 0, Math.PI * 2);
+    ctx.fillStyle = onPath ? 'rgba(0, 245, 212, 0.18)' : 'rgba(255, 184, 48, 0.10)';
+    ctx.fill();
+    ctx.restore();
+
+    // Core sphere with a radial highlight to read as a physical ball.
+    const grad = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.35, r * 0.05, cx, cy, r);
+    if (onPath) {
+        grad.addColorStop(0,    'rgba(255, 255, 255, 0.98)');
+        grad.addColorStop(0.45, 'rgba(170, 250, 235, 0.95)');
+        grad.addColorStop(1,    'rgba(0, 245, 212, 0.85)');
+    } else {
+        grad.addColorStop(0,    'rgba(255, 255, 255, 0.92)');
+        grad.addColorStop(0.5,  'rgba(255, 220, 160, 0.85)');
+        grad.addColorStop(1,    'rgba(255, 160, 50, 0.72)');
+    }
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Specular highlight — sells the "glassy ball" reading.
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx - r * 0.32, cy - r * 0.32, r * 0.32, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+    ctx.fill();
+    ctx.restore();
+};
+
+// ═══════════════════════════════════════════════
+// GHOST AHEAD — Scaffolding overlay for stuck kids
+// Highlights the next 12–25% of the path with a pulsing warm trail.
+// Length and brightness scale with the recovery level (SOFT/MEDIUM/STRONG).
+// ═══════════════════════════════════════════════
+const drawGhostAhead = (
+    ctx: CanvasRenderingContext2D,
+    path: TracingPath,
+    fromT: number,
+    width: number,
+    height: number,
+    level: RecoveryLevel,
+    now: number,
+): void => {
+    const points = path.points;
+    if (points.length < 2) return;
+
+    const aheadFraction = level === 'STRONG' ? 0.25 : level === 'MEDIUM' ? 0.18 : 0.12;
+    const toT = Math.min(fromT + aheadFraction, 1);
+    if (toT - fromT < 0.01) return;
+
+    const totalLen = calculatePathLength(points, width, height);
+    if (totalLen === 0) return;
+    const targetStart = fromT * totalLen;
+    const targetEnd   = toT   * totalLen;
+
+    // Build a sub-polyline along [targetStart, targetEnd]. Same maths as
+    // traceLine in drawPath but slicing both ends instead of just the end.
+    const aheadPts: Array<{ x: number; y: number }> = [];
+    let acc = 0;
+    for (let i = 0; i < points.length - 1; i++) {
+        const segLen = Math.hypot(
+            (points[i + 1].x - points[i].x) * width,
+            (points[i + 1].y - points[i].y) * height,
+        );
+        const segStart = acc;
+        const segEnd   = acc + segLen;
+
+        if (segEnd < targetStart) { acc = segEnd; continue; }
+        if (segStart > targetEnd) break;
+
+        // First point — interpolate to targetStart inside this segment.
+        if (aheadPts.length === 0) {
+            const t = segLen === 0 ? 0 : Math.max(0, (targetStart - segStart) / segLen);
+            aheadPts.push({
+                x: points[i].x + (points[i + 1].x - points[i].x) * t,
+                y: points[i].y + (points[i + 1].y - points[i].y) * t,
+            });
+        }
+
+        // End — interpolate to targetEnd if this segment crosses it, else
+        // take the segment endpoint and continue.
+        if (segEnd >= targetEnd) {
+            const t = segLen === 0 ? 1 : (targetEnd - segStart) / segLen;
+            aheadPts.push({
+                x: points[i].x + (points[i + 1].x - points[i].x) * t,
+                y: points[i].y + (points[i + 1].y - points[i].y) * t,
+            });
+            break;
+        } else {
+            aheadPts.push({ x: points[i + 1].x, y: points[i + 1].y });
+            acc = segEnd;
+        }
+    }
+
+    if (aheadPts.length < 2) return;
+
+    // Pulse — gentle on SOFT, prominent on STRONG.
+    const baseAlpha = level === 'STRONG' ? 0.85 : level === 'MEDIUM' ? 0.62 : 0.40;
+    const pulse = 0.5 + 0.5 * Math.sin(now * 0.005);
+    const alpha = Math.min(1, baseAlpha * (0.7 + 0.3 * pulse));
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = `rgba(255, 200, 80, ${alpha})`;
+    ctx.lineWidth = path.tolerancePx * 1.6;
+    ctx.shadowColor = `rgba(255, 184, 48, ${alpha * 0.7})`;
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.moveTo(aheadPts[0].x * width, aheadPts[0].y * height);
+    for (let i = 1; i < aheadPts.length; i++) {
+        ctx.lineTo(aheadPts[i].x * width, aheadPts[i].y * height);
+    }
+    ctx.stroke();
+    ctx.restore();
 };
 
 // ═══════════════════════════════════════════════
@@ -768,12 +986,19 @@ const drawPath = (
     height: number,
     progress: number,
     onPath: boolean,
-    perfConfig: { visualQuality: 'high' | 'low'; shadowBlurScale: number }
+    perfConfig: { visualQuality: 'high' | 'low'; shadowBlurScale: number },
+    reverseDirection: boolean = false,
 ): void => {
-    const points = path.points;
+    // When the kid traces from the back end of the path, render the same
+    // polyline reversed so the progress fill grows from their starting
+    // hand position outward — matching the direction of their movement.
+    const points = reverseDirection ? [...path.points].reverse() : path.points;
     if (points.length < 2) return;
     const tol = path.tolerancePx;
-    const thicknessScale = 2.0;
+    // Bumped from 2.0 → 2.6 (2026-05-13). Kids reported the "path felt
+    // thin" — fatter tube is more tactile, easier for shaky hands to
+    // stay inside, and visually reads as something to drag through.
+    const thicknessScale = 2.6;
     const blurScale = Math.min(0.6, perfConfig.shadowBlurScale);
 
     // Helper to draw a polyline through points

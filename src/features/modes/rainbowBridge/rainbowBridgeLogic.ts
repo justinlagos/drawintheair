@@ -14,6 +14,7 @@ import type { DrawingUtils } from '@mediapipe/tasks-vision';
 import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import { normalizedToCanvas } from '../../../core/coordinateUtils';
 import { logEvent } from '../../../lib/analytics';
+import { narrateText } from '../../../core/narrator';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Colour definitions
@@ -75,6 +76,19 @@ let totalCompleted = 0;
 
 const LEVEL_LENGTHS = [3, 4, 5, 5, 6];  // pattern length per level
 
+// ── Scaffolding state (2026-05-13) ──────────────────────────────────────────
+// The dashboard showed all 7 colours clustered at ~50% accuracy across 22–27
+// kids per colour. Hit-zones are spacious, colour names are on both clouds
+// and stones, so this is a *scaffolding* gap, not a recogniser bug: 3–5
+// year-olds need an audio prompt + a sticky visual cue to commit to a target.
+let lastSpokenStep = -1;       // index of the step we most recently spoke
+let stepStartedAt = 0;          // wall-clock when current step became active
+let lastStuckPromptAt = 0;      // last time we re-prompted on a stuck step
+let lastWrongPromptAt = 0;      // last time we narrated a wrong-stone bounce
+const STUCK_PROMPT_AFTER_MS  = 5000;
+const STUCK_REPROMPT_EVERY_MS = 6000;  // don't loop endlessly
+const WRONG_PROMPT_COOLDOWN_MS = 2500; // soft re-prompt cap
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -109,6 +123,11 @@ function buildLevel(): void {
     levelComplete = false;
     celebrationTime = 0;
     stageStartedAt = Date.now();
+    // Reset scaffolding state — fresh level means we re-prompt for step 0.
+    lastSpokenStep = -1;
+    stepStartedAt = stageStartedAt;
+    lastStuckPromptAt = 0;
+    lastWrongPromptAt = 0;
     logEvent('stage_started', {
         game_mode: 'rainbow-bridge',
         stage_id: `level-${levelIndex + 1}`,
@@ -221,6 +240,7 @@ function drawStone(
     ctx: CanvasRenderingContext2D,
     stone: Stone,
     isTarget: boolean,
+    isStuckOnTarget: boolean,
     isCompleted: boolean,
     dwellProgress: number,
     bounceOffset: number,
@@ -291,14 +311,29 @@ function drawStone(
         ctx.stroke();
     }
 
-    // Target pulse ring
+    // Target pulse ring — intensifies when the kid has been stuck on this
+    // step long enough that we've started re-prompting verbally. Bigger
+    // amplitude, faster pulse, full alpha + a soft outer halo so the
+    // target is unambiguous on a busy screen.
     if (isTarget && !isCompleted) {
-        const pulse = 0.5 + 0.5 * Math.sin(now * 0.005);
+        const speed  = isStuckOnTarget ? 0.009 : 0.005;
+        const offset = isStuckOnTarget ? 18 : 12;
+        const range  = isStuckOnTarget ? 10 : 5;
+        const pulse  = 0.5 + 0.5 * Math.sin(now * speed);
         ctx.beginPath();
-        ctx.arc(sc.x, cy, r + 12 + pulse * 5, 0, Math.PI * 2);
-        ctx.strokeStyle = col.hex + '88';
-        ctx.lineWidth = 3;
+        ctx.arc(sc.x, cy, r + offset + pulse * range, 0, Math.PI * 2);
+        ctx.strokeStyle = col.hex + (isStuckOnTarget ? 'FF' : '88');
+        ctx.lineWidth = isStuckOnTarget ? 5 : 3;
         ctx.stroke();
+
+        if (isStuckOnTarget) {
+            // Soft outer halo — visible "look here" anchor.
+            ctx.beginPath();
+            ctx.arc(sc.x, cy, r + offset + pulse * range + 14, 0, Math.PI * 2);
+            ctx.strokeStyle = col.hex + '55';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
     }
 }
 
@@ -370,7 +405,27 @@ export const rainbowBridgeLogic = (
 
     // ── Dwell detection on stones ─────────────────────────────────────────────
     const targetColourId = pattern[currentStep]?.id;
+    const targetColour = pattern[currentStep] ?? null;
     const fingerCanvas = filteredPoint ? normalizedToCanvas(filteredPoint, width, height) : null;
+
+    // ── Scaffolding: voice cue when a new step becomes active ─────────────
+    // Without this, kids see a pulsing cloud + a pulsing stone with no audio
+    // anchor for the colour name. Adding "Find the purple" makes the prompt
+    // multi-modal and gives 3-5 year olds a chance to lock onto the target.
+    if (targetColour && currentStep !== lastSpokenStep && !levelComplete) {
+        narrateText(`Find the ${targetColour.name.toLowerCase()}`);
+        lastSpokenStep = currentStep;
+        stepStartedAt = now;
+        lastStuckPromptAt = 0;  // allow re-prompt on this new step
+    }
+
+    // ── Scaffolding: re-prompt if stuck on a step past STUCK_PROMPT_AFTER_MS ─
+    const stuckOnStep = targetColour != null && !levelComplete
+        && (now - stepStartedAt) > STUCK_PROMPT_AFTER_MS;
+    if (stuckOnStep && (now - lastStuckPromptAt) > STUCK_REPROMPT_EVERY_MS) {
+        narrateText(`Find the ${targetColour!.name.toLowerCase()}`, { urgent: true });
+        lastStuckPromptAt = now;
+    }
 
     if (fingerCanvas && !levelComplete) {
         stones.forEach(stone => {
@@ -447,6 +502,17 @@ export const rainbowBridgeLogic = (
                                 step: currentStep,
                             },
                         });
+                        // Scaffolding: soft re-prompt naming both stones so the
+                        // child learns the colour they touched and the one they
+                        // need. Cooldown prevents spam if they bounce repeatedly.
+                        if (targetColour && (now - lastWrongPromptAt) > WRONG_PROMPT_COOLDOWN_MS) {
+                            const wrongCol = getColour(stone.colourId);
+                            narrateText(
+                                `That's ${wrongCol.name.toLowerCase()}. Find ${targetColour.name.toLowerCase()}.`,
+                                { urgent: true },
+                            );
+                            lastWrongPromptAt = now;
+                        }
                     }
                 }
             } else {
@@ -458,6 +524,7 @@ export const rainbowBridgeLogic = (
     // ── Draw stones ───────────────────────────────────────────────────────────
     stones.forEach(stone => {
         const isTargetStone = stone.colourId === targetColourId;
+        const isStuckOnThisTarget = isTargetStone && stuckOnStep;
         const isCompletedStone = arcs.some(a => a.colourId === stone.colourId && a.step < currentStep);
         const dwellP = stone.dwellStart !== null ? Math.min((now - stone.dwellStart) / DWELL_MS, 1) : 0;
 
@@ -468,7 +535,7 @@ export const rainbowBridgeLogic = (
             if (t > 1) stone.bouncing = false;
         }
 
-        drawStone(ctx, stone, isTargetStone, isCompletedStone, dwellP, bounceOffset, width, height, now);
+        drawStone(ctx, stone, isTargetStone, isStuckOnThisTarget, isCompletedStone, dwellP, bounceOffset, width, height, now);
     });
 
     // ── Finger cursor ─────────────────────────────────────────────────────────

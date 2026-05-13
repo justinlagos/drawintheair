@@ -69,7 +69,7 @@ export const ExecutiveTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                 <Kpi
                     label="Median session"
                     value={fmtDuration(c.median_session_s)}
-                    sub="active gameplay time"
+                    sub="all sessions, bounces included"
                     delta={dlt.median_session_s_delta_s}
                     deltaSuffix="s"
                 />

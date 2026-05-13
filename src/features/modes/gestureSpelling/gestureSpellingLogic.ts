@@ -14,6 +14,8 @@ import type { DrawingUtils } from '@mediapipe/tasks-vision';
 import type { TrackingFrameData } from '../../tracking/TrackingLayer';
 import { normalizedToCanvas } from '../../../core/coordinateUtils';
 import { logEvent } from '../../../lib/analytics';
+import { recordProgress as recordStuckProgress, tick as stuckTick, resetStage as resetStuckStage, type RecoveryLevel } from '../../../core/stuckRecovery';
+import { narrate } from '../../../core/narrator';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Word list (picture + word pairs)
@@ -236,6 +238,10 @@ function buildTiles(word: SpellingWord): LetterTile[] {
 // Tier B/C analytics: per-word timing.
 let wordStartedAt = 0;
 
+// Cross-mode stuck-recovery — tracks the previous-frame level so we can
+// fire the idle narration exactly once on the SOFT → MEDIUM transition.
+let lastSpokenRecoveryLevel: RecoveryLevel = 'NONE';
+
 export function initGestureSpelling(): void {
     wordsSpelled = 0;
     usedWordIndices = [];
@@ -245,6 +251,8 @@ export function initGestureSpelling(): void {
     wordComplete = false;
     celebrationTime = 0;
     wordStartedAt = Date.now();
+    resetStuckStage('gesture-spelling');
+    lastSpokenRecoveryLevel = 'NONE';
     logEvent('stage_started', {
         game_mode: 'gesture-spelling',
         stage_id: currentWord.word,
@@ -266,6 +274,8 @@ export function advanceToNextWord(): void {
     wordComplete = false;
     celebrationTime = 0;
     wordStartedAt = Date.now();
+    resetStuckStage('gesture-spelling');
+    lastSpokenRecoveryLevel = 'NONE';
     logEvent('stage_started', {
         game_mode: 'gesture-spelling',
         stage_id: currentWord.word,
@@ -378,6 +388,38 @@ function drawTile(
     ctx.restore();
 }
 
+// Halo around the tile holding the next expected letter. Renders only
+// when the kid has been idle past the SOFT threshold — the haloes get
+// brighter and pulse faster as recovery level escalates so a stuck child
+// gets an unmistakable visual anchor for where to point next.
+function drawTargetHalo(
+    ctx: CanvasRenderingContext2D,
+    tile: LetterTile,
+    level: RecoveryLevel,
+    width: number,
+    height: number,
+    now: number,
+): void {
+    const tc = normalizedToCanvas({ x: tile.x + tile.width / 2, y: tile.y + tile.height / 2 }, width, height);
+    const r = (Math.max(tile.width * width, tile.height * height) / 2) + 10;
+
+    const baseAlpha = level === 'STRONG' ? 0.90 : level === 'MEDIUM' ? 0.65 : 0.40;
+    const speed     = level === 'STRONG' ? 0.009 : level === 'MEDIUM' ? 0.006 : 0.004;
+    const pulse     = 0.5 + 0.5 * Math.sin(now * speed);
+    const alpha     = Math.min(1, baseAlpha * (0.7 + 0.3 * pulse));
+    const extra     = level === 'STRONG' ? 12 : level === 'MEDIUM' ? 8 : 4;
+
+    ctx.save();
+    ctx.shadowColor = `rgba(255, 216, 77, ${alpha * 0.7})`; // sunshine glow
+    ctx.shadowBlur  = 22;
+    ctx.beginPath();
+    ctx.arc(tc.x, tc.y, r + extra + pulse * 6, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255, 216, 77, ${alpha})`;
+    ctx.lineWidth   = level === 'STRONG' ? 6 : 4;
+    ctx.stroke();
+    ctx.restore();
+}
+
 function drawDwellRing(
     ctx: CanvasRenderingContext2D,
     tile: LetterTile,
@@ -480,6 +522,8 @@ export const gestureSpellingLogic = (
                     if (tile.letter === nextExpected) {
                         tile.status = 'correct';
                         typedSoFar.push(tile.letter);
+                        // Forward progress — reset the stuck-recovery clock.
+                        recordStuckProgress('gesture-spelling', now);
                         // Per-letter mastery row.
                         logEvent('item_dropped', {
                             game_mode: 'gesture-spelling',
@@ -539,6 +583,21 @@ export const gestureSpellingLogic = (
             }
         });
     }
+
+    // ── Stuck-recovery: halo around the next letter when kid is idle ──────
+    // Drawn before the tiles so the halo sits behind them. The recovery
+    // service drives the level; we just paint the response.
+    const recoveryLevel = stuckTick('gesture-spelling', now);
+    if (recoveryLevel !== 'NONE' && !wordComplete) {
+        const targetTile = tiles.find(t => t.letter === nextExpected && t.status !== 'correct');
+        if (targetTile) {
+            drawTargetHalo(ctx, targetTile, recoveryLevel, width, height, now);
+        }
+    }
+    if (recoveryLevel === 'MEDIUM' && lastSpokenRecoveryLevel !== 'MEDIUM') {
+        narrate('idle');
+    }
+    lastSpokenRecoveryLevel = recoveryLevel;
 
     // Draw tiles
     tiles.forEach(tile => {

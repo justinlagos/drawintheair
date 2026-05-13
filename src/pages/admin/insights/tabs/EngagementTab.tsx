@@ -60,7 +60,7 @@ export const EngagementTab: React.FC<{ filter: FilterState }> = ({ filter }) => 
                 <Kpi label="Mode plays" value={fmtNum(totalStarted)} sub={`across ${modes.length} modes`} />
                 <Kpi label="Completions" value={fmtNum(totalCompleted)} sub="finished activities" />
                 <Kpi label="Avg completion rate" value={fmtPct(overallCompletion)} sub="across non-sandbox modes" />
-                <Kpi label="Avg time-on-task" value={fmtDuration(medianAcrossModes)} sub="median seconds per session" />
+                <Kpi label="Avg time-on-task" value={fmtDuration(medianAcrossModes)} sub="median per-mode play length" />
                 <Kpi label="Stuck moments" value={fmtNum(totalStuck)} sub="30s+ idle during a stage" />
             </div>
 
@@ -127,7 +127,12 @@ export const EngagementTab: React.FC<{ filter: FilterState }> = ({ filter }) => 
                             </thead>
                             <tbody>
                                 {[...modes].sort((a, b) => b.stuck_rate_pct - a.stuck_rate_pct).slice(0, 8).map(m => {
-                                    const signal = m.stuck_rate_pct > 30 ? { tone: 'coral' as const, text: 'needs scaffolding' }
+                                    // Sandbox modes (Free Paint) have no goal, so "abandon" just means
+                                    // "the kid moved on" — that is not a difficulty signal and should
+                                    // never trigger the "too hard" badge. Surface them as exploratory.
+                                    const signal = m.is_open_ended
+                                        ? { tone: 'gray' as const, text: 'exploratory' }
+                                        : m.stuck_rate_pct > 30 ? { tone: 'coral' as const, text: 'needs scaffolding' }
                                         : m.abandon_rate_pct > 40 ? { tone: 'coral' as const, text: 'too hard' }
                                         : m.stuck_rate_pct > 15 ? { tone: 'aqua' as const, text: 'some friction' }
                                         : { tone: 'green' as const, text: 'healthy' };
@@ -135,7 +140,7 @@ export const EngagementTab: React.FC<{ filter: FilterState }> = ({ filter }) => 
                                         <tr key={m.game_mode}>
                                             <td><Tag tone="aqua">{label(m.game_mode)}</Tag></td>
                                             <td>{fmtPct(m.stuck_rate_pct)}</td>
-                                            <td>{fmtPct(m.abandon_rate_pct)}</td>
+                                            <td>{m.is_open_ended ? '—' : fmtPct(m.abandon_rate_pct)}</td>
                                             <td><Tag tone={signal.tone}>{signal.text}</Tag></td>
                                         </tr>
                                     );
