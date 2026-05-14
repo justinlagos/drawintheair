@@ -23,6 +23,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
     animate,
     motion,
+    useInView,
     useReducedMotion,
     useScroll,
     useTransform,
@@ -244,6 +245,18 @@ export const Landing: React.FC = () => {
     const [proof, setProof] = useState<PublicProof | null>(null);
     const hasTrackedView = useRef(false);
 
+    // Mark <html> so landing-v3.css can override the global :root
+    // night-theme background. Without this, macOS rubber-band
+    // overscroll and Chrome's paint-fallback expose the dark
+    // --world-bg-0 canvas behind the light landing — the "black
+    // space on scroll" issue. Cleaned up on unmount so the app
+    // shell goes back to its night-theme canvas.
+    useEffect(() => {
+        const root = document.documentElement;
+        root.classList.add('lp-route');
+        return () => { root.classList.remove('lp-route'); };
+    }, []);
+
     useEffect(() => {
         if (hasTrackedView.current) return;
         hasTrackedView.current = true;
@@ -434,6 +447,25 @@ const Hero: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
     const visualScale = useTransform(scrollYProgress, [0, 1], [1, 0.92]);
     const prefersReduced = useReducedMotion();
 
+    // Scroll-linked parallax was the biggest single source of
+    // scroll-time jank: useTransform writes inline transforms on
+    // every scroll frame to a large rotated layer that already
+    // costs a lot to repaint. Gate it behind real desktop hardware
+    // (mouse, hover-capable, wide viewport) so touch devices,
+    // tablets and small laptops scroll smoothly. Hooks themselves
+    // must still run unconditionally — we just skip applying the
+    // motion values to the `style` prop.
+    const [enableParallax, setEnableParallax] = useState(false);
+    useEffect(() => {
+        if (prefersReduced) return;
+        if (typeof window === 'undefined' || !window.matchMedia) return;
+        const mq = window.matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)');
+        const apply = () => setEnableParallax(mq.matches);
+        apply();
+        mq.addEventListener?.('change', apply);
+        return () => mq.removeEventListener?.('change', apply);
+    }, [prefersReduced]);
+
     // Defer the hero loop video until after first paint. Poster shows
     // instantly; the <video> mounts ~250ms later so the browser is not
     // racing to decode 280 KB of webm at the same moment React is
@@ -504,7 +536,7 @@ const Hero: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
 
                 <motion.div
                     className="lp-hero-visual"
-                    style={prefersReduced ? undefined : { y: visualY, scale: visualScale }}
+                    style={enableParallax ? { y: visualY, scale: visualScale } : undefined}
                     initial={{ opacity: 0, y: 24 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
@@ -535,6 +567,8 @@ const Hero: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
                                     src="/landing-videos/hero-loop.jpg"
                                     alt=""
                                     aria-hidden
+                                    decoding="async"
+                                    fetchPriority="high"
                                 />
                             )}
                             <div className="lp-hero-device-bar">
@@ -544,20 +578,25 @@ const Hero: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
                             </div>
                         </motion.div>
 
+                        {/* Motion budget: keep two of the four hero icons
+                            looping (star + hand) so the hero still reads
+                            as alive, and render trophy + crown as static
+                            decoration. Net saving: 2 of the 4 continuous
+                            Framer rAF drivers in the hero. */}
                         <motion.img
                             src="/landing-icons/smiley-star.png" alt="" className="lp-hero-float lp-hero-float-star"
                             animate={prefersReduced ? undefined : { y: [0, -14, 0], rotate: [0, 8, 0] }}
                             transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
                         />
-                        <motion.img
-                            src="/landing-icons/trophy.png" alt="" className="lp-hero-float lp-hero-float-trophy"
-                            animate={prefersReduced ? undefined : { y: [0, 12, 0], rotate: [0, -6, 0] }}
-                            transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+                        <img
+                            src="/landing-icons/trophy.png" alt=""
+                            className="lp-hero-float lp-hero-float-trophy"
+                            loading="lazy" decoding="async"
                         />
-                        <motion.img
-                            src="/landing-icons/crown-star.png" alt="" className="lp-hero-float lp-hero-float-crown"
-                            animate={prefersReduced ? undefined : { y: [0, -10, 0], rotate: [0, 5, 0] }}
-                            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
+                        <img
+                            src="/landing-icons/crown-star.png" alt=""
+                            className="lp-hero-float lp-hero-float-crown"
+                            loading="lazy" decoding="async"
                         />
                         <motion.img
                             src="/landing-icons/hand.png" alt="" className="lp-hero-float lp-hero-float-hand"
@@ -580,35 +619,34 @@ const TrustChip: React.FC<{ icon: string; label: React.ReactNode }> = ({ icon, l
 const HandTrail: React.FC = () => {
     const prefersReduced = useReducedMotion();
     if (prefersReduced) return null;
+    // Motion budget: was 3 SVG circles each animating cx/cy/opacity
+    // through 5 keyframes infinitely — 3 simultaneous rAF drivers on
+    // top of the already-heavy hero. Reduced to a single circle.
+    // Visually you still get the "trail" suggestion; the eye fills
+    // the rest from the floating icons around the device.
     return (
         <svg className="lp-hero-trail" viewBox="0 0 400 280" aria-hidden>
-            {[0, 0.15, 0.3].map((delay, i) => (
-                <motion.circle
-                    key={i}
-                    cx="60" cy="220" r={6 - i * 1.2}
-                    fill={['#FFD84D', '#55DDE0', '#FF6B6B'][i]}
-                    animate={{
-                        cx: [60, 140, 240, 320, 60],
-                        cy: [220, 100, 150, 70, 220],
-                        opacity: [0.3 - i * 0.05, 0.95 - i * 0.15, 0.85 - i * 0.15, 0.6 - i * 0.1, 0.3 - i * 0.05],
-                    }}
-                    transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay }}
-                />
-            ))}
+            <motion.circle
+                cx="60" cy="220" r="6"
+                fill="#FFD84D"
+                animate={{
+                    cx: [60, 140, 240, 320, 60],
+                    cy: [220, 100, 150, 70, 220],
+                    opacity: [0.3, 0.95, 0.85, 0.6, 0.3],
+                }}
+                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+            />
         </svg>
     );
 };
 
 const FloatingOrb: React.FC<{ className: string }> = ({ className }) => {
-    const prefersReduced = useReducedMotion();
-    return (
-        <motion.div
-            className={`lp-orb ${className}`}
-            animate={prefersReduced ? undefined : { y: [0, -14, 0], opacity: [0.45, 0.65, 0.45] }}
-            transition={{ duration: 7 + Math.random() * 3, repeat: Infinity, ease: 'easeInOut' }}
-            aria-hidden
-        />
-    );
+    // Motion budget: the orbs used to bob 14 px and pulse opacity
+    // 0.45→0.65→0.45 forever. The bob is imperceptible at this scale
+    // and the opacity pulse is invisible against the page gradient.
+    // Three orbs × infinite rAF = three composite layers redrawn on
+    // every frame for no visible payoff. Now static.
+    return <div className={`lp-orb ${className}`} aria-hidden />;
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -652,19 +690,27 @@ const HowItWorks: React.FC = () => {
 // ═══════════════════════════════════════════════════════════════════════
 const CameraTrust: React.FC = () => {
     const prefersReduced = useReducedMotion();
+    // Motion budget: shield bobbed forever, even while the user was
+    // miles away in another section. Pause it off-view so we only
+    // pay rAF cost when someone is actually looking.
+    const sectionRef = useRef<HTMLElement | null>(null);
+    const inView = useInView(sectionRef, { amount: 0.2 });
+    const shieldAnimate = !prefersReduced && inView
+        ? { y: [0, -10, 0], rotate: [-2, 2, -2] }
+        : undefined;
     return (
-        <section className="lp-section-trust-wrap">
+        <section ref={sectionRef} className="lp-section-trust-wrap">
             <motion.div
                 className="lp-trust-card"
                 variants={fadeUp} initial="hidden"
                 whileInView="show" viewport={{ once: true, amount: 0.35 }}
             >
                 <div className="lp-trust-stage">
-                    <img src="/landing-icons/scan-banner.png" alt="" className="lp-trust-frame" />
+                    <img src="/landing-icons/scan-banner.png" alt="" className="lp-trust-frame" loading="lazy" decoding="async" />
                     <motion.img
                         src="/landing-icons/shield.png" alt=""
                         className="lp-trust-shield"
-                        animate={prefersReduced ? undefined : { y: [0, -10, 0], rotate: [-2, 2, -2] }}
+                        animate={shieldAnimate}
                         transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
                     />
                 </div>
@@ -790,9 +836,12 @@ const GameCard: React.FC<{ game: ActivityMeta; primary: boolean }> = ({ game, pr
                         observer?.disconnect();
                     }
                 },
-                // Pre-load a quarter-viewport before the card enters
-                // so the video starts seamlessly, not after a jank.
-                { threshold: 0.1, rootMargin: '0px 0px 25% 0px' }
+                // Pre-load 10% of a viewport before the card enters.
+                // Was 25%, which mounted 3–5 videos in quick succession
+                // during a fast downward scroll and caused decode
+                // contention. 10% gives enough lead time for the
+                // poster to show without thrashing.
+                { threshold: 0.1, rootMargin: '0px 0px 10% 0px' }
             );
             observer.observe(card);
         } catch {
@@ -816,7 +865,22 @@ const GameCard: React.FC<{ game: ActivityMeta; primary: boolean }> = ({ game, pr
         >
             <div className="lp-game-frame">
                 <div className="lp-game-screen">
-                    {showVideo ? (
+                    {/* Keep the poster <img> mounted at all times. The
+                        <video> overlays on top once IntersectionObserver
+                        flips visible=true. This means there is never a
+                        moment where the screen wrapper's background
+                        shows through — eliminating the "grey/black box
+                        flashing into view" artefact from the scroll
+                        recording. The poster is decoded async so it
+                        doesn't compete with the hero on first paint. */}
+                    <img
+                        className="lp-game-media"
+                        src={game.poster}
+                        alt={`${game.name} preview`}
+                        loading="lazy"
+                        decoding="async"
+                    />
+                    {showVideo && (
                         <video
                             className="lp-game-media"
                             poster={game.poster}
@@ -826,8 +890,6 @@ const GameCard: React.FC<{ game: ActivityMeta; primary: boolean }> = ({ game, pr
                             <source src={game.videoWebm} type="video/webm" />
                             {game.videoMp4 && <source src={game.videoMp4} type="video/mp4" />}
                         </video>
-                    ) : (
-                        <img className="lp-game-media" src={game.poster} alt={`${game.name} preview`} loading="lazy" />
                     )}
                 </div>
                 <span className="lp-game-tag" style={{ background: game.accent }}>{game.tagline}</span>
@@ -845,8 +907,14 @@ const GameCard: React.FC<{ game: ActivityMeta; primary: boolean }> = ({ game, pr
 // ═══════════════════════════════════════════════════════════════════════
 const RealKidProof: React.FC = () => {
     const prefersReduced = useReducedMotion();
+    // Motion budget: deco star bobs only while this section is in view.
+    const sectionRef = useRef<HTMLElement | null>(null);
+    const inView = useInView(sectionRef, { amount: 0.2 });
+    const decoAnimate = !prefersReduced && inView
+        ? { y: [0, -10, 0], rotate: [0, 6, 0] }
+        : undefined;
     return (
-        <section id="real-proof" className="lp-section lp-section-realproof">
+        <section ref={sectionRef} id="real-proof" className="lp-section lp-section-realproof">
             <SectionHead
                 eyebrow="REAL CHILDREN. REAL MOMENTS."
                 title={<>The first hand they raise is the moment learning begins.</>}
@@ -875,7 +943,7 @@ const RealKidProof: React.FC = () => {
             {!prefersReduced && (
                 <motion.img
                     src="/landing-icons/smiley-star.png" alt="" className="lp-realproof-deco"
-                    animate={{ y: [0, -10, 0], rotate: [0, 6, 0] }}
+                    animate={decoAnimate}
                     transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
                 />
             )}
@@ -907,7 +975,10 @@ const RealKidCard: React.FC<{
                         observer?.disconnect();
                     }
                 },
-                { threshold: 0.1, rootMargin: '0px 0px 25% 0px' }
+                // Tightened from 25% to 10% to avoid simultaneous
+                // mounts of these (700 KB-ish each) clips during
+                // a fast scroll.
+                { threshold: 0.1, rootMargin: '0px 0px 10% 0px' }
             );
             observer.observe(card);
         } catch {
@@ -924,7 +995,19 @@ const RealKidCard: React.FC<{
             whileHover={{ y: -6, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
         >
             <div className="lp-realproof-phone">
-                {visible && !prefersReduced ? (
+                {/* Same poster-under-video stack as GameCard. The phone
+                    bezel is intentionally dark, so this matters less
+                    visually, but keeping the poster mounted prevents
+                    the brief dark-screen flash between observer mount
+                    and the first video frame decoding. */}
+                <img
+                    className="lp-realproof-video"
+                    src={poster}
+                    alt={caption}
+                    loading="lazy"
+                    decoding="async"
+                />
+                {visible && !prefersReduced && (
                     <video
                         className="lp-realproof-video"
                         poster={poster}
@@ -933,8 +1016,6 @@ const RealKidCard: React.FC<{
                         <source src={webm} type="video/webm" />
                         <source src={mp4} type="video/mp4" />
                     </video>
-                ) : (
-                    <img className="lp-realproof-video" src={poster} alt={caption} loading="lazy" />
                 )}
             </div>
             <div className="lp-realproof-caption">
@@ -972,12 +1053,18 @@ const Parents: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => (
                 </div>
             </motion.div>
             <motion.div className="lp-split-visual" variants={fadeUp}>
-                <img src="/landing-images/parent-child-screen.jpg" alt="A parent and child playing Draw in the Air together on a TV" />
+                <img
+                    src="/landing-images/parent-child-screen.jpg"
+                    alt="A parent and child playing Draw in the Air together on a TV"
+                    loading="lazy"
+                    decoding="async"
+                />
                 <motion.img
                     src="/landing-icons/kids-reading.png"
                     alt=""
                     className="lp-split-icon-corner"
                     whileHover={{ rotate: 4 }}
+                    loading="lazy"
                 />
                 <div className="lp-floating-stat lp-floating-stat-br">
                     <strong>5 min a day</strong>
@@ -1015,12 +1102,18 @@ const Teachers: React.FC = () => (
                 </div>
             </motion.div>
             <motion.div className="lp-split-visual" variants={fadeUp}>
-                <img src="/landing-images/classroom.jpg" alt="A teacher leading a class with multiple children moving" />
+                <img
+                    src="/landing-images/classroom.jpg"
+                    alt="A teacher leading a class with multiple children moving"
+                    loading="lazy"
+                    decoding="async"
+                />
                 <motion.img
                     src="/landing-icons/globe.png"
                     alt=""
                     className="lp-split-icon-corner"
                     whileHover={{ rotate: -4 }}
+                    loading="lazy"
                 />
                 <div className="lp-floating-stat lp-floating-stat-bl">
                     <strong>Loved by teachers</strong>
@@ -1075,8 +1168,22 @@ const ProofTile: React.FC<{
 // ═══════════════════════════════════════════════════════════════════════
 // Final CTA
 // ═══════════════════════════════════════════════════════════════════════
-const FinalCTA: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => (
-    <section className="lp-section lp-section-final">
+const FinalCTA: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
+    const prefersReduced = useReducedMotion();
+    // Motion budget: was three decos all bobbing forever. Dropped the
+    // third one entirely (the layout reads cleaner without it) and
+    // gated the remaining two behind in-view so they only bob while
+    // someone has scrolled to the final CTA.
+    const sectionRef = useRef<HTMLElement | null>(null);
+    const inView = useInView(sectionRef, { amount: 0.3 });
+    const deco1Animate = !prefersReduced && inView
+        ? { y: [0, -12, 0], rotate: [0, 6, 0] }
+        : undefined;
+    const deco2Animate = !prefersReduced && inView
+        ? { y: [0, 10, 0], rotate: [0, -4, 0] }
+        : undefined;
+    return (
+    <section ref={sectionRef} className="lp-section lp-section-final">
         <motion.div
             className="lp-final"
             variants={fadeUp} initial="hidden"
@@ -1084,18 +1191,13 @@ const FinalCTA: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => (
         >
             <motion.img src="/landing-icons/star-books.png" alt=""
                 className="lp-final-deco lp-final-deco-1"
-                animate={{ y: [0, -12, 0], rotate: [0, 6, 0] }}
+                animate={deco1Animate}
                 transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
             />
             <motion.img src="/landing-icons/smiley-star.png" alt=""
                 className="lp-final-deco lp-final-deco-2"
-                animate={{ y: [0, 10, 0], rotate: [0, -4, 0] }}
+                animate={deco2Animate}
                 transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
-            />
-            <motion.img src="/landing-icons/trophy.png" alt=""
-                className="lp-final-deco lp-final-deco-3"
-                animate={{ y: [0, -8, 0], rotate: [0, 3, 0] }}
-                transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
             />
             <h2>
                 Let them <span className="lp-final-emph">move</span>.
@@ -1118,7 +1220,8 @@ const FinalCTA: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => (
             </div>
         </motion.div>
     </section>
-);
+    );
+};
 
 // ═══════════════════════════════════════════════════════════════════════
 // Footer

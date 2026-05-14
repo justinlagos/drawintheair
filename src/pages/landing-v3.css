@@ -4,6 +4,33 @@
    Mobile-first . Framer Motion friendly . single file.
    ============================================================ */
 
+/* ── Route-scoped canvas overrides ───────────────────────────
+   The global app theme paints :root dark (--world-bg-0 #070C18)
+   so the in-app night theme renders correctly. On the landing
+   route that dark canvas was leaking through in two places:
+     1. macOS rubber-band / elastic overscroll exposes the html
+        canvas color directly.
+     2. Under heavy paint load Chrome briefly falls back to the
+        canvas color for a frame while it catches up.
+   This block makes the canvas match the landing's lp-shell
+   gradient base so neither case shows the night theme. The
+   .lp-route class is toggled on <html> by Landing's mount
+   effect, so the app shell is unaffected.
+   ============================================================ */
+html.lp-route {
+    background: #FFFAEB;
+    color-scheme: light;
+    overscroll-behavior-y: none;
+}
+html.lp-route body {
+    background:
+        radial-gradient(ellipse at 12% 0%, rgba(85, 221, 224, 0.14), transparent 40%),
+        radial-gradient(ellipse at 92% 6%, rgba(255, 216, 77, 0.18), transparent 38%),
+        radial-gradient(ellipse at 50% 100%, rgba(108, 63, 164, 0.10), transparent 55%),
+        linear-gradient(180deg, #F4F1FF 0%, #FFFAEB 55%, #FFF6E0 100%);
+    color: #1A1B2E;
+}
+
 .lp-shell {
     --plum: #6C3FA4;
     --plum-dark: #5A2F8C;
@@ -92,9 +119,13 @@
     position: sticky; top: 0; z-index: 50;
     display: flex; align-items: center; gap: 24px;
     padding: 14px 28px;
-    background: rgba(255, 250, 235, 0.78);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    /* More-opaque background lets us halve the backdrop blur kernel
+       cost. Sticky elements re-rasterise every scroll frame, and a
+       16px blur over the full nav width was a significant chunk of
+       scroll-time GPU. 8px reads identical at typical speeds. */
+    background: rgba(255, 250, 235, 0.88);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border-bottom: 1px solid transparent;
     transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, padding 0.25s ease;
 }
@@ -272,13 +303,15 @@
 .lp-eyebrow-green { background: var(--green-soft); color: var(--green-deep); }
 
 .lp-dot {
+    /* Was pulsing 1.6s infinite. The nav metrics ticker has its own
+       pulsing live-dot (.nm-pulse), so this one was duplicate motion;
+       removed to cut continuous rAF work. The static dot still reads
+       as a status indicator. */
     width: 7px; height: 7px; border-radius: 50%;
     background: var(--green-deep);
     box-shadow: 0 0 0 4px rgba(126, 217, 87, 0.25);
     display: inline-block;
-    animation: lp-pulse 1.6s ease-in-out infinite;
 }
-@keyframes lp-pulse { 50% { opacity: 0.4; } }
 
 /* ── Hero ─────────────────────────────────────────────────── */
 .lp-hero {
@@ -350,7 +383,12 @@
     border-radius: 50%;
     pointer-events: none;
     z-index: 0;
-    filter: blur(1px);
+    /* `filter: blur(1px)` promoted each orb to its own composited
+       layer and forced an extra GPU pass per scroll frame. The
+       radial-gradient backgrounds below are already soft, so the
+       extra 1px blur was barely visible — removing it has no
+       perceptible visual effect and saves 3 layer composites per
+       frame on hero scroll. */
     opacity: 0.5;
 }
 .lp-orb-1 {
@@ -397,9 +435,12 @@
         linear-gradient(180deg, #FFFFFF 0%, #F4FAFF 100%);
     border: 3px solid rgba(108, 63, 164, 0.20);
     border-radius: 36px;
+    /* Halved blur radii on the two key shadows. An 80px blur on a
+       large rotated element is one of the more expensive paint
+       ops on this page. 40px reads almost identical visually. */
     box-shadow:
-        0 32px 80px rgba(108, 63, 164, 0.30),
-        0 8px 24px rgba(108, 63, 164, 0.12),
+        0 16px 40px rgba(108, 63, 164, 0.28),
+        0 6px 14px rgba(108, 63, 164, 0.12),
         inset 0 1px 0 rgba(255, 255, 255, 0.6);
     overflow: hidden;
     transform: rotate(-2deg);
@@ -718,7 +759,11 @@
 .lp-game-screen {
     position: relative;
     aspect-ratio: 4 / 3;
-    background: #000;
+    /* Background sits visible for the moment between the IntersectionObserver
+       mounting <video> and its first frame decoding. Pure black against
+       cream cards read as "broken" in the scroll recording. A soft neutral
+       blends with the card frame and the brand palette. */
+    background: #F4FAFF;
     border-radius: 18px;
     overflow: hidden;
     border: 3px solid #fff;
@@ -798,8 +843,10 @@
     background: #1A1B2E;
     border-radius: 36px;
     border: 8px solid #1A1B2E;
+    /* Halved shadow blur (60 → 32 px). On a long page with two phone
+       cards, the 60 px blur radius was a measurable scroll-time cost. */
     box-shadow:
-        0 32px 60px rgba(63, 64, 82, 0.28),
+        0 18px 32px rgba(63, 64, 82, 0.26),
         inset 0 0 0 2px rgba(255, 255, 255, 0.06);
     overflow: hidden;
 }
@@ -814,23 +861,22 @@
     z-index: 4;
 }
 .lp-realproof-phone::after {
-    /* Editorial sheen: a soft diagonal highlight that sweeps across
-       the phone glass on a loop. Sits above the video, below the notch. */
+    /* Editorial sheen: was a soft diagonal highlight that swept across
+       the phone glass every 7s on a loop. Motion budget pass dropped
+       the animation — most users never noticed it, but the browser
+       was redrawing two phone cards forever to support it. The
+       static highlight stays for a hint of glassy material. */
     content: '';
     position: absolute;
     inset: 0;
     background: linear-gradient(
         115deg,
         transparent 30%,
-        rgba(255, 255, 255, 0.10) 45%,
+        rgba(255, 255, 255, 0.10) 48%,
         rgba(255, 255, 255, 0.22) 50%,
-        rgba(255, 255, 255, 0.10) 55%,
+        rgba(255, 255, 255, 0.10) 52%,
         transparent 70%
     );
-    background-size: 220% 100%;
-    background-position: 200% 0;
-    mix-blend-mode: screen;
-    animation: lp-sheen 7s ease-in-out infinite;
     pointer-events: none;
     z-index: 3;
     border-radius: inherit;
