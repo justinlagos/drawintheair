@@ -1064,3 +1064,93 @@
     .lp-hero-trail circle { animation: none !important; }
     .lp-proof-skel { animation: none !important; }
 }
+
+/* ============================================================
+   BULLETPROOF LOGO LOCKDOWN
+   Defeats any global `img { max-width: 100%; height: auto }`
+   cascade from legacy stylesheets. Scoped to .lp-shell so it
+   never leaks. Uses !important + higher specificity. Every
+   logo on the landing renders at the exact pixel size we want
+   on every breakpoint.
+   ============================================================ */
+
+/* Nav brand */
+.lp-shell .lp-nav-brand,
+.lp-shell .lp-nav-brand a { display: inline-flex !important; align-items: center !important; }
+.lp-shell .lp-nav-brand img {
+    height: 36px !important;
+    width: auto !important;
+    max-width: 132px !important;
+    max-height: 36px !important;
+    object-fit: contain !important;
+    display: block !important;
+    flex: 0 0 auto !important;
+}
+
+/* Footer brand */
+.lp-shell .lp-footer-brand img {
+    height: 40px !important;
+    width: auto !important;
+    max-width: 140px !important;
+    max-height: 40px !important;
+    object-fit: contain !important;
+    display: block !important;
+    margin-bottom: 10px !important;
+}
+
+/* Hero device brand badge (the small pill INSIDE the floating card) */
+.lp-shell .lp-hero-device-brand {
+    max-width: calc(100% - 28px) !important;
+    box-sizing: border-box !important;
+}
+.lp-shell .lp-hero-device-brand img {
+    height: 14px !important;
+    width: auto !important;
+    max-width: 28px !important;
+    max-height: 14px !important;
+    object-fit: contain !important;
+    display: block !important;
+    flex: 0 0 auto !important;
+}
+
+/* Mobile: shrink everything one more notch */
+@media (max-width: 860px) {
+    .lp-shell .lp-nav-brand img {
+        height: 28px !important;
+        max-width: 104px !important;
+        max-height: 28px !important;
+    }
+    .lp-shell .lp-footer-brand img {
+        height: 36px !important;
+        max-width: 124px !important;
+        max-height: 36px !important;
+    }
+    .lp-shell .lp-hero-device-brand img {
+        height: 12px !important;
+        max-width: 24px !important;
+        max-height: 12px !important;
+    }
+    .lp-shell .lp-hero-device-brand {
+        font-size: 9px !important;
+        padding: 4px 9px !important;
+        gap: 5px !important;
+    }
+}
+@media (max-width: 480px) {
+    .lp-shell .lp-nav-brand img {
+        height: 24px !important;
+        max-width: 88px !important;
+        max-height: 24px !important;
+    }
+    .lp-shell .lp-footer-brand img {
+        height: 32px !important;
+        max-width: 110px !important;
+        max-height: 32px !important;
+    }
+    .lp-shell .lp-hero-device-brand img {
+        height: 11px !important;
+        max-width: 22px !important;
+        max-height: 11px !important;
+    }
+    .lp-shell .lp-hero-device-brand { font-size: 8.5px !important; padding: 3px 8px !important; }
+}
