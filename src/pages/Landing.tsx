@@ -1,20 +1,22 @@
 /**
- * Landing v4 — cinematic redesign.
+ * Landing v5. cinematic, conversion-first.
  *
- * Reference: Justin's design mock + spec ("Apple polish + Nintendo
- * delight + Pixar warmth"). Cream backgrounds, lavender primary,
- * soft 3D icons, gameplay videos in stylised frames, choreographed
- * Framer Motion throughout.
- *
- * Activation path (Phase 1): hero + section CTAs all open the
- * TryFreeModal. The no-modal flow is Phase 2.
- *
- * Assets:
- *   /public/landing-videos/{free-paint,tracing,balloon-math,sort-place,word-search}.{webm,mp4,jpg}
- *   /public/landing-icons/{abc,shapes,math,brain,shield,scan-banner,hand,star-trail,smiley-star,trophy,kids-reading,star-books,globe,crown-star}.png
- *
- * Proof numbers: live from `landing_public_proof` RPC (aggregate
- * platform totals only — no PII, no child data, no school data).
+ * Changes vs v4:
+ *  - All icons swapped for transparent (no white bg) ChatGPT 3D renders.
+ *  - Em dashes removed from all copy. Sentences read clean.
+ *  - Camera trust redesigned to match the green-shield-on-scan-frame mock.
+ *  - Hero re-composed: floating 3D icons over a tilted device frame that
+ *    plays the Free Paint clip on load. No more single-photo card.
+ *  - Floating orbs constrained inside the hero section (no edge cuts).
+ *  - Game cards tightened: 4 by 3 aspect, smaller frames, padding bumps,
+ *    inner device-style border. Reads "cute", not "fullscreen video".
+ *  - Real-kid proof section added: two portrait clips from in-store
+ *    sessions, framed as device mock-ups.
+ *  - Rainbow Bridge + Bubble Pop now have real gameplay video.
+ *  - Heavier Framer Motion choreography: parallax tilt on the hero
+ *    device, magnetic CTA shimmer, scroll-driven section reveals,
+ *    spring lift on every card, ticker count-ups, looping float
+ *    decorations on every section header.
  */
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -31,7 +33,7 @@ import { logEvent } from '../lib/analytics';
 import { getSupabaseUrl, getAnonKey } from '../lib/supabase';
 import './landing-v3.css';
 
-// ── Main games (videos) ────────────────────────────────────────────────
+// ── Activity meta ─────────────────────────────────────────────────────
 interface ActivityMeta {
     id: string;
     name: string;
@@ -48,7 +50,7 @@ const MAIN_GAMES: ActivityMeta[] = [
         id: 'free',
         name: 'Free Paint',
         tagline: 'FREE PAINT',
-        body: 'Draw in the air with colors and watch your art come alive.',
+        body: 'Draw in the air with colours and watch your art come alive.',
         accent: '#FF6B6B',
         videoWebm: '/landing-videos/free-paint.webm',
         videoMp4: '/landing-videos/free-paint.mp4',
@@ -60,7 +62,9 @@ const MAIN_GAMES: ActivityMeta[] = [
         tagline: 'BUBBLE POP',
         body: 'Pop bubbles with your moves and rack up points.',
         accent: '#55DDE0',
-        poster: '/landing-images/bubble-pop.jpg',
+        videoWebm: '/landing-videos/bubble-pop.webm',
+        videoMp4: '/landing-videos/bubble-pop.mp4',
+        poster: '/landing-videos/bubble-pop.jpg',
     },
     {
         id: 'pre-writing',
@@ -99,7 +103,9 @@ const NEXT_STEP: ActivityMeta[] = [
         tagline: 'RAINBOW BRIDGE',
         body: 'Match colours in order and watch the rainbow grow.',
         accent: '#FF8E8E',
-        poster: '/landing-images/sort-shapes.png',
+        videoWebm: '/landing-videos/rainbow-bridge.webm',
+        videoMp4: '/landing-videos/rainbow-bridge.mp4',
+        poster: '/landing-videos/rainbow-bridge.jpg',
     },
     {
         id: 'word-search',
@@ -123,12 +129,11 @@ const NEXT_STEP: ActivityMeta[] = [
     },
 ];
 
-// ── Skills they build (4 cards with 3D icons) ─────────────────────────
 const SKILLS = [
-    { id: 'abc',    icon: '/landing-icons/abc.png',    title: 'Letters & Sounds',  body: 'Trace letters in the air and hear them come to life.',    age: 'Ages 3–7' },
-    { id: 'shapes', icon: '/landing-icons/shapes.png', title: 'Shapes & Patterns', body: 'Explore shapes, colours, and simple patterns.',           age: 'Ages 3–7' },
-    { id: 'math',   icon: '/landing-icons/math.png',   title: 'Early Math',        body: 'Count, compare, and solve with movement.',                age: 'Ages 3–7' },
-    { id: 'brain',  icon: '/landing-icons/brain.png',  title: 'Focus & Memory',    body: 'Games that build attention, memory, and listening.',      age: 'Ages 3–7' },
+    { id: 'abc',    icon: '/landing-icons/abc.png',    title: 'Letters & Sounds',  body: 'Trace letters in the air and hear them come to life.',    age: 'Ages 3 to 7' },
+    { id: 'shapes', icon: '/landing-icons/shapes.png', title: 'Shapes & Patterns', body: 'Explore shapes, colours, and simple patterns.',           age: 'Ages 3 to 7' },
+    { id: 'math',   icon: '/landing-icons/math.png',   title: 'Early Math',        body: 'Count, compare, and solve with movement.',                age: 'Ages 3 to 7' },
+    { id: 'brain',  icon: '/landing-icons/brain.png',  title: 'Focus & Memory',    body: 'Games that build attention, memory, and listening.',      age: 'Ages 3 to 7' },
 ];
 
 // ── Public proof RPC ──────────────────────────────────────────────────
@@ -162,8 +167,12 @@ const stagger: Variants = {
     hidden: {},
     show: { transition: { staggerChildren: 0.08, delayChildren: 0.04 } },
 };
+const popIn: Variants = {
+    hidden: { opacity: 0, scale: 0.85, y: 14 },
+    show: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
+};
 
-// ── Count-up animation for proof stats ────────────────────────────────
+// ── Count-up animation ────────────────────────────────────────────────
 function useCountUp(target: number | undefined, duration = 1400): number {
     const [val, setVal] = useState(0);
     const prefersReduced = useReducedMotion();
@@ -230,15 +239,15 @@ export const Landing: React.FC = () => {
     useEffect(() => { fetchPublicProof().then(setProof); }, []);
 
     const handleTryFree = (source: string) => {
-        logEvent('cta_click', { meta: { source, target: 'try_free_modal', variant: 'landing_v4' } });
-        logEvent('try_free_clicked', { meta: { source, variant: 'landing_v4' } });
+        logEvent('cta_click', { meta: { source, target: 'try_free_modal', variant: 'landing_v5' } });
+        logEvent('try_free_clicked', { meta: { source, variant: 'landing_v5' } });
         setTryFreeOpen(true);
     };
 
     return (
         <div className="lp-shell">
             <SEOMeta
-                title="Draw in the Air · Movement-based learning for kids"
+                title="Draw in the Air. Movement-based learning for kids"
                 description="Children practise letters, shapes, spelling, and early maths by moving their hands in front of a webcam. No apps. No touchscreen. No special hardware."
                 canonical="https://drawintheair.com/"
             />
@@ -246,10 +255,11 @@ export const Landing: React.FC = () => {
             <Nav onTryFree={() => handleTryFree('nav')} />
             <Hero onTryFree={() => handleTryFree('hero')} />
             <HowItWorks />
-            <CameraTrust onTryFree={() => handleTryFree('camera_trust')} />
+            <CameraTrust />
             <Skills />
             <MainGames onTryFree={() => handleTryFree('main_games')} />
             <NextSteps />
+            <RealKidProof />
             <Parents onTryFree={() => handleTryFree('parents')} />
             <Teachers />
             <LiveProof proof={proof} />
@@ -285,12 +295,13 @@ const Nav: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => (
 );
 
 // ═══════════════════════════════════════════════════════════════════════
-// Hero
+// Hero. floating 3D icons over an animated device frame
 // ═══════════════════════════════════════════════════════════════════════
 const Hero: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
     const heroRef = useRef<HTMLElement | null>(null);
     const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
-    const yKid = useTransform(scrollYProgress, [0, 1], ['0%', '-18%']);
+    const visualY = useTransform(scrollYProgress, [0, 1], ['0%', '-12%']);
+    const visualScale = useTransform(scrollYProgress, [0, 1], [1, 0.92]);
     const prefersReduced = useReducedMotion();
 
     return (
@@ -302,7 +313,7 @@ const Hero: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
             <div className="lp-hero-inner">
                 <motion.div className="lp-hero-copy" variants={stagger} initial="hidden" animate="show">
                     <motion.div className="lp-eyebrow lp-eyebrow-green" variants={fadeUp}>
-                        <span className="lp-dot" /> Movement-based learning · Ages 3–7
+                        <span className="lp-dot" /> Movement-based learning . Ages 3 to 7
                     </motion.div>
                     <motion.h1 className="lp-hero-headline" variants={fadeUp}>
                         Learning starts when children{' '}
@@ -335,42 +346,63 @@ const Hero: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
                     <motion.div className="lp-hero-trust" variants={fadeUp}>
                         <TrustChip icon="✓" label="No downloads" />
                         <TrustChip icon="📱" label="Works on any device" />
-                        <TrustChip icon="🔒" label="Private & secure" />
+                        <TrustChip icon="🔒" label="Private &amp; secure" />
                     </motion.div>
                 </motion.div>
 
                 <motion.div
                     className="lp-hero-visual"
-                    style={prefersReduced ? undefined : { y: yKid }}
-                    initial={{ opacity: 0, scale: 0.9, rotate: -2 }}
-                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                    style={prefersReduced ? undefined : { y: visualY, scale: visualScale }}
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
                 >
-                    <div className="lp-hero-card">
-                        <span className="lp-hero-card-brand">
-                            <img src="/logo.png" alt="" /> Draw in the Air
-                        </span>
-                        <img className="lp-hero-card-art" src="/landing-images/hero-kid-star.png" alt="Child reaching for a glowing star" />
+                    <div className="lp-hero-stage">
+                        <motion.div
+                            className="lp-hero-device"
+                            initial={{ rotate: -2 }}
+                            animate={prefersReduced ? undefined : { rotate: [-2, 0.6, -2] }}
+                            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+                        >
+                            <span className="lp-hero-device-brand">
+                                <img src="/logo.png" alt="" /> Draw in the Air
+                            </span>
+                            <video
+                                className="lp-hero-device-screen"
+                                src="/landing-videos/free-paint.mp4"
+                                poster="/landing-videos/free-paint.jpg"
+                                autoPlay muted loop playsInline preload="metadata"
+                                aria-hidden
+                            />
+                            <div className="lp-hero-device-bar">
+                                <span className="lp-hero-device-stat"><span aria-hidden>⭐</span><strong>Star Collector</strong></span>
+                                <span className="lp-hero-device-stat"><strong>Level 3</strong></span>
+                                <span className="lp-hero-device-stat"><strong>420 points</strong></span>
+                            </div>
+                        </motion.div>
+
+                        <motion.img
+                            src="/landing-icons/smiley-star.png" alt="" className="lp-hero-float lp-hero-float-star"
+                            animate={prefersReduced ? undefined : { y: [0, -14, 0], rotate: [0, 8, 0] }}
+                            transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+                        />
+                        <motion.img
+                            src="/landing-icons/trophy.png" alt="" className="lp-hero-float lp-hero-float-trophy"
+                            animate={prefersReduced ? undefined : { y: [0, 12, 0], rotate: [0, -6, 0] }}
+                            transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+                        />
+                        <motion.img
+                            src="/landing-icons/crown-star.png" alt="" className="lp-hero-float lp-hero-float-crown"
+                            animate={prefersReduced ? undefined : { y: [0, -10, 0], rotate: [0, 5, 0] }}
+                            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
+                        />
+                        <motion.img
+                            src="/landing-icons/hand.png" alt="" className="lp-hero-float lp-hero-float-hand"
+                            animate={prefersReduced ? undefined : { y: [0, 10, 0], rotate: [-4, 4, -4] }}
+                            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
+                        />
+
                         <HandTrail />
-                        <motion.img
-                            className="lp-hero-float lp-hero-float-star"
-                            src="/landing-icons/smiley-star.png"
-                            alt=""
-                            animate={prefersReduced ? undefined : { y: [0, -10, 0], rotate: [0, 6, 0] }}
-                            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                        />
-                        <motion.img
-                            className="lp-hero-float lp-hero-float-trophy"
-                            src="/landing-icons/trophy.png"
-                            alt=""
-                            animate={prefersReduced ? undefined : { y: [0, 8, 0], rotate: [0, -4, 0] }}
-                            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
-                        />
-                        <div className="lp-hero-card-bar">
-                            <span className="lp-hero-card-stat"><span className="lp-stat-icon">⭐</span><span><strong>Star Collector</strong></span></span>
-                            <span className="lp-hero-card-stat"><span><strong>Level 3</strong></span></span>
-                            <span className="lp-hero-card-stat"><span><strong>420 points</strong></span></span>
-                        </div>
                     </div>
                 </motion.div>
             </div>
@@ -378,28 +410,26 @@ const Hero: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
     );
 };
 
-const TrustChip: React.FC<{ icon: string; label: string }> = ({ icon, label }) => (
+const TrustChip: React.FC<{ icon: string; label: React.ReactNode }> = ({ icon, label }) => (
     <span className="lp-chip"><span aria-hidden>{icon}</span>{label}</span>
 );
 
-// Animated dotted hand trail across the hero card
 const HandTrail: React.FC = () => {
     const prefersReduced = useReducedMotion();
     if (prefersReduced) return null;
     return (
-        <svg className="lp-hero-trail" viewBox="0 0 320 220" aria-hidden>
+        <svg className="lp-hero-trail" viewBox="0 0 400 280" aria-hidden>
             {[0, 0.15, 0.3].map((delay, i) => (
                 <motion.circle
                     key={i}
-                    cx="60" cy="160"
-                    r={6 - i * 1.2}
+                    cx="60" cy="220" r={6 - i * 1.2}
                     fill={['#FFD84D', '#55DDE0', '#FF6B6B'][i]}
                     animate={{
-                        cx: [60, 120, 220, 280, 60],
-                        cy: [160, 80, 100, 60, 160],
+                        cx: [60, 140, 240, 320, 60],
+                        cy: [220, 100, 150, 70, 220],
                         opacity: [0.3 - i * 0.05, 0.95 - i * 0.15, 0.85 - i * 0.15, 0.6 - i * 0.1, 0.3 - i * 0.05],
                     }}
-                    transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay }}
+                    transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay }}
                 />
             ))}
         </svg>
@@ -411,7 +441,7 @@ const FloatingOrb: React.FC<{ className: string }> = ({ className }) => {
     return (
         <motion.div
             className={`lp-orb ${className}`}
-            animate={prefersReduced ? undefined : { y: [0, -14, 0], opacity: [0.5, 0.7, 0.5] }}
+            animate={prefersReduced ? undefined : { y: [0, -14, 0], opacity: [0.45, 0.65, 0.45] }}
             transition={{ duration: 7 + Math.random() * 3, repeat: Infinity, ease: 'easeInOut' }}
             aria-hidden
         />
@@ -419,14 +449,14 @@ const FloatingOrb: React.FC<{ className: string }> = ({ className }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════
-// How it works — 4 numbered cards
+// How it works
 // ═══════════════════════════════════════════════════════════════════════
 const HowItWorks: React.FC = () => {
     const steps = [
-        { n: 1, icon: '/landing-icons/hand.png',       title: 'Move your hand',         body: 'Your child waves, points, or draws in the air.' },
-        { n: 2, icon: '/landing-icons/star-trail.png', title: 'We track movement',      body: 'Our camera only detects movement — not who they are.' },
-        { n: 3, icon: '/landing-icons/smiley-star.png', title: 'Earn points & feedback', body: 'Instant encouragement keeps them engaged and motivated.' },
-        { n: 4, icon: '/landing-icons/trophy.png',     title: 'Build skills & confidence', body: 'Small wins add up to big learning breakthroughs.' },
+        { n: 1, icon: '/landing-icons/hand.png',        title: 'Move your hand',           body: 'Your child waves, points, or draws in the air.' },
+        { n: 2, icon: '/landing-icons/star-trail.png',  title: 'We track movement',        body: 'Our camera only detects movement, not who they are.' },
+        { n: 3, icon: '/landing-icons/smiley-star.png', title: 'Earn points & feedback',    body: 'Instant encouragement keeps them engaged and motivated.' },
+        { n: 4, icon: '/landing-icons/trophy.png',      title: 'Build skills & confidence', body: 'Small wins add up to big learning breakthroughs.' },
     ];
     return (
         <section id="how-it-works" className="lp-section">
@@ -441,7 +471,7 @@ const HowItWorks: React.FC = () => {
                 whileInView="show" viewport={{ once: true, amount: 0.2 }}
             >
                 {steps.map((s, i) => (
-                    <motion.li key={s.n} className="lp-step" variants={fadeUp}>
+                    <motion.li key={s.n} className="lp-step" variants={popIn}>
                         <div className="lp-step-num">{s.n}</div>
                         <img className="lp-step-icon" src={s.icon} alt="" />
                         <h3>{s.title}</h3>
@@ -455,10 +485,9 @@ const HowItWorks: React.FC = () => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════
-// Camera trust
+// Camera trust . Redesigned: shield sits ON the scan-frame backdrop
 // ═══════════════════════════════════════════════════════════════════════
-const CameraTrust: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
-    void onTryFree;
+const CameraTrust: React.FC = () => {
     const prefersReduced = useReducedMotion();
     return (
         <section className="lp-section-trust-wrap">
@@ -467,17 +496,20 @@ const CameraTrust: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
                 variants={fadeUp} initial="hidden"
                 whileInView="show" viewport={{ once: true, amount: 0.35 }}
             >
-                <div className="lp-trust-visual">
+                <div className="lp-trust-stage">
+                    <img src="/landing-icons/scan-banner.png" alt="" className="lp-trust-frame" />
                     <motion.img
                         src="/landing-icons/shield.png" alt=""
                         className="lp-trust-shield"
-                        animate={prefersReduced ? undefined : { y: [0, -8, 0], rotate: [0, 2, 0] }}
-                        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                        animate={prefersReduced ? undefined : { y: [0, -10, 0], rotate: [-2, 2, -2] }}
+                        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
                     />
-                    <img src="/landing-icons/scan-banner.png" alt="" className="lp-trust-scan" />
                 </div>
                 <div className="lp-trust-copy">
-                    <p className="lp-trust-lead">Your child's privacy comes first. Draw in the Air uses advanced movement detection — we never store video, images, or audio.</p>
+                    <p className="lp-trust-lead">
+                        Your child's privacy comes first. Draw in the Air uses advanced movement
+                        detection. We never store video, images, or audio.
+                    </p>
                     <h2>The camera only detects movement.</h2>
                     <ul className="lp-trust-list">
                         <li><Check />No video or photos are stored</li>
@@ -495,14 +527,14 @@ const CameraTrust: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
 };
 
 const Check: React.FC = () => (
-    <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden className="lp-check">
+    <svg viewBox="0 0 16 16" width="20" height="20" aria-hidden className="lp-check">
         <circle cx="8" cy="8" r="8" fill="#7ED957" />
-        <path d="M4.5 8.5l2.2 2.2L11.5 6" stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M4.5 8.5l2.2 2.2L11.5 6" stroke="#fff" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
 );
 
 // ═══════════════════════════════════════════════════════════════════════
-// Skills they build — 4 cards with 3D icons
+// Skills they build
 // ═══════════════════════════════════════════════════════════════════════
 const Skills: React.FC = () => (
     <section className="lp-section">
@@ -517,8 +549,8 @@ const Skills: React.FC = () => (
             whileInView="show" viewport={{ once: true, amount: 0.2 }}
         >
             {SKILLS.map(s => (
-                <motion.div key={s.id} className="lp-skill-card" variants={fadeUp}
-                    whileHover={{ y: -6, transition: { duration: 0.2 } }}
+                <motion.div key={s.id} className="lp-skill-card" variants={popIn}
+                    whileHover={{ y: -8, transition: { type: 'spring', stiffness: 300, damping: 18 } }}
                 >
                     <img src={s.icon} alt="" className="lp-skill-icon" />
                     <h3>{s.title}</h3>
@@ -531,7 +563,7 @@ const Skills: React.FC = () => (
 );
 
 // ═══════════════════════════════════════════════════════════════════════
-// Main games — gameplay video tiles in stylised frames
+// Main games . Tighter, cuter framing
 // ═══════════════════════════════════════════════════════════════════════
 const MainGames: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => (
     <section id="activities" className="lp-section">
@@ -558,7 +590,7 @@ const NextSteps: React.FC = () => (
     <section className="lp-section">
         <SectionHead
             eyebrow="NEXT-STEP ACTIVITIES"
-            title={<>Next-step activities, once confidence is built.</>}
+            title={<>Once confidence is built.</>}
         />
         <motion.div
             className="lp-game-grid lp-game-grid-4"
@@ -584,37 +616,111 @@ const GameCard: React.FC<{ game: ActivityMeta; primary: boolean }> = ({ game, pr
     return (
         <motion.div
             className={`lp-game-card ${primary ? '' : 'lp-game-card-small'}`}
-            variants={fadeUp}
+            variants={popIn}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             onFocus={() => setHovered(true)}
             onBlur={() => setHovered(false)}
-            whileHover={{ y: -6 }}
+            whileHover={{ y: -8 }}
             transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+            style={{ '--accent': game.accent } as React.CSSProperties}
         >
-            <div className="lp-game-frame" style={{ '--accent': game.accent } as React.CSSProperties}>
-                {game.videoWebm ? (
-                    <video
-                        ref={videoRef}
-                        className="lp-game-media"
-                        poster={game.poster}
-                        muted
-                        playsInline
-                        loop
-                        preload="metadata"
-                        aria-hidden
-                    >
-                        <source src={game.videoWebm} type="video/webm" />
-                        {game.videoMp4 && <source src={game.videoMp4} type="video/mp4" />}
-                    </video>
-                ) : (
-                    <img className="lp-game-media" src={game.poster} alt={`${game.name} preview`} loading="lazy" />
-                )}
+            <div className="lp-game-frame">
+                <div className="lp-game-screen">
+                    {game.videoWebm ? (
+                        <video
+                            ref={videoRef}
+                            className="lp-game-media"
+                            poster={game.poster}
+                            muted playsInline loop preload="metadata"
+                            aria-hidden
+                        >
+                            <source src={game.videoWebm} type="video/webm" />
+                            {game.videoMp4 && <source src={game.videoMp4} type="video/mp4" />}
+                        </video>
+                    ) : (
+                        <img className="lp-game-media" src={game.poster} alt={`${game.name} preview`} loading="lazy" />
+                    )}
+                </div>
                 <span className="lp-game-tag" style={{ background: game.accent }}>{game.tagline}</span>
             </div>
             <div className="lp-game-meta">
                 <h3>{game.name}</h3>
                 <p>{game.body}</p>
+            </div>
+        </motion.div>
+    );
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// Real-kid proof . Two clips of children playing in-store
+// ═══════════════════════════════════════════════════════════════════════
+const RealKidProof: React.FC = () => {
+    const prefersReduced = useReducedMotion();
+    return (
+        <section className="lp-section lp-section-realproof">
+            <SectionHead
+                eyebrow="REAL CHILDREN. REAL MOMENTS."
+                title={<>The first hand they raise is the moment learning begins.</>}
+                sub="Caught on camera at our in-store demo days. No script, no setup. Just curious kids who walked up and started moving."
+            />
+            <motion.div
+                className="lp-realproof-grid"
+                variants={stagger} initial="hidden"
+                whileInView="show" viewport={{ once: true, amount: 0.15 }}
+            >
+                <RealKidCard
+                    webm="/landing-videos/real-kid-1.webm"
+                    mp4="/landing-videos/real-kid-1.mp4"
+                    poster="/landing-videos/real-kid-1.jpg"
+                    caption="Popping bubbles with a wave"
+                    sub="In-store demo, Best Buy"
+                />
+                <RealKidCard
+                    webm="/landing-videos/real-kid-2.webm"
+                    mp4="/landing-videos/real-kid-2.mp4"
+                    poster="/landing-videos/real-kid-2.jpg"
+                    caption="First time, hand already up"
+                    sub="In-store demo, Best Buy"
+                />
+            </motion.div>
+            {!prefersReduced && (
+                <motion.img
+                    src="/landing-icons/smiley-star.png" alt="" className="lp-realproof-deco"
+                    animate={{ y: [0, -10, 0], rotate: [0, 6, 0] }}
+                    transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                />
+            )}
+        </section>
+    );
+};
+
+const RealKidCard: React.FC<{
+    webm: string; mp4: string; poster: string; caption: string; sub: string;
+}> = ({ webm, mp4, poster, caption, sub }) => {
+    const ref = useRef<HTMLVideoElement | null>(null);
+    return (
+        <motion.div
+            className="lp-realproof-card"
+            variants={popIn}
+            whileHover={{ y: -6, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
+            onMouseEnter={() => ref.current?.play().catch(() => undefined)}
+            onMouseLeave={() => { if (ref.current) { ref.current.pause(); } }}
+        >
+            <div className="lp-realproof-phone">
+                <video
+                    ref={ref}
+                    className="lp-realproof-video"
+                    poster={poster}
+                    muted playsInline loop preload="metadata" autoPlay
+                >
+                    <source src={webm} type="video/webm" />
+                    <source src={mp4} type="video/mp4" />
+                </video>
+            </div>
+            <div className="lp-realproof-caption">
+                <strong>{caption}</strong>
+                <span>{sub}</span>
             </div>
         </motion.div>
     );
@@ -707,24 +813,24 @@ const Teachers: React.FC = () => (
 );
 
 // ═══════════════════════════════════════════════════════════════════════
-// Live proof — real numbers from RPC
+// Live proof . Real RPC numbers
 // ═══════════════════════════════════════════════════════════════════════
 const LiveProof: React.FC<{ proof: PublicProof | null }> = ({ proof }) => (
     <section className="lp-section lp-section-proof">
         <SectionHead
             eyebrow="EARLY USAGE"
             title={<>Trusted by families and educators.</>}
-            sub="Aggregate platform numbers, updated live. We don't track individual children — these are anonymous device-level counts."
+            sub="Aggregate platform numbers, updated live. We don't track individual children. These are anonymous device-level counts."
         />
         <motion.div
             className="lp-proof-grid"
             variants={stagger} initial="hidden"
             whileInView="show" viewport={{ once: true, amount: 0.2 }}
         >
-            <ProofTile icon="/landing-icons/star-books.png" value={proof?.distinct_devices_90d} label="Children learning" sub="last 90 days" />
+            <ProofTile icon="/landing-icons/star-books.png"  value={proof?.distinct_devices_90d} label="Children learning"   sub="last 90 days" />
             <ProofTile icon="/landing-icons/smiley-star.png" value={proof?.activities_completed} label="Activities completed" sub="finished and counted" />
-            <ProofTile icon="/landing-icons/crown-star.png" value={proof?.items_mastered} label="Items mastered" sub="≥5 attempts, ≥80% acc." />
-            <ProofTile icon="/landing-icons/globe.png" value={proof?.tracker_success_pct} suffix="%" label="Tracker success" sub="clean hand-tracking starts" />
+            <ProofTile icon="/landing-icons/crown-star.png"  value={proof?.items_mastered}        label="Items mastered"      sub="5 plus attempts, 80 percent acc." />
+            <ProofTile icon="/landing-icons/globe.png"       value={proof?.tracker_success_pct}   suffix="%" label="Tracker success" sub="clean hand-tracking starts" />
         </motion.div>
     </section>
 );
@@ -734,8 +840,8 @@ const ProofTile: React.FC<{
 }> = ({ icon, value, label, sub, suffix }) => {
     const n = useCountUp(value, 1400);
     return (
-        <motion.div className="lp-proof-tile" variants={fadeUp}
-            whileHover={{ y: -4, transition: { duration: 0.2 } }}
+        <motion.div className="lp-proof-tile" variants={popIn}
+            whileHover={{ y: -6, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
         >
             <img src={icon} alt="" className="lp-proof-icon" />
             <div className="lp-proof-num">
@@ -789,7 +895,7 @@ const FinalCTA: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => (
             <div className="lp-hero-trust" style={{ marginTop: 24, justifyContent: 'center' }}>
                 <TrustChip icon="✓" label="No downloads" />
                 <TrustChip icon="📱" label="Works on any device" />
-                <TrustChip icon="🔒" label="Private & secure" />
+                <TrustChip icon="🔒" label="Private &amp; secure" />
             </div>
         </motion.div>
     </section>
