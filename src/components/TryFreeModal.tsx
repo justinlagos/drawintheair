@@ -118,7 +118,15 @@ export const TryFreeModal: React.FC<TryFreeModalProps> = ({ open, onClose }) => 
         <div className="tryfree-overlay" onClick={handleOverlayClick}>
             <div className="tryfree-card" role="dialog" aria-modal="true" aria-label="Try Free">
                 <button className="tryfree-close" onClick={onClose} aria-label="Close">
-                    ×
+                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                        <path
+                            d="M6 6l12 12M18 6L6 18"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            fill="none"
+                        />
+                    </svg>
                 </button>
 
                 <h2 className="tryfree-title">Let's Get Started</h2>

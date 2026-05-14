@@ -104,7 +104,8 @@
     box-shadow: 0 8px 24px rgba(63, 64, 82, 0.06);
     padding: 10px 28px;
 }
-.lp-nav-brand img { height: 36px; width: auto; display: block; }
+.lp-nav-brand { display: flex; align-items: center; flex: 0 0 auto; }
+.lp-nav-brand img { height: 36px; width: auto; max-width: 140px; display: block; object-fit: contain; }
 .lp-nav-links { display: flex; gap: 22px; margin-left: 8px; flex: 1; }
 .lp-nav-links a {
     color: var(--ink); text-decoration: none;
@@ -112,11 +113,63 @@
     transition: color 0.18s ease;
 }
 .lp-nav-links a:hover { color: var(--plum); }
-.lp-nav-cta { display: flex; gap: 8px; }
+.lp-nav-cta { display: flex; gap: 8px; align-items: center; }
+.lp-nav-burger {
+    display: none;
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.7);
+    cursor: pointer;
+    padding: 0;
+    align-items: center; justify-content: center;
+    flex-direction: column;
+    gap: 4px;
+    transition: background 0.18s ease, border-color 0.18s ease;
+}
+.lp-nav-burger:hover { background: #fff; border-color: var(--plum-soft); }
+.lp-burger-line {
+    display: block;
+    width: 18px; height: 2px;
+    border-radius: 2px;
+    background: var(--ink);
+    transition: transform 0.22s ease, opacity 0.18s ease;
+}
+.lp-burger-line.a { transform: translateY(6px) rotate(45deg); }
+.lp-burger-line.b { opacity: 0; }
+.lp-burger-line.c { transform: translateY(-6px) rotate(-45deg); }
 
+.lp-nav-drawer {
+    position: absolute;
+    top: 100%; left: 0; right: 0;
+    display: flex; flex-direction: column;
+    gap: 6px;
+    padding: 18px 20px 24px;
+    background: rgba(255, 250, 235, 0.98);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 18px 36px rgba(63, 64, 82, 0.10);
+}
+.lp-nav-drawer a {
+    color: var(--ink); text-decoration: none;
+    font: 700 17px Nunito;
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--line);
+    transition: color 0.18s ease;
+}
+.lp-nav-drawer a:last-of-type { border-bottom: none; }
+.lp-nav-drawer a:hover { color: var(--plum); }
+.lp-nav-drawer-cta { margin-top: 12px; align-self: stretch; }
+
+@media (min-width: 861px) {
+    .lp-nav-drawer { display: none !important; }
+}
 @media (max-width: 860px) {
     .lp-nav { padding: 12px 16px; gap: 12px; }
     .lp-nav-links { display: none; }
+    .lp-nav-burger { display: inline-flex; }
+    .lp-nav-cta-btn { display: none; }
+    .lp-nav-brand img { height: 30px; max-width: 110px; }
 }
 
 /* ── Section primitives ──────────────────────────────────── */
@@ -288,15 +341,21 @@
 }
 .lp-hero-device-brand {
     position: absolute; top: 14px; left: 14px; z-index: 4;
-    display: inline-flex; align-items: center; gap: 8px;
+    display: inline-flex; align-items: center; gap: 6px;
+    max-width: calc(100% - 28px);
     background: rgba(255, 255, 255, 0.96);
     border: 1px solid var(--line);
-    padding: 6px 12px; border-radius: 999px;
-    font: 700 10.5px Nunito; color: var(--plum);
+    padding: 5px 10px; border-radius: 999px;
+    font: 700 9.5px Nunito; color: var(--plum);
     text-transform: uppercase; letter-spacing: 0.10em;
     box-shadow: 0 6px 14px rgba(63, 64, 82, 0.10);
+    box-sizing: border-box;
 }
-.lp-hero-device-brand img { height: 16px; width: auto; display: block; }
+.lp-hero-device-brand img { height: 14px; width: auto; max-width: 40px; display: block; object-fit: contain; }
+@media (max-width: 540px) {
+    .lp-hero-device-brand { font-size: 8.5px; padding: 4px 8px; }
+    .lp-hero-device-brand img { height: 12px; max-width: 34px; }
+}
 .lp-hero-device-screen {
     position: absolute; inset: 0;
     width: 100%; height: 100%;
@@ -441,7 +500,16 @@
     border-radius: 24px;
     display: flex;
     align-items: center; justify-content: center;
-    overflow: hidden;
+    overflow: visible; /* allow shield to overlap top edge */
+}
+.lp-trust-stage::before {
+    /* Mask the frame to its own rounded rect so the SHIELD can poke
+       above without the frame growing. */
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 24px;
+    background: inherit;
+    z-index: 0;
 }
 .lp-trust-frame {
     position: absolute; inset: 0;
@@ -450,15 +518,22 @@
     object-position: center;
     opacity: 0.95;
     pointer-events: none;
+    border-radius: 24px;
+    z-index: 1;
 }
 .lp-trust-shield {
     position: relative;
-    width: 56%;
-    max-width: 220px;
+    width: 60%;
+    max-width: 240px;
     height: auto;
     object-fit: contain;
-    z-index: 2;
-    filter: drop-shadow(0 18px 32px rgba(46, 174, 82, 0.34));
+    z-index: 3;
+    /* shift up so the top tip of the shield rises above the frame */
+    transform: translateY(-22%);
+    filter: drop-shadow(0 22px 36px rgba(46, 174, 82, 0.38));
+}
+@media (max-width: 860px) {
+    .lp-trust-shield { transform: translateY(-16%); }
 }
 .lp-trust-copy { max-width: 540px; }
 .lp-trust-lead {
@@ -664,13 +739,46 @@
     overflow: hidden;
 }
 .lp-realproof-phone::before {
+    /* Notch detail */
     content: '';
     position: absolute;
     top: 12px; left: 50%; transform: translateX(-50%);
     width: 56px; height: 6px;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.10);
     border-radius: 999px;
+    z-index: 4;
+}
+.lp-realproof-phone::after {
+    /* Editorial sheen: a soft diagonal highlight that sweeps across
+       the phone glass on a loop. Sits above the video, below the notch. */
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        115deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.10) 45%,
+        rgba(255, 255, 255, 0.22) 50%,
+        rgba(255, 255, 255, 0.10) 55%,
+        transparent 70%
+    );
+    background-size: 220% 100%;
+    background-position: 200% 0;
+    mix-blend-mode: screen;
+    animation: lp-sheen 7s ease-in-out infinite;
+    pointer-events: none;
     z-index: 3;
+    border-radius: inherit;
+}
+@keyframes lp-sheen {
+    0%   { background-position: 200% 0; }
+    50%  { background-position: -50% 0; }
+    100% { background-position: -50% 0; }
+}
+.lp-realproof-card:nth-child(2) .lp-realproof-phone::after {
+    /* second card sweeps in the opposite direction, offset timing */
+    transform: scaleX(-1);
+    animation-delay: 1.8s;
 }
 .lp-realproof-video {
     position: absolute; inset: 0;
@@ -909,7 +1017,14 @@
     gap: 48px;
     margin-bottom: 32px;
 }
-.lp-footer-brand img { height: 36px; margin-bottom: 10px; }
+.lp-footer-brand img {
+    height: 44px;
+    width: auto;
+    max-width: 160px;
+    margin-bottom: 10px;
+    display: block;
+    object-fit: contain;
+}
 .lp-footer-brand p { color: var(--flat); font-size: 14px; max-width: 320px; }
 .lp-footer-cols {
     display: grid;

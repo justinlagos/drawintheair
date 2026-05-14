@@ -309,6 +309,7 @@ export const Landing: React.FC = () => {
 const Nav: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
     const bounceTo = useBounceScroll();
     const [scrolled, setScrolled] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 60);
@@ -317,15 +318,21 @@ const Nav: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
         return () => window.removeEventListener('scroll', onScroll);
     }, []);
 
+    useEffect(() => {
+        document.body.style.overflow = menuOpen ? 'hidden' : '';
+        return () => { document.body.style.overflow = ''; };
+    }, [menuOpen]);
+
     const go = (id: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
         logEvent('nav_click', { meta: { target: id } });
+        setMenuOpen(false);
         bounceTo(id);
     };
 
     return (
         <motion.header
-            className={`lp-nav ${scrolled ? 'lp-nav-scrolled' : ''}`}
+            className={`lp-nav ${scrolled ? 'lp-nav-scrolled' : ''} ${menuOpen ? 'lp-nav-open' : ''}`}
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -343,15 +350,46 @@ const Nav: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
             </nav>
             <div className="lp-nav-cta">
                 <motion.button
-                    className="lp-btn lp-btn-primary lp-btn-magnetic"
+                    className="lp-btn lp-btn-primary lp-btn-magnetic lp-nav-cta-btn"
                     onClick={onTryFree}
                     whileHover={{ scale: 1.04 }}
                     whileTap={{ scale: 0.96 }}
                     transition={{ type: 'spring', stiffness: 380, damping: 18 }}
                 >
-                    Try Draw in the Air
+                    Try free
                 </motion.button>
+                <button
+                    className="lp-nav-burger"
+                    aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+                    aria-expanded={menuOpen}
+                    onClick={() => setMenuOpen(o => !o)}
+                >
+                    <span className={`lp-burger-line ${menuOpen ? 'a' : ''}`} />
+                    <span className={`lp-burger-line ${menuOpen ? 'b' : ''}`} />
+                    <span className={`lp-burger-line ${menuOpen ? 'c' : ''}`} />
+                </button>
             </div>
+
+            <motion.div
+                className="lp-nav-drawer"
+                initial={false}
+                animate={menuOpen ? { opacity: 1, y: 0, pointerEvents: 'auto' } : { opacity: 0, y: -12, pointerEvents: 'none' }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                aria-hidden={!menuOpen}
+            >
+                <a href="#how-it-works" onClick={go('how-it-works')}>How it works</a>
+                <a href="#activities" onClick={go('activities')}>Activities</a>
+                <a href="#real-proof" onClick={go('real-proof')}>Proof</a>
+                <a href="#parents" onClick={go('parents')}>For parents</a>
+                <a href="#teachers" onClick={go('teachers')}>For teachers</a>
+                <a href="/pricing">Pricing</a>
+                <button
+                    className="lp-btn lp-btn-primary lp-btn-lg lp-nav-drawer-cta"
+                    onClick={() => { setMenuOpen(false); onTryFree(); }}
+                >
+                    Try Draw in the Air
+                </button>
+            </motion.div>
         </motion.header>
     );
 };
@@ -431,11 +469,13 @@ const Hero: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
                             </span>
                             <video
                                 className="lp-hero-device-screen"
-                                src="/landing-videos/free-paint.mp4"
-                                poster="/landing-videos/free-paint.jpg"
+                                poster="/landing-videos/hero-loop.jpg"
                                 autoPlay muted loop playsInline preload="metadata"
                                 aria-hidden
-                            />
+                            >
+                                <source src="/landing-videos/hero-loop.webm" type="video/webm" />
+                                <source src="/landing-videos/hero-loop.mp4" type="video/mp4" />
+                            </video>
                             <div className="lp-hero-device-bar">
                                 <span className="lp-hero-device-stat"><span aria-hidden>⭐</span><strong>Star Collector</strong></span>
                                 <span className="lp-hero-device-stat"><strong>Level 3</strong></span>
@@ -736,14 +776,14 @@ const RealKidProof: React.FC = () => {
                     mp4="/landing-videos/real-kid-1.mp4"
                     poster="/landing-videos/real-kid-1.jpg"
                     caption="Popping bubbles with a wave"
-                    sub="In-store demo, Best Buy"
+                    sub="First-time player"
                 />
                 <RealKidCard
                     webm="/landing-videos/real-kid-2.webm"
                     mp4="/landing-videos/real-kid-2.mp4"
                     poster="/landing-videos/real-kid-2.jpg"
                     caption="First time, hand already up"
-                    sub="In-store demo, Best Buy"
+                    sub="Walked up, started playing"
                 />
             </motion.div>
             {!prefersReduced && (
