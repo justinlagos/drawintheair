@@ -21,6 +21,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import {
+    animate,
     motion,
     useReducedMotion,
     useScroll,
@@ -82,7 +83,9 @@ const MAIN_GAMES: ActivityMeta[] = [
         tagline: 'SPELLING STARS',
         body: 'Find letters, build words, and earn stars.',
         accent: '#FFB14D',
-        poster: '/landing-images/word-search-3d.png',
+        videoWebm: '/landing-videos/spelling-stars.webm',
+        videoMp4: '/landing-videos/spelling-stars.mp4',
+        poster: '/landing-videos/spelling-stars.jpg',
     },
 ];
 
@@ -195,6 +198,35 @@ function useCountUp(target: number | undefined, duration = 1400): number {
 
 const fmtNum = (n: number) => n.toLocaleString();
 
+// ── Bounce-scroll to a section by id ──────────────────────────────────
+// Framer-driven spring scroll with a subtle overshoot so the destination
+// lands with character.
+function bounceScrollTo(id: string, prefersReduced: boolean) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const navOffset = 80;
+    const target = el.getBoundingClientRect().top + window.scrollY - navOffset;
+    if (prefersReduced) {
+        window.scrollTo({ top: target, behavior: 'auto' });
+        return;
+    }
+    const start = window.scrollY;
+    const controls = animate(start, target, {
+        type: 'spring',
+        stiffness: 90,
+        damping: 18,
+        mass: 1.1,
+        onUpdate: v => window.scrollTo(0, v),
+    });
+    return () => controls.stop();
+}
+
+// Use within a component so it picks up the user's reduced-motion preference.
+function useBounceScroll() {
+    const prefersReduced = useReducedMotion() ?? false;
+    return (id: string) => bounceScrollTo(id, prefersReduced);
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // Main component
 // ═══════════════════════════════════════════════════════════════════════
@@ -274,25 +306,55 @@ export const Landing: React.FC = () => {
 // ═══════════════════════════════════════════════════════════════════════
 // Nav
 // ═══════════════════════════════════════════════════════════════════════
-const Nav: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => (
-    <header className="lp-nav">
-        <a href="/" className="lp-nav-brand" aria-label="Draw in the Air home">
-            <img src="/logo.png" alt="Draw in the Air" />
-        </a>
-        <nav className="lp-nav-links" aria-label="Primary">
-            <a href="#how-it-works">How it works</a>
-            <a href="#activities">Activities</a>
-            <a href="/parents/setup">For parents</a>
-            <a href="/teachers/setup">For teachers</a>
-            <a href="/pricing">Pricing</a>
-        </nav>
-        <div className="lp-nav-cta">
-            <button className="lp-btn lp-btn-primary lp-btn-magnetic" onClick={onTryFree}>
-                Try Draw in the Air
-            </button>
-        </div>
-    </header>
-);
+const Nav: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
+    const bounceTo = useBounceScroll();
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY > 60);
+        onScroll();
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => window.removeEventListener('scroll', onScroll);
+    }, []);
+
+    const go = (id: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+        logEvent('nav_click', { meta: { target: id } });
+        bounceTo(id);
+    };
+
+    return (
+        <motion.header
+            className={`lp-nav ${scrolled ? 'lp-nav-scrolled' : ''}`}
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        >
+            <a href="#hero" className="lp-nav-brand" aria-label="Draw in the Air home" onClick={go('hero')}>
+                <img src="/logo.png" alt="Draw in the Air" />
+            </a>
+            <nav className="lp-nav-links" aria-label="Primary">
+                <a href="#how-it-works" onClick={go('how-it-works')}>How it works</a>
+                <a href="#activities" onClick={go('activities')}>Activities</a>
+                <a href="#real-proof" onClick={go('real-proof')}>Proof</a>
+                <a href="#parents" onClick={go('parents')}>For parents</a>
+                <a href="#teachers" onClick={go('teachers')}>For teachers</a>
+                <a href="/pricing">Pricing</a>
+            </nav>
+            <div className="lp-nav-cta">
+                <motion.button
+                    className="lp-btn lp-btn-primary lp-btn-magnetic"
+                    onClick={onTryFree}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    transition={{ type: 'spring', stiffness: 380, damping: 18 }}
+                >
+                    Try Draw in the Air
+                </motion.button>
+            </div>
+        </motion.header>
+    );
+};
 
 // ═══════════════════════════════════════════════════════════════════════
 // Hero. floating 3D icons over an animated device frame
@@ -658,7 +720,7 @@ const GameCard: React.FC<{ game: ActivityMeta; primary: boolean }> = ({ game, pr
 const RealKidProof: React.FC = () => {
     const prefersReduced = useReducedMotion();
     return (
-        <section className="lp-section lp-section-realproof">
+        <section id="real-proof" className="lp-section lp-section-realproof">
             <SectionHead
                 eyebrow="REAL CHILDREN. REAL MOMENTS."
                 title={<>The first hand they raise is the moment learning begins.</>}
@@ -730,7 +792,7 @@ const RealKidCard: React.FC<{
 // Parents
 // ═══════════════════════════════════════════════════════════════════════
 const Parents: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => (
-    <section className="lp-section lp-section-parents">
+    <section id="parents" className="lp-section lp-section-parents">
         <motion.div
             className="lp-split"
             variants={stagger} initial="hidden"
@@ -773,7 +835,7 @@ const Parents: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => (
 // Teachers
 // ═══════════════════════════════════════════════════════════════════════
 const Teachers: React.FC = () => (
-    <section className="lp-section lp-section-teachers">
+    <section id="teachers" className="lp-section lp-section-teachers">
         <motion.div
             className="lp-split lp-split-reverse"
             variants={stagger} initial="hidden"
