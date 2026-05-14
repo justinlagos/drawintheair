@@ -20,7 +20,6 @@ import { GestureSpellingMode } from './features/modes/gestureSpelling/GestureSpe
 import { gestureSpellingLogic } from './features/modes/gestureSpelling/gestureSpellingLogic';
 import { WaveToWake } from './features/onboarding/WaveToWake';
 import { ModeSelectionMenu, type GameMode } from './features/menu/ModeSelectionMenu';
-import { NextModeOverlay } from './features/menu/NextModeOverlay';
 import { AdultGate } from './features/safety/AdultGate';
 import { MagicCursor } from './components/MagicCursor';
 import { ModeBackground } from './components/ModeBackground';
@@ -44,33 +43,23 @@ import { startCountdown } from './core/countdownService';
 type AppState = 'onboarding' | 'menu' | 'game';
 
 // Debug: Allow URL params to skip to specific screens
-const getInitialState = (): {
-  appState: AppState;
-  gameMode: GameMode;
-  // Phase 2 . skip-menu first session. The wave gate still runs (we
-  // need the camera grant); after wake, App.tsx skips the menu and
-  // mounts Free Paint. When the user exits Free Paint, the
-  // "ready for the next one?" overlay fires once.
-  firstRun: boolean;
-} => {
+const getInitialState = (): { appState: AppState; gameMode: GameMode } => {
   const params = new URLSearchParams(window.location.search);
   const screen = params.get('screen');
   const mode = params.get('mode') as GameMode;
-  const firstRun = params.get('firstrun') === '1';
 
   // Check screen param first - allows direct access to any screen
-  if (screen === 'menu') return { appState: 'menu', gameMode: 'free', firstRun: false };
+  if (screen === 'menu') return { appState: 'menu', gameMode: 'free' };
   if (screen === 'game') {
     const validMode = (mode === 'free' || mode === 'pre-writing' || mode === 'calibration' || mode === 'sort-and-place' || mode === 'word-search' || mode === 'colour-builder' || mode === 'balloon-math' || mode === 'rainbow-bridge' || mode === 'gesture-spelling') ? mode : 'free';
     return {
       appState: 'game',
-      gameMode: validMode,
-      firstRun: false,
+      gameMode: validMode
     };
   }
 
   // Default to onboarding for /play or /onboarding paths
-  return { appState: 'onboarding', gameMode: 'free', firstRun };
+  return { appState: 'onboarding', gameMode: 'free' };
 };
 
 // Window-level version marker. Lives at module scope (not inside the
@@ -84,12 +73,6 @@ function App() {
   const [appState, setAppState] = useState<AppState>(() => getInitialState().appState);
   const [gameMode, setGameMode] = useState<GameMode>(() => getInitialState().gameMode);
   const [flags, setFlags] = useState(featureFlags.getFlags());
-
-  // Phase 2: first-session-after-Try-Free routing. Sticky for the
-  // entire session so we know to (a) auto-mount Free Paint after
-  // wake and (b) show the post-paint suggestion overlay once.
-  const firstRunRef = useRef<boolean>(getInitialState().firstRun);
-  const [showNextModeOverlay, setShowNextModeOverlay] = useState(false);
 
   // One-time debug noise on mount, gated by the debug flag. Moved out
   // of the function body for the same reason as the version marker.
@@ -119,22 +102,8 @@ function App() {
   }, []);
 
   const handleWake = useCallback(() => {
-    // Phase 2 . first-session-after-Try-Free skips the menu and
-    // drops straight into Free Paint. Returning users get the menu.
-    if (firstRunRef.current) {
-      setAppState('game');
-      setGameMode('free');
-      featureFlags.enableForMode('free' as FeatureGameMode);
-      if (hasActiveSession()) {
-        logEvent('mode_selected', { game_mode: 'free', meta: { auto: true, variant: 'skip_menu_freepaint_v1' } });
-        logEvent('mode_started', { game_mode: 'free', stage_id: 'initial', meta: { auto: true } });
-      }
-      // Clear drawing canvas for a clean Free Paint canvas
-      drawingEngine.clear();
-      return;
-    }
-
     setAppState('menu');
+    // Fire menu_opened event for pilot analytics
     if (hasActiveSession()) {
       logEvent('menu_opened');
     }
@@ -201,34 +170,19 @@ function App() {
   }, [flags]);
 
   const handleExitToMenu = useCallback(() => {
-    // Phase 2 . if this is the first auto-routed Free Paint session,
-    // show the "ready for the next one?" overlay instead of dumping
-    // them straight into the menu. The overlay fires only once per
-    // session; after it is closed (any way) we flip firstRunRef off
-    // and the normal menu flow resumes.
-    const isFirstFreePaintExit = firstRunRef.current && gameMode === 'free';
-
     setAppState('menu');
     drawingEngine.clear();
-
+    // Fire events for pilot analytics. We treat every menu-button exit
+    // as `mode_abandoned` . the per-stage `mode_completed` events from
+    // inside the game logic are the source of truth for "actually
+    // finished a stage". Using mode_completed here was a lie that made
+    // every exit look like a win.
     if (hasActiveSession()) {
       logEvent('mode_abandoned', {
         game_mode: gameMode,
-        meta: { reason: 'exit_to_menu', auto_first_run: isFirstFreePaintExit },
+        meta: { reason: 'exit_to_menu' },
       });
       logEvent('menu_opened');
-    }
-
-    if (isFirstFreePaintExit) {
-      // Don't fire again for this session, even if the user re-enters
-      // Free Paint manually from the menu.
-      firstRunRef.current = false;
-      setShowNextModeOverlay(true);
-      if (hasActiveSession()) {
-        logEvent('next_mode_overlay_shown', {
-          meta: { variant: 'skip_menu_freepaint_v1' },
-        });
-      }
     }
   }, [gameMode]);
 
@@ -387,17 +341,6 @@ function App() {
                   trackingResults={frameRef.current.results}
                 />
               )}
-
-              {/* Phase 2: post-Free-Paint suggestion overlay */}
-              <NextModeOverlay
-                open={showNextModeOverlay}
-                onPick={(mode) => {
-                  setShowNextModeOverlay(false);
-                  handleModeSelect(mode);
-                }}
-                onBrowseAll={() => setShowNextModeOverlay(false)}
-                onDismiss={() => setShowNextModeOverlay(false)}
-              />
 
               {/* State: Game */}
               {appState === 'game' && (

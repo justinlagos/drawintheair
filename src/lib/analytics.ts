@@ -128,13 +128,7 @@ export type EventName =
     | 'demo_request_form_submit'
     | 'for_teachers_page_view'
     | 'for_parents_page_view'
-    | 'share_button_clicked'        // social share / colleague share
-
-    // ── Activation v2 (Phase 2): skip-menu first session ──
-    | 'first_session_auto_freepaint' // meta: { variant, ms_since_age_band, source }
-    | 'next_mode_overlay_shown'      // post-FreePaint suggestion overlay shown
-    | 'next_mode_overlay_pick'       // meta.choice: 'calibration'|'pre-writing'|'menu'|'dismiss'
-    | 'next_mode_overlay_dismissed'; // closed without picking
+    | 'share_button_clicked';       // social share / colleague share
 
 export type AgeBand = '4-5' | '6-7' | '8-9' | '10-11' | '12+';
 
