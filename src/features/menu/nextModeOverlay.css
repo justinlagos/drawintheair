@@ -1,0 +1,169 @@
+/* NextModeOverlay . post Free-Paint suggestion */
+
+.nmo-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background:
+        radial-gradient(circle at 30% 20%, rgba(108, 63, 164, 0.30), transparent 50%),
+        radial-gradient(circle at 70% 80%, rgba(255, 216, 77, 0.20), transparent 50%),
+        rgba(15, 16, 30, 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    animation: nmo-overlay-in 0.3s ease-out;
+}
+@keyframes nmo-overlay-in { from { opacity: 0 } to { opacity: 1 } }
+
+.nmo-card {
+    position: relative;
+    width: 100%;
+    max-width: 720px;
+    background: linear-gradient(180deg, #FFFFFF 0%, #F4F1FF 100%);
+    border: 1px solid rgba(108, 63, 164, 0.20);
+    border-radius: 32px;
+    padding: 56px 48px 40px;
+    box-shadow: 0 32px 80px rgba(63, 64, 82, 0.30);
+    text-align: center;
+}
+@media (max-width: 640px) {
+    .nmo-card { padding: 40px 24px 28px; border-radius: 24px; }
+}
+
+.nmo-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    aspect-ratio: 1 / 1;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(108, 63, 164, 0.18);
+    background: #fff;
+    color: #6C3FA4;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(108, 63, 164, 0.10);
+    transition: background 0.18s ease, transform 0.18s ease;
+    box-sizing: border-box;
+}
+.nmo-close:hover { background: #F4FAFF; transform: scale(1.05); }
+.nmo-close svg { display: block; }
+
+.nmo-eyebrow {
+    display: inline-block;
+    font: 700 12px Nunito, system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #2EAE52;
+    background: rgba(126, 217, 87, 0.18);
+    padding: 7px 14px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+}
+
+.nmo-title {
+    margin: 0 0 12px;
+    font: 700 clamp(28px, 4vw, 40px) Fredoka, system-ui, sans-serif;
+    color: #1A1B2E;
+    letter-spacing: -0.02em;
+    line-height: 1.10;
+}
+.nmo-emph { color: #6C3FA4; }
+
+.nmo-sub {
+    margin: 0 0 32px;
+    color: #4A4D6B;
+    font-size: 16px;
+    line-height: 1.55;
+}
+
+.nmo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 22px;
+}
+@media (max-width: 640px) {
+    .nmo-grid { grid-template-columns: 1fr; gap: 14px; }
+}
+
+.nmo-card-pick {
+    position: relative;
+    text-align: left;
+    background:
+        radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--nmo-accent) 22%, transparent), transparent 60%),
+        #FFFFFF;
+    border: 2px solid var(--nmo-accent);
+    border-radius: 22px;
+    padding: 22px 22px 56px;
+    cursor: pointer;
+    transition: box-shadow 0.22s ease, background 0.22s ease;
+    color: #1A1B2E;
+    font-family: inherit;
+    overflow: hidden;
+}
+.nmo-card-pick:hover {
+    box-shadow: 0 18px 36px rgba(63, 64, 82, 0.18);
+}
+.nmo-card-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(63, 64, 82, 0.10);
+    font-size: 28px;
+    margin-bottom: 14px;
+    box-shadow: 0 6px 14px rgba(63, 64, 82, 0.08);
+}
+.nmo-card-title {
+    display: block;
+    font: 700 22px Fredoka, system-ui, sans-serif;
+    color: #1A1B2E;
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+}
+.nmo-card-blurb {
+    display: block;
+    font: 600 14px Nunito, system-ui, sans-serif;
+    color: #4A4D6B;
+    line-height: 1.5;
+}
+.nmo-card-arrow {
+    position: absolute;
+    bottom: 20px;
+    right: 22px;
+    font: 700 18px Nunito, system-ui, sans-serif;
+    color: var(--nmo-accent);
+    transition: transform 0.18s ease;
+}
+.nmo-card-pick:hover .nmo-card-arrow {
+    transform: translateX(4px);
+}
+
+.nmo-browse {
+    background: transparent;
+    border: none;
+    color: #6C3FA4;
+    font: 700 15px Nunito, system-ui, sans-serif;
+    cursor: pointer;
+    padding: 10px 16px;
+    border-radius: 999px;
+    transition: background 0.18s ease;
+}
+.nmo-browse:hover { background: rgba(108, 63, 164, 0.08); }
+
+@media (prefers-reduced-motion: reduce) {
+    .nmo-overlay { animation: none; }
+}

@@ -81,7 +81,45 @@ export const TryFreeModal: React.FC<TryFreeModalProps> = ({ open, onClose }) => 
             });
         }
 
-        // Navigate to play
+        // Phase 2 . skip-menu first session.
+        // First-time visitors land directly in Free Paint after the
+        // wave gate. Returning visitors keep the menu. Detection is
+        // device-level via localStorage so it survives reloads but
+        // does not require auth.
+        const HAS_PLAYED_KEY = 'dia_has_played_v1';
+        let isFirstSession = false;
+        try {
+            isFirstSession = !window.localStorage.getItem(HAS_PLAYED_KEY);
+        } catch {
+            // Private mode / storage disabled. Default to first-time
+            // experience . the worst case is a returning user gets the
+            // direct Free Paint route, which is still a fine outcome.
+            isFirstSession = true;
+        }
+
+        // Mark "this device has tried it" up front so a reload mid-
+        // session does not put them back through the first-time path.
+        // The Free Paint completion handler is the source of truth for
+        // counting actual completed sessions . this flag is only the
+        // routing hint.
+        try { window.localStorage.setItem(HAS_PLAYED_KEY, '1'); } catch { /* ignore */ }
+
+        if (isFirstSession) {
+            logEvent('first_session_auto_freepaint', {
+                meta: {
+                    variant: 'skip_menu_freepaint_v1',
+                    source: 'try_free_modal',
+                    age_band: ageBand,
+                },
+            });
+            // ?firstrun=1 tells App.tsx to land directly in Free Paint
+            // after the wave gate (no menu). The mode is set explicitly
+            // so the same query also works as a deep-link.
+            window.location.href = '/play?firstrun=1&mode=free';
+            return;
+        }
+
+        // Returning user . normal flow (onboarding . wave . menu).
         window.location.pathname = '/play';
     }, [ageBand, schoolCode, classCode]);
 

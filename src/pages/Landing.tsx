@@ -150,15 +150,23 @@ interface PublicProof {
 }
 
 async function fetchPublicProof(): Promise<PublicProof | null> {
-    try {
-        const res = await fetch(`${getSupabaseUrl()}/rest/v1/rpc/landing_public_proof`, {
-            method: 'POST',
-            headers: { apikey: getAnonKey(), 'Content-Type': 'application/json', Prefer: 'return=representation' },
-            body: '{}',
-        });
-        if (!res.ok) return null;
-        return await res.json();
-    } catch { return null; }
+    // Phase 3: prefers the new dashboard_public_proof name. Falls back
+    // to landing_public_proof if dashboard_* is not yet deployed so
+    // the page never goes dark while the migration is rolling out.
+    const tryRpc = async (fn: string): Promise<PublicProof | null> => {
+        try {
+            const res = await fetch(`${getSupabaseUrl()}/rest/v1/rpc/${fn}`, {
+                method: 'POST',
+                headers: { apikey: getAnonKey(), 'Content-Type': 'application/json', Prefer: 'return=representation' },
+                body: '{}',
+            });
+            if (!res.ok) return null;
+            return await res.json();
+        } catch { return null; }
+    };
+    const fresh = await tryRpc('dashboard_public_proof');
+    if (fresh) return fresh;
+    return tryRpc('landing_public_proof');
 }
 
 // ── Motion primitives ─────────────────────────────────────────────────
@@ -268,7 +276,27 @@ export const Landing: React.FC = () => {
         };
     }, []);
 
-    useEffect(() => { fetchPublicProof().then(setProof); }, []);
+    // Phase 3: live proof. Fetch on mount, then refresh every 60s
+    // while the tab is visible. Investors who keep the tab open
+    // (or leave it backgrounded and come back) see live growth, not
+    // a frozen snapshot. Visibility check avoids hammering the RPC
+    // for backgrounded tabs.
+    useEffect(() => {
+        let mounted = true;
+        const load = () => {
+            if (document.visibilityState !== 'visible') return;
+            fetchPublicProof().then(p => { if (mounted && p) setProof(p); });
+        };
+        load();
+        const id = window.setInterval(load, 60_000);
+        const onVisibility = () => { if (document.visibilityState === 'visible') load(); };
+        document.addEventListener('visibilitychange', onVisibility);
+        return () => {
+            mounted = false;
+            window.clearInterval(id);
+            document.removeEventListener('visibilitychange', onVisibility);
+        };
+    }, []);
 
     const handleTryFree = (source: string) => {
         logEvent('cta_click', { meta: { source, target: 'try_free_modal', variant: 'landing_v5' } });
@@ -705,24 +733,54 @@ const NextSteps: React.FC = () => (
 );
 
 const GameCard: React.FC<{ game: ActivityMeta; primary: boolean }> = ({ game, primary }) => {
-    const [hovered, setHovered] = useState(false);
+    // Phase 4: autoplay preview videos. Cards were static on mobile
+    // (no hover) which is exactly where conversion matters most. We
+    // now autoplay-and-loop every video on mount, but start paused
+    // when the card is offscreen via IntersectionObserver so we
+    // don't burn bandwidth on cards the user never sees.
     const videoRef = useRef<HTMLVideoElement | null>(null);
+    const cardRef = useRef<HTMLDivElement | null>(null);
+    const prefersReduced = useReducedMotion();
 
     useEffect(() => {
         const v = videoRef.current;
-        if (!v) return;
-        if (hovered) v.play().catch(() => undefined);
-        else { v.pause(); v.currentTime = 0; }
-    }, [hovered]);
+        const card = cardRef.current;
+        if (!v || !card) return;
+
+        // Honour reduced-motion . show the poster, never play.
+        if (prefersReduced) { v.pause(); return; }
+
+        // Pause when offscreen, play when visible. 25% threshold is
+        // generous enough for tablets where the card is half-cut at
+        // the viewport edge.
+        let observer: IntersectionObserver | null = null;
+        try {
+            observer = new IntersectionObserver(
+                entries => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            v.play().catch(() => undefined);
+                        } else {
+                            v.pause();
+                        }
+                    });
+                },
+                { threshold: 0.25 }
+            );
+            observer.observe(card);
+        } catch {
+            // Old browsers: just autoplay always.
+            v.play().catch(() => undefined);
+        }
+
+        return () => { observer?.disconnect(); };
+    }, [prefersReduced]);
 
     return (
         <motion.div
+            ref={cardRef}
             className={`lp-game-card ${primary ? '' : 'lp-game-card-small'}`}
             variants={popIn}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-            onFocus={() => setHovered(true)}
-            onBlur={() => setHovered(false)}
             whileHover={{ y: -8 }}
             transition={{ type: 'spring', stiffness: 300, damping: 22 }}
             style={{ '--accent': game.accent } as React.CSSProperties}
@@ -734,7 +792,7 @@ const GameCard: React.FC<{ game: ActivityMeta; primary: boolean }> = ({ game, pr
                             ref={videoRef}
                             className="lp-game-media"
                             poster={game.poster}
-                            muted playsInline loop preload="metadata"
+                            muted playsInline loop autoPlay preload="metadata"
                             aria-hidden
                         >
                             <source src={game.videoWebm} type="video/webm" />

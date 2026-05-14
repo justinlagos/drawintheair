@@ -26,16 +26,25 @@ interface ModeOption {
     category: string;
 }
 
+/**
+ * Mode order is BEHAVIOURAL, not alphabetical.
+ *
+ * Tier 1 (top row . activation modes . highest first-session engagement):
+ *   1. Free Paint . the "they just played this" anchor + creative.
+ *   2. Bubble Pop . quickest win, biggest smile, lowest learning curve.
+ *   3. Tracing . the curriculum gateway.
+ *   4. Spelling Stars . the literacy hook for parents.
+ *
+ * Tier 2 (next-step modes . need more dexterity / dwell control):
+ *   5. Sort & Place
+ *   6. Word Search
+ *   7. Balloon Math
+ *   8. Rainbow Bridge
+ *
+ * Source: dashboard mode_started + mode_completed counts over the
+ * last 90 days. Phase 2 of the activation refactor.
+ */
 const MODES: ModeOption[] = [
-    {
-        id: 'calibration',
-        title: 'Bubble Pop',
-        subtitle: 'Warm up your hands',
-        icon: '🫧',
-        accentColor: '#FF8C42',
-        accentGlow: 'rgba(255, 140, 66, 0.35)',
-        category: 'Warm-up'
-    },
     {
         id: 'free',
         title: 'Free Paint',
@@ -46,12 +55,30 @@ const MODES: ModeOption[] = [
         category: 'Creative'
     },
     {
+        id: 'calibration',
+        title: 'Bubble Pop',
+        subtitle: 'Warm up your hands',
+        icon: '🫧',
+        accentColor: '#FF8C42',
+        accentGlow: 'rgba(255, 140, 66, 0.35)',
+        category: 'Warm-up'
+    },
+    {
         id: 'pre-writing',
         title: 'Tracing',
         subtitle: 'Follow the path',
         icon: '✏️',
         accentColor: '#2ECC71',
         accentGlow: 'rgba(46, 204, 113, 0.35)',
+        category: 'Learning'
+    },
+    {
+        id: 'gesture-spelling',
+        title: 'Spelling Stars',
+        subtitle: 'Spell the word!',
+        icon: '✍️',
+        accentColor: '#A855F7',
+        accentGlow: 'rgba(168, 85, 247, 0.35)',
         category: 'Learning'
     },
     {
@@ -88,15 +115,6 @@ const MODES: ModeOption[] = [
         icon: '🌈',
         accentColor: '#00BCD4',
         accentGlow: 'rgba(0, 188, 212, 0.35)',
-        category: 'Learning'
-    },
-    {
-        id: 'gesture-spelling',
-        title: 'Spelling Stars',
-        subtitle: 'Spell the word!',
-        icon: '✍️',
-        accentColor: '#A855F7',
-        accentGlow: 'rgba(168, 85, 247, 0.35)',
         category: 'Learning'
     }
 ];
