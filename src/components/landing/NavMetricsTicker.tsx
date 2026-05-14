@@ -23,10 +23,10 @@ const FADE_MS = 480;
 
 interface Props {
     isScrolled: boolean;
-    proof: PublicProof | null;
+    proof?: PublicProof | null;
 }
 
-export const NavMetricsTicker: React.FC<Props> = ({ isScrolled, proof }) => {
+export const NavMetricsTicker: React.FC<Props> = ({ isScrolled, proof = null }) => {
     const [index, setIndex] = useState(0);
     const [visible, setVisible] = useState(true);
 
