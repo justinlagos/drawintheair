@@ -171,6 +171,51 @@ async function fetchPublicProof(): Promise<PublicProof | null> {
     return tryRpc('landing_public_proof');
 }
 
+// ── PublicProof cache (stale-while-revalidate) ───────────────
+// Old behaviour: first paint always showed a shimmer skeleton until
+// the Supabase RPC returned. If the RPC was slow or down, the
+// skeleton lived forever — exactly what was reported.
+//
+// New behaviour:
+//   1. On mount we read the last-known PublicProof from localStorage
+//      and seed React state with it. First paint shows real numbers
+//      from the last successful fetch — never invented.
+//   2. We still call the RPC in the background to refresh. Successful
+//      responses update state AND the cache.
+//   3. If the RPC fails AND we have no cache (true first-time visit
+//      with a broken RPC), we flip a loadFailed flag after a short
+//      timeout. Tiles then render an em-dash instead of the infinite
+//      skeleton. No fake numbers — just an honest "no data yet".
+const PROOF_CACHE_KEY = 'dita.lp.proof.v1';
+const PROOF_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const PROOF_LOAD_TIMEOUT_MS = 6000;                  // 6s before "—"
+
+function readCachedProof(): PublicProof | null {
+    if (typeof window === 'undefined') return null;
+    try {
+        const raw = window.localStorage.getItem(PROOF_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw) as { ts?: number; data?: PublicProof };
+        if (!parsed?.data || typeof parsed.ts !== 'number') return null;
+        if (Date.now() - parsed.ts > PROOF_CACHE_TTL_MS) return null;
+        return parsed.data;
+    } catch {
+        return null;
+    }
+}
+
+function writeCachedProof(data: PublicProof) {
+    if (typeof window === 'undefined') return;
+    try {
+        window.localStorage.setItem(
+            PROOF_CACHE_KEY,
+            JSON.stringify({ ts: Date.now(), data }),
+        );
+    } catch {
+        /* quota exceeded / private mode — non-fatal */
+    }
+}
+
 // ── Motion primitives ─────────────────────────────────────────────────
 const fadeUp: Variants = {
     hidden: { opacity: 0, y: 28 },
@@ -242,7 +287,10 @@ function useBounceScroll() {
 // ═══════════════════════════════════════════════════════════════════════
 export const Landing: React.FC = () => {
     const [tryFreeOpen, setTryFreeOpen] = useState(false);
-    const [proof, setProof] = useState<PublicProof | null>(null);
+    // Seed proof state from localStorage so first paint shows real,
+    // previously-fetched numbers instead of a forever-skeleton.
+    const [proof, setProof] = useState<PublicProof | null>(() => readCachedProof());
+    const [proofLoadFailed, setProofLoadFailed] = useState(false);
     const hasTrackedView = useRef(false);
 
     // Mark <html> so landing-v3.css can override the global :root
@@ -295,19 +343,40 @@ export const Landing: React.FC = () => {
     // (or leave it backgrounded and come back) see live growth, not
     // a frozen snapshot. Visibility check avoids hammering the RPC
     // for backgrounded tabs.
+    //
+    // SWR shape: state is already seeded from localStorage in the
+    // useState initialiser above; this effect refreshes in the
+    // background. On success we update both state and cache. If the
+    // first fetch hasn't produced a value within PROOF_LOAD_TIMEOUT_MS
+    // AND we have no cached data either, we flip proofLoadFailed so
+    // ProofTile can render an em-dash instead of an infinite skel.
     useEffect(() => {
         let mounted = true;
+        let resolvedOnce = false;
         const load = () => {
             if (document.visibilityState !== 'visible') return;
-            fetchPublicProof().then(p => { if (mounted && p) setProof(p); });
+            fetchPublicProof().then(p => {
+                if (!mounted) return;
+                if (p) {
+                    resolvedOnce = true;
+                    setProof(p);
+                    setProofLoadFailed(false);
+                    writeCachedProof(p);
+                }
+            });
         };
         load();
         const id = window.setInterval(load, 60_000);
+        const failTimer = window.setTimeout(() => {
+            if (!mounted) return;
+            if (!resolvedOnce) setProofLoadFailed(true);
+        }, PROOF_LOAD_TIMEOUT_MS);
         const onVisibility = () => { if (document.visibilityState === 'visible') load(); };
         document.addEventListener('visibilitychange', onVisibility);
         return () => {
             mounted = false;
             window.clearInterval(id);
+            window.clearTimeout(failTimer);
             document.removeEventListener('visibilitychange', onVisibility);
         };
     }, []);
@@ -336,7 +405,7 @@ export const Landing: React.FC = () => {
             <RealKidProof />
             <Parents onTryFree={() => handleTryFree('parents')} />
             <Teachers />
-            <LiveProof proof={proof} />
+            <LiveProof proof={proof} loadFailed={proofLoadFailed} />
             <FinalCTA onTryFree={() => handleTryFree('final_cta')} />
             <Footer />
 
@@ -1127,7 +1196,7 @@ const Teachers: React.FC = () => (
 // ═══════════════════════════════════════════════════════════════════════
 // Live proof . Real RPC numbers
 // ═══════════════════════════════════════════════════════════════════════
-const LiveProof: React.FC<{ proof: PublicProof | null }> = ({ proof }) => (
+const LiveProof: React.FC<{ proof: PublicProof | null; loadFailed: boolean }> = ({ proof, loadFailed }) => (
     <section className="lp-section lp-section-proof">
         <SectionHead
             eyebrow="EARLY USAGE"
@@ -1139,25 +1208,33 @@ const LiveProof: React.FC<{ proof: PublicProof | null }> = ({ proof }) => (
             variants={stagger} initial="hidden"
             whileInView="show" viewport={{ once: true, amount: 0.2 }}
         >
-            <ProofTile icon="/landing-icons/star-books.png"  value={proof?.distinct_devices_90d} label="Children learning"   sub="last 90 days" />
-            <ProofTile icon="/landing-icons/smiley-star.png" value={proof?.activities_completed} label="Activities completed" sub="finished and counted" />
-            <ProofTile icon="/landing-icons/crown-star.png"  value={proof?.items_mastered}        label="Items mastered"      sub="5 plus attempts, 80 percent acc." />
-            <ProofTile icon="/landing-icons/globe.png"       value={proof?.tracker_success_pct}   suffix="%" label="Tracker success" sub="clean hand-tracking starts" />
+            <ProofTile icon="/landing-icons/star-books.png"  value={proof?.distinct_devices_90d} loadFailed={loadFailed} label="Children learning"   sub="last 90 days" />
+            <ProofTile icon="/landing-icons/smiley-star.png" value={proof?.activities_completed} loadFailed={loadFailed} label="Activities completed" sub="finished and counted" />
+            <ProofTile icon="/landing-icons/crown-star.png"  value={proof?.items_mastered}        loadFailed={loadFailed} label="Items mastered"      sub="5 plus attempts, 80 percent acc." />
+            <ProofTile icon="/landing-icons/globe.png"       value={proof?.tracker_success_pct}   loadFailed={loadFailed} suffix="%" label="Tracker success" sub="clean hand-tracking starts" />
         </motion.div>
     </section>
 );
 
 const ProofTile: React.FC<{
-    icon: string; value: number | undefined; label: string; sub: string; suffix?: string;
-}> = ({ icon, value, label, sub, suffix }) => {
+    icon: string; value: number | undefined; label: string; sub: string; suffix?: string; loadFailed: boolean;
+}> = ({ icon, value, label, sub, suffix, loadFailed }) => {
     const n = useCountUp(value, 1400);
+    // Render priority:
+    //   1. We have a value -> show the real, animated number.
+    //   2. No value yet AND fetch has been timing out -> show "—".
+    //      Honest empty state. Never invents a number.
+    //   3. No value yet AND still fetching -> shimmer skel.
     return (
         <motion.div className="lp-proof-tile" variants={popIn}
             whileHover={{ y: -6, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
         >
-            <img src={icon} alt="" className="lp-proof-icon" />
+            <img src={icon} alt="" className="lp-proof-icon" loading="lazy" decoding="async" />
             <div className="lp-proof-num">
-                {value == null ? <span className="lp-proof-skel" /> : <>{fmtNum(n)}{suffix ?? ''}</>}
+                {value == null
+                    ? (loadFailed ? <span aria-hidden>—</span> : <span className="lp-proof-skel" />)
+                    : <>{fmtNum(n)}{suffix ?? ''}</>
+                }
             </div>
             <div className="lp-proof-label">{label}</div>
             <div className="lp-proof-sub">{sub}</div>
@@ -1200,8 +1277,8 @@ const FinalCTA: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
                 transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
             />
             <h2>
-                Let them <span className="lp-final-emph">move</span>.
-                Let them <span className="lp-final-emph">learn</span>.
+                <span className="lp-final-line">Let them <span className="lp-final-emph">move</span>.</span>
+                <span className="lp-final-line">Let them <span className="lp-final-emph">learn</span>.</span>
             </h2>
             <p>Open Draw in the Air in your browser and turn any space into a learning space.</p>
             <div className="lp-cta-row">

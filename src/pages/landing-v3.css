@@ -1093,6 +1093,9 @@ html.lp-route body {
     letter-spacing: -0.02em;
 }
 .lp-final-emph { color: var(--plum); position: relative; display: inline-block; }
+/* Stack each sentence of the final-CTA headline on its own line.
+   Using block-level spans keeps a single <h2> for semantics and SEO. */
+.lp-final-line { display: block; }
 .lp-final p {
     margin: 0 0 32px;
     font-size: clamp(16px, 1.6vw, 19px);

@@ -194,6 +194,61 @@ export default function StudentClassClient() {
         return () => { unsubSession(); unsubMyRow(); unsubActivity(); };
     }, [ui.kind, ui.kind === 'classroom' ? ui.session.id : null, ui.kind === 'classroom' ? ui.student.id : null]);
 
+    // ── Defensive session heartbeat ────────────────────────────────
+    // The PRD "Teacher ended class but student continued" bug class.
+    // The Realtime subscription above is the primary path for state
+    // changes, but websockets are not reliable: load balancers kill
+    // idle connections, tabs get suspended on mobile, Supabase
+    // reconnects can lose events fired during the gap. When that
+    // happens the teacher sets class_state='ended' but the student
+    // never sees the UPDATE and the experience stays live.
+    //
+    // This effect adds a 10s safety-net poll. It re-fetches the
+    // session row directly. If class_state is 'ended', or the row
+    // is gone entirely, we transition out immediately. We also
+    // re-check on tab visibility-change so a student who tabbed
+    // away and back catches up at once instead of waiting for the
+    // next tick.
+    useEffect(() => {
+        if (ui.kind !== 'classroom') return;
+        const sessionId = ui.session.id;
+        const studentId = ui.student.id;
+        let cancelled = false;
+        const check = async () => {
+            if (cancelled || document.visibilityState !== 'visible') return;
+            try {
+                const { data } = await dbSelect<SessionRow[]>(
+                    'sessions', `id=eq.${sessionId}&limit=1`,
+                );
+                if (cancelled) return;
+                if (!data || !data[0] || data[0].class_state === 'ended') {
+                    sessionStorage.removeItem(RECONNECT_KEY);
+                    setUi({ kind: 'ended', sessionId });
+                    return;
+                }
+                // Also catch kicks that Realtime missed.
+                const { data: studs } = await dbSelect<StudentRow[]>(
+                    'session_students', `id=eq.${studentId}&limit=1`,
+                );
+                if (cancelled) return;
+                if (studs && studs[0]?.kicked_at) {
+                    sessionStorage.removeItem(RECONNECT_KEY);
+                    setUi({ kind: 'kicked', reason: studs[0].kicked_reason });
+                }
+            } catch {
+                /* network blip — next tick will retry */
+            }
+        };
+        const id = window.setInterval(check, 10_000);
+        const onVis = () => { if (document.visibilityState === 'visible') check(); };
+        document.addEventListener('visibilitychange', onVis);
+        return () => {
+            cancelled = true;
+            window.clearInterval(id);
+            document.removeEventListener('visibilitychange', onVis);
+        };
+    }, [ui.kind, ui.kind === 'classroom' ? ui.session.id : null, ui.kind === 'classroom' ? ui.student.id : null]);
+
     // ── Auto-redirect after kicked / ended ─────────────────────────
     useEffect(() => {
         if (ui.kind !== 'kicked' && ui.kind !== 'ended') return;
