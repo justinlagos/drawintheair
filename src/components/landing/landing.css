@@ -4953,6 +4953,94 @@ img {
   color: rgba(255, 255, 255, 0.75);
 }
 
+/* ── Nav Metrics Ticker ────────────────────────────────────────────── */
+.nav-metrics-ticker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.8rem 0.3rem 0.65rem;
+  border-radius: 100px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.28s ease, transform 0.28s ease;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+.nav-metrics-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* light nav (scrolled state) */
+.nav-metrics-scrolled {
+  border-color: rgba(0, 0, 0, 0.07);
+  background: rgba(0, 0, 0, 0.025);
+}
+
+/* pulsing live dot */
+.nav-metrics-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #4ade80;
+  flex-shrink: 0;
+  animation: nm-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes nm-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* number */
+.nav-metrics-value {
+  font-size: 0.825rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+  color: #FFD93D;
+  line-height: 1;
+}
+
+.nav-metrics-scrolled .nav-metrics-value {
+  color: #0c7a6e;
+}
+
+/* mid-dot separator */
+.nav-metrics-sep {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.18);
+  line-height: 1;
+}
+
+.nav-metrics-scrolled .nav-metrics-sep {
+  color: rgba(0, 0, 0, 0.16);
+}
+
+/* label */
+.nav-metrics-label {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.42);
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+.nav-metrics-scrolled .nav-metrics-label {
+  color: rgba(0, 0, 0, 0.36);
+}
+
+/* hide on smaller viewports — nav is too tight */
+@media (max-width: 1100px) {
+  .nav-metrics-ticker {
+    display: none;
+  }
+}
+
 .landing-mode-meta {
   display: flex;
   flex-direction: column;

@@ -33,6 +33,7 @@ import { SEOMeta } from '../seo/SEOMeta';
 import { logEvent } from '../lib/analytics';
 import { getSupabaseUrl, getAnonKey } from '../lib/supabase';
 import './landing-v3.css';
+import { NavMetricsTicker, type PublicProof as TickerProof } from '../components/landing/NavMetricsTicker';
 
 // ── Activity meta ─────────────────────────────────────────────────────
 interface ActivityMeta {
@@ -312,7 +313,7 @@ export const Landing: React.FC = () => {
                 canonical="https://drawintheair.com/"
             />
 
-            <Nav onTryFree={() => handleTryFree('nav')} />
+            <Nav onTryFree={() => handleTryFree('nav')} proof={proof as TickerProof | null} />
             <Hero onTryFree={() => handleTryFree('hero')} />
             <HowItWorks />
             <CameraTrust />
@@ -334,7 +335,7 @@ export const Landing: React.FC = () => {
 // ═══════════════════════════════════════════════════════════════════════
 // Nav
 // ═══════════════════════════════════════════════════════════════════════
-const Nav: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
+const Nav: React.FC<{ onTryFree: () => void; proof: TickerProof | null }> = ({ onTryFree, proof }) => {
     const bounceTo = useBounceScroll();
     const [scrolled, setScrolled] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
@@ -377,6 +378,7 @@ const Nav: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
                 <a href="/pricing">Pricing</a>
             </nav>
             <div className="lp-nav-cta">
+                <NavMetricsTicker isScrolled={scrolled} proof={proof} />
                 <motion.button
                     className="lp-btn lp-btn-primary lp-btn-magnetic lp-nav-cta-btn"
                     onClick={onTryFree}

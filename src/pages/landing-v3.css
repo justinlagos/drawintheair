@@ -170,6 +170,71 @@
     .lp-nav-burger { display: inline-flex; }
     .lp-nav-cta-btn { display: none; }
     .lp-nav-brand img { height: 30px; max-width: 110px; }
+    .lp-shell .nav-metrics-ticker { display: none; }
+}
+
+/* ── Nav Metrics Ticker ──────────────────────────────────────────── */
+.lp-shell .nav-metrics-ticker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-radius: 999px;
+    border: 2px solid var(--plum);
+    background: transparent;
+    /* container is always visible — only the text inside fades */
+    opacity: 1;
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+    flex-shrink: 0;
+    margin-right: 6px;
+    /* stable width so the pill never resizes between metrics */
+    min-width: 196px;
+    justify-content: center;
+}
+/* live dot — always visible */
+.lp-shell .nav-metrics-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green-deep);
+    flex-shrink: 0;
+    animation: nm-pulse 2.4s ease-in-out infinite;
+}
+@keyframes nm-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+}
+/* inner content — this is what fades in/out */
+.lp-shell .nav-metrics-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: opacity 0.48s ease;
+}
+.lp-shell .nav-metrics-content.nm-in  { opacity: 1; }
+.lp-shell .nav-metrics-content.nm-out { opacity: 0; }
+/* number */
+.lp-shell .nav-metrics-value {
+    font: 700 13px Nunito, system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    color: var(--plum-dark);
+    line-height: 1;
+}
+/* separator */
+.lp-shell .nav-metrics-sep {
+    font-size: 11px;
+    color: var(--flat);
+    line-height: 1;
+}
+/* label */
+.lp-shell .nav-metrics-label {
+    font: 600 12px Nunito, system-ui, sans-serif;
+    color: var(--ink);
+    letter-spacing: 0.01em;
+    line-height: 1;
 }
 
 /* ── Section primitives ──────────────────────────────────── */

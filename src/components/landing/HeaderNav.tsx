@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './landing.css';
 import { LandingCTAButton } from './LandingCTAButton';
+import { NavMetricsTicker } from './NavMetricsTicker';
 
 interface HeaderNavProps {
   variant?: 'transparent' | 'solid';
@@ -146,6 +147,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ onTryFree }) => {
           >
             Teacher Login
           </a>
+          <NavMetricsTicker isScrolled={isScrolled} />
           <LandingCTAButton
             variant="primary"
             size="sm"
