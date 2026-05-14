@@ -20,7 +20,7 @@
  * changes so the activate-handler cache-cleanup nukes stale caches.
  */
 
-const CACHE_VERSION = 'v4-analytics-2026-05-07';
+const CACHE_VERSION = 'v6-landing-2026-05-14';
 const CACHE_NAME = `draw-in-the-air-${CACHE_VERSION}`;
 
 /** Assets to pre-cache on install for fastest first load */

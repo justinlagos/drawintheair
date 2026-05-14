@@ -432,6 +432,28 @@ const Hero: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
     const visualScale = useTransform(scrollYProgress, [0, 1], [1, 0.92]);
     const prefersReduced = useReducedMotion();
 
+    // Defer the hero loop video until after first paint. Poster shows
+    // instantly; the <video> mounts ~250ms later so the browser is not
+    // racing to decode 280 KB of webm at the same moment React is
+    // hydrating the rest of the landing.
+    const [videoReady, setVideoReady] = useState(false);
+    useEffect(() => {
+        if (prefersReduced) return;
+        type IdleWindow = Window & {
+            requestIdleCallback?: (cb: () => void) => number;
+            cancelIdleCallback?: (h: number) => void;
+        };
+        const w = window as IdleWindow;
+        const hasIdle = typeof w.requestIdleCallback === 'function';
+        const t = hasIdle && w.requestIdleCallback
+            ? w.requestIdleCallback(() => setVideoReady(true))
+            : window.setTimeout(() => setVideoReady(true), 250);
+        return () => {
+            if (hasIdle && w.cancelIdleCallback) w.cancelIdleCallback(t);
+            else window.clearTimeout(t as number);
+        };
+    }, [prefersReduced]);
+
     return (
         <section ref={heroRef} className="lp-hero" id="hero">
             <FloatingOrb className="lp-orb-1" />
@@ -495,15 +517,24 @@ const Hero: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
                             <span className="lp-hero-device-brand">
                                 <img src="/logo.png" alt="" /> Draw in the Air
                             </span>
-                            <video
-                                className="lp-hero-device-screen"
-                                poster="/landing-videos/hero-loop.jpg"
-                                autoPlay muted loop playsInline preload="metadata"
-                                aria-hidden
-                            >
-                                <source src="/landing-videos/hero-loop.webm" type="video/webm" />
-                                <source src="/landing-videos/hero-loop.mp4" type="video/mp4" />
-                            </video>
+                            {videoReady ? (
+                                <video
+                                    className="lp-hero-device-screen"
+                                    poster="/landing-videos/hero-loop.jpg"
+                                    autoPlay muted loop playsInline preload="metadata"
+                                    aria-hidden
+                                >
+                                    <source src="/landing-videos/hero-loop.webm" type="video/webm" />
+                                    <source src="/landing-videos/hero-loop.mp4" type="video/mp4" />
+                                </video>
+                            ) : (
+                                <img
+                                    className="lp-hero-device-screen"
+                                    src="/landing-videos/hero-loop.jpg"
+                                    alt=""
+                                    aria-hidden
+                                />
+                            )}
                             <div className="lp-hero-device-bar">
                                 <span className="lp-hero-device-stat"><span aria-hidden>⭐</span><strong>Star Collector</strong></span>
                                 <span className="lp-hero-device-stat"><strong>Level 3</strong></span>
@@ -733,48 +764,44 @@ const NextSteps: React.FC = () => (
 );
 
 const GameCard: React.FC<{ game: ActivityMeta; primary: boolean }> = ({ game, primary }) => {
-    // Phase 4: autoplay preview videos. Cards were static on mobile
-    // (no hover) which is exactly where conversion matters most. We
-    // now autoplay-and-loop every video on mount, but start paused
-    // when the card is offscreen via IntersectionObserver so we
-    // don't burn bandwidth on cards the user never sees.
-    const videoRef = useRef<HTMLVideoElement | null>(null);
+    // Activity previews: only mount the <video> element AFTER the
+    // card scrolls into view. Posters show until then. This avoids
+    // browsers downloading + decoding 6+ webm streams on first load,
+    // which is what was making the landing sluggish on mid-tier
+    // phones. IntersectionObserver flips visible once, never goes
+    // back . once mounted the video keeps playing in the background
+    // and the browser handles tab/visibility itself.
+    const [visible, setVisible] = useState(false);
     const cardRef = useRef<HTMLDivElement | null>(null);
     const prefersReduced = useReducedMotion();
 
     useEffect(() => {
-        const v = videoRef.current;
         const card = cardRef.current;
-        if (!v || !card) return;
+        if (!card || prefersReduced) return;
 
-        // Honour reduced-motion . show the poster, never play.
-        if (prefersReduced) { v.pause(); return; }
-
-        // Pause when offscreen, play when visible. 25% threshold is
-        // generous enough for tablets where the card is half-cut at
-        // the viewport edge.
         let observer: IntersectionObserver | null = null;
         try {
             observer = new IntersectionObserver(
                 entries => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            v.play().catch(() => undefined);
-                        } else {
-                            v.pause();
-                        }
-                    });
+                    if (entries.some(e => e.isIntersecting)) {
+                        setVisible(true);
+                        observer?.disconnect();
+                    }
                 },
-                { threshold: 0.25 }
+                // Pre-load a quarter-viewport before the card enters
+                // so the video starts seamlessly, not after a jank.
+                { threshold: 0.1, rootMargin: '0px 0px 25% 0px' }
             );
             observer.observe(card);
         } catch {
-            // Old browsers: just autoplay always.
-            v.play().catch(() => undefined);
+            // Old browsers: just show the video.
+            setVisible(true);
         }
 
         return () => { observer?.disconnect(); };
     }, [prefersReduced]);
+
+    const showVideo = visible && !prefersReduced && Boolean(game.videoWebm);
 
     return (
         <motion.div
@@ -787,9 +814,8 @@ const GameCard: React.FC<{ game: ActivityMeta; primary: boolean }> = ({ game, pr
         >
             <div className="lp-game-frame">
                 <div className="lp-game-screen">
-                    {game.videoWebm ? (
+                    {showVideo ? (
                         <video
-                            ref={videoRef}
                             className="lp-game-media"
                             poster={game.poster}
                             muted playsInline loop autoPlay preload="metadata"
@@ -858,25 +884,56 @@ const RealKidProof: React.FC = () => {
 const RealKidCard: React.FC<{
     webm: string; mp4: string; poster: string; caption: string; sub: string;
 }> = ({ webm, mp4, poster, caption, sub }) => {
-    const ref = useRef<HTMLVideoElement | null>(null);
+    // Lazy-mount the <video> for the same reason as game cards .
+    // browsers don't even fetch the webm/mp4 until the card is in
+    // view. Two real-kid videos at 700 KB each used to start
+    // downloading on first paint even though they're well below
+    // the fold.
+    const [visible, setVisible] = useState(false);
+    const cardRef = useRef<HTMLDivElement | null>(null);
+    const prefersReduced = useReducedMotion();
+
+    useEffect(() => {
+        const card = cardRef.current;
+        if (!card || prefersReduced) return;
+        let observer: IntersectionObserver | null = null;
+        try {
+            observer = new IntersectionObserver(
+                entries => {
+                    if (entries.some(e => e.isIntersecting)) {
+                        setVisible(true);
+                        observer?.disconnect();
+                    }
+                },
+                { threshold: 0.1, rootMargin: '0px 0px 25% 0px' }
+            );
+            observer.observe(card);
+        } catch {
+            setVisible(true);
+        }
+        return () => { observer?.disconnect(); };
+    }, [prefersReduced]);
+
     return (
         <motion.div
+            ref={cardRef}
             className="lp-realproof-card"
             variants={popIn}
             whileHover={{ y: -6, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
-            onMouseEnter={() => ref.current?.play().catch(() => undefined)}
-            onMouseLeave={() => { if (ref.current) { ref.current.pause(); } }}
         >
             <div className="lp-realproof-phone">
-                <video
-                    ref={ref}
-                    className="lp-realproof-video"
-                    poster={poster}
-                    muted playsInline loop preload="metadata" autoPlay
-                >
-                    <source src={webm} type="video/webm" />
-                    <source src={mp4} type="video/mp4" />
-                </video>
+                {visible && !prefersReduced ? (
+                    <video
+                        className="lp-realproof-video"
+                        poster={poster}
+                        muted playsInline loop preload="metadata" autoPlay
+                    >
+                        <source src={webm} type="video/webm" />
+                        <source src={mp4} type="video/mp4" />
+                    </video>
+                ) : (
+                    <img className="lp-realproof-video" src={poster} alt={caption} loading="lazy" />
+                )}
             </div>
             <div className="lp-realproof-caption">
                 <strong>{caption}</strong>
