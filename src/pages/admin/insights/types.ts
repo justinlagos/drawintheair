@@ -9,7 +9,7 @@ export const RANGE_DAYS: Record<Range, number> = { '24h': 1, '7d': 7, '30d': 30,
 
 export type TabKey =
     | 'executive' | 'engagement' | 'learning'
-    | 'retention' | 'sessions' | 'errors' | 'friction';
+    | 'retention' | 'sessions' | 'errors' | 'friction' | 'progression';
 
 export interface FilterState {
     range: Range;
@@ -176,6 +176,158 @@ export interface LiveData {
     active_count: number;
     by_mode: Record<string, number>;
     sessions: LiveSessionRow[];
+}
+
+// ── LIOS Sprint 3 — Learner Progression Dashboard ──────────────────────
+//
+// Document A §7.1 Learner Progression Dashboard. v1 scope renders:
+// summary stats, four-state totals, top-practised items, θ-over-time
+// trajectories from skill_state_history, recent mastery transitions,
+// recent attempts. The motor-precision / confidence / decay-probe /
+// transfer-probe curves wait for later sprints to produce that data.
+export interface ProgressionLearnerSummary {
+    n_attempts:       number;
+    n_distinct_items: number;
+    n_sessions:       number;
+    first_seen:       string;
+    last_seen:        string;
+    accuracy:         number | null;
+    mean_credibility: number | null;
+    age_band:         string | null;
+}
+export interface ProgressionLearnerListItem extends ProgressionLearnerSummary {
+    device_id:  string;
+    n_mastered: number;
+}
+export interface ProgressionTopLearners {
+    days:     number;
+    limit:    number;
+    as_of:    string;
+    learners: ProgressionLearnerListItem[];
+}
+export interface ProgressionTrajectoryPoint {
+    day:        string;
+    theta:      number;
+    n_attempts: number;
+}
+export interface ProgressionTrajectory {
+    item_key:   string;
+    game_mode:  string;
+    series:     ProgressionTrajectoryPoint[];
+}
+export interface ProgressionTransition {
+    item_key:      string;
+    game_mode:     string;
+    from_state:    string | null;
+    to_state:      string;
+    transition_at: string;
+    evidence:      Record<string, unknown>;
+}
+export interface ProgressionRecentAttempt {
+    occurred_at:        string;
+    game_mode:          string;
+    item_key:           string;
+    was_correct:        boolean;
+    ms_to_attempt:      number | null;
+    credibility_score:  number | null;
+    credibility_tier:   'A' | 'B' | 'C' | null;
+}
+export interface ProgressionStateTotals {
+    exposed:     number;
+    acquired:    number;
+    mastered:    number;
+    decayed:     number;
+    total_pairs: number;
+}
+export interface ProgressionTopItem {
+    item_key:   string;
+    game_mode:  string;
+    n_attempts: number;
+}
+export interface ProgressionLearnerData {
+    device_id:        string;
+    as_of:            string;
+    summary:          ProgressionLearnerSummary;
+    state_totals:     ProgressionStateTotals;
+    top_items:        ProgressionTopItem[];
+    trajectories:     ProgressionTrajectory[];
+    transitions:      ProgressionTransition[];
+    recent_attempts:  ProgressionRecentAttempt[];
+}
+
+// ── LIOS Sprint 3 — home / classroom context split ─────────────────────
+//
+// Surfaces the dimension unlocked by the ?join=CODE classroom-code
+// redemption flow. Renders as a small split panel on the Learning tab
+// and feeds the dashboard's home-vs-classroom comparisons.
+export interface ContextSplitRow {
+    context:          'home' | 'classroom' | 'unknown';
+    n_attempts:       number;
+    n_sessions:       number;
+    accuracy:         number | null;
+    mean_credibility: number | null;
+    tier_a:           number;
+    tier_b:           number;
+    tier_c:           number;
+}
+export interface ContextSplitClassCode {
+    class_code: string;
+    n_attempts: number;
+    n_sessions: number;
+}
+export interface ContextSplitData {
+    days:           number;
+    as_of:          string;
+    total_attempts: number;
+    by_context:     ContextSplitRow[];
+    class_codes:    ContextSplitClassCode[];
+}
+
+// ── LIOS Mastery v2 — four-state vocabulary ────────────────────────────
+//
+// Document A §4.4 — Exposed / Acquired / Mastered / Decayed. Backed by
+// the mastery_episode_fact state-transition log produced by the
+// lios_detect_mastery_episodes_v1 function.
+export interface MasteryV2Totals {
+    exposed:     number;
+    acquired:    number;
+    mastered:    number;
+    decayed:     number;
+    total_pairs: number;
+}
+export interface MasteryV2StateMode {
+    game_mode:     string;
+    current_state: 'Exposed' | 'Acquired' | 'Mastered' | 'Decayed';
+    n:             number;
+}
+export interface MasteryV2AgeState {
+    age_band:      string;
+    current_state: 'Exposed' | 'Acquired' | 'Mastered' | 'Decayed';
+    n:             number;
+}
+export interface MasteryV2Transition {
+    device_id:     string;
+    item_key:      string;
+    game_mode:     string;
+    from_state:    string | null;
+    to_state:      string;
+    transition_at: string;
+    age_band:      string | null;
+    evidence:      Record<string, unknown>;
+}
+export interface MasteryV2TopMastered {
+    item_key:    string;
+    game_mode:   string;
+    n_learners:  number;
+}
+export interface MasteryV2Data {
+    days:  number;
+    as_of: string;
+    totals: MasteryV2Totals;
+    by_state_mode:       MasteryV2StateMode[];
+    by_age_state:        MasteryV2AgeState[];
+    recent_transitions:  MasteryV2Transition[];
+    top_mastered:        MasteryV2TopMastered[];
 }
 
 // ── LIOS Cognitive Friction v1 — engineering surface ──────────────────

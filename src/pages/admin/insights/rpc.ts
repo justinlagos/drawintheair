@@ -12,7 +12,8 @@ import type {
     EngagementDeepData, MasterySummaryData, RetentionDeepData,
     TodayData, FunnelData, TrackerData, ModesData, ErrorsData,
     CohortData, MasteryData, CurriculumData, MilestonesData, SessionsData,
-    TrustStripData, FrictionEngineeringData,
+    TrustStripData, FrictionEngineeringData, MasteryV2Data, ContextSplitData,
+    ProgressionTopLearners, ProgressionLearnerData,
 } from './types';
 
 async function callRpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T> {
@@ -60,6 +61,27 @@ export const fetchRetentionDeep = () =>
 // underneath every chart they're looking at.
 export const fetchTrustStrip = (days: number) =>
     callRpc<TrustStripData>('dashboard_trust_strip', { in_days: days });
+
+// LIOS Mastery v2 — four-state vocabulary (Exposed/Acquired/Mastered/Decayed).
+// Replaces the static three-tier (strong/practising/new) classification on
+// the Learning tab with the proper state-transition language.
+export const fetchMasteryV2 = (days: number) =>
+    callRpc<MasteryV2Data>('dashboard_mastery_v2', { in_days: days });
+
+// LIOS Sprint 3 — home/classroom split (per-context counts + per-class_code
+// drilldown). Driven by the ?join=CODE redemption flow that flips
+// context='classroom' and stamps class_code into event meta.
+export const fetchContextSplit = (days: number) =>
+    callRpc<ContextSplitData>('dashboard_context_split', { in_days: days });
+
+// LIOS Sprint 3 — Learner Progression Dashboard data (Document A §7.1).
+// Two RPCs: the picker list (top N most-active pseudonymous learners) and
+// the per-learner profile with θ trajectories + mastery transitions.
+export const fetchProgressionTopLearners = (days: number, limit = 25) =>
+    callRpc<ProgressionTopLearners>('dashboard_progression_top_learners', { in_days: days, in_limit: limit });
+
+export const fetchProgressionForLearner = (deviceId: string) =>
+    callRpc<ProgressionLearnerData>('dashboard_progression_for_learner', { in_device_id: deviceId });
 
 // LIOS Cognitive Friction v1 — engineering observability.
 // Per-detector counts, per-mode + per-age breakdowns, recent firings

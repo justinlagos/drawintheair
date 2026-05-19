@@ -533,6 +533,14 @@ export const preWritingLogic = (
         // are identical (mistake patterns aren't meaningful here),
         // but the row still feeds per-letter time + accuracy
         // aggregates on the mastery panel.
+        //
+        // LIOS Sprint 3: attach the gesture_quality block. Pre-writing
+        // already tracks on_path_frames vs off_path_frames per stroke,
+        // which is exactly the path-accuracy signal Document A §2.1
+        // calls for. The richer scalars (velocity variance, pause
+        // count, etc.) wait for the on-device GestureSampler to be
+        // wired through the MediaPipe sample loop in a later sprint.
+        const totalFramesForGq = onPathFrames + offPathFrames;
         logEvent('item_dropped', {
             game_mode: 'pre-writing',
             stage_id: currentPath.name,
@@ -544,6 +552,13 @@ export const preWritingLogic = (
                 action_duration_ms: totalDurationMs,
                 accuracy_pct: accuracyPct,
                 is_letter: currentPath.isLetter,
+                gesture_quality: {
+                    path_accuracy_pct: accuracyPct,
+                    time_to_completion_ms: totalDurationMs,
+                    n_samples: totalFramesForGq,
+                    // Other scalars left null — filled when the
+                    // GestureSampler runtime integration ships.
+                },
             },
         });
         if (completeCallback) {

@@ -223,6 +223,43 @@ interface LearningRow {
     client_seq: number;
     client_ts: string;
     context: SessionContextKind;
+
+    // LIOS Sprint 3 — gesture-quality scalars (Document A §2.1).
+    // Computed locally on-device by GestureSampler (or by the game
+    // mode's own logic). Raw coordinates NEVER leave the device —
+    // only these scalars transit. NULL for events without gesture
+    // quality (most modes, until each is integrated).
+    gq_path_accuracy_pct:          number | null;
+    gq_path_efficiency:            number | null;
+    gq_spatial_error_mean_px:      number | null;
+    gq_velocity_variance:          number | null;
+    gq_pause_count:                number | null;
+    gq_directional_changes:        number | null;
+    gq_time_to_first_movement_ms:  number | null;
+    gq_time_to_completion_ms:      number | null;
+    gq_corrections_in_stroke:      number | null;
+    gq_n_samples:                  number | null;
+}
+
+/**
+ * Shape callers (game modes, GestureSampler.finalize) put on
+ * opts.meta.gesture_quality. The analytics mirror reads this block
+ * to populate the gq_* columns on learning_attempts.
+ */
+interface GestureQualityBlock {
+    path_accuracy_pct?:          number | null;
+    path_efficiency?:            number | null;
+    spatial_error_mean_px?:      number | null;
+    velocity_variance?:          number | null;
+    pause_count?:                number | null;
+    directional_changes?:        number | null;
+    time_to_first_movement_ms?:  number | null;
+    time_to_completion_ms?:      number | null;
+    corrections_in_stroke?:      number | null;
+    n_samples?:                  number | null;
+}
+function gqOrNull(v: unknown): number | null {
+    return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -431,32 +468,81 @@ function getOrCreateSession(): SessionContext {
     return session;
 }
 
-// ── LIOS Sprint 1: session context resolution ──────────────────
+// ── LIOS Sprint 3: classroom-code redemption flow ──────────────
 // Resolution order (highest priority first):
-//   1. Explicit ?context=home|classroom URL param   — ops override
-//   2. localStorage 'dita_session_context'           — sticky pref
-//   3. Default 'home' for non-classroom installs
+//   1. ?join=<CODE> URL param   → classroom-context, code captured
+//   2. ?classroom=<CODE> alias  → same as #1
+//   3. ?context=home|classroom  → explicit ops override (no code)
+//   4. localStorage stored class_code or context preference
+//   5. Default 'home'
 //
-// Sprint 4 will replace this with a classroom-code redemption
-// flow that flips the context to 'classroom' on a per-device,
-// per-session basis. Until then, this conservative default
-// ensures we never silently mis-attribute a home session as
-// classroom — and the URL-param override lets pilot schools
-// be tagged correctly today.
-const CONTEXT_KEY = 'dita_session_context';
+// Once a kid lands on the platform with /?join=XYZ, the device is
+// flagged as classroom-context for the lifetime of the localStorage
+// (a school session is sticky across page reloads). Every event
+// thereafter carries context='classroom' AND the class_code in meta,
+// so the dashboard's home-vs-classroom split is accurate from the
+// first action.
+const CONTEXT_KEY    = 'dita_session_context';
+const CLASS_CODE_KEY = 'dita_class_code';
+
 function resolveDefaultContext(): SessionContextKind {
     if (typeof window === 'undefined') return 'unknown';
     try {
-        const param = new URLSearchParams(window.location.search).get('context');
+        const params = new URLSearchParams(window.location.search);
+
+        // 1+2. Classroom code redemption — flips context AND captures code
+        const joinCode = params.get('join') ?? params.get('classroom');
+        if (joinCode && joinCode.trim().length > 0 && joinCode.trim().length <= 32) {
+            const code = joinCode.trim().toUpperCase();
+            try {
+                localStorage.setItem(CONTEXT_KEY, 'classroom');
+                localStorage.setItem(CLASS_CODE_KEY, code);
+            } catch { /* private mode */ }
+            return 'classroom';
+        }
+
+        // 3. Explicit ?context override (legacy testing path)
+        const param = params.get('context');
         if (param === 'home' || param === 'classroom') {
-            // Persist for the rest of this device's sessions
             try { localStorage.setItem(CONTEXT_KEY, param); } catch { /* ignore */ }
+            // If switching to home, clear any stale class code
+            if (param === 'home') {
+                try { localStorage.removeItem(CLASS_CODE_KEY); } catch { /* ignore */ }
+            }
             return param;
         }
+
+        // 4. Sticky preference
         const stored = localStorage.getItem(CONTEXT_KEY);
         if (stored === 'home' || stored === 'classroom') return stored;
     } catch { /* private mode etc. */ }
     return 'home';
+}
+
+/**
+ * Read the redeemed classroom code (if any). Returned on every
+ * event's meta when context='classroom' so the dashboard can
+ * group by which class did what. Returns null in home / unknown
+ * contexts and when no code was redeemed.
+ */
+function getClassCode(): string | null {
+    if (typeof window === 'undefined') return null;
+    try {
+        const code = localStorage.getItem(CLASS_CODE_KEY);
+        return code && code.length > 0 ? code : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Clear a redeemed classroom code (e.g. teacher ending the session
+ * or a kid going home for the day on a shared device). Optional —
+ * the code is also auto-cleared when context flips to 'home'.
+ */
+export function clearClassCode(): void {
+    if (typeof window === 'undefined') return;
+    try { localStorage.removeItem(CLASS_CODE_KEY); } catch { /* ignore */ }
 }
 
 /**
@@ -543,6 +629,15 @@ function buildRow(name: EventName, opts: EventOptions = {}): EventRow {
     // NEVER at flush time — so retries of the same event preserve
     // identity and ordering even if the flush is delayed by hours.
     const now = new Date().toISOString();
+
+    // Inject class_code into meta whenever a classroom-context
+    // session was redeemed via /?join=CODE. The dashboard's
+    // home-vs-classroom split is keyed on the `context` column,
+    // but per-classroom drilldowns join on this meta field.
+    const classCode = ctx.context === 'classroom' ? getClassCode() : null;
+    const eventMeta: Record<string, unknown> = classCode
+        ? { ...(opts.meta || {}), class_code: classCode }
+        : (opts.meta || {});
     return {
         session_id: ctx.sessionId,
         device_id: getOrCreateDeviceId(),
@@ -568,7 +663,7 @@ function buildRow(name: EventName, opts: EventOptions = {}): EventRow {
         utm_campaign: utm.utm_campaign,
         referrer: typeof document !== 'undefined' ? (document.referrer || null) : null,
         value_number: opts.value_number ?? null,
-        meta: opts.meta || {},
+        meta: eventMeta,
 
         // LIOS envelope. event_uid is the idempotency key —
         // generated at event creation so retried inserts collapse
@@ -866,6 +961,12 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
                 (m.actual_bin_id as string | undefined) ??
                 (m.actual_letter as string | undefined) ??
                 null;
+            // Gesture-quality scalars (LIOS Sprint 3). The game mode
+            // attaches its `gesture_quality` block to opts.meta.
+            // We flatten that block onto the row's gq_* columns so
+            // it's queryable without a JSON traversal.
+            const gq = (m.gesture_quality ?? {}) as GestureQualityBlock;
+
             learningQueue.push({
                 occurred_at: row.occurred_at,
                 session_id: ctx.sessionId,
@@ -889,6 +990,20 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
                 client_seq: row.client_seq,
                 client_ts: row.client_ts,
                 context: row.context,
+
+                // Gesture-quality columns — null when the game mode
+                // didn't supply a gesture_quality block. NEVER store
+                // raw coordinates; the block is scalar-only.
+                gq_path_accuracy_pct:         gqOrNull(gq.path_accuracy_pct),
+                gq_path_efficiency:           gqOrNull(gq.path_efficiency),
+                gq_spatial_error_mean_px:     gqOrNull(gq.spatial_error_mean_px),
+                gq_velocity_variance:         gqOrNull(gq.velocity_variance),
+                gq_pause_count:               gqOrNull(gq.pause_count),
+                gq_directional_changes:       gqOrNull(gq.directional_changes),
+                gq_time_to_first_movement_ms: gqOrNull(gq.time_to_first_movement_ms),
+                gq_time_to_completion_ms:     gqOrNull(gq.time_to_completion_ms),
+                gq_corrections_in_stroke:     gqOrNull(gq.corrections_in_stroke),
+                gq_n_samples:                 gqOrNull(gq.n_samples),
             });
             persistLearningQueue();
         }
@@ -1097,5 +1212,6 @@ export const analytics = {
     noteProductiveAction,
     clearStuckWatcher,
     setSessionContext,
+    clearClassCode,
     getDeviceId: getOrCreateDeviceId,
 };
