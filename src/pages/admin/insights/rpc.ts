@@ -12,7 +12,7 @@ import type {
     EngagementDeepData, MasterySummaryData, RetentionDeepData,
     TodayData, FunnelData, TrackerData, ModesData, ErrorsData,
     CohortData, MasteryData, CurriculumData, MilestonesData, SessionsData,
-    TrustStripData,
+    TrustStripData, FrictionEngineeringData,
 } from './types';
 
 async function callRpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T> {
@@ -60,6 +60,12 @@ export const fetchRetentionDeep = () =>
 // underneath every chart they're looking at.
 export const fetchTrustStrip = (days: number) =>
     callRpc<TrustStripData>('dashboard_trust_strip', { in_days: days });
+
+// LIOS Cognitive Friction v1 — engineering observability.
+// Per-detector counts, per-mode + per-age breakdowns, recent firings
+// with full meta. Read by the Friction tab, which is engineering-only.
+export const fetchFrictionEngineering = (days: number) =>
+    callRpc<FrictionEngineeringData>('dashboard_friction_engineering', { in_days: days });
 
 // Existing v1 RPCs (preserved) ───────────────────────────────────────────
 export const fetchToday      = () => callRpc<TodayData>('dashboard_today', {});

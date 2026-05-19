@@ -9,7 +9,7 @@ export const RANGE_DAYS: Record<Range, number> = { '24h': 1, '7d': 7, '30d': 30,
 
 export type TabKey =
     | 'executive' | 'engagement' | 'learning'
-    | 'retention' | 'sessions' | 'errors';
+    | 'retention' | 'sessions' | 'errors' | 'friction';
 
 export interface FilterState {
     range: Range;
@@ -176,6 +176,45 @@ export interface LiveData {
     active_count: number;
     by_mode: Record<string, number>;
     sessions: LiveSessionRow[];
+}
+
+// ── LIOS Cognitive Friction v1 — engineering surface ──────────────────
+//
+// Document B §4.1 — eight detectors over each session's pattern.
+// This is an ENGINEERING-only view for threshold calibration; the
+// teacher-facing equivalent ships once the v1 detector firings are
+// validated against ground-truth teacher tags (Sprint 4+).
+export interface FrictionCount {
+    detector: string;     // 'friction_<name>_detected'
+    n:        number;
+}
+export interface FrictionModeCount {
+    game_mode: string;
+    detector:  string;
+    n:         number;
+}
+export interface FrictionAgeCount {
+    age_band: string;
+    detector: string;
+    n:        number;
+}
+export interface FrictionRecent {
+    session_id:  string;
+    detector:    string;
+    game_mode:   string | null;
+    age_band:    string | null;
+    context:     string | null;
+    occurred_at: string;
+    meta:        Record<string, unknown>;
+}
+export interface FrictionEngineeringData {
+    days:        number;
+    as_of:       string;
+    total:       number;
+    by_detector: FrictionCount[];
+    by_mode:     FrictionModeCount[];
+    by_age:      FrictionAgeCount[];
+    recent:      FrictionRecent[];
 }
 
 // ── LIOS Trust v1 — composition strip ──────────────────────────────────

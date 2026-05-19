@@ -23,6 +23,7 @@ import { LearningTab } from './insights/tabs/LearningTab';
 import { RetentionTab } from './insights/tabs/RetentionTab';
 import { SessionsTab } from './insights/tabs/SessionsTab';
 import { ErrorsTab } from './insights/tabs/ErrorsTab';
+import { FrictionTab } from './insights/tabs/FrictionTab';
 import { PrintReport } from './insights/PrintReport';
 import './insights/insights.css';
 
@@ -38,6 +39,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
     { key: 'retention',  label: 'Retention' },
     { key: 'sessions',   label: 'Sessions' },
     { key: 'errors',     label: 'Errors' },
+    { key: 'friction',   label: 'Friction' },
 ];
 
 const RANGES: Array<{ key: Range; label: string }> = [
@@ -225,6 +227,7 @@ const AuthenticatedDashboard: React.FC<{ email: string; onSignOut: () => Promise
                 {filter.tab === 'retention'  && <RetentionTab />}
                 {filter.tab === 'sessions'   && <SessionsTab   filter={filter} />}
                 {filter.tab === 'errors'     && <ErrorsTab />}
+                {filter.tab === 'friction'   && <FrictionTab   filter={filter} />}
             </main>
         </div>
     );
