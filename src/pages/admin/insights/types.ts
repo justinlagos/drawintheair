@@ -9,7 +9,7 @@ export const RANGE_DAYS: Record<Range, number> = { '24h': 1, '7d': 7, '30d': 30,
 
 export type TabKey =
     | 'executive' | 'engagement' | 'learning'
-    | 'retention' | 'sessions' | 'errors' | 'friction' | 'progression';
+    | 'retention' | 'sessions' | 'errors' | 'friction' | 'progression' | 'adaptive';
 
 export interface FilterState {
     range: Range;
@@ -176,6 +176,56 @@ export interface LiveData {
     active_count: number;
     by_mode: Record<string, number>;
     sessions: LiveSessionRow[];
+}
+
+// ── LIOS Sprint 3 — Adaptive Engine v1 audit surface ───────────────────
+//
+// Document B §5 + §6.2. Engineering observability for the rule-based
+// recommendation engine — regime distribution, recovery-step ladder,
+// invariant fire counts, per-mode throughput, recent decisions with
+// the full audit row (inputs + reasoning).
+export type AdaptiveRegime = 'fresh' | 'flow' | 'productive' | 'boredom' | 'frustration';
+export type AdaptiveScaffold = 'none' | 'partial' | 'full';
+export type AdaptiveReward = 'quiet' | 'standard' | 'big';
+
+export interface AdaptiveRegimeCount { regime: AdaptiveRegime; n: number; }
+export interface AdaptiveRecoveryCount { recovery_step: number; n: number; }
+export interface AdaptiveScaffoldCount { scaffold_level: AdaptiveScaffold; n: number; }
+export interface AdaptiveRewardCount { reward_intensity: AdaptiveReward; n: number; }
+export interface AdaptiveInvariantCount { invariant: string; n: number; }
+export interface AdaptiveModeCount {
+    game_mode:       string;
+    n:               number;
+    mean_p_expected: number | null;
+}
+export interface AdaptiveRecentDecision {
+    id:                 string;
+    made_at:            string;
+    device_id:          string;
+    session_id:         string;
+    game_mode:          string;
+    current_item:       string | null;
+    next_item:          string | null;
+    scaffold_level:     AdaptiveScaffold;
+    reward_intensity:   AdaptiveReward;
+    suggest_break:      boolean;
+    regime:             AdaptiveRegime;
+    recovery_step:      number | null;
+    p_expected:         number | null;
+    invariants_applied: string[];
+    reasoning:          string | null;
+}
+export interface AdaptiveDecisionsData {
+    days:              number;
+    as_of:             string;
+    total:             number;
+    by_regime:         AdaptiveRegimeCount[];
+    by_recovery_step:  AdaptiveRecoveryCount[];
+    by_scaffold:       AdaptiveScaffoldCount[];
+    by_reward:         AdaptiveRewardCount[];
+    invariant_fires:   AdaptiveInvariantCount[];
+    by_mode:           AdaptiveModeCount[];
+    recent:            AdaptiveRecentDecision[];
 }
 
 // ── LIOS Sprint 3 — Learner Progression Dashboard ──────────────────────

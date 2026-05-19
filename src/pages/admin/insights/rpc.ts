@@ -14,6 +14,7 @@ import type {
     CohortData, MasteryData, CurriculumData, MilestonesData, SessionsData,
     TrustStripData, FrictionEngineeringData, MasteryV2Data, ContextSplitData,
     ProgressionTopLearners, ProgressionLearnerData,
+    AdaptiveDecisionsData,
 } from './types';
 
 async function callRpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T> {
@@ -82,6 +83,12 @@ export const fetchProgressionTopLearners = (days: number, limit = 25) =>
 
 export const fetchProgressionForLearner = (deviceId: string) =>
     callRpc<ProgressionLearnerData>('dashboard_progression_for_learner', { in_device_id: deviceId });
+
+// LIOS Sprint 3 — Adaptive Engine v1 audit surface. Powers the
+// Adaptive tab: regime distribution, recovery-step ladder, invariant
+// fire counts, recent decisions with full reasoning.
+export const fetchAdaptiveDecisions = (days: number) =>
+    callRpc<AdaptiveDecisionsData>('dashboard_adaptive_decisions', { in_days: days });
 
 // LIOS Cognitive Friction v1 — engineering observability.
 // Per-detector counts, per-mode + per-age breakdowns, recent firings

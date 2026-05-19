@@ -25,6 +25,7 @@ import { SessionsTab } from './insights/tabs/SessionsTab';
 import { ErrorsTab } from './insights/tabs/ErrorsTab';
 import { FrictionTab } from './insights/tabs/FrictionTab';
 import { ProgressionTab } from './insights/tabs/ProgressionTab';
+import { AdaptiveTab } from './insights/tabs/AdaptiveTab';
 import { PrintReport } from './insights/PrintReport';
 import './insights/insights.css';
 
@@ -42,6 +43,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
     { key: 'errors',     label: 'Errors' },
     { key: 'friction',   label: 'Friction' },
     { key: 'progression', label: 'Progression' },
+    { key: 'adaptive',    label: 'Adaptive' },
 ];
 
 const RANGES: Array<{ key: Range; label: string }> = [
@@ -140,6 +142,7 @@ const AuthenticatedDashboard: React.FC<{ email: string; onSignOut: () => Promise
             if (e.key === '6') setFilter({ tab: 'errors' });
             if (e.key === '7') setFilter({ tab: 'friction' });
             if (e.key === '8') setFilter({ tab: 'progression' });
+            if (e.key === '9') setFilter({ tab: 'adaptive' });
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
@@ -233,6 +236,7 @@ const AuthenticatedDashboard: React.FC<{ email: string; onSignOut: () => Promise
                 {filter.tab === 'errors'     && <ErrorsTab />}
                 {filter.tab === 'friction'   && <FrictionTab   filter={filter} />}
                 {filter.tab === 'progression' && <ProgressionTab filter={filter} />}
+                {filter.tab === 'adaptive'   && <AdaptiveTab   filter={filter} />}
             </main>
         </div>
     );

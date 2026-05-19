@@ -74,7 +74,7 @@ function readFilterFromUrl(): FilterState {
     return {
         range: valid<Range>(p.get('range'), ['24h', '7d', '30d', '90d'], '7d'),
         tab: valid<TabKey>(p.get('tab'),
-            ['executive', 'engagement', 'learning', 'retention', 'sessions', 'errors', 'friction', 'progression'],
+            ['executive', 'engagement', 'learning', 'retention', 'sessions', 'errors', 'friction', 'progression', 'adaptive'],
             'executive'),
         deviceType: valid(p.get('device'), ['all', 'desktop', 'tablet', 'mobile'] as const, 'all'),
         ageBand: valid(p.get('age'), ['all', '4-5', '6-7', '8-9', '10-11'] as const, 'all'),
