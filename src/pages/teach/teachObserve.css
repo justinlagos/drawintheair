@@ -1,0 +1,293 @@
+/* =====================================================================
+   /teach/observe — teacher tagging surface (tablet-first)
+   ===================================================================== */
+
+.to-shell {
+    --plum: #6C3FA4;
+    --plum-soft: rgba(108, 63, 164, 0.10);
+    --aqua: #55DDE0;
+    --good: #1f7a3a;
+    --good-soft: rgba(126, 217, 87, 0.18);
+    --bad:  #C13A3A;
+    --paper: #FAFAFD;
+    --card:  #FFFFFF;
+    --line:  rgba(63, 64, 82, 0.10);
+    --ink:   #1A1B2E;
+    --flat:  #6B6F84;
+
+    min-height: 100vh;
+    background: var(--paper);
+    color: var(--ink);
+    font: 15px/1.5 Nunito, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── Top bar ─────────────────────────────────────────────────────── */
+.to-topbar {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: saturate(180%) blur(10px);
+    border-bottom: 1px solid var(--line);
+}
+.to-topbar-inner {
+    max-width: 1240px; margin: 0 auto;
+    padding: 12px 20px;
+    display: flex; align-items: center; gap: 12px;
+    flex-wrap: wrap;
+}
+.to-brand { display: flex; align-items: center; gap: 10px; }
+.to-brand-logo { height: 30px; }
+.to-brand-name {
+    font: 700 16px Fredoka, system-ui, sans-serif;
+    color: var(--plum);
+}
+.to-brand-sub { font-size: 12px; color: var(--flat); margin-top: 1px; }
+.to-topbar-spacer { flex: 1; }
+.to-topbar-meta {
+    background: var(--plum-soft);
+    color: var(--plum);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font: 700 12px Nunito, system-ui, sans-serif;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────── */
+.to-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 10px 18px; border-radius: 999px;
+    font: 700 13.5px Nunito, system-ui, sans-serif;
+    background: var(--card); color: var(--ink);
+    border: 1px solid var(--line);
+    cursor: pointer; user-select: none;
+    min-height: 40px;
+}
+.to-btn:hover:not(:disabled) { background: var(--paper); }
+.to-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.to-btn-primary {
+    background: linear-gradient(180deg, #7E4FB8, #6C3FA4);
+    color: #fff; border-color: transparent;
+    box-shadow: 0 2px 8px rgba(108, 63, 164, 0.25);
+}
+.to-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(180deg, #6C3FA4, #5A2F8C);
+}
+.to-btn-ghost { background: transparent; border-color: transparent; color: var(--flat); }
+
+/* ── Gate / setup card ───────────────────────────────────────────── */
+.to-gate-card {
+    max-width: 460px;
+    margin: 80px auto;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 4px 24px rgba(63, 64, 82, 0.06);
+}
+.to-gate-card h1 {
+    margin: 0 0 8px;
+    font: 700 22px Fredoka, system-ui, sans-serif;
+    color: var(--plum);
+}
+.to-gate-card p { color: var(--flat); margin: 0 0 20px; font-size: 14px; }
+
+.to-field {
+    display: block; margin-bottom: 14px;
+}
+.to-field > span {
+    display: block;
+    font: 700 11px Nunito, system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--flat); margin-bottom: 4px;
+}
+.to-field input,
+.to-field select,
+.to-field textarea {
+    width: 100%; box-sizing: border-box;
+    padding: 10px 12px;
+    font: 15px Nunito, system-ui, sans-serif;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--ink);
+    min-height: 44px;
+}
+.to-field input:focus,
+.to-field select:focus,
+.to-field textarea:focus {
+    outline: none;
+    border-color: var(--plum);
+    box-shadow: 0 0 0 3px rgba(108, 63, 164, 0.15);
+}
+.to-field textarea { min-height: 60px; resize: vertical; }
+
+/* ── Main / roster grid ─────────────────────────────────────────── */
+.to-main {
+    max-width: 1240px; margin: 0 auto;
+    padding: 20px;
+}
+.to-roster {
+    display: grid; gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+/* ── Child card ─────────────────────────────────────────────────── */
+.to-child {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 10px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.to-child.is-tagged {
+    border-color: rgba(126, 217, 87, 0.4);
+    box-shadow: 0 1px 4px rgba(126, 217, 87, 0.15);
+    background: rgba(126, 217, 87, 0.04);
+}
+.to-child-head {
+    display: flex; align-items: center; gap: 10px;
+}
+.to-child-pos {
+    width: 36px; height: 36px; border-radius: 12px;
+    background: var(--plum-soft); color: var(--plum);
+    display: flex; align-items: center; justify-content: center;
+    font: 700 16px Fredoka, system-ui, sans-serif;
+    flex-shrink: 0;
+}
+.to-child-name {
+    flex: 1; min-width: 0;
+    border: none; background: transparent;
+    font: 600 14px Nunito, system-ui, sans-serif;
+    color: var(--ink);
+    padding: 6px 8px;
+    border-radius: 8px;
+}
+.to-child-name::placeholder { color: #B8BACF; font-weight: 500; }
+.to-child-name:focus {
+    outline: none; background: var(--paper);
+    box-shadow: 0 0 0 2px var(--plum-soft);
+}
+.to-child-tag-btn { width: 100%; }
+.to-child-foot {
+    text-align: center; font-size: 11px; color: var(--flat);
+}
+
+.to-row-actions {
+    display: flex; gap: 10px; margin-top: 20px;
+    justify-content: center;
+}
+
+/* ── Tag picker bottom sheet ────────────────────────────────────── */
+.to-sheet-overlay {
+    position: fixed; inset: 0;
+    background: rgba(26, 27, 46, 0.55);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    display: flex; align-items: flex-end; justify-content: center;
+    animation: toFadeIn 0.18s ease-out;
+}
+@keyframes toFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.to-sheet {
+    background: var(--card);
+    width: 100%; max-width: 640px;
+    max-height: 92vh;
+    border-radius: 20px 20px 0 0;
+    display: flex; flex-direction: column;
+    box-shadow: 0 -8px 32px rgba(63, 64, 82, 0.25);
+    animation: toSlideUp 0.22s ease-out;
+}
+@keyframes toSlideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+}
+
+.to-sheet-head {
+    padding: 18px 20px 12px;
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid var(--line);
+}
+.to-sheet-head h2 {
+    margin: 0;
+    font: 700 18px Fredoka, system-ui, sans-serif;
+    color: var(--plum);
+}
+.to-sheet-sub { font-size: 12px; color: var(--flat); margin-top: 2px; }
+
+.to-sheet-body {
+    padding: 16px 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.to-family {
+    margin-bottom: 14px;
+}
+.to-family-label {
+    font: 700 11px Nunito, system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--flat);
+    margin-bottom: 6px;
+}
+.to-family-tags {
+    display: flex; flex-wrap: wrap; gap: 6px;
+}
+.to-tag-pill {
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    color: var(--ink);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font: 600 13px Nunito, system-ui, sans-serif;
+    cursor: pointer; user-select: none;
+    min-height: 38px;
+    transition: transform 0.08s;
+}
+.to-tag-pill:hover { background: var(--paper); }
+.to-tag-pill:active { transform: scale(0.96); }
+.to-tag-pill.is-selected {
+    border-color: transparent;
+    font-weight: 700;
+}
+
+.to-error {
+    background: rgba(193, 58, 58, 0.08);
+    border: 1px solid rgba(193, 58, 58, 0.2);
+    color: var(--bad);
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.to-sheet-foot {
+    padding: 12px 20px 16px;
+    display: flex; gap: 10px; justify-content: flex-end;
+    border-top: 1px solid var(--line);
+    background: var(--card);
+}
+
+/* ── Mobile (< 640px) — single column, larger tap targets ───────── */
+@media (max-width: 639px) {
+    .to-topbar-inner { padding: 10px 14px; gap: 8px; }
+    .to-brand-logo   { height: 24px; }
+    .to-brand-name   { font-size: 14px; }
+    .to-brand-sub    { font-size: 11px; }
+    .to-topbar-meta  { font-size: 11px; padding: 4px 10px; }
+    .to-btn          { padding: 10px 14px; font-size: 12.5px; min-height: 42px; }
+    .to-main         { padding: 14px; }
+    .to-roster       { grid-template-columns: 1fr; gap: 10px; }
+    .to-child        { padding: 12px; }
+    .to-child-pos    { width: 32px; height: 32px; }
+    .to-sheet-head   { padding: 14px 16px 10px; }
+    .to-sheet-body   { padding: 12px 16px; }
+    .to-sheet-foot   { padding: 10px 16px 14px; }
+    .to-tag-pill     { padding: 9px 14px; min-height: 40px; }
+}
+
+/* ── Touch-coarse pointer: bigger everywhere ─────────────────────── */
+@media (pointer: coarse) {
+    .to-btn       { min-height: 44px; }
+    .to-tag-pill  { min-height: 42px; padding: 9px 16px; }
+}
