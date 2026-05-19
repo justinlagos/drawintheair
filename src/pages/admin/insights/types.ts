@@ -9,7 +9,7 @@ export const RANGE_DAYS: Record<Range, number> = { '24h': 1, '7d': 7, '30d': 30,
 
 export type TabKey =
     | 'executive' | 'engagement' | 'learning'
-    | 'retention' | 'sessions' | 'errors' | 'friction' | 'progression' | 'adaptive';
+    | 'retention' | 'sessions' | 'errors' | 'friction' | 'progression' | 'adaptive' | 'observations';
 
 export interface FilterState {
     range: Range;
@@ -176,6 +176,76 @@ export interface LiveData {
     active_count: number;
     by_mode: Record<string, number>;
     sessions: LiveSessionRow[];
+}
+
+// ── LIOS Sprint 4 — Human Observation Layer ────────────────────────────
+//
+// Document B §9. Teacher / parent / researcher tags joined to
+// pseudonymous learner sessions. The qualitative companion to the
+// quantitative telemetry stack.
+export type ObservationFamily = 'focus' | 'affect' | 'independence' | 'social' | 'notable';
+export interface ObservationTagCount {
+    family: ObservationFamily;
+    tag:    string;
+    n:      number;
+}
+export interface ObservationClassroomCount {
+    classroom_code: string;
+    n_observations: number;
+    n_learners:     number;
+}
+export interface ObservationEngagementVsMastery {
+    device_id:   string;
+    focus:       string[] | null;
+    affect:      string[] | null;
+    n_attempts:  number;
+    n_mastered:  number;
+}
+export interface ObservationRecent {
+    id:                string;
+    recorded_at:       string;
+    recorded_by:       string | null;
+    observer_role:     'teacher' | 'parent' | 'researcher';
+    device_id:         string;
+    session_id:        string | null;
+    classroom_code:    string | null;
+    age_band:          string | null;
+    focus_tags:        string[];
+    affect_tags:       string[];
+    independence_tags: string[];
+    social_tags:       string[];
+    notable_tags:      string[];
+    note:              string | null;
+}
+export interface ObservationsData {
+    days:                       number;
+    as_of:                      string;
+    total:                      number;
+    distinct_learners_observed: number;
+    distinct_classrooms:        number;
+    by_tag:                     ObservationTagCount[];
+    by_classroom:               ObservationClassroomCount[];
+    engagement_vs_mastery:      ObservationEngagementVsMastery[];
+    recent:                     ObservationRecent[];
+}
+
+// LIOS Sprint 4 — Unified Export headline
+export interface ExportHeadline {
+    export_version: string;
+    generated_at:   string;
+    window_days:    number;
+    product:        string;
+    environment:    string;
+    headline: {
+        attempts_in_window:           number;
+        sessions_in_window:           number;
+        learners_in_window:           number;
+        mastered_skills:              number;
+        observations_in_window:       number;
+        adaptive_decisions_in_window: number;
+        cron_runs_24h:                number;
+        cron_failed_24h:              number;
+    };
 }
 
 // ── LIOS Sprint 3 — Adaptive Engine v1 audit surface ───────────────────

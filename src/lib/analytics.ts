@@ -1010,6 +1010,32 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
     }
 
     if (eventQueue.length >= FLUSH_BATCH_SIZE) flush();
+
+    // LIOS Sprint 4 — Adaptive Engine auto-shadow trigger.
+    // When the lios_adaptive_mode feature flag is on ('shadow' or
+    // 'live'), every item_dropped resolution fires a background
+    // call to the rule-based recommendation engine. The decision
+    // is logged into lios_adaptive_decisions for engineering review;
+    // game-mode item selection is unaffected in shadow mode. The
+    // dynamic import keeps the engine code out of the critical
+    // logEvent path and out of bundles that don't need it.
+    if (name === 'item_dropped' && opts.game_mode) {
+        const m = opts.meta ?? {};
+        const itemKey  = (m.itemKey ?? m.item_key) as unknown;
+        const wasCorrect = m.isCorrect as unknown;
+        if (typeof itemKey === 'string' && typeof wasCorrect === 'boolean') {
+            // Fire and forget — never block the analytics path.
+            void (async () => {
+                try {
+                    const mod = await import('./useAdaptiveEngine');
+                    if (mod.getAdaptiveEngineMode() === 'off') return;
+                    await mod.requestAdaptiveRecommendation(
+                        opts.game_mode as string, itemKey, wasCorrect,
+                    );
+                } catch { /* engine unavailable — silent */ }
+            })();
+        }
+    }
 }
 
 const LEARNING_QUEUE_KEY = 'dita_learning_queue';

@@ -827,3 +827,164 @@
     width: 8px; height: 8px; border-radius: 50%;
     display: inline-block;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Mobile + UX compression overhaul (Sprint 4)
+   ═══════════════════════════════════════════════════════════════════
+   Goal: feel like a premium operational intelligence console, not a
+   stacked admin panel. Tighter density on desktop, intelligent
+   reflow on tablet, fully touch-ergonomic on mobile.
+
+   Breakpoints:
+     desktop  ≥ 1024px   (current default)
+     tablet   < 1024px
+     mobile   < 640px
+     phone    < 420px
+*/
+
+/* ── Tighter desktop density (UX compression) ─────────────────── */
+.iv-main {
+    gap: 12px;
+    padding: 14px 24px 56px;
+}
+.iv-row { gap: 12px; }
+.iv-card { padding: 14px 16px; border-radius: 12px; }
+.iv-card-head { margin-bottom: 10px; }
+.iv-kpi-grid { gap: 10px; }
+.iv-kpi { padding: 12px 14px; gap: 8px; border-radius: 12px; }
+.iv-kpi-value { font-size: 26px; }
+.iv-kpi-label { font-size: 10px; }
+
+/* ── Tablet (< 1024px) — intelligent column collapse ──────────── */
+@media (max-width: 1023px) {
+    .iv-topbar-inner,
+    .iv-filterbar,
+    .iv-tabstrip,
+    .iv-main { padding-left: 16px; padding-right: 16px; }
+    .iv-main { padding-bottom: 80px; gap: 12px; }
+
+    .iv-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+
+    /* Most columns collapse to half-width except col-12 which stays full */
+    .iv-col-3, .iv-col-4 { grid-column: span 6; }
+    .iv-col-6, .iv-col-8 { grid-column: span 12; }
+
+    .iv-card { padding: 12px 14px; }
+    .iv-tab { padding: 10px 14px; font-size: 12.5px; }
+
+    /* Bigger pills for touch */
+    .iv-filter-pill { padding: 7px 13px; font-size: 12px; }
+    .iv-btn { padding: 8px 14px; font-size: 12.5px; }
+}
+
+/* ── Mobile (< 640px) — full reflow + touch-first ─────────────── */
+@media (max-width: 639px) {
+    .iv-topbar-inner {
+        padding: 10px 14px;
+        gap: 8px;
+    }
+    .iv-brand-logo { height: 24px; }
+    .iv-brand-name { font-size: 13px; }
+    .iv-brand-sub  { font-size: 10px; }
+
+    /* "Live" pill compresses on mobile */
+    .iv-live {
+        padding: 2px 7px;
+        font-size: 10px;
+        letter-spacing: 0.02em;
+    }
+    .iv-live-dot { width: 6px; height: 6px; }
+
+    /* Make top actions an icon-row */
+    .iv-topbar-actions { gap: 6px; }
+    .iv-btn {
+        padding: 9px 12px;
+        font-size: 11.5px;
+        min-height: 36px;             /* touch target */
+    }
+    .iv-btn-sm { min-height: 32px; padding: 6px 10px; }
+
+    .iv-filterbar {
+        padding: 8px 14px 0;
+        gap: 6px;
+    }
+    .iv-filter-pill {
+        padding: 8px 14px;
+        font-size: 11.5px;
+        min-height: 34px;
+    }
+
+    .iv-tabstrip {
+        padding: 6px 14px 0;
+        gap: 2px;
+        scroll-snap-type: x mandatory;
+    }
+    .iv-tab {
+        padding: 10px 12px;
+        font-size: 12px;
+        scroll-snap-align: start;
+        min-height: 40px;
+    }
+
+    .iv-main {
+        padding: 12px 14px 80px;
+        gap: 10px;
+    }
+    .iv-row { gap: 10px; }
+
+    /* Everything collapses to full width — every col becomes col-12 */
+    .iv-col-3, .iv-col-4, .iv-col-6, .iv-col-8, .iv-col-12 {
+        grid-column: span 12;
+    }
+
+    /* KPI grid → 2 columns on mobile (1 row of 4 is unreadable) */
+    .iv-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .iv-kpi { padding: 10px 12px; }
+    .iv-kpi-value { font-size: 22px; }
+    .iv-kpi-value-sub { font-size: 11.5px; }
+    .iv-kpi-label { font-size: 9.5px; letter-spacing: 0.06em; }
+
+    /* Card density — preserve breathing room but tighten */
+    .iv-card { padding: 12px 12px; border-radius: 10px; }
+    .iv-card-title { font-size: 11.5px; }
+    .iv-card-meta { font-size: 11px; }
+
+    /* Tables: keep horizontal scroll but improve touch ergonomics */
+    .iv-table { font-size: 12px; }
+    .iv-table th { padding: 8px 8px; font-size: 9.5px; }
+    .iv-table td { padding: 10px 8px; }
+
+    /* Trust strip compression on mobile */
+    .iv-trust-strip { padding: 10px 12px; margin-bottom: 12px; }
+    .iv-trust-summary { font-size: 12px; }
+    .iv-trust-head { gap: 8px; }
+    .iv-trust-mode-table th,
+    .iv-trust-mode-table td { padding: 5px 6px; }
+}
+
+/* ── Phone (< 420px) — extreme compression ────────────────────── */
+@media (max-width: 419px) {
+    /* KPI → single column on the smallest phones, otherwise headlines
+       get truncated awkwardly */
+    .iv-kpi-grid { grid-template-columns: 1fr; }
+
+    .iv-brand-sub { display: none; }     /* email + refresh time row;
+                                            keep the brand row clean */
+    .iv-card-meta { display: none; }     /* tooltip-only on phone */
+    .iv-tabstrip { padding: 4px 12px 0; }
+    .iv-tab { padding: 9px 10px; font-size: 11.5px; }
+}
+
+/* ── Larger touch targets globally on coarse pointers (touch) ──── */
+@media (pointer: coarse) {
+    .iv-btn, .iv-filter-pill, .iv-tab {
+        min-height: 36px;
+    }
+    /* Table rows on touch need a generous tap zone for row-click UX */
+    .iv-table tr { min-height: 40px; }
+}
+
+/* ── Reduced-motion override for the live-dot pulse ────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .iv-live-dot { animation: none; }
+}

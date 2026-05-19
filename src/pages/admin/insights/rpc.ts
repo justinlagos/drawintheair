@@ -14,7 +14,7 @@ import type {
     CohortData, MasteryData, CurriculumData, MilestonesData, SessionsData,
     TrustStripData, FrictionEngineeringData, MasteryV2Data, ContextSplitData,
     ProgressionTopLearners, ProgressionLearnerData,
-    AdaptiveDecisionsData,
+    AdaptiveDecisionsData, ObservationsData, ExportHeadline,
 } from './types';
 
 async function callRpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T> {
@@ -89,6 +89,32 @@ export const fetchProgressionForLearner = (deviceId: string) =>
 // fire counts, recent decisions with full reasoning.
 export const fetchAdaptiveDecisions = (days: number) =>
     callRpc<AdaptiveDecisionsData>('dashboard_adaptive_decisions', { in_days: days });
+
+// LIOS Sprint 4 — Human Observation Layer.
+export const fetchObservations = (days: number) =>
+    callRpc<ObservationsData>('dashboard_observations', { in_days: days });
+
+export const recordObservation = (args: {
+    p_device_id: string;
+    p_focus_tags?: string[];
+    p_affect_tags?: string[];
+    p_independence_tags?: string[];
+    p_social_tags?: string[];
+    p_notable_tags?: string[];
+    p_session_id?: string | null;
+    p_classroom_code?: string | null;
+    p_age_band?: string | null;
+    p_note?: string | null;
+    p_observer_role?: 'teacher' | 'parent' | 'researcher';
+}) => callRpc<{ id: string; recorded_at: string; recorded_by: string | null }>(
+    'lios_record_observation', args,
+);
+
+// LIOS Sprint 4 — Unified export. Client bundles the full payload by
+// fetching each dashboard RPC in parallel; this endpoint returns the
+// lightweight headline preamble that every bundle starts with.
+export const fetchExportHeadline = (days: number) =>
+    callRpc<ExportHeadline>('dashboard_export_headline', { in_days: days });
 
 // LIOS Cognitive Friction v1 — engineering observability.
 // Per-detector counts, per-mode + per-age breakdowns, recent firings

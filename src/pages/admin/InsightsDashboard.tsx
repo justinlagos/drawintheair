@@ -16,7 +16,14 @@ import { useAuth } from '../../context/AuthContext';
 import { SEOMeta } from '../../seo/SEOMeta';
 import { fmtRelative, useFilter, useRpc, copyShareLink } from './insights/helpers';
 import type { TabKey, Range, FilterState } from './insights/types';
-import { fetchLive } from './insights/rpc';
+import {
+    fetchLive, fetchExportHeadline,
+    fetchExecutive, fetchEngagementDeep, fetchMasterySummary,
+    fetchMasteryV2, fetchTrustStrip, fetchFrictionEngineering,
+    fetchContextSplit, fetchAdaptiveDecisions, fetchObservations,
+    fetchProgressionTopLearners, fetchRetentionDeep,
+} from './insights/rpc';
+import { days as rangeDays } from './insights/helpers';
 import { ExecutiveTab } from './insights/tabs/ExecutiveTab';
 import { EngagementTab } from './insights/tabs/EngagementTab';
 import { LearningTab } from './insights/tabs/LearningTab';
@@ -26,6 +33,7 @@ import { ErrorsTab } from './insights/tabs/ErrorsTab';
 import { FrictionTab } from './insights/tabs/FrictionTab';
 import { ProgressionTab } from './insights/tabs/ProgressionTab';
 import { AdaptiveTab } from './insights/tabs/AdaptiveTab';
+import { ObservationsTab } from './insights/tabs/ObservationsTab';
 import { PrintReport } from './insights/PrintReport';
 import './insights/insights.css';
 
@@ -44,6 +52,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
     { key: 'friction',   label: 'Friction' },
     { key: 'progression', label: 'Progression' },
     { key: 'adaptive',    label: 'Adaptive' },
+    { key: 'observations', label: 'Observations' },
 ];
 
 const RANGES: Array<{ key: Range; label: string }> = [
@@ -125,6 +134,78 @@ const AuthenticatedDashboard: React.FC<{ email: string; onSignOut: () => Promise
     };
     const handleShare = () => copyShareLink(filter);
 
+    // ── LIOS Unified Export ─────────────────────────────────────────
+    // Single click, parallel-fetches every dashboard RPC, bundles the
+    // result client-side, downloads as a single JSON. Per-section
+    // failures don't kill the export — they appear as `null` in the
+    // bundle so the recipient can still consume what succeeded.
+    const [exporting, setExporting] = useState(false);
+    const [exportProgress, setExportProgress] = useState<string>('');
+    const handleExportEverything = async () => {
+        setExporting(true);
+        setExportProgress('Preparing…');
+        const days = rangeDays(filter.range);
+        const safe = async <T,>(name: string, fn: () => Promise<T>): Promise<T | null> => {
+            try {
+                setExportProgress(`Fetching ${name}…`);
+                return await fn();
+            } catch {
+                return null;
+            }
+        };
+        try {
+            const [headline, executive, engagement, masterySummary, masteryV2,
+                   trust, friction, contextSplit, adaptive, observations,
+                   progression, retention] = await Promise.all([
+                safe('headline',         () => fetchExportHeadline(days)),
+                safe('executive',        () => fetchExecutive(days)),
+                safe('engagement',       () => fetchEngagementDeep(days)),
+                safe('mastery (v1)',     () => fetchMasterySummary(Math.max(days, 30))),
+                safe('mastery (v2)',     () => fetchMasteryV2(Math.max(days, 30))),
+                safe('trust',            () => fetchTrustStrip(Math.max(days, 30))),
+                safe('friction',         () => fetchFrictionEngineering(Math.max(days, 30))),
+                safe('context split',    () => fetchContextSplit(Math.max(days, 30))),
+                safe('adaptive',         () => fetchAdaptiveDecisions(Math.max(days, 30))),
+                safe('observations',     () => fetchObservations(Math.max(days, 30))),
+                safe('progression top',  () => fetchProgressionTopLearners(Math.max(days, 90), 50)),
+                safe('retention',        () => fetchRetentionDeep()),
+            ]);
+            setExportProgress('Bundling…');
+            const bundle = {
+                ...(headline ?? {
+                    export_version: 'lios-v1',
+                    generated_at:   new Date().toISOString(),
+                    window_days:    days,
+                    product:        'draw-in-the-air',
+                    environment:    'production',
+                }),
+                sections: {
+                    executive, engagement,
+                    mastery_summary: masterySummary,
+                    mastery_v2:      masteryV2,
+                    trust,           friction,
+                    context_split:   contextSplit,
+                    adaptive,        observations,
+                    progression,     retention,
+                },
+                exported_by: email,
+            };
+            const blob = new Blob([JSON.stringify(bundle, null, 2)],
+                                  { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `dita-insights-${new Date().toISOString().slice(0, 10)}-${filter.range}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            setExportProgress('Done.');
+        } finally {
+            setTimeout(() => { setExporting(false); setExportProgress(''); }, 800);
+        }
+    };
+
     // Dedicated report view — auto-prints once loaded.
     if (reportMode) {
         return <PrintReport range={filter.range} email={email} />;
@@ -180,6 +261,14 @@ const AuthenticatedDashboard: React.FC<{ email: string; onSignOut: () => Promise
                     <div className="iv-topbar-spacer" />
 
                     <div className="iv-topbar-actions iv-no-print">
+                        <button
+                            className="iv-btn iv-btn-primary"
+                            onClick={handleExportEverything}
+                            disabled={exporting}
+                            title="Bundle every dashboard payload and download as a single JSON"
+                        >
+                            {exporting ? (exportProgress || 'Exporting…') : 'Export everything'}
+                        </button>
                         <button className="iv-btn" onClick={handleShare} title="Copy a permalink to this view">
                             Share
                         </button>
@@ -237,6 +326,7 @@ const AuthenticatedDashboard: React.FC<{ email: string; onSignOut: () => Promise
                 {filter.tab === 'friction'   && <FrictionTab   filter={filter} />}
                 {filter.tab === 'progression' && <ProgressionTab filter={filter} />}
                 {filter.tab === 'adaptive'   && <AdaptiveTab   filter={filter} />}
+                {filter.tab === 'observations' && <ObservationsTab filter={filter} />}
             </main>
         </div>
     );
