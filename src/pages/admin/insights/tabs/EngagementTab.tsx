@@ -10,7 +10,7 @@
 
 import React from 'react';
 import {
-    Card, Skeleton, Empty, Tag, InlineBar, TableWrap, Sparkline,
+    Card, Skeleton, Empty, Tag, InlineBar, TableWrap, Sparkline, TrustStrip,
 } from '../components';
 import { fmtNum, fmtPct, fmtDuration, days as rangeDays, useRpc, downloadCsv } from '../helpers';
 import { fetchEngagementDeep } from '../rpc';
@@ -55,6 +55,14 @@ export const EngagementTab: React.FC<{ filter: FilterState }> = ({ filter }) => 
 
     return (
         <>
+            {/* LIOS Trust v1 — inline strip. Sits at the top of the
+                engagement tab so completion-rate and stuck-rate are
+                always read against their data-quality denominator. */}
+            <div className="iv-col-12">
+                <TrustStrip range={filter.range}
+                    title="Data-quality denominator for the engagement metrics below" />
+            </div>
+
             {/* Summary strip */}
             <div className="iv-col-12 iv-kpi-grid">
                 <Kpi label="Mode plays" value={fmtNum(totalStarted)} sub={`across ${modes.length} modes`} />

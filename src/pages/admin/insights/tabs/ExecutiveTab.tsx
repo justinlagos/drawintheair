@@ -9,7 +9,7 @@
 import React from 'react';
 import {
     Card, Kpi, Skeleton, Empty,
-    FunnelChart,
+    FunnelChart, TrustStrip,
 } from '../components';
 import { fmtDuration, fmtNum, fmtPct, days as rangeDays, useRpc, downloadCsv } from '../helpers';
 import { fetchExecutive, fetchAb, fetchFunnel, fetchTracker, fetchErrors } from '../rpc';
@@ -45,6 +45,16 @@ export const ExecutiveTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
 
     return (
         <>
+            {/* LIOS Trust v1 — investor-grade transparency strip.
+                Surfaces the data-quality denominator at the very top of
+                the Executive tab so every headline metric is read in
+                context. This is the discipline that earns institutional
+                credibility. */}
+            <div className="iv-col-12">
+                <TrustStrip range={filter.range}
+                    title="Beneath the headline KPIs on this page" />
+            </div>
+
             {/* KPI strip — 6 cards, snap-scroll on mobile */}
             <div className="iv-col-12 iv-kpi-grid">
                 <Kpi

@@ -249,12 +249,27 @@ export async function dbSelect<T = Record<string, unknown>>(
 export async function dbInsert<T = Record<string, unknown>>(
   table: string,
   row: Record<string, unknown>,
-  options?: { returning?: boolean; single?: boolean }
+  options?: { returning?: boolean; single?: boolean; ignoreDuplicates?: boolean }
 ): Promise<PostgrestResponse<T>> {
   try {
+    // Prefer header composition: returning + duplicate resolution.
+    //
+    //   • returning=minimal vs representation  → existing behaviour
+    //   • resolution=ignore-duplicates         → LIOS idempotency
+    //
+    // PostgREST accepts multiple Prefer values comma-separated. When
+    // ignoreDuplicates is set and the table has a UNIQUE constraint
+    // (we add one on event_uid in 20260519_lios_event_envelope.sql),
+    // duplicate rows in a bulk insert are silently skipped instead
+    // of failing the whole batch — exactly what an offline-queue
+    // retry needs.
+    const preferParts = [
+      options?.returning !== false ? 'return=representation' : 'return=minimal',
+    ];
+    if (options?.ignoreDuplicates) preferParts.push('resolution=ignore-duplicates');
     const headers: Record<string, string> = {
       ...authHeaders(),
-      'Prefer': options?.returning !== false ? 'return=representation' : 'return=minimal',
+      'Prefer': preferParts.join(', '),
     };
     if (options?.single) {
       headers['Accept'] = 'application/vnd.pgrst.object+json';

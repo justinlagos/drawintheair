@@ -178,6 +178,39 @@ export interface LiveData {
     sessions: LiveSessionRow[];
 }
 
+// ── LIOS Trust v1 — composition strip ──────────────────────────────────
+// Renders above every dashboard chart so the audience can audit the
+// data-quality denominator (Tier A high credibility / Tier B reduced
+// weight / Tier C quarantined) underneath the headline metric.
+export interface TrustStripByMode {
+    game_mode: string;
+    total: number;
+    tier_a: number;
+    tier_b: number;
+    tier_c: number;
+    pct_a: number | null;
+    pct_b: number | null;
+    pct_c: number | null;
+}
+export interface TrustStripReason {
+    reason: string;
+    n: number;
+}
+export interface TrustStripData {
+    days: number;
+    as_of: string;
+    total: number;
+    tier_a: number;
+    tier_b: number;
+    tier_c: number;
+    pct_a: number | null;
+    pct_b: number | null;
+    pct_c: number | null;
+    mean_score: number;
+    by_mode: TrustStripByMode[];
+    top_reasons: TrustStripReason[];
+}
+
 // ── Existing RPCs (preserved verbatim from v1) ─────────────────────────
 export interface TodayData {
     sessions_started: number;

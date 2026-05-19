@@ -132,6 +132,14 @@ export type EventName =
 
 export type AgeBand = '4-5' | '6-7' | '8-9' | '10-11' | '12+';
 
+/**
+ * Session context — first-class LIOS dimension. Set at session
+ * start via startSession() or upgraded later via setSessionContext()
+ * when a classroom code is redeemed. Defaults to 'unknown' so we
+ * never silently mis-attribute a home session as classroom.
+ */
+export type SessionContextKind = 'home' | 'classroom' | 'unknown';
+
 /** Optional fields on every event. Anything not in this shape goes in `meta`. */
 export interface EventOptions {
     page?: string;
@@ -170,6 +178,22 @@ interface EventRow {
     referrer: string | null;
     value_number: number | null;
     meta: Record<string, unknown>;
+
+    // ── LIOS Sprint 1 envelope ─────────────────────────────────
+    // event_uid: client-generated UUID at event creation. UNIQUE
+    //   constraint on the table (migration 20260519) makes inserts
+    //   idempotent — offline-queue retries don't double-write.
+    // client_seq: monotonic per-session integer for true event
+    //   ordering, independent of flush / arrival order.
+    // client_ts: client wall clock at event creation. occurred_at
+    //   remains the server's view; the pair lets downstream jobs
+    //   estimate clock skew and reconcile latency timings.
+    // context: 'home' | 'classroom' | 'unknown'. Powers the
+    //   home-vs-classroom dimension required by the LIOS strategy.
+    event_uid: string;
+    client_seq: number;
+    client_ts: string;
+    context: SessionContextKind;
 }
 
 /** One row in the learning_attempts table. The mode logic files don't
@@ -191,6 +215,14 @@ interface LearningRow {
     expected_value: string | null;
     actual_value: string | null;
     meta: Record<string, unknown>;
+
+    // LIOS envelope mirrors the originating event so the
+    // mastery-fact pipeline shares the same idempotency guarantees
+    // as the raw event log.
+    event_uid: string;
+    client_seq: number;
+    client_ts: string;
+    context: SessionContextKind;
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -203,6 +235,13 @@ interface SessionContext {
     schoolId: string;
     classId: string;
     startedAt: string;
+    /**
+     * LIOS context flag. 'home' is the default for sessions that
+     * begin without a classroom code; flipped to 'classroom' when
+     * a classroom redemption flow runs (sprint 4). Persisted in
+     * sessionStorage so a tab refresh doesn't lose it.
+     */
+    context: SessionContextKind;
 }
 
 const SESSION_KEY = 'dita_analytics_session';
@@ -228,6 +267,17 @@ function nextAttemptNumber(itemKey: string): number {
     const n = (attemptCounters.get(itemKey) ?? 0) + 1;
     attemptCounters.set(itemKey, n);
     return n;
+}
+
+// ── LIOS Sprint 1: per-session monotonic event sequence ─────────
+// client_seq is incremented for every event in the session and
+// recorded on the row so downstream jobs can reconstruct true
+// ordering even when the offline queue flushes out of order.
+// Resets to 0 on every new session.
+let clientSeq = 0;
+function nextClientSeq(): number {
+    clientSeq += 1;
+    return clientSeq;
 }
 
 // ── Fatigue + per-action timing ─────────────────────────────────
@@ -363,6 +413,9 @@ function getOrCreateSession(): SessionContext {
     if (session) return session;
     const restored = loadSession();
     if (restored) {
+        // Older restored sessions may not carry the LIOS context
+        // field — synthesise the default so the type stays narrow.
+        if (!restored.context) restored.context = resolveDefaultContext();
         session = restored;
         return session;
     }
@@ -372,9 +425,54 @@ function getOrCreateSession(): SessionContext {
         schoolId: '',
         classId: '',
         startedAt: new Date().toISOString(),
+        context: resolveDefaultContext(),
     };
     persistSession(session);
     return session;
+}
+
+// ── LIOS Sprint 1: session context resolution ──────────────────
+// Resolution order (highest priority first):
+//   1. Explicit ?context=home|classroom URL param   — ops override
+//   2. localStorage 'dita_session_context'           — sticky pref
+//   3. Default 'home' for non-classroom installs
+//
+// Sprint 4 will replace this with a classroom-code redemption
+// flow that flips the context to 'classroom' on a per-device,
+// per-session basis. Until then, this conservative default
+// ensures we never silently mis-attribute a home session as
+// classroom — and the URL-param override lets pilot schools
+// be tagged correctly today.
+const CONTEXT_KEY = 'dita_session_context';
+function resolveDefaultContext(): SessionContextKind {
+    if (typeof window === 'undefined') return 'unknown';
+    try {
+        const param = new URLSearchParams(window.location.search).get('context');
+        if (param === 'home' || param === 'classroom') {
+            // Persist for the rest of this device's sessions
+            try { localStorage.setItem(CONTEXT_KEY, param); } catch { /* ignore */ }
+            return param;
+        }
+        const stored = localStorage.getItem(CONTEXT_KEY);
+        if (stored === 'home' || stored === 'classroom') return stored;
+    } catch { /* private mode etc. */ }
+    return 'home';
+}
+
+/**
+ * Flip the current session's context (e.g. after a classroom code
+ * is redeemed). Persists to sessionStorage so subsequent events
+ * carry the new context. Idempotent — calling with the current
+ * context is a no-op.
+ */
+export function setSessionContext(kind: SessionContextKind): void {
+    const s = session ?? loadSession();
+    if (!s) return;
+    if (s.context === kind) return;
+    s.context = kind;
+    session = s;
+    persistSession(s);
+    try { localStorage.setItem(CONTEXT_KEY, kind); } catch { /* ignore */ }
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -441,10 +539,14 @@ function buildRow(name: EventName, opts: EventOptions = {}): EventRow {
     const ctx = getOrCreateSession();
     const { browser, version } = detectBrowser();
     const utm = getUTMParams();
+    // The LIOS envelope is computed at the moment of event creation —
+    // NEVER at flush time — so retries of the same event preserve
+    // identity and ordering even if the flush is delayed by hours.
+    const now = new Date().toISOString();
     return {
         session_id: ctx.sessionId,
         device_id: getOrCreateDeviceId(),
-        occurred_at: new Date().toISOString(),
+        occurred_at: now,
         event_name: name,
         page: opts.page || (typeof window !== 'undefined' ? window.location.pathname : null),
         component: opts.component || null,
@@ -467,6 +569,19 @@ function buildRow(name: EventName, opts: EventOptions = {}): EventRow {
         referrer: typeof document !== 'undefined' ? (document.referrer || null) : null,
         value_number: opts.value_number ?? null,
         meta: opts.meta || {},
+
+        // LIOS envelope. event_uid is the idempotency key —
+        // generated at event creation so retried inserts collapse
+        // on the unique index. client_seq orders events within the
+        // session independent of flush order. client_ts is the
+        // wall clock at creation; occurred_at is preserved as the
+        // canonical timestamp (it's now identical at creation,
+        // but if/when the server starts overwriting it on insert
+        // these two will diverge and downstream jobs need both).
+        event_uid: generateUUID(),
+        client_seq: nextClientSeq(),
+        client_ts: now,
+        context: ctx.context,
     };
 }
 
@@ -506,6 +621,11 @@ async function flush(): Promise<void> {
 
     // Mirror flush of learning_attempts. Same return=minimal trick as
     // analytics_events to dodge the SELECT-after-INSERT RLS rollback.
+    //
+    // LIOS: ignoreDuplicates makes the bulk insert tolerant of
+    // event_uid collisions — when an offline-queue retry races a
+    // partial-success flush, the duplicate rows are silently
+    // skipped instead of aborting the whole batch.
     if (learningQueue.length > 0) {
         const learningBatch = learningQueue.splice(0, FLUSH_BATCH_SIZE);
         persistLearningQueue();
@@ -513,7 +633,7 @@ async function flush(): Promise<void> {
             const { error } = await dbInsert(
                 'learning_attempts',
                 learningBatch as unknown as Record<string, unknown>,
-                { returning: false },
+                { returning: false, ignoreDuplicates: true },
             );
             if (error) {
                 learningQueue = [...learningBatch, ...learningQueue];
@@ -552,7 +672,7 @@ async function flush(): Promise<void> {
         const { error } = await dbInsert(
             'analytics_events',
             batch as unknown as Record<string, unknown>,
-            { returning: false },
+            { returning: false, ignoreDuplicates: true },
         );
         if (error) {
             // Put the batch back at the front of the queue and retry next tick
@@ -597,6 +717,12 @@ function setupBeforeUnload(): void {
     window.addEventListener('beforeunload', () => {
         // Use sendBeacon for reliable last-gasp delivery during page unload.
         // dbInsert won't work here because the page is being torn down.
+        //
+        // LIOS: sendBeacon doesn't expose the Prefer header (the body
+        // is a Blob and the browser sets Content-Type only). We append
+        // the resolution preference as a URL hint that PostgREST also
+        // accepts on the query string — same effect, duplicate
+        // event_uids are silently ignored instead of failing the batch.
         if (eventQueue.length === 0 || typeof navigator.sendBeacon !== 'function') return;
         const url = (import.meta.env.VITE_SUPABASE_URL as string) || '';
         const key = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || '';
@@ -604,7 +730,7 @@ function setupBeforeUnload(): void {
         const body = new Blob([JSON.stringify(eventQueue)], { type: 'application/json' });
         try {
             navigator.sendBeacon(
-                `${url}/rest/v1/analytics_events?apikey=${encodeURIComponent(key)}`,
+                `${url}/rest/v1/analytics_events?apikey=${encodeURIComponent(key)}&on_conflict=event_uid`,
                 body,
             );
             eventQueue = [];
@@ -711,12 +837,19 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
     if (name === 'stage_completed' || name === 'mode_completed' || name === 'mode_abandoned') {
         clearStuckWatcher();
     }
-    eventQueue.push(buildRow(name, opts));
+    const row = buildRow(name, opts);
+    eventQueue.push(row);
     persistQueue();
 
     // Mirror item_dropped into the learning_attempts table when the
     // meta carries the necessary fields. Mode logic files therefore
     // never have to know about that table.
+    //
+    // CRITICAL: the mirrored row reuses the parent event's LIOS
+    // envelope (event_uid, client_seq, client_ts, context) so the
+    // two rows can be joined cleanly downstream AND so the unique
+    // event_uid index on learning_attempts gives us the same
+    // idempotency guarantee as analytics_events.
     if (name === 'item_dropped') {
         const m = opts.meta ?? {};
         const itemKey = (m.itemKey ?? m.item_key) as unknown;
@@ -734,7 +867,7 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
                 (m.actual_letter as string | undefined) ??
                 null;
             learningQueue.push({
-                occurred_at: new Date().toISOString(),
+                occurred_at: row.occurred_at,
                 session_id: ctx.sessionId,
                 device_id: getOrCreateDeviceId(),
                 game_mode: opts.game_mode,
@@ -748,6 +881,14 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
                 expected_value: expected,
                 actual_value: actual,
                 meta: m as Record<string, unknown>,
+
+                // Inherit the LIOS envelope from the parent event
+                // so analytics_events.event_uid ⇔ learning_attempts.event_uid
+                // joins are 1:1, and offline-queue retries dedupe.
+                event_uid: row.event_uid,
+                client_seq: row.client_seq,
+                client_ts: row.client_ts,
+                context: row.context,
             });
             persistLearningQueue();
         }
@@ -817,14 +958,26 @@ export function exposeFeatureFlag(name: string, variant: string | boolean | numb
 /**
  * Start a session and capture the age-band context that subsequent
  * events should inherit. Called from TryFreeModal.handleStart().
+ *
+ * LIOS Sprint 1: accepts an optional `context` override so that the
+ * (future) classroom-code redemption flow can set the session as
+ * classroom-context at the moment it begins, rather than relying on
+ * a post-hoc setSessionContext() call. Defaults to whatever
+ * resolveDefaultContext() decides (URL param > localStorage > 'home').
  */
-export function startSession(input: { ageBand: AgeBand; schoolId?: string; classId?: string }): string {
+export function startSession(input: {
+    ageBand: AgeBand;
+    schoolId?: string;
+    classId?: string;
+    context?: SessionContextKind;
+}): string {
     session = {
         sessionId: generateUUID(),
         ageBand: input.ageBand,
         schoolId: input.schoolId ?? '',
         classId: input.classId ?? '',
         startedAt: new Date().toISOString(),
+        context: input.context ?? resolveDefaultContext(),
     };
     persistSession(session);
     // Reset per-session derived state so a fresh session doesn't
@@ -835,6 +988,7 @@ export function startSession(input: { ageBand: AgeBand; schoolId?: string; class
     grabTimers.clear();
     attemptCounters.clear();
     oncePerSessionFired.clear();
+    clientSeq = 0;  // LIOS: per-session monotonic counter restart
     startFlushTimer();
     startHeartbeat();
     logEvent('session_started');
@@ -870,6 +1024,7 @@ export function endSession(reason: string = 'unspecified'): void {
     exposedFlags.clear();
     grabTimers.clear();
     attemptCounters.clear();
+    clientSeq = 0;  // LIOS: counter resets with the session
     clearStuckWatcher();
 }
 
@@ -913,10 +1068,12 @@ export function initAnalytics(): void {
     (window as { dita_analytics?: unknown }).dita_analytics = {
         logEvent, startSession, endSession, hasActiveSession, getSessionId,
         markGrab, elapsedSinceGrab, noteTwoHandsSeen, exposeFeatureFlag,
-        noteProductiveAction, clearStuckWatcher,
+        noteProductiveAction, clearStuckWatcher, setSessionContext,
         getQueueSize: () => eventQueue.length,
         getDeviceId: getOrCreateDeviceId,
         getActionTimings: () => [...actionTimings],
+        getClientSeq: () => clientSeq,
+        getContext: () => (session ?? loadSession())?.context ?? 'unknown',
         flushNow: flush,
     };
 }
@@ -939,5 +1096,6 @@ export const analytics = {
     exposeFeatureFlag,
     noteProductiveAction,
     clearStuckWatcher,
+    setSessionContext,
     getDeviceId: getOrCreateDeviceId,
 };

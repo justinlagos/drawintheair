@@ -9,7 +9,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Card, Skeleton, Empty, Tag, TableWrap, StrengthBar, StrengthKey, InlineBar } from '../components';
+import { Card, Skeleton, Empty, Tag, TableWrap, StrengthBar, StrengthKey, InlineBar, TrustStrip } from '../components';
 import { fmtNum, fmtPct, days as rangeDays, useRpc, downloadCsv } from '../helpers';
 import { fetchMasterySummary, fetchCurriculum } from '../rpc';
 import type { FilterState, MasteryItemSummary } from '../types';
@@ -50,6 +50,15 @@ export const LearningTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
 
     return (
         <>
+            {/* LIOS Trust v1 — full panel. The Learning tab is the
+                natural home: it makes the data quality behind every
+                mastery claim visible at a glance, plus per-mode
+                composition (pre-writing's anomaly first surfaced here). */}
+            <div className="iv-col-12">
+                <TrustStrip range={filter.range} variant="full"
+                    title="Underneath every mastery claim on this tab" />
+            </div>
+
             {/* Summary KPIs — what's actually been learned */}
             <div className="iv-col-12 iv-kpi-grid">
                 <Kpi label="Items kids have mastered"

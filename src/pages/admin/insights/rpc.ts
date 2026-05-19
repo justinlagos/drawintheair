@@ -12,6 +12,7 @@ import type {
     EngagementDeepData, MasterySummaryData, RetentionDeepData,
     TodayData, FunnelData, TrackerData, ModesData, ErrorsData,
     CohortData, MasteryData, CurriculumData, MilestonesData, SessionsData,
+    TrustStripData,
 } from './types';
 
 async function callRpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T> {
@@ -53,6 +54,12 @@ export const fetchMasterySummary = (days = 30) =>
 
 export const fetchRetentionDeep = () =>
     callRpc<RetentionDeepData>('dashboard_retention_deep', {});
+
+// LIOS Trust v1 — composition strip data for the dashboards.
+// Wired onto every tab so the audience can audit data quality
+// underneath every chart they're looking at.
+export const fetchTrustStrip = (days: number) =>
+    callRpc<TrustStripData>('dashboard_trust_strip', { in_days: days });
 
 // Existing v1 RPCs (preserved) ───────────────────────────────────────────
 export const fetchToday      = () => callRpc<TodayData>('dashboard_today', {});

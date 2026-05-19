@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { Card, Skeleton, Empty, Tag, CohortCurves, Heatmap, DualAreaChart, TableWrap } from '../components';
+import { Card, Skeleton, Empty, Tag, CohortCurves, Heatmap, DualAreaChart, TableWrap, TrustStrip } from '../components';
 import { fmtNum, fmtPct, useRpc, downloadCsv } from '../helpers';
 import { fetchRetentionDeep, fetchCohortCurves, fetchCohorts } from '../rpc';
 
@@ -38,6 +38,14 @@ export const RetentionTab: React.FC = () => {
 
     return (
         <>
+            {/* LIOS Trust v1 — retention claims need a data-quality
+                anchor too. A retention curve drawn from contaminated
+                attempts is the most expensive kind of bad number. */}
+            <div className="iv-col-12">
+                <TrustStrip range="30d"
+                    title="Underneath the retention metrics on this tab" />
+            </div>
+
             {/* Stickiness + headline */}
             <div className="iv-col-6">
                 <Card title="Stickiness — how often kids come back"

@@ -6,8 +6,9 @@
  */
 
 import React from 'react';
-import { CHART_COLORS, deltaTone, fmtDelta, fmtNum } from './helpers';
-import type { CohortCurve, SparkPoint } from './types';
+import { CHART_COLORS, deltaTone, fmtDelta, fmtNum, useRpc, days as rangeDays } from './helpers';
+import { fetchTrustStrip } from './rpc';
+import type { CohortCurve, SparkPoint, TrustStripData, Range } from './types';
 
 // ── Tag ─────────────────────────────────────────────────────────────
 export const Tag: React.FC<{
@@ -41,6 +42,165 @@ export const Card: React.FC<{
 export const Empty: React.FC<{ message: React.ReactNode }> = ({ message }) => (
     <div className="iv-empty">{message}</div>
 );
+
+// ── LIOS Trust v1 — composition strip ───────────────────────────────
+//
+// Renders the data-quality denominator under every chart. Three modes:
+//
+//   • <TrustStrip range="30d" />              — compact bar, one line
+//   • <TrustStrip range="30d" variant="full" />  — full panel with
+//                                                  per-mode breakdown
+//                                                  and top reason list
+//   • <TrustStrip range="30d" compact />        — micro inline pill
+//                                                  ("96.7% Tier A")
+//
+// All variants hit the same dashboard_trust_strip RPC and so share a
+// single network call when more than one is mounted on the same tab.
+
+const TIER_COLOURS = {
+    A: '#7ED957',   // meadow green — full credibility
+    B: '#FFB14D',   // warm orange — reduced weight
+    C: '#FF6B6B',   // coral — quarantined
+} as const;
+
+const REASON_LABELS: Record<string, string> = {
+    timing_distraction:      'Slow response (likely distracted)',
+    timing_reflex_floor:     'Too fast to be intentional',
+    timing_missing:          'Response time not recorded',
+    tab_hidden_during_window: 'Tab was hidden during the attempt',
+    stuck_recent:            'Stuck immediately before',
+    two_hands_session:       'Two hands seen in session',
+};
+const reasonLabel = (r: string) => REASON_LABELS[r] ?? r;
+
+const TierBar: React.FC<{ data: TrustStripData }> = ({ data }) => {
+    const seg = (n: number, total: number) =>
+        total > 0 ? `${(100 * n / total).toFixed(1)}%` : '0%';
+    return (
+        <div className="iv-trust-bar" role="img"
+             aria-label={`Trust composition: Tier A ${data.pct_a ?? 0}%, Tier B ${data.pct_b ?? 0}%, Tier C ${data.pct_c ?? 0}%`}>
+            <i style={{ width: seg(data.tier_a, data.total), background: TIER_COLOURS.A }} />
+            <i style={{ width: seg(data.tier_b, data.total), background: TIER_COLOURS.B }} />
+            <i style={{ width: seg(data.tier_c, data.total), background: TIER_COLOURS.C }} />
+        </div>
+    );
+};
+
+const TierLegend: React.FC<{ data: TrustStripData }> = ({ data }) => (
+    <div className="iv-trust-legend">
+        <span><i style={{ background: TIER_COLOURS.A }} />A · full · {fmtNum(data.tier_a)} ({data.pct_a ?? 0}%)</span>
+        <span><i style={{ background: TIER_COLOURS.B }} />B · reduced · {fmtNum(data.tier_b)} ({data.pct_b ?? 0}%)</span>
+        <span><i style={{ background: TIER_COLOURS.C }} />C · quarantined · {fmtNum(data.tier_c)} ({data.pct_c ?? 0}%)</span>
+    </div>
+);
+
+export const TrustStrip: React.FC<{
+    range: Range;
+    variant?: 'inline' | 'full';
+    compact?: boolean;
+    title?: string;
+}> = ({ range, variant = 'inline', compact = false, title }) => {
+    const d = rangeDays(range);
+    const strip = useRpc<TrustStripData>(() => fetchTrustStrip(d), [d]);
+
+    if (strip.loading && !strip.data) {
+        return <div className="iv-trust-strip iv-trust-loading" aria-live="polite">
+            Checking data quality…
+        </div>;
+    }
+    if (strip.error || !strip.data) {
+        return <div className="iv-trust-strip iv-trust-error">
+            Trust composition unavailable
+        </div>;
+    }
+    const t = strip.data;
+    if (t.total === 0) {
+        return <div className="iv-trust-strip iv-trust-empty">
+            No scored attempts in the last {t.days} days.
+        </div>;
+    }
+
+    if (compact) {
+        return (
+            <span className="iv-trust-pill"
+                  title={`${fmtNum(t.tier_a)} of ${fmtNum(t.total)} attempts at full credibility (Tier A) in the last ${t.days} days`}>
+                <i style={{ background: TIER_COLOURS.A }} />
+                {t.pct_a ?? 0}% Tier A · n={fmtNum(t.total)}
+            </span>
+        );
+    }
+
+    return (
+        <div className={`iv-trust-strip ${variant === 'full' ? 'iv-trust-full' : ''}`}>
+            <div className="iv-trust-head">
+                <div className="iv-trust-title">
+                    <span className="iv-trust-label">Data quality · LIOS Trust v1</span>
+                    {title && <span className="iv-trust-subtitle">{title}</span>}
+                </div>
+                <div className="iv-trust-summary">
+                    <strong>{t.pct_a ?? 0}%</strong> Tier A
+                    <span className="iv-trust-divider">·</span>
+                    {fmtNum(t.total)} attempts in last {t.days} days
+                    <span className="iv-trust-divider">·</span>
+                    mean score {t.mean_score.toFixed(2)}
+                </div>
+            </div>
+            <TierBar data={t} />
+            <TierLegend data={t} />
+
+            {variant === 'full' && t.by_mode.length > 0 && (
+                <details className="iv-trust-details" open>
+                    <summary>Per-game-mode composition</summary>
+                    <table className="iv-trust-mode-table">
+                        <thead>
+                            <tr>
+                                <th>Game mode</th>
+                                <th>Attempts</th>
+                                <th>Tier A</th>
+                                <th>Tier B</th>
+                                <th>Tier C</th>
+                                <th>Composition</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {t.by_mode.map(m => (
+                                <tr key={m.game_mode}
+                                    className={(m.pct_a ?? 100) < 85 ? 'iv-trust-flag' : ''}>
+                                    <td>{m.game_mode}</td>
+                                    <td>{fmtNum(m.total)}</td>
+                                    <td>{m.pct_a ?? 0}%</td>
+                                    <td>{m.pct_b ?? 0}%</td>
+                                    <td>{m.pct_c ?? 0}%</td>
+                                    <td>
+                                        <div className="iv-trust-bar iv-trust-bar-mini">
+                                            <i style={{ width: `${m.pct_a ?? 0}%`, background: TIER_COLOURS.A }} />
+                                            <i style={{ width: `${m.pct_b ?? 0}%`, background: TIER_COLOURS.B }} />
+                                            <i style={{ width: `${m.pct_c ?? 0}%`, background: TIER_COLOURS.C }} />
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </details>
+            )}
+
+            {variant === 'full' && t.top_reasons.length > 0 && (
+                <details className="iv-trust-details">
+                    <summary>Why attempts were down-weighted (top reasons)</summary>
+                    <ul className="iv-trust-reasons">
+                        {t.top_reasons.map(r => (
+                            <li key={r.reason}>
+                                <span>{reasonLabel(r.reason)}</span>
+                                <span className="iv-trust-reason-n">{fmtNum(r.n)} attempts</span>
+                            </li>
+                        ))}
+                    </ul>
+                </details>
+            )}
+        </div>
+    );
+};
 
 // ── Skeleton ────────────────────────────────────────────────────────
 export const Skeleton: React.FC<{ count?: number }> = ({ count = 1 }) => (
