@@ -1,0 +1,229 @@
+/* =====================================================================
+   /transparency — public LIOS trust composition report
+   ===================================================================== */
+
+.tx-shell {
+    --plum: #6C3FA4;
+    --paper: #FAFAFD;
+    --card: #FFFFFF;
+    --line: rgba(63, 64, 82, 0.10);
+    --ink: #1A1B2E;
+    --flat: #6B6F84;
+    min-height: 100vh;
+    background: var(--paper);
+    color: var(--ink);
+    font: 15px/1.55 Nunito, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── Header ────────────────────────────────────────────────────── */
+.tx-header {
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 5;
+}
+.tx-header-inner {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 14px 24px;
+    display: flex; align-items: center; gap: 16px;
+    justify-content: space-between;
+}
+.tx-brand {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--plum); text-decoration: none;
+    font: 700 14px Fredoka, system-ui, sans-serif;
+}
+.tx-brand img { height: 26px; }
+.tx-nav { display: flex; gap: 14px; }
+.tx-nav a {
+    color: var(--flat); text-decoration: none;
+    font: 600 13px Nunito, system-ui, sans-serif;
+}
+.tx-nav a:hover { color: var(--plum); }
+
+/* ── Main ─────────────────────────────────────────────────────── */
+.tx-main {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+}
+
+.tx-hero {
+    margin-bottom: 28px;
+}
+.tx-eyebrow {
+    font: 700 11px Nunito, system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--plum);
+    margin-bottom: 10px;
+}
+.tx-hero h1 {
+    margin: 0 0 12px;
+    font: 700 36px/1.15 Fredoka, system-ui, sans-serif;
+    letter-spacing: -0.01em;
+}
+.tx-hero p {
+    margin: 0;
+    color: var(--flat);
+    font-size: 16px;
+    max-width: 640px;
+}
+
+.tx-range {
+    display: flex; gap: 8px; margin-top: 20px;
+}
+.tx-range-pill {
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 7px 14px;
+    border-radius: 999px;
+    font: 700 12px Nunito, system-ui, sans-serif;
+    color: var(--flat);
+    cursor: pointer;
+}
+.tx-range-pill.is-active {
+    background: var(--plum); color: #fff; border-color: var(--plum);
+}
+
+/* ── Card ─────────────────────────────────────────────────────── */
+.tx-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+}
+.tx-card h2 {
+    margin: 0 0 6px;
+    font: 700 22px Fredoka, system-ui, sans-serif;
+}
+.tx-card h3 {
+    margin: 18px 0 6px;
+    font: 700 14px Fredoka, system-ui, sans-serif;
+}
+.tx-card-sub {
+    margin: 0 0 18px;
+    color: var(--flat);
+    font-size: 14px;
+}
+.tx-muted { color: var(--flat); }
+
+/* ── Bar ─────────────────────────────────────────────────────── */
+.tx-bar {
+    display: flex; width: 100%; height: 24px;
+    border-radius: 8px; overflow: hidden;
+    background: rgba(63, 64, 82, 0.06);
+    margin: 10px 0;
+}
+.tx-bar i { display: block; height: 100%; }
+.tx-bar-mini { height: 8px; max-width: 140px; }
+
+/* ── Legend ─────────────────────────────────────────────────── */
+.tx-legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px; margin-top: 18px;
+}
+.tx-legend-item {
+    border-left: 3px solid var(--line);
+    padding-left: 12px;
+}
+.tx-legend-row {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px;
+}
+.tx-legend-row i {
+    width: 12px; height: 12px; border-radius: 3px;
+    display: inline-block;
+}
+.tx-legend-pct {
+    margin-left: auto;
+    font: 700 14px Fredoka, system-ui, sans-serif;
+    color: var(--ink);
+}
+.tx-legend-note {
+    margin-top: 4px;
+    font-size: 12.5px;
+    color: var(--flat);
+}
+
+/* ── Tables ─────────────────────────────────────────────────── */
+.tx-table, .tx-meta-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 14px;
+}
+.tx-table th, .tx-meta-table th {
+    text-align: left;
+    font: 700 11px Nunito, system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--flat);
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--line);
+}
+.tx-table td, .tx-meta-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--line);
+}
+.tx-meta-table th { white-space: nowrap; width: 200px; }
+
+.tx-rules { margin: 6px 0 0; padding-left: 20px; font-size: 13.5px; color: var(--flat); }
+.tx-rules li { margin-bottom: 4px; }
+.tx-rules code {
+    background: rgba(108, 63, 164, 0.06);
+    padding: 1px 6px; border-radius: 4px;
+    font-size: 12.5px;
+    color: var(--plum);
+}
+
+.tx-posture {
+    margin: 0; padding-left: 20px;
+    font-size: 14.5px; color: var(--ink);
+}
+.tx-posture li { margin-bottom: 8px; }
+
+.tx-fineprint {
+    background: var(--paper);
+    border-style: dashed;
+}
+.tx-fineprint p { font-size: 13.5px; color: var(--flat); margin: 6px 0; }
+.tx-fineprint code {
+    background: var(--card);
+    padding: 1px 6px; border-radius: 4px;
+    font-size: 12.5px;
+    color: var(--plum);
+}
+
+.tx-error {
+    background: rgba(193, 58, 58, 0.08);
+    border: 1px solid rgba(193, 58, 58, 0.25);
+    color: #C13A3A;
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+
+/* ── Footer ─────────────────────────────────────────────────── */
+.tx-footer {
+    border-top: 1px solid var(--line);
+    text-align: center;
+    padding: 24px;
+    color: var(--flat);
+}
+.tx-footer a {
+    color: var(--flat); text-decoration: none;
+    margin: 0 6px;
+}
+.tx-footer a:hover { color: var(--plum); }
+
+/* ── Mobile ─────────────────────────────────────────────────── */
+@media (max-width: 639px) {
+    .tx-hero h1     { font-size: 28px; }
+    .tx-hero p      { font-size: 15px; }
+    .tx-main        { padding: 24px 16px 56px; }
+    .tx-card        { padding: 18px; border-radius: 14px; }
+    .tx-table, .tx-meta-table { font-size: 13px; }
+    .tx-meta-table th { width: auto; }
+    .tx-range       { flex-wrap: wrap; }
+}

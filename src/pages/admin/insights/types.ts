@@ -9,7 +9,7 @@ export const RANGE_DAYS: Record<Range, number> = { '24h': 1, '7d': 7, '30d': 30,
 
 export type TabKey =
     | 'executive' | 'engagement' | 'learning'
-    | 'retention' | 'sessions' | 'errors' | 'friction' | 'progression' | 'adaptive' | 'observations';
+    | 'retention' | 'sessions' | 'errors' | 'friction' | 'progression' | 'adaptive' | 'observations' | 'observability';
 
 export interface FilterState {
     range: Range;
@@ -176,6 +176,90 @@ export interface LiveData {
     active_count: number;
     by_mode: Record<string, number>;
     sessions: LiveSessionRow[];
+}
+
+// ── LIOS Sprint 6 — Observability + SLOs ───────────────────────────────
+export type SloStatus = 'green' | 'amber' | 'red' | 'no_data';
+export interface SloBlock {
+    target_pct?:        number;
+    target_pct_max?:    number;
+    target_max?:        number;
+    target_failures_24h?: number;
+    current_pct?:       number | null;
+    current?:           number | null;
+    duplicates_count?:  number;
+    runs_24h?:          number;
+    avg_duration_ms?:   number | null;
+    current_failures_24h?: number;
+    status:             SloStatus;
+}
+export interface ObservabilityAnomaly {
+    id:            string;
+    detected_at:   string;
+    metric:        string;
+    severity:      'info' | 'warn' | 'critical';
+    current_value: number | null;
+    baseline_mean: number | null;
+    baseline_sd:   number | null;
+    z_score:       number | null;
+    reason:        string | null;
+}
+export interface ObservabilityData {
+    days:  number;
+    as_of: string;
+    ingest: {
+        events_total:         number;
+        events_with_envelope: number;
+        events_legacy:        number;
+        distinct_event_uids:  number;
+        hours_observed:       number;
+    };
+    latency: {
+        rows_with_client_ts: number;
+        p50_latency_ms:      number | null;
+        p95_latency_ms:      number | null;
+        p99_latency_ms:      number | null;
+    };
+    by_hour_24h: Array<{ h: string; n: number }>;
+    by_build:    Array<{ build: string; n: number }>;
+    slos: {
+        event_durability:         SloBlock;
+        idempotency:              SloBlock;
+        ingestion_latency_p99_ms: SloBlock;
+        session_quality:          SloBlock;
+        cron_health:              SloBlock;
+    };
+    recent_anomalies: ObservabilityAnomaly[];
+}
+
+export interface TransparencyReportData {
+    report_version: string;
+    generated_at:   string;
+    window_days:    number;
+    methodology: {
+        trust_v1_thresholds: {
+            tier_a_min: number;
+            tier_b_min: number;
+            tier_c_max: number;
+            publication_eligibility_min: number;
+        };
+        rules:           string[];
+        privacy_posture: string[];
+    };
+    composition: {
+        attempts_rounded: number;
+        tier_a_pct:       number | null;
+        tier_b_pct:       number | null;
+        tier_c_pct:       number | null;
+    };
+    by_game_mode: Array<{
+        game_mode: string;
+        total:     number;
+        pct_a:     number;
+        pct_b:     number;
+        pct_c:     number;
+    }>;
+    coverage_disclaimer: string;
 }
 
 // ── LIOS Sprint 4 — Human Observation Layer ────────────────────────────

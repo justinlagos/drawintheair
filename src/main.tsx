@@ -49,6 +49,7 @@ const ShareLandingPage = React.lazy(() => import('./pages/seo/ShareLandingPage.t
 // Admin — internal analytics insights (auth-gated, allow-list)
 const InsightsDashboard = React.lazy(() => import('./pages/admin/InsightsDashboard.tsx'));
 const TeachObservePage  = React.lazy(() => import('./pages/teach/TeachObservePage.tsx'));
+const TransparencyPage  = React.lazy(() => import('./pages/TransparencyPage.tsx'));
 
 // Setup guides — idiot-proof quick-start, print-optimised for A4.
 const TeacherSetupGuide = React.lazy(() => import('./pages/setup/TeacherSetupGuide.tsx'));
@@ -86,6 +87,7 @@ function getRouteFromPath(path: string, hash: string): string {
   if (path === '/admin/insights') return 'admin-insights';
   if (path === '/admin') return 'admin';
   if (path === '/teach/observe') return 'teach-observe';
+  if (path === '/transparency') return 'transparency';
   if (path === '/demo') return 'demo';
   if (path === '/play' || path === '/onboarding') return 'play';
   if (path === '/app' || hash === '#app') return 'app';
@@ -267,6 +269,14 @@ function Root() {
     return (
       <React.Suspense fallback={<DemoLoader />}>
         <TeachObservePage />
+      </React.Suspense>
+    );
+  }
+
+  if (route === 'transparency') {
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <TransparencyPage />
       </React.Suspense>
     );
   }

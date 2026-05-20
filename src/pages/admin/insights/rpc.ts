@@ -15,6 +15,7 @@ import type {
     TrustStripData, FrictionEngineeringData, MasteryV2Data, ContextSplitData,
     ProgressionTopLearners, ProgressionLearnerData,
     AdaptiveDecisionsData, ObservationsData, ExportHeadline,
+    ObservabilityData, TransparencyReportData,
 } from './types';
 
 async function callRpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T> {
@@ -89,6 +90,14 @@ export const fetchProgressionForLearner = (deviceId: string) =>
 // fire counts, recent decisions with full reasoning.
 export const fetchAdaptiveDecisions = (days: number) =>
     callRpc<AdaptiveDecisionsData>('dashboard_adaptive_decisions', { in_days: days });
+
+// LIOS Sprint 6 — Observability + SLOs (engineering tab) and the
+// public transparency report (anon-readable, k-anonymised).
+export const fetchObservability = (days: number) =>
+    callRpc<ObservabilityData>('dashboard_observability', { in_days: days });
+
+export const fetchTransparencyReport = (days: number) =>
+    callRpc<TransparencyReportData>('dashboard_transparency_report', { in_days: days });
 
 // LIOS Sprint 4 — Human Observation Layer.
 export const fetchObservations = (days: number) =>

@@ -34,6 +34,7 @@ import { FrictionTab } from './insights/tabs/FrictionTab';
 import { ProgressionTab } from './insights/tabs/ProgressionTab';
 import { AdaptiveTab } from './insights/tabs/AdaptiveTab';
 import { ObservationsTab } from './insights/tabs/ObservationsTab';
+import { ObservabilityTab } from './insights/tabs/ObservabilityTab';
 import { PrintReport } from './insights/PrintReport';
 import './insights/insights.css';
 
@@ -53,6 +54,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
     { key: 'progression', label: 'Progression' },
     { key: 'adaptive',    label: 'Adaptive' },
     { key: 'observations', label: 'Observations' },
+    { key: 'observability', label: 'Observability' },
 ];
 
 const RANGES: Array<{ key: Range; label: string }> = [
@@ -327,6 +329,7 @@ const AuthenticatedDashboard: React.FC<{ email: string; onSignOut: () => Promise
                 {filter.tab === 'progression' && <ProgressionTab filter={filter} />}
                 {filter.tab === 'adaptive'   && <AdaptiveTab   filter={filter} />}
                 {filter.tab === 'observations' && <ObservationsTab filter={filter} />}
+                {filter.tab === 'observability' && <ObservabilityTab filter={filter} />}
             </main>
         </div>
     );
