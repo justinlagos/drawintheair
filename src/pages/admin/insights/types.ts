@@ -232,6 +232,21 @@ export interface ObservabilityData {
     recent_anomalies: ObservabilityAnomaly[];
 }
 
+export interface TransparencySignalsData {
+    days:  number;
+    as_of: string;
+    impact: {
+        skills_mastered:          number;
+        learners_active:          number;
+        sessions_run:             number;
+        avg_attempts_per_session: number | null;
+        classrooms_engaged:       number;
+    };
+    top_engaging_mode: string | null;
+    strongest_signal:        { game_mode: string; pct_a: number | null } | null;
+    calibration_in_progress: { game_mode: string; pct_a: number | null } | null;
+}
+
 export interface TransparencyReportData {
     report_version: string;
     generated_at:   string;
