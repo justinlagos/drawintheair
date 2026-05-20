@@ -30,6 +30,7 @@ import {
     type Variants,
 } from 'framer-motion';
 import { TryFreeModal } from '../components/TryFreeModal';
+import { BrandLogo } from '../components/BrandLogo';
 import { SEOMeta } from '../seo/SEOMeta';
 import { logEvent } from '../lib/analytics';
 import { getSupabaseUrl, getAnonKey } from '../lib/supabase';
@@ -449,7 +450,7 @@ const Nav: React.FC<{ onTryFree: () => void; proof: TickerProof | null }> = ({ o
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
             <a href="#hero" className="lp-nav-brand" aria-label="Draw in the Air home" onClick={go('hero')}>
-                <img src="/logo.png" alt="Draw in the Air" />
+                <BrandLogo variant="header" />
             </a>
             <nav className="lp-nav-links" aria-label="Primary">
                 <a href="#how-it-works" onClick={go('how-it-works')}>How it works</a>
@@ -618,7 +619,7 @@ const Hero: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
                             transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
                         >
                             <span className="lp-hero-device-brand">
-                                <img src="/logo.png" alt="" /> Draw in the Air
+                                <BrandLogo variant="compact" decorative /> Draw in the Air
                             </span>
                             {videoReady ? (
                                 <video
@@ -1307,7 +1308,7 @@ const Footer: React.FC = () => (
     <footer className="lp-footer">
         <div className="lp-footer-inner">
             <div className="lp-footer-brand">
-                <img src="/logo.png" alt="Draw in the Air" />
+                <BrandLogo variant="footer" />
                 <p>Movement-based learning for curious kids.</p>
             </div>
             <div className="lp-footer-cols">

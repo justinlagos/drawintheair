@@ -410,12 +410,12 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = {
-  h2: { color: 'white', fontSize: '1.6rem', fontWeight: 800, marginBottom: 20 } as React.CSSProperties,
-  h3: { color: 'white', fontSize: '1.2rem', fontWeight: 700, marginBottom: 12 } as React.CSSProperties,
-  body: { color: '#94a3b8', fontSize: '1.05rem', lineHeight: 1.65, marginBottom: 20 } as React.CSSProperties,
+  h2: { color: '#1A1B2E', fontSize: '1.6rem', fontWeight: 800, marginBottom: 20 } as React.CSSProperties,
+  h3: { color: '#1A1B2E', fontSize: '1.2rem', fontWeight: 700, marginBottom: 12 } as React.CSSProperties,
+  body: { color: '#4A4D6B', fontSize: '1.05rem', lineHeight: 1.65, marginBottom: 20 } as React.CSSProperties,
   grid2: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, marginBottom: 20 } as React.CSSProperties,
   grid3: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 20 } as React.CSSProperties,
-  card: { background: '#111629', border: '1px solid rgba(108,71,255,0.2)', borderRadius: 12, padding: '20px 24px' } as React.CSSProperties,
+  card: { background: '#FFFFFF', border: '1px solid rgba(3,78,174,0.17)', borderRadius: 12, padding: '20px 24px' } as React.CSSProperties,
   linkRow: { display: 'flex', flexWrap: 'wrap' as const, gap: 10 },
 };
 
@@ -467,8 +467,8 @@ export default function UseCasePage({ slug }: { slug: UseCaseSlug }) {
           {data.classroomExamples.map((ex, i) => (
             <div key={i} style={styles.card}>
               <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>{ex.icon}</div>
-              <div style={{ color: 'white', fontWeight: 700, marginBottom: 6, fontSize: '1rem' }}>{ex.title}</div>
-              <div style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.55 }}>{ex.detail}</div>
+              <div style={{ color: '#1A1B2E', fontWeight: 700, marginBottom: 6, fontSize: '1rem' }}>{ex.title}</div>
+              <div style={{ color: '#4A4D6B', fontSize: '0.9rem', lineHeight: 1.55 }}>{ex.detail}</div>
             </div>
           ))}
         </div>
@@ -481,19 +481,19 @@ export default function UseCasePage({ slug }: { slug: UseCaseSlug }) {
           {data.steps.map((step, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
               <div style={{
-                width: 32, height: 32, borderRadius: '50%', background: 'rgba(108,71,255,0.25)',
-                border: '1px solid rgba(108,71,255,0.5)', color: '#a78bfa',
+                width: 32, height: 32, borderRadius: '50%', background: 'rgba(3,78,174,0.18)',
+                border: '1px solid rgba(3,78,174,0.425)', color: '#6C3FA4',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontWeight: 800, fontSize: '0.85rem', flexShrink: 0
               }}>{step.icon}</div>
-              <p style={{ color: '#e2e8f0', fontSize: '0.95rem', lineHeight: 1.6, margin: 0, paddingTop: 4 }}>{step.text}</p>
+              <p style={{ color: '#1A1B2E', fontSize: '0.95rem', lineHeight: 1.6, margin: 0, paddingTop: 4 }}>{step.text}</p>
             </div>
           ))}
         </div>
         <div style={{ marginTop: 32, textAlign: 'center' }}>
           <button
             onClick={() => navigate(SITE.appPath)}
-            style={{ background: 'linear-gradient(135deg, #6c47ff, #22d3ee)', color: 'white', border: 'none', borderRadius: 32, padding: '14px 36px', fontWeight: 800, fontSize: '1rem', cursor: 'pointer' }}
+            style={{ background: 'linear-gradient(180deg, #1d6fd1 0%, #034eae 100%)', color: '#1A1B2E', border: 'none', borderRadius: 32, padding: '14px 36px', fontWeight: 800, fontSize: '1rem', cursor: 'pointer' }}
           >
             Start Free — No Account Needed ✨
           </button>
@@ -511,25 +511,25 @@ export default function UseCasePage({ slug }: { slug: UseCaseSlug }) {
       {/* ── Internal Links ── */}
       <Section light>
         <h2 style={styles.h2}>Explore Related Activities</h2>
-        <h3 style={{ ...styles.h3, color: '#a78bfa', marginBottom: 12 }}>Continue learning</h3>
+        <h3 style={{ ...styles.h3, color: '#6C3FA4', marginBottom: 12 }}>Continue learning</h3>
         <div style={{ ...styles.linkRow, marginBottom: 28 }}>
           {data.internalLinks.map(link => (
             <button
               key={link.path}
               onClick={() => navigate(link.path)}
-              style={{ background: 'rgba(108,71,255,0.15)', border: '1px solid rgba(108,71,255,0.35)', color: '#c4b5fd', borderRadius: 20, padding: '8px 18px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}
+              style={{ background: 'rgba(3,78,174,0.10)', border: '1px solid rgba(3,78,174,0.297)', color: '#6C3FA4', borderRadius: 20, padding: '8px 18px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}
             >
               {link.label}
             </button>
           ))}
         </div>
-        <h3 style={{ ...styles.h3, color: '#22d3ee', marginBottom: 12 }}>Also useful</h3>
+        <h3 style={{ ...styles.h3, color: '#1c7e80', marginBottom: 12 }}>Also useful</h3>
         <div style={styles.linkRow}>
           {data.relatedLinks.map(link => (
             <button
               key={link.path}
               onClick={() => navigate(link.path)}
-              style={{ background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.3)', color: '#67e8f9', borderRadius: 20, padding: '8px 18px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}
+              style={{ background: 'rgba(85,221,224,0.16)', border: '1px solid rgba(28,126,128,0.3)', color: '#1c7e80', borderRadius: 20, padding: '8px 18px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}
             >
               {link.label}
             </button>

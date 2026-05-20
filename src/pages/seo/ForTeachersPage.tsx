@@ -52,20 +52,20 @@ export default function ForTeachersPage() {
       <Section light>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16, marginBottom: 32 }}>
           {[['0', 'Accounts needed'], ['0', 'Downloads required'], ['26', 'Letter activities'], ['10', 'Number activities'], ['8', 'Shape activities'], ['4', 'Interactive games']].map(([num, label]) => (
-            <div key={label} style={{ textAlign: 'center', background: 'rgba(108,71,255,0.1)', border: '1px solid rgba(108,71,255,0.2)', borderRadius: 12, padding: 20 }}>
-              <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#6c47ff' }}>{num}</div>
-              <div style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: 4 }}>{label}</div>
+            <div key={label} style={{ textAlign: 'center', background: 'rgba(3,78,174,0.08)', border: '1px solid rgba(3,78,174,0.17)', borderRadius: 12, padding: 20 }}>
+              <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#034eae' }}>{num}</div>
+              <div style={{ color: '#4A4D6B', fontSize: '0.8rem', marginTop: 4 }}>{label}</div>
             </div>
           ))}
         </div>
-        <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800, marginBottom: 8 }}>Classroom Use Cases</h2>
-        <p style={{ color: '#94a3b8', marginBottom: 24, fontSize: '0.9rem' }}>How teachers are already using Draw in the Air in their classrooms:</p>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 8 }}>Classroom Use Cases</h2>
+        <p style={{ color: '#4A4D6B', marginBottom: 24, fontSize: '0.9rem' }}>How teachers are already using Draw in the Air in their classrooms:</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14 }}>
           {USE_CASES.map(u => (
-            <div key={u.title} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 18 }}>
+            <div key={u.title} style={{ background: '#FFFFFF', border: '1px solid rgba(63,64,82,0.12)', borderRadius: 12, padding: 18 }}>
               <div style={{ fontSize: '1.6rem', marginBottom: 8 }}>{u.icon}</div>
-              <div style={{ color: 'white', fontWeight: 700, fontSize: '0.9rem', marginBottom: 4 }}>{u.title}</div>
-              <div style={{ color: '#94a3b8', fontSize: '0.81rem', lineHeight: 1.6 }}>{u.desc}</div>
+              <div style={{ color: '#1A1B2E', fontWeight: 700, fontSize: '0.9rem', marginBottom: 4 }}>{u.title}</div>
+              <div style={{ color: '#4A4D6B', fontSize: '0.81rem', lineHeight: 1.6 }}>{u.desc}</div>
             </div>
           ))}
         </div>
@@ -73,18 +73,18 @@ export default function ForTeachersPage() {
 
       {/* Curriculum alignment */}
       <Section>
-        <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800, marginBottom: 8 }}>Curriculum Alignment</h2>
-        <p style={{ color: '#94a3b8', marginBottom: 24, fontSize: '0.9rem' }}>Draw in the Air activities are designed to support early childhood curriculum objectives across multiple frameworks:</p>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 8 }}>Curriculum Alignment</h2>
+        <p style={{ color: '#4A4D6B', marginBottom: 24, fontSize: '0.9rem' }}>Draw in the Air activities are designed to support early childhood curriculum objectives across multiple frameworks:</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
           {[
-            { framework: 'EYFS (UK)', areas: ['Communication, Language and Literacy', 'Physical Development — Fine Motor Skills', 'Mathematics — Numbers and Shape', 'Understanding the World — Technology'], color: '#22d3ee' },
+            { framework: 'EYFS (UK)', areas: ['Communication, Language and Literacy', 'Physical Development — Fine Motor Skills', 'Mathematics — Numbers and Shape', 'Understanding the World — Technology'], color: '#1c7e80' },
             { framework: 'Common Core (US)', areas: ['Print Concepts — Letter Recognition', 'Counting and Cardinality K.CC', 'Geometry — Shape Identification', 'Physical Development — Fine Motor'], color: '#a855f7' },
             { framework: 'General Pre-K', areas: ['Alphabet knowledge A–Z', 'Numeral formation 1–10', 'Basic shape recognition', 'Hand-eye coordination development'], color: '#ec4899' },
           ].map(fw => (
-            <div key={fw.framework} style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid ${fw.color}33`, borderRadius: 14, padding: 20 }}>
+            <div key={fw.framework} style={{ background: '#FFFFFF', border: `1px solid ${fw.color}33`, borderRadius: 14, padding: 20 }}>
               <div style={{ color: fw.color, fontWeight: 800, fontSize: '0.9rem', marginBottom: 12 }}>{fw.framework}</div>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                {fw.areas.map(a => <li key={a} style={{ color: '#e2e8f0', fontSize: '0.82rem', marginBottom: 6, display: 'flex', gap: 8 }}><span style={{ color: fw.color }}>✓</span>{a}</li>)}
+                {fw.areas.map(a => <li key={a} style={{ color: '#1A1B2E', fontSize: '0.82rem', marginBottom: 6, display: 'flex', gap: 8 }}><span style={{ color: fw.color }}>✓</span>{a}</li>)}
               </ul>
             </div>
           ))}
@@ -93,7 +93,7 @@ export default function ForTeachersPage() {
 
       {/* Resources for teachers */}
       <Section light>
-        <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>Free Resources for Your Classroom</h2>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>Free Resources for Your Classroom</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
           {[
             { icon: '📥', label: 'Free Printable Worksheets', path: '/free-resources', desc: 'Letter and number tracing worksheets to complement air drawing practice' },
@@ -103,17 +103,17 @@ export default function ForTeachersPage() {
             { icon: '🏃', label: 'Classroom Movement Activities', path: '/classroom-movement-activities', desc: 'Brain break and movement ideas that pair perfectly with Draw in the Air' },
             { icon: '💻', label: 'Chromebook Learning Tools', path: '/chromebook-learning-tools', desc: 'How to use Draw in the Air on school Chromebook carts and labs' },
           ].map(r => (
-            <button key={r.path} onClick={() => navigate(r.path)} style={{ background: 'rgba(108,71,255,0.08)', border: '1px solid rgba(108,71,255,0.2)', borderRadius: 12, padding: 18, cursor: 'pointer', textAlign: 'left' }}>
+            <button key={r.path} onClick={() => navigate(r.path)} style={{ background: 'rgba(3,78,174,0.06)', border: '1px solid rgba(3,78,174,0.17)', borderRadius: 12, padding: 18, cursor: 'pointer', textAlign: 'left' }}>
               <div style={{ fontSize: '1.6rem', marginBottom: 8 }}>{r.icon}</div>
-              <div style={{ color: 'white', fontWeight: 700, fontSize: '0.88rem', marginBottom: 4 }}>{r.label}</div>
-              <div style={{ color: '#94a3b8', fontSize: '0.78rem', lineHeight: 1.5 }}>{r.desc}</div>
+              <div style={{ color: '#1A1B2E', fontWeight: 700, fontSize: '0.88rem', marginBottom: 4 }}>{r.label}</div>
+              <div style={{ color: '#4A4D6B', fontSize: '0.78rem', lineHeight: 1.5 }}>{r.desc}</div>
             </button>
           ))}
         </div>
       </Section>
 
       <Section>
-        <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800, marginBottom: 24 }}>Teacher FAQ</h2>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 24 }}>Teacher FAQ</h2>
         {FAQ.map(item => <FAQItem key={item.q} q={item.q} a={item.a} />)}
       </Section>
     </SeoLayout>

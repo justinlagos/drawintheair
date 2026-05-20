@@ -1,0 +1,19 @@
+{
+  "id": "/",
+  "name": "Draw in the Air",
+  "short_name": "Draw in Air",
+  "description": "Gesture-based learning platform for early years. Children draw letters, numbers and shapes in the air using just their hands.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FFFAEB",
+  "theme_color": "#034eae",
+  "orientation": "any",
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ],
+  "categories": ["education", "kids", "games"]
+}

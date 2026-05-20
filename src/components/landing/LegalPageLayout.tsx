@@ -10,6 +10,7 @@
 import React, { useState } from 'react';
 import { tokens } from '../../styles/tokens';
 import { KidButton } from '../kid-ui';
+import { BrandLogo } from '../BrandLogo';
 
 interface LegalPageLayoutProps {
     children: React.ReactNode;
@@ -42,10 +43,7 @@ export const LegalPageLayout: React.FC<LegalPageLayoutProps> = ({ children, hero
             }}>
                 <div style={{ width: '100%', maxWidth: 1152, margin: '0 auto', padding: '0 24px', height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <a href="/#top" style={{ display: 'inline-flex', alignItems: 'center', gap: 12, textDecoration: 'none', flexShrink: 0 }}>
-                        <img src="/logo.png" alt="Draw in the Air" width={120} height={36} className="dl-nav-logo" />
-                        <span style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1.1rem', color: tokens.colors.deepPlum }} className="lpl-brand">
-                            Draw in the Air
-                        </span>
+                        <BrandLogo variant="header" className="dl-nav-logo" />
                     </a>
                     <div className="lpl-desktop" style={{ alignItems: 'center', gap: 24, fontFamily: tokens.fontFamily.body, fontWeight: 600, color: tokens.colors.charcoal }}>
                         <a href="/#how-it-works" className="lpl-nav-link">How it Works</a>
@@ -186,8 +184,7 @@ export const LegalPageLayout: React.FC<LegalPageLayoutProps> = ({ children, hero
                     <div className="lpl-footer-grid">
                         <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                                <img src="/logo.png" alt="Draw in the Air" width={110} height={32} className="dl-footer-logo" />
-                                <span style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '1rem', color: tokens.colors.deepPlum }}>Draw in the Air</span>
+                                <BrandLogo variant="footer" className="dl-footer-logo" />
                             </div>
                             <p style={{ fontFamily: tokens.fontFamily.body, fontSize: '0.85rem', color: tokens.colors.charcoal, opacity: 0.7, lineHeight: 1.55 }}>
                                 Active learning that moves young minds forward.

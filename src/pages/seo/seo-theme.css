@@ -1,105 +1,134 @@
 /*
  * Draw in the Air — SEO Page Theme System
- * Dark mode — consistent with the game UI
+ * Light premium mode — aligned with landing-v3 (cream/plum/aqua/sunshine).
+ * Logo brand blue: #034eae · Logo sunshine: #f9e55e.
+ * Migrated May 2026 — every SEO surface inherits these tokens.
  */
 
 /* ══════════════════════════════════════════════════════════
-   THEME VARIABLES
+   THEME VARIABLES — LIGHT, PREMIUM, MOVEMENT-LED
    ══════════════════════════════════════════════════════════ */
 
 [data-seo-theme] {
-  /* Background layers */
-  --seo-bg-page:        #07091a;
-  --seo-bg-surface:     #0f1124;
-  --seo-bg-raised:      #111629;
-  --seo-bg-elevated:    #161b35;
-  --seo-bg-input:       #0d1020;
+  /* ── Brand primitives (synced with landing-v3 + new logo) ── */
+  --seo-brand-blue:     #034eae;       /* Logo navy-blue */
+  --seo-brand-blue-2:   #1d6fd1;
+  --seo-brand-yellow:   #f9e55e;       /* Logo sunshine */
+  --seo-plum:           #6C3FA4;
+  --seo-plum-dark:      #5A2F8C;
+  --seo-aqua:           #55DDE0;
+  --seo-coral:          #FF6B6B;
+  --seo-sunshine:       #FFD84D;
+  --seo-green:          #7ED957;
+  --seo-cream:          #FFFAEB;
+  --seo-cream-deep:     #FCEFC8;
+  --seo-paper:          #FAFAFD;
+  --seo-ink:            #1A1B2E;
+  --seo-ink-soft:       #4A4D6B;
+  --seo-ink-mute:       #6B6F84;
+  --seo-line:           rgba(63, 64, 82, 0.10);
+  --seo-line-strong:    rgba(63, 64, 82, 0.18);
 
-  /* Hero gradient */
-  --seo-hero-bg: linear-gradient(160deg, #0f0c29 0%, #1a1042 40%, #07091a 100%);
-  --seo-hero-overlay: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(108,71,255,0.25) 0%, transparent 70%);
+  /* ── Background layers ── */
+  --seo-bg-page:
+    radial-gradient(ellipse at 12% 0%, rgba(85, 221, 224, 0.14), transparent 40%),
+    radial-gradient(ellipse at 92% 6%, rgba(255, 216, 77, 0.18), transparent 38%),
+    radial-gradient(ellipse at 50% 100%, rgba(108, 63, 164, 0.08), transparent 55%),
+    linear-gradient(180deg, #F4F1FF 0%, #FFFAEB 55%, #FFF6E0 100%);
+  --seo-bg-surface:     #FFFFFF;
+  --seo-bg-raised:      #FFFFFF;
+  --seo-bg-elevated:    #FFFFFF;
+  --seo-bg-input:       #FFFFFF;
 
-  /* Section tints */
-  --seo-section-light:  #0f1225;
-  --seo-section-dark:   #07091a;
-  --seo-cta-band: linear-gradient(135deg, #6c47ff 0%, #a855f7 50%, #22d3ee 100%);
+  /* ── Hero gradient ── */
+  --seo-hero-bg:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(3, 78, 174, 0.10) 0%, transparent 70%),
+    linear-gradient(180deg, #F4F1FF 0%, #FFFAEB 60%, #FFF6E0 100%);
+  --seo-hero-overlay:
+    radial-gradient(ellipse 60% 40% at 12% 12%, rgba(85, 221, 224, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 88% 10%, rgba(255, 216, 77, 0.22) 0%, transparent 60%);
 
-  /* Nav */
-  --seo-nav-bg:         rgba(7, 9, 26, 0.96);
-  --seo-nav-border:     rgba(34, 211, 238, 0.12);
+  /* ── Section tints ── */
+  --seo-section-light:  #FFFFFF;
+  --seo-section-dark:   transparent;
+  --seo-cta-band: linear-gradient(135deg, #034eae 0%, #1d6fd1 55%, #6C3FA4 100%);
 
-  /* Text */
-  --seo-text-primary:   #f1f5f9;
-  --seo-text-secondary: #94a3b8;
-  --seo-text-muted:     #475569;
-  --seo-text-on-accent: #ffffff;
-  --seo-text-heading:   #ffffff;
-  --seo-text-nav:       #94a3b8;
-  --seo-text-nav-hover: #e2e8f0;
-  --seo-text-footer:    #475569;
+  /* ── Nav ── */
+  --seo-nav-bg:         rgba(255, 255, 255, 0.82);
+  --seo-nav-border:     rgba(3, 78, 174, 0.12);
 
-  /* Accent / brand */
-  --seo-accent:         #6c47ff;
-  --seo-accent-hover:   #7c5cff;
-  --seo-accent-dim:     rgba(108,71,255,0.15);
-  --seo-accent-border:  rgba(108,71,255,0.3);
-  --seo-cyan:           #22d3ee;
-  --seo-cyan-dim:       rgba(34,211,238,0.12);
-  --seo-cyan-border:    rgba(34,211,238,0.3);
+  /* ── Text ── */
+  --seo-text-primary:   #1A1B2E;
+  --seo-text-secondary: #4A4D6B;
+  --seo-text-muted:     #6B6F84;
+  --seo-text-on-accent: #FFFFFF;
+  --seo-text-heading:   #1A1B2E;
+  --seo-text-nav:       #4A4D6B;
+  --seo-text-nav-hover: #034eae;
+  --seo-text-footer:    #4A4D6B;
 
-  /* Badge / chip */
-  --seo-badge-bg:       rgba(108,71,255,0.18);
-  --seo-badge-border:   rgba(108,71,255,0.4);
-  --seo-badge-text:     #c4b5fd;
-  --seo-badge-audience-bg: rgba(108,71,255,0.15);
-  --seo-badge-audience-text: #a78bfa;
+  /* ── Accent / brand ── */
+  --seo-accent:         #034eae;
+  --seo-accent-hover:   #1d6fd1;
+  --seo-accent-dim:     rgba(3, 78, 174, 0.08);
+  --seo-accent-border:  rgba(3, 78, 174, 0.22);
+  --seo-cyan:           #1c7e80;
+  --seo-cyan-dim:       rgba(85, 221, 224, 0.18);
+  --seo-cyan-border:    rgba(28, 126, 128, 0.30);
 
-  /* Cards */
-  --seo-card-bg:        #111629;
-  --seo-card-border:    rgba(108,71,255,0.18);
-  --seo-card-border-hover: rgba(108,71,255,0.55);
-  --seo-card-shadow-hover: 0 10px 28px rgba(108,71,255,0.22);
-  --seo-card-letter-bg: rgba(108,71,255,0.07);
+  /* ── Badge / chip ── */
+  --seo-badge-bg:       rgba(3, 78, 174, 0.08);
+  --seo-badge-border:   rgba(3, 78, 174, 0.22);
+  --seo-badge-text:     #034eae;
+  --seo-badge-audience-bg: rgba(108, 63, 164, 0.10);
+  --seo-badge-audience-text: #6C3FA4;
 
-  /* Download accent */
-  --seo-download-text:  #22d3ee;
-  --seo-download-bg:    rgba(34,211,238,0.05);
+  /* ── Cards ── */
+  --seo-card-bg:        #FFFFFF;
+  --seo-card-border:    rgba(63, 64, 82, 0.10);
+  --seo-card-border-hover: rgba(3, 78, 174, 0.40);
+  --seo-card-shadow-hover: 0 24px 60px rgba(63, 64, 82, 0.14);
+  --seo-card-letter-bg: rgba(255, 216, 77, 0.18);
 
-  /* CTA button */
-  --seo-btn-primary-bg: #6c47ff;
-  --seo-btn-primary-text: #ffffff;
-  --seo-btn-primary-shadow: 0 4px 18px rgba(108,71,255,0.45);
-  --seo-btn-outline-bg: rgba(34,211,238,0.1);
-  --seo-btn-outline-text: #22d3ee;
-  --seo-btn-outline-border: rgba(34,211,238,0.4);
+  /* ── Download accent ── */
+  --seo-download-text:  #1c7e80;
+  --seo-download-bg:    rgba(85, 221, 224, 0.14);
 
-  /* FAQ */
-  --seo-faq-border:     rgba(255,255,255,0.07);
-  --seo-faq-q-text:     #f1f5f9;
-  --seo-faq-a-text:     #94a3b8;
-  --seo-faq-toggle:     #6c47ff;
+  /* ── CTA button ── */
+  --seo-btn-primary-bg: linear-gradient(180deg, #1d6fd1 0%, #034eae 100%);
+  --seo-btn-primary-text: #FFFFFF;
+  --seo-btn-primary-shadow: 0 10px 24px rgba(3, 78, 174, 0.28);
+  --seo-btn-outline-bg: rgba(255, 255, 255, 0.85);
+  --seo-btn-outline-text: #034eae;
+  --seo-btn-outline-border: rgba(3, 78, 174, 0.28);
 
-  /* Dividers */
-  --seo-divider:        rgba(255,255,255,0.06);
-  --seo-footer-border:  rgba(108,71,255,0.18);
-  --seo-footer-bg:      #050810;
+  /* ── FAQ ── */
+  --seo-faq-border:     rgba(63, 64, 82, 0.10);
+  --seo-faq-q-text:     #1A1B2E;
+  --seo-faq-a-text:     #4A4D6B;
+  --seo-faq-toggle:     #034eae;
 
-  /* Hero text tint */
-  --seo-hero-subtitle:  #c4b5fd;
+  /* ── Dividers ── */
+  --seo-divider:        rgba(63, 64, 82, 0.10);
+  --seo-footer-border:  rgba(3, 78, 174, 0.14);
+  --seo-footer-bg:      linear-gradient(180deg, #FFFAEB 0%, #FCEFC8 100%);
 
-  /* Workbook CTA box */
-  --seo-workbook-bg: linear-gradient(135deg, rgba(108,71,255,0.18), rgba(34,211,238,0.07));
-  --seo-workbook-border: rgba(34,211,238,0.22);
+  /* ── Hero text tint ── */
+  --seo-hero-subtitle:  #4A4D6B;
 
-  /* Internal link chips */
-  --seo-chip-bg:        rgba(108,71,255,0.1);
-  --seo-chip-border:    rgba(108,71,255,0.25);
-  --seo-chip-text:      #a78bfa;
-  --seo-chip-bg-hover:  #6c47ff;
-  --seo-chip-text-hover: #ffffff;
+  /* ── Workbook CTA box ── */
+  --seo-workbook-bg:    linear-gradient(135deg, rgba(255, 216, 77, 0.18), rgba(85, 221, 224, 0.10));
+  --seo-workbook-border: rgba(3, 78, 174, 0.18);
 
-  /* Mobile menu */
-  --seo-mobile-menu-bg: rgba(10, 14, 26, 0.98);
+  /* ── Internal link chips ── */
+  --seo-chip-bg:        rgba(255, 255, 255, 0.85);
+  --seo-chip-border:    rgba(3, 78, 174, 0.22);
+  --seo-chip-text:      #034eae;
+  --seo-chip-bg-hover:  #034eae;
+  --seo-chip-text-hover: #FFFFFF;
+
+  /* ── Mobile menu ── */
+  --seo-mobile-menu-bg: rgba(255, 255, 255, 0.98);
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -148,8 +177,28 @@
 }
 
 .seo-nav-logo img {
-  height: 44px;
+  height: 48px;
   width: auto;
+  max-width: 170px;
+  max-height: 48px;
+  object-fit: contain;
+  display: block;
+}
+
+@media (max-width: 860px) {
+  .seo-nav-logo img {
+    height: 40px;
+    max-width: 144px;
+    max-height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .seo-nav-logo img {
+    height: 34px;
+    max-width: 122px;
+    max-height: 34px;
+  }
 }
 
 .seo-nav-links {
@@ -188,22 +237,22 @@
 }
 
 .seo-btn-cta {
-  background: linear-gradient(135deg, #6c47ff, #22d3ee);
+  background: linear-gradient(180deg, #1d6fd1 0%, #034eae 100%);
   color: white;
   border: none;
-  border-radius: 24px;
-  padding: 9px 20px;
+  border-radius: 999px;
+  padding: 10px 22px;
   font-weight: 800;
   font-size: 0.875rem;
   cursor: pointer;
   white-space: nowrap;
-  transition: transform 0.15s, box-shadow 0.15s;
-  box-shadow: 0 2px 10px rgba(108,71,255,0.35);
+  transition: transform 0.18s, box-shadow 0.18s;
+  box-shadow: 0 8px 20px rgba(3, 78, 174, 0.28), inset 0 1px 0 rgba(255,255,255,0.3);
 }
 
 .seo-btn-cta:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(108,71,255,0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(3, 78, 174, 0.36);
 }
 
 /* Mobile hamburger */
@@ -264,15 +313,16 @@
 
 .seo-mobile-cta {
   margin-top: 12px;
-  background: linear-gradient(135deg, #6c47ff, #22d3ee);
+  background: linear-gradient(180deg, #1d6fd1 0%, #034eae 100%);
   color: white;
   border: none;
-  border-radius: 24px;
-  padding: 13px;
+  border-radius: 999px;
+  padding: 14px;
   font-weight: 800;
   font-size: 0.95rem;
   cursor: pointer;
   text-align: center;
+  box-shadow: 0 8px 20px rgba(3, 78, 174, 0.30);
 }
 
 /* ── Hero ─────────────────────────────────────────────── */
@@ -342,21 +392,21 @@
 }
 
 .seo-hero-cta {
-  background: linear-gradient(135deg, #6c47ff, #22d3ee);
+  background: linear-gradient(180deg, #1d6fd1 0%, #034eae 100%);
   color: white;
   border: none;
-  border-radius: 32px;
-  padding: 15px 40px;
+  border-radius: 999px;
+  padding: 16px 42px;
   font-weight: 800;
   font-size: 1.05rem;
   cursor: pointer;
-  box-shadow: 0 6px 24px rgba(108,71,255,0.45);
-  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 12px 28px rgba(3, 78, 174, 0.30), inset 0 1px 0 rgba(255,255,255,0.3);
+  transition: transform 0.18s, box-shadow 0.18s;
 }
 
 .seo-hero-cta:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 32px rgba(108,71,255,0.55);
+  box-shadow: 0 18px 36px rgba(3, 78, 174, 0.40);
 }
 
 /* ── Sections ─────────────────────────────────────────── */
@@ -624,16 +674,16 @@
 }
 
 .seo-cta-band-btn {
-  background: white;
-  color: #6c47ff;
+  background: #FFD84D;
+  color: #1A1B2E;
   border: none;
-  border-radius: 32px;
+  border-radius: 999px;
   padding: 16px 44px;
   font-weight: 900;
   font-size: 1.1rem;
   cursor: pointer;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-  transition: transform 0.15s;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transition: transform 0.18s, box-shadow 0.18s;
 }
 
 .seo-cta-band-btn:hover {

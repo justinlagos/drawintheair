@@ -205,18 +205,18 @@ export default function SpecialActivityPage({ slug }: SpecialActivityPageProps) 
             />
 
             <Section light>
-                <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>How It Works</h2>
-                <div style={{ color: '#94a3b8', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: 30 }}>
+                <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>How It Works</h2>
+                <div style={{ color: '#4A4D6B', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: 30 }}>
                     <p style={{ marginBottom: 15 }}>Just open the app—no downloads required. When prompted, allow webcam access (processed 100% locally and privately).</p>
                     <p>Raise your index finger, pinch it with your thumb to grab your digital pen, and start drawing right in the air!</p>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginTop: 40 }}>
                     {data.tips.map(t => (
-                        <div key={t.title} style={{ background: 'rgba(108,71,255,0.1)', border: '1px solid rgba(108,71,255,0.2)', borderRadius: 12, padding: 20 }}>
+                        <div key={t.title} style={{ background: 'rgba(3,78,174,0.08)', border: '1px solid rgba(3,78,174,0.17)', borderRadius: 12, padding: 20 }}>
                             <div style={{ fontSize: '2rem', marginBottom: 8 }}>{t.icon}</div>
-                            <div style={{ color: 'white', fontWeight: 700, marginBottom: 4 }}>{t.title}</div>
-                            <div style={{ color: '#94a3b8', fontSize: '0.84rem' }}>{t.desc}</div>
+                            <div style={{ color: '#1A1B2E', fontWeight: 700, marginBottom: 4 }}>{t.title}</div>
+                            <div style={{ color: '#4A4D6B', fontSize: '0.84rem' }}>{t.desc}</div>
                         </div>
                     ))}
                 </div>
@@ -224,7 +224,7 @@ export default function SpecialActivityPage({ slug }: SpecialActivityPageProps) 
 
             {/* Internal links — every special page links into the core activity network */}
             <Section>
-                <h2 style={{ color: 'white', fontSize: '1.3rem', fontWeight: 800, marginBottom: 20 }}>
+                <h2 style={{ color: '#1A1B2E', fontSize: '1.3rem', fontWeight: 800, marginBottom: 20 }}>
                     Explore More Activities
                 </h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
@@ -237,25 +237,25 @@ export default function SpecialActivityPage({ slug }: SpecialActivityPageProps) 
                         { label: '🎨 Free Paint', path: '/free-paint' },
                     ].filter(a => !a.path.includes(slug ?? '')).map(a => (
                         <button key={a.path} onClick={() => navigate(a.path)} style={{
-                            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                            background: '#FFFFFF', border: '1px solid rgba(63,64,82,0.14)',
                             borderRadius: 10, padding: '14px 12px', cursor: 'pointer',
-                            color: 'white', fontWeight: 600, fontSize: '0.85rem',
+                            color: '#1A1B2E', fontWeight: 600, fontSize: '0.85rem',
                         }}>
                             {a.label}
                         </button>
                     ))}
                 </div>
                 <div style={{ marginTop: 24, display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                    <button onClick={() => navigate('/for-teachers')} style={{ background: 'rgba(108,71,255,0.1)', border: '1px solid rgba(108,71,255,0.25)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#a78bfa', fontWeight: 600, fontSize: '0.82rem' }}>
+                    <button onClick={() => navigate('/for-teachers')} style={{ background: 'rgba(3,78,174,0.08)', border: '1px solid rgba(3,78,174,0.212)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#6C3FA4', fontWeight: 600, fontSize: '0.82rem' }}>
                         👩‍🏫 For Teachers
                     </button>
-                    <button onClick={() => navigate('/for-parents')} style={{ background: 'rgba(108,71,255,0.1)', border: '1px solid rgba(108,71,255,0.25)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#a78bfa', fontWeight: 600, fontSize: '0.82rem' }}>
+                    <button onClick={() => navigate('/for-parents')} style={{ background: 'rgba(3,78,174,0.08)', border: '1px solid rgba(3,78,174,0.212)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#6C3FA4', fontWeight: 600, fontSize: '0.82rem' }}>
                         👨‍👩‍👧 For Parents
                     </button>
-                    <button onClick={() => navigate('/learn')} style={{ background: 'rgba(108,71,255,0.1)', border: '1px solid rgba(108,71,255,0.25)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#a78bfa', fontWeight: 600, fontSize: '0.82rem' }}>
+                    <button onClick={() => navigate('/learn')} style={{ background: 'rgba(3,78,174,0.08)', border: '1px solid rgba(3,78,174,0.212)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#6C3FA4', fontWeight: 600, fontSize: '0.82rem' }}>
                         📚 Learning Hub
                     </button>
-                    <button onClick={() => navigate('/free-resources')} style={{ background: 'rgba(108,71,255,0.1)', border: '1px solid rgba(108,71,255,0.25)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#a78bfa', fontWeight: 600, fontSize: '0.82rem' }}>
+                    <button onClick={() => navigate('/free-resources')} style={{ background: 'rgba(3,78,174,0.08)', border: '1px solid rgba(3,78,174,0.212)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#6C3FA4', fontWeight: 600, fontSize: '0.82rem' }}>
                         📥 Free Worksheets
                     </button>
                 </div>

@@ -51,14 +51,14 @@ export default function ForParentsPage() {
 
       {/* Why parents love it */}
       <Section light>
-        <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800, marginBottom: 8 }}>Why Parents Choose Draw in the Air</h2>
-        <p style={{ color: '#94a3b8', marginBottom: 28, fontSize: '0.9rem' }}>Thousands of families use Draw in the Air every week. Here's what makes it different from other kids' apps.</p>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 8 }}>Why Parents Choose Draw in the Air</h2>
+        <p style={{ color: '#4A4D6B', marginBottom: 28, fontSize: '0.9rem' }}>Thousands of families use Draw in the Air every week. Here's what makes it different from other kids' apps.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
           {BENEFITS.map(b => (
-            <div key={b.title} style={{ background: 'rgba(108,71,255,0.08)', border: '1px solid rgba(108,71,255,0.2)', borderRadius: 14, padding: 20 }}>
+            <div key={b.title} style={{ background: 'rgba(3,78,174,0.06)', border: '1px solid rgba(3,78,174,0.17)', borderRadius: 14, padding: 20 }}>
               <div style={{ fontSize: '1.8rem', marginBottom: 8 }}>{b.icon}</div>
-              <div style={{ color: 'white', fontWeight: 700, fontSize: '0.95rem', marginBottom: 6 }}>{b.title}</div>
-              <div style={{ color: '#94a3b8', fontSize: '0.82rem', lineHeight: 1.6 }}>{b.desc}</div>
+              <div style={{ color: '#1A1B2E', fontWeight: 700, fontSize: '0.95rem', marginBottom: 6 }}>{b.title}</div>
+              <div style={{ color: '#4A4D6B', fontSize: '0.82rem', lineHeight: 1.6 }}>{b.desc}</div>
             </div>
           ))}
         </div>
@@ -66,8 +66,8 @@ export default function ForParentsPage() {
 
       {/* What children learn */}
       <Section>
-        <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800, marginBottom: 8 }}>What Your Child Will Learn</h2>
-        <p style={{ color: '#94a3b8', marginBottom: 28, fontSize: '0.9rem' }}>Draw in the Air isn't just entertainment — every activity is designed to build measurable developmental skills.</p>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 8 }}>What Your Child Will Learn</h2>
+        <p style={{ color: '#4A4D6B', marginBottom: 28, fontSize: '0.9rem' }}>Draw in the Air isn't just entertainment — every activity is designed to build measurable developmental skills.</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
           {[
             { activity: 'Letter Tracing A–Z', skills: ['Letter recognition and formation', 'Phonics — sounds for all 26 letters', 'Pre-writing fine motor skills', 'Alphabetical order awareness'], icon: '🔤' },
@@ -80,9 +80,9 @@ export default function ForParentsPage() {
             <div key={item.activity} style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '20px 0', display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 20, alignItems: 'start' }}>
               <div style={{ fontSize: '2rem' }}>{item.icon}</div>
               <div>
-                <div style={{ color: 'white', fontWeight: 700, marginBottom: 8 }}>{item.activity}</div>
+                <div style={{ color: '#1A1B2E', fontWeight: 700, marginBottom: 8 }}>{item.activity}</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {item.skills.map(s => <span key={s} style={{ background: 'rgba(108,71,255,0.15)', color: '#c4b5fd', padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600 }}>{s}</span>)}
+                  {item.skills.map(s => <span key={s} style={{ background: 'rgba(3,78,174,0.10)', color: '#6C3FA4', padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600 }}>{s}</span>)}
                 </div>
               </div>
             </div>
@@ -92,7 +92,7 @@ export default function ForParentsPage() {
 
       {/* How to get started */}
       <Section light>
-        <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>Getting Started in 60 Seconds</h2>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>Getting Started in 60 Seconds</h2>
         {[
           ['Open the browser', 'On any laptop or desktop with a webcam, go to drawintheair.com. No download, no app store, no waiting.'],
           ['Allow camera access', 'Click "Allow" when the browser asks for camera permission. Your video never leaves your device.'],
@@ -101,15 +101,15 @@ export default function ForParentsPage() {
           ['Let them play!', 'Step back and watch the magic happen. For younger children, sit alongside for the first few minutes to help them understand the gesture.'],
         ].map(([step, desc], i) => (
           <div key={i} style={{ display: 'flex', gap: 16, marginBottom: 20, alignItems: 'flex-start' }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #6c47ff, #22d3ee)', color: 'white', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</div>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(180deg, #1d6fd1 0%, #034eae 100%)', color: '#1A1B2E', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</div>
             <div>
-              <div style={{ color: 'white', fontWeight: 700, marginBottom: 4, fontSize: '0.95rem' }}>{step}</div>
-              <div style={{ color: '#94a3b8', fontSize: '0.87rem', lineHeight: 1.6 }}>{desc}</div>
+              <div style={{ color: '#1A1B2E', fontWeight: 700, marginBottom: 4, fontSize: '0.95rem' }}>{step}</div>
+              <div style={{ color: '#4A4D6B', fontSize: '0.87rem', lineHeight: 1.6 }}>{desc}</div>
             </div>
           </div>
         ))}
         <div style={{ marginTop: 28, textAlign: 'center' }}>
-          <button onClick={() => navigate(SITE.appPath)} style={{ background: 'linear-gradient(135deg, #6c47ff, #22d3ee)', color: 'white', border: 'none', borderRadius: 28, padding: '14px 36px', fontWeight: 800, fontSize: '1rem', cursor: 'pointer' }}>
+          <button onClick={() => navigate(SITE.appPath)} style={{ background: 'linear-gradient(180deg, #1d6fd1 0%, #034eae 100%)', color: '#1A1B2E', border: 'none', borderRadius: 28, padding: '14px 36px', fontWeight: 800, fontSize: '1rem', cursor: 'pointer' }}>
             Try It Now — Free ✨
           </button>
         </div>
@@ -117,7 +117,7 @@ export default function ForParentsPage() {
 
       {/* Also useful for */}
       <Section>
-        <h2 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 800, marginBottom: 20 }}>Also Useful For</h2>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.4rem', fontWeight: 800, marginBottom: 20 }}>Also Useful For</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
           {[
             { label: 'Homeschool Families', path: '/homeschool-movement-learning', icon: '🏠' },
@@ -127,7 +127,7 @@ export default function ForParentsPage() {
             { label: 'Free Resources', path: '/free-resources', icon: '📥' },
             { label: 'Gesture Learning Guide', path: '/gesture-learning', icon: '✋' },
           ].map(item => (
-            <button key={item.path} onClick={() => navigate(item.path)} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 16, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', gap: 10, fontWeight: 600, fontSize: '0.88rem' }}>
+            <button key={item.path} onClick={() => navigate(item.path)} style={{ background: '#FFFFFF', border: '1px solid rgba(63,64,82,0.12)', borderRadius: 12, padding: 16, cursor: 'pointer', color: '#1A1B2E', display: 'flex', alignItems: 'center', gap: 10, fontWeight: 600, fontSize: '0.88rem' }}>
               <span style={{ fontSize: '1.4rem' }}>{item.icon}</span>{item.label}
             </button>
           ))}
@@ -135,7 +135,7 @@ export default function ForParentsPage() {
       </Section>
 
       <Section light>
-        <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800, marginBottom: 24 }}>Parent FAQ</h2>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 24 }}>Parent FAQ</h2>
         {FAQ.map(item => <FAQItem key={item.q} q={item.q} a={item.a} />)}
       </Section>
     </SeoLayout>

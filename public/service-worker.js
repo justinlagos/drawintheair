@@ -20,13 +20,18 @@
  * changes so the activate-handler cache-cleanup nukes stale caches.
  */
 
-const CACHE_VERSION = 'v6-landing-2026-05-14';
+// v7-brand-2026-05-20: bumped to invalidate returning-user cache for the
+// new brand-mark + light SEO theme migration.
+const CACHE_VERSION = 'v7-brand-2026-05-20';
 const CACHE_NAME = `draw-in-the-air-${CACHE_VERSION}`;
 
 /** Assets to pre-cache on install for fastest first load */
 const PRECACHE_ASSETS = [
     '/',
+    '/logo.svg',
     '/logo.png',
+    '/favicon.ico',
+    '/apple-touch-icon.png',
     '/manifest.json'
 ];
 

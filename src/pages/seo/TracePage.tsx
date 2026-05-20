@@ -95,35 +95,35 @@ function LaunchPanel({ type, value }: { type: 'letter' | 'number' | 'shape'; val
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, rgba(108,71,255,0.25) 0%, rgba(0,245,212,0.15) 100%)',
-      border: '1px solid rgba(108,71,255,0.4)',
+      background: 'linear-gradient(135deg, rgba(3,78,174,0.212) 0%, rgba(0,245,212,0.15) 100%)',
+      border: '1px solid rgba(3,78,174,0.34)',
       borderRadius: 20,
       padding: '36px 40px',
       textAlign: 'center',
       backdropFilter: 'blur(12px)',
       margin: '32px 0',
-      boxShadow: '0 8px 40px rgba(108,71,255,0.2)',
+      boxShadow: '0 8px 40px rgba(3,78,174,0.17)',
     }}>
       <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🖐️</div>
-      <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800, margin: '0 0 8px' }}>
+      <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, margin: '0 0 8px' }}>
         Try It Right Now — Free
       </h2>
-      <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.95rem', margin: '0 0 24px', lineHeight: 1.6 }}>
+      <p style={{ color: 'rgba(26,27,46,0.70)', fontSize: '0.95rem', margin: '0 0 24px', lineHeight: 1.6 }}>
         No download. No login. Works on any laptop or desktop with a webcam.
       </p>
       <button
         onClick={() => navigate(url)}
         id={`launch-trace-${type}-${value}`}
         style={{
-          background: 'linear-gradient(135deg, #6c47ff, #00f5d4)',
+          background: 'linear-gradient(180deg, #1d6fd1 0%, #034eae 100%)',
           border: 'none',
           borderRadius: 50,
           padding: '16px 40px',
-          color: 'white',
+          color: '#1A1B2E',
           fontSize: '1.05rem',
           fontWeight: 800,
           cursor: 'pointer',
-          boxShadow: '0 4px 24px rgba(108,71,255,0.5)',
+          boxShadow: '0 4px 24px rgba(3,78,174,0.425)',
           transition: 'all 0.2s ease',
           letterSpacing: '0.02em',
         }}
@@ -142,15 +142,15 @@ function LaunchPanel({ type, value }: { type: 'letter' | 'number' | 'shape'; val
 // ─── Educational deep-dive section ───────────────────────────────────────────
 function EducationalContent({ type, value }: { type: 'letter' | 'number' | 'shape'; value: string }) {
   const para = (text: string) => (
-    <p style={{ color: 'rgba(255,255,255,0.82)', lineHeight: 1.75, marginBottom: 16, fontSize: '0.95rem' }}>{text}</p>
+    <p style={{ color: 'rgba(26,27,46,0.82)', lineHeight: 1.75, marginBottom: 16, fontSize: '0.95rem' }}>{text}</p>
   );
   const h3 = (text: string) => (
     <h3 style={{ color: '#00f5d4', fontSize: '1rem', fontWeight: 700, marginBottom: 8, marginTop: 20 }}>{text}</h3>
   );
   const tip = (text: string) => (
     <div style={{
-      background: 'rgba(108,71,255,0.12)',
-      border: '1px solid rgba(108,71,255,0.3)',
+      background: 'rgba(3,78,174,0.08)',
+      border: '1px solid rgba(3,78,174,0.255)',
       borderRadius: 12,
       padding: '14px 18px',
       marginTop: 16,
@@ -159,7 +159,7 @@ function EducationalContent({ type, value }: { type: 'letter' | 'number' | 'shap
       alignItems: 'flex-start',
     }}>
       <span style={{ fontSize: '1.3rem', flexShrink: 0 }}>💡</span>
-      <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', lineHeight: 1.65, margin: 0 }}>{text}</p>
+      <p style={{ color: 'rgba(26,27,46,0.78)', fontSize: '0.9rem', lineHeight: 1.65, margin: 0 }}>{text}</p>
     </div>
   );
 
@@ -170,7 +170,7 @@ function EducationalContent({ type, value }: { type: 'letter' | 'number' | 'shap
     if (!lc) return null;
     return (
       <div>
-        <h2 style={{ color: 'white', fontSize: '1.35rem', fontWeight: 800, marginBottom: 20 }}>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.35rem', fontWeight: 800, marginBottom: 20 }}>
           Learning Letter {L} — A Complete Guide
         </h2>
         {h3('How to Form Letter ' + L)}
@@ -192,7 +192,7 @@ function EducationalContent({ type, value }: { type: 'letter' | 'number' | 'shap
     if (!nc) return null;
     return (
       <div>
-        <h2 style={{ color: 'white', fontSize: '1.35rem', fontWeight: 800, marginBottom: 20 }}>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.35rem', fontWeight: 800, marginBottom: 20 }}>
           Learning Number {value} — A Complete Guide
         </h2>
         {h3('How to Form the Numeral ' + value)}
@@ -213,7 +213,7 @@ function EducationalContent({ type, value }: { type: 'letter' | 'number' | 'shap
   if (!sc) return null;
   return (
     <div>
-      <h2 style={{ color: 'white', fontSize: '1.35rem', fontWeight: 800, marginBottom: 20 }}>
+      <h2 style={{ color: '#1A1B2E', fontSize: '1.35rem', fontWeight: 800, marginBottom: 20 }}>
         Learning the {cap(value)} Shape — A Complete Guide
       </h2>
       {h3('Geometry Facts')}
@@ -236,10 +236,10 @@ function CrossCategoryLinks({ currentType }: { currentType: 'letter' | 'number' 
     alignItems: 'center',
     gap: 8,
     padding: '10px 18px',
-    background: 'rgba(255,255,255,0.06)',
+    background: '#FFFFFF',
     border: '1px solid rgba(255,255,255,0.15)',
     borderRadius: 50,
-    color: 'rgba(255,255,255,0.75)',
+    color: 'rgba(26,27,46,0.72)',
     fontSize: '0.85rem',
     fontWeight: 600,
     cursor: 'pointer',
@@ -254,21 +254,21 @@ function CrossCategoryLinks({ currentType }: { currentType: 'letter' | 'number' 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
         {currentType !== 'letter' && (
           <button style={btnStyle} onClick={() => navigate('/trace-a')}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#6c47ff'; }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#034eae'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)'; }}>
             🔤 Trace the Alphabet A–Z
           </button>
         )}
         {currentType !== 'number' && (
           <button style={btnStyle} onClick={() => navigate('/trace-number-1')}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#6c47ff'; }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#034eae'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)'; }}>
             🔢 Trace Numbers 1–10
           </button>
         )}
         {currentType !== 'shape' && (
           <button style={btnStyle} onClick={() => navigate('/trace-circle')}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#6c47ff'; }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#034eae'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)'; }}>
             🔷 Trace Shapes
           </button>
@@ -292,12 +292,12 @@ function CrossCategoryLinks({ currentType }: { currentType: 'letter' | 'number' 
 function RelatedCard({ label, path, emoji }: { label: string; path: string; emoji: string }) {
   return (
     <button onClick={() => navigate(path)} style={{
-      background: 'rgba(108,71,255,0.1)',
-      border: '1px solid rgba(108,71,255,0.25)',
+      background: 'rgba(3,78,174,0.08)',
+      border: '1px solid rgba(3,78,174,0.212)',
       borderRadius: 12,
       padding: '14px 18px',
       cursor: 'pointer',
-      color: 'white',
+      color: '#1A1B2E',
       textAlign: 'center',
       display: 'flex',
       flexDirection: 'column',
@@ -306,8 +306,8 @@ function RelatedCard({ label, path, emoji }: { label: string; path: string; emoj
       minWidth: 80,
       transition: 'all 0.2s',
     }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#6c47ff'; (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,0.2)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(108,71,255,0.25)'; (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,0.1)'; }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#034eae'; (e.currentTarget as HTMLElement).style.background = 'rgba(3,78,174,0.16)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(3,78,174,0.18)'; (e.currentTarget as HTMLElement).style.background = 'rgba(3,78,174,0.08)'; }}
     >
       <span style={{ fontSize: '1.6rem' }}>{emoji}</span>
       <span style={{ fontSize: '0.78rem', fontWeight: 700 }}>{label}</span>
@@ -370,7 +370,7 @@ export default function TracePage({ type, value }: TracePageProps) {
       <Section>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 32 }}>
           <div>
-            <h2 style={{ color: 'white', fontSize: '1.2rem', fontWeight: 800, marginBottom: 16 }}>Quick Facts</h2>
+            <h2 style={{ color: '#1A1B2E', fontSize: '1.2rem', fontWeight: 800, marginBottom: 16 }}>Quick Facts</h2>
             {type === 'letter' && (() => {
               const L = value.toUpperCase();
               const ph = PHONICS[L] || { sound: '', word: L, emoji: '✏️' };
@@ -378,8 +378,8 @@ export default function TracePage({ type, value }: TracePageProps) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {[['Letter', `${L} / ${L.toLowerCase()}`], ['Phonics Sound', ph.sound], ['Example Word', `${ph.word} ${ph.emoji}`], ['Position', `#${LETTERS.indexOf(L) + 1} of 26`]].map(([k, v]) => (
                     <div key={String(k)} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                      <span style={{ color: '#6c47ff', fontSize: '0.78rem', fontWeight: 700, minWidth: 110 }}>{k}</span>
-                      <span style={{ color: '#e2e8f0', fontSize: '0.88rem' }}>{v}</span>
+                      <span style={{ color: '#034eae', fontSize: '0.78rem', fontWeight: 700, minWidth: 110 }}>{k}</span>
+                      <span style={{ color: '#1A1B2E', fontSize: '0.88rem' }}>{v}</span>
                     </div>
                   ))}
                 </div>
@@ -391,8 +391,8 @@ export default function TracePage({ type, value }: TracePageProps) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {[['Number', `${value} (${cap(m.word)})`], ['Emoji', m.emoji], ['Fun Fact', m.funFact]].map(([k, v]) => (
                     <div key={String(k)} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                      <span style={{ color: '#6c47ff', fontSize: '0.78rem', fontWeight: 700, minWidth: 80 }}>{k}</span>
-                      <span style={{ color: '#e2e8f0', fontSize: '0.88rem' }}>{v}</span>
+                      <span style={{ color: '#034eae', fontSize: '0.78rem', fontWeight: 700, minWidth: 80 }}>{k}</span>
+                      <span style={{ color: '#1A1B2E', fontSize: '0.88rem' }}>{v}</span>
                     </div>
                   ))}
                 </div>
@@ -404,8 +404,8 @@ export default function TracePage({ type, value }: TracePageProps) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {[['Shape', cap(value)], ['Properties', m.sides], ['Description', m.description]].map(([k, v]) => (
                     <div key={String(k)} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                      <span style={{ color: '#6c47ff', fontSize: '0.78rem', fontWeight: 700, minWidth: 100 }}>{k}</span>
-                      <span style={{ color: '#e2e8f0', fontSize: '0.88rem' }}>{v}</span>
+                      <span style={{ color: '#034eae', fontSize: '0.78rem', fontWeight: 700, minWidth: 100 }}>{k}</span>
+                      <span style={{ color: '#1A1B2E', fontSize: '0.88rem' }}>{v}</span>
                     </div>
                   ))}
                 </div>
@@ -413,7 +413,7 @@ export default function TracePage({ type, value }: TracePageProps) {
             })()}
           </div>
           <div>
-            <h2 style={{ color: 'white', fontSize: '1.2rem', fontWeight: 800, marginBottom: 16 }}>How to Trace</h2>
+            <h2 style={{ color: '#1A1B2E', fontSize: '1.2rem', fontWeight: 800, marginBottom: 16 }}>How to Trace</h2>
             {[
               ['1. Open the app', 'Click the Launch button above or visit drawintheair.com.'],
               ['2. Allow webcam', 'Click Allow when your browser requests camera access.'],
@@ -422,8 +422,8 @@ export default function TracePage({ type, value }: TracePageProps) {
               ['5. Follow the guide', 'Trace the outlined shape shown on screen — follow the green dot!'],
             ].map(([step, desc]) => (
               <div key={String(step)} style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-                <span style={{ color: '#6c47ff', fontWeight: 800, fontSize: '0.8rem', minWidth: 110 }}>{step}</span>
-                <span style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>{desc}</span>
+                <span style={{ color: '#034eae', fontWeight: 800, fontSize: '0.8rem', minWidth: 110 }}>{step}</span>
+                <span style={{ color: '#4A4D6B', fontSize: '0.85rem', lineHeight: 1.5 }}>{desc}</span>
               </div>
             ))}
           </div>
@@ -432,7 +432,7 @@ export default function TracePage({ type, value }: TracePageProps) {
 
       {/* ── RELATED ITEMS ── */}
       <Section light>
-        <h2 style={{ color: 'white', fontSize: '1.3rem', fontWeight: 800, marginBottom: 20 }}>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.3rem', fontWeight: 800, marginBottom: 20 }}>
           {type === 'letter' ? 'Trace Every Letter A–Z' : type === 'number' ? 'Trace Every Number 1–10' : 'Trace Every Shape'}
         </h2>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 32 }}>
@@ -453,7 +453,7 @@ export default function TracePage({ type, value }: TracePageProps) {
 
       {/* ── FAQ ── */}
       <Section>
-        <h2 style={{ color: 'white', fontSize: '1.3rem', fontWeight: 800, marginBottom: 24 }}>Frequently Asked Questions</h2>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.3rem', fontWeight: 800, marginBottom: 24 }}>Frequently Asked Questions</h2>
         {data.faq.map(item => <FAQItem key={item.q} q={item.q} a={item.a} />)}
       </Section>
     </SeoLayout>

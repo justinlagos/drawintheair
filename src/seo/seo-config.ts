@@ -6,8 +6,9 @@ export const SITE = {
   url: 'https://drawintheair.com',
   description: 'Draw in the Air — the free, browser-based gesture drawing app for kids. Trace letters A–Z and numbers 0–9, pop bubbles, and learn through hand-tracking. No download needed.',
   twitter: '@drawintheair',
-  ogImage: 'https://drawintheair.com/og-default.jpg',
-  logo: 'https://drawintheair.com/logo.png',
+  ogImage: 'https://drawintheair.com/og-image.png',
+  logo: 'https://drawintheair.com/logo.svg',
+  logoRaster: 'https://drawintheair.com/logo.png',
   appPath: '/play',
 };
 

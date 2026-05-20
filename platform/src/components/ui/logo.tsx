@@ -1,53 +1,79 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
+/**
+ * Logo — Draw in the Air brand mark for the platform (Next.js) app.
+ *
+ * This component renders the official vector logo (/logo.svg) using
+ * next/image, with sensible sizing per variant. The legacy `showIcon`
+ * + wordmark layout has been retired in favour of the unified brand
+ * mark, but the component preserves its existing prop shape so callers
+ * keep compiling.
+ */
+
 interface LogoProps {
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
   linked?: boolean
   className?: string
+  /** Render the PNG raster instead of the SVG (print/export/email surfaces). */
+  raster?: boolean
+  /** Decorative — empty alt for screen readers. */
+  decorative?: boolean
+  /** @deprecated Kept for back-compat. The new logo is the icon. */
   showIcon?: boolean
 }
 
-const sizeStyles = { sm: 'text-base', md: 'text-lg', lg: 'text-2xl' }
-const iconSizes  = { sm: 'h-7 w-7', md: 'h-9 w-9', lg: 'h-11 w-11' }
-
-function LogoIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg"
-      className={className} aria-hidden="true">
-      <rect width="36" height="36" rx="10" fill="#f97316"/>
-      {/* trail arc */}
-      <path d="M8 26 Q13 12 22 8" stroke="#fde68a" strokeWidth="2.5"
-        strokeLinecap="round" fill="none" opacity="0.7"/>
-      <path d="M10 24 Q16 10 24 7" stroke="#fff" strokeWidth="2"
-        strokeLinecap="round" fill="none" opacity="0.9"/>
-      {/* fingertip */}
-      <circle cx="24" cy="7" r="3" fill="#fbbf24"/>
-      {/* sparkles */}
-      <circle cx="7"  cy="9"  r="1.5" fill="#fde68a" opacity="0.8"/>
-      <circle cx="28" cy="22" r="1.2" fill="#fde68a" opacity="0.6"/>
-      <circle cx="15" cy="6"  r="1"   fill="#fff"    opacity="0.5"/>
-    </svg>
-  )
+const SIZE_PX: Record<NonNullable<LogoProps['size']>, number> = {
+  sm: 28,
+  md: 36,
+  lg: 48,
+  xl: 80,
 }
 
-export function Logo({ size = 'md', linked = false, className, showIcon = true }: LogoProps) {
-  const content = (
-    <span className={cn('inline-flex items-center gap-2 font-bold', className)}>
-      {showIcon && <LogoIcon className={iconSizes[size]} />}
-      <span className={cn('text-orange-500 font-extrabold tracking-tight', sizeStyles[size])}>
-        Draw in the Air
-      </span>
-    </span>
+// Intrinsic aspect ratio: 1510 × 1041
+const RATIO = 1510 / 1041
+
+export function Logo({
+  size = 'md',
+  linked = false,
+  className,
+  raster = false,
+  decorative = false,
+}: LogoProps) {
+  const h = SIZE_PX[size]
+  const w = Math.round(h * RATIO)
+  const src = raster ? '/logo.png' : '/logo.svg'
+  const alt = decorative ? '' : 'Draw in the Air'
+
+  const img = (
+    <Image
+      src={src}
+      alt={alt}
+      width={w}
+      height={h}
+      priority={size === 'lg' || size === 'xl'}
+      className={cn('inline-block h-auto select-none', className)}
+      style={{ height: h, width: 'auto' }}
+      draggable={false}
+    />
   )
+
   if (linked) {
     return (
-      <Link href="/" className="inline-flex items-center gap-2 hover:opacity-90 transition-opacity">
-        {content}
+      <Link
+        href="/"
+        aria-label="Draw in the Air — Home"
+        className="inline-flex items-center hover:opacity-90 transition-opacity"
+      >
+        {img}
       </Link>
     )
   }
-  return content
+  return img
 }
+
+/** Convenience re-export with a cleaner name; both names work. */
+export const BrandLogo = Logo

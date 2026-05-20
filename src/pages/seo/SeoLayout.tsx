@@ -1,9 +1,11 @@
 // src/pages/seo/SeoLayout.tsx
 // Shared layout for all SEO content pages.
+// Migrated May 2026 — light premium theme + new brand logo.
 
 import React, { useState } from 'react';
 import './seo-theme.css';
 import { SITE } from '../../seo/seo-config';
+import { BrandLogo } from '../../components/BrandLogo';
 
 // ─── Navigation ─────────────────────────────────────────────────────────────
 
@@ -71,7 +73,7 @@ export function SeoLayout({ children }: SeoLayoutProps) {
   return (
     <div
       className="seo-root"
-      data-seo-theme="dark"
+      data-seo-theme="light"
       aria-label="Draw in the Air"
     >
       {/* ── NAVIGATION ── */}
@@ -79,7 +81,7 @@ export function SeoLayout({ children }: SeoLayoutProps) {
         <div className="seo-nav-inner">
           {/* Logo */}
           <button className="seo-nav-logo" onClick={() => navigate('/')} aria-label="Go to homepage">
-            <img src="/logo.png" alt="Draw in the Air" />
+            <BrandLogo variant="header" />
           </button>
 
           {/* Desktop links */}
@@ -144,10 +146,11 @@ export function SeoLayout({ children }: SeoLayoutProps) {
       {/* ── CTA BAND ── */}
       <section className="seo-cta-band">
         <div className="seo-cta-band-inner">
-          <img
-            src="/logo.png"
-            alt="Draw in the Air"
-            style={{ height: 72, width: 'auto', display: 'block', margin: '0 auto 14px' }}
+          <BrandLogo
+            variant="hero"
+            height={72}
+            raster
+            style={{ margin: '0 auto 14px' }}
           />
           <h2>Ready to Draw in the Air?</h2>
           <p>Free, no download, no account. Just open your browser and start drawing!</p>

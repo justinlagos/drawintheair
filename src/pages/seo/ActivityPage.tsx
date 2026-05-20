@@ -152,35 +152,35 @@ export default function ActivityPage({ slug }: ActivityPageProps) {
       <PageHero badge={badge} emoji={emoji} title={heroTitle} subtitle={heroSub} cta={{ label: 'Play Now — Free ✨', path: SITE.appPath }} />
 
       <Section light>
-        <h2 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 800, marginBottom: 24 }}>Skills This Activity Develops</h2>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.4rem', fontWeight: 800, marginBottom: 24 }}>Skills This Activity Develops</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
           {skills.map(s => (
-            <div key={s.title} style={{ background: 'rgba(108,71,255,0.1)', border: '1px solid rgba(108,71,255,0.2)', borderRadius: 12, padding: 20 }}>
+            <div key={s.title} style={{ background: 'rgba(3,78,174,0.08)', border: '1px solid rgba(3,78,174,0.17)', borderRadius: 12, padding: 20 }}>
               <div style={{ fontSize: '2rem', marginBottom: 8 }}>{s.icon}</div>
-              <div style={{ color: 'white', fontWeight: 700, marginBottom: 4 }}>{s.title}</div>
-              <div style={{ color: '#94a3b8', fontSize: '0.84rem' }}>{s.desc}</div>
+              <div style={{ color: '#1A1B2E', fontWeight: 700, marginBottom: 4 }}>{s.title}</div>
+              <div style={{ color: '#4A4D6B', fontSize: '0.84rem' }}>{s.desc}</div>
             </div>
           ))}
         </div>
       </Section>
 
       <Section>
-        <h2 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 800, marginBottom: 20 }}>How to Play</h2>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.4rem', fontWeight: 800, marginBottom: 20 }}>How to Play</h2>
         {howItWorks.map((step, i) => (
           <div key={i} style={{ display: 'flex', gap: 16, marginBottom: 16, alignItems: 'flex-start' }}>
-            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#6c47ff', color: 'white', fontWeight: 800, fontSize: '0.82rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</div>
-            <p style={{ color: '#e2e8f0', fontSize: '0.9rem', lineHeight: 1.6, margin: 0 }}>{step}</p>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#034eae', color: '#1A1B2E', fontWeight: 800, fontSize: '0.82rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</div>
+            <p style={{ color: '#1A1B2E', fontSize: '0.9rem', lineHeight: 1.6, margin: 0 }}>{step}</p>
           </div>
         ))}
       </Section>
 
       <Section light>
-        <h2 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 800, marginBottom: 24 }}>Frequently Asked Questions</h2>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.4rem', fontWeight: 800, marginBottom: 24 }}>Frequently Asked Questions</h2>
         {faq.map(item => <FAQItem key={item.q} q={item.q} a={item.a} />)}
       </Section>
 
       <Section>
-        <h2 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 800, marginBottom: 20 }}>Try Other Activities</h2>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.4rem', fontWeight: 800, marginBottom: 20 }}>Try Other Activities</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
           {[
             { label: '🔤 Letter Tracing', path: '/letter-tracing' },
@@ -190,7 +190,7 @@ export default function ActivityPage({ slug }: ActivityPageProps) {
             { label: '🗂️ Sort & Place', path: '/activities/sort-and-place' },
             { label: '🎨 Free Paint', path: '/free-paint' },
           ].filter(a => !a.path.includes(slug)).map(a => (
-            <button key={a.path} onClick={() => navigate(a.path)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '14px 12px', cursor: 'pointer', color: 'white', fontWeight: 600, fontSize: '0.85rem' }}>
+            <button key={a.path} onClick={() => navigate(a.path)} style={{ background: '#FFFFFF', border: '1px solid rgba(63,64,82,0.14)', borderRadius: 10, padding: '14px 12px', cursor: 'pointer', color: '#1A1B2E', fontWeight: 600, fontSize: '0.85rem' }}>
               {a.label}
             </button>
           ))}

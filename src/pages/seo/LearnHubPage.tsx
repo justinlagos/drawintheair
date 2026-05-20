@@ -25,10 +25,10 @@ export default function LearnHubPage() {
       {/* Introduction */}
       <Section>
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
-          <p style={{ color: '#94a3b8', fontSize: '1.05rem', lineHeight: 1.75, marginBottom: 16 }}>
+          <p style={{ color: '#4A4D6B', fontSize: '1.05rem', lineHeight: 1.75, marginBottom: 16 }}>
             Draw in the Air is built on research in embodied cognition, kinesthetic learning, and early childhood motor development. These articles explain the educational thinking behind the platform — not marketing copy, but genuine information for parents wondering whether gesture learning is worthwhile and teachers considering how it fits into their classroom practice.
           </p>
-          <p style={{ color: '#94a3b8', fontSize: '1.05rem', lineHeight: 1.75, marginBottom: 0 }}>
+          <p style={{ color: '#4A4D6B', fontSize: '1.05rem', lineHeight: 1.75, marginBottom: 0 }}>
             Every article is written with references to developmental research and practical advice for use at home or in the classroom. Whether you teach Reception, homeschool a 4-year-old, or want to understand how AI hand tracking actually works, there is something here for you.
           </p>
         </div>
@@ -36,14 +36,14 @@ export default function LearnHubPage() {
 
       {/* Featured article */}
       <Section light>
-        <h2 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 800, marginBottom: 20 }}>Featured</h2>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.4rem', fontWeight: 800, marginBottom: 20 }}>Featured</h2>
         <button
           onClick={() => navigate('/learn/gesture-learning')}
           style={{
             display: 'block',
             width: '100%',
-            background: 'linear-gradient(135deg, rgba(108,71,255,0.15), rgba(34,211,238,0.1))',
-            border: '1px solid rgba(108,71,255,0.3)',
+            background: 'linear-gradient(135deg, rgba(3,78,174,0.128), rgba(28,126,128,0.1))',
+            border: '1px solid rgba(3,78,174,0.255)',
             borderRadius: 16,
             padding: 28,
             cursor: 'pointer',
@@ -53,18 +53,18 @@ export default function LearnHubPage() {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <span style={{ fontSize: '1.8rem' }}>✋</span>
-            <span style={{ color: '#a78bfa', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Research</span>
+            <span style={{ color: '#6C3FA4', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Research</span>
           </div>
-          <div style={{ color: 'white', fontWeight: 800, fontSize: '1.3rem', lineHeight: 1.4, marginBottom: 8 }}>
+          <div style={{ color: '#1A1B2E', fontWeight: 800, fontSize: '1.3rem', lineHeight: 1.4, marginBottom: 8 }}>
             Gesture-Based Learning — The Future of Interactive Education
           </div>
-          <div style={{ color: '#94a3b8', fontSize: '0.92rem', lineHeight: 1.65, marginBottom: 12 }}>
+          <div style={{ color: '#4A4D6B', fontSize: '0.92rem', lineHeight: 1.65, marginBottom: 12 }}>
             Movement-based learning activates multiple cognitive pathways simultaneously. When a child physically traces the letter A in the air while seeing the letter form on screen, they engage proprioceptive memory, visual processing, and motor planning in a single action. This article explores what the research says and how it applies to young learners.
           </div>
-          <span style={{ color: '#6c47ff', fontSize: '0.82rem', fontWeight: 700 }}>Read article — 6 min</span>
+          <span style={{ color: '#034eae', fontSize: '0.82rem', fontWeight: 700 }}>Read article — 6 min</span>
         </button>
 
-        <h2 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 800, marginBottom: 20 }}>All Articles</h2>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.4rem', fontWeight: 800, marginBottom: 20 }}>All Articles</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
           {ARTICLES.map(a => (
             <button
@@ -72,7 +72,7 @@ export default function LearnHubPage() {
               onClick={() => navigate(`/learn/${a.slug}`)}
               style={{
                 background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                border: '1px solid rgba(63,64,82,0.12)',
                 borderRadius: 14,
                 padding: 22,
                 cursor: 'pointer',
@@ -82,16 +82,16 @@ export default function LearnHubPage() {
                 gap: 8,
                 transition: 'border-color 0.2s',
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(108,71,255,0.4)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(3,78,174,0.30)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(63,64,82,0.12)'; }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: '1.6rem' }}>{a.emoji}</span>
-                <span style={{ color: '#6c47ff', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{a.category}</span>
+                <span style={{ color: '#034eae', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{a.category}</span>
               </div>
-              <span style={{ color: 'white', fontWeight: 700, fontSize: '0.95rem', lineHeight: 1.4 }}>{a.title}</span>
-              <span style={{ color: '#94a3b8', fontSize: '0.82rem', lineHeight: 1.6 }}>{a.desc}</span>
-              <span style={{ color: '#6c47ff', fontSize: '0.75rem', fontWeight: 600, marginTop: 'auto' }}>{a.readTime} →</span>
+              <span style={{ color: '#1A1B2E', fontWeight: 700, fontSize: '0.95rem', lineHeight: 1.4 }}>{a.title}</span>
+              <span style={{ color: '#4A4D6B', fontSize: '0.82rem', lineHeight: 1.6 }}>{a.desc}</span>
+              <span style={{ color: '#034eae', fontSize: '0.75rem', fontWeight: 600, marginTop: 'auto' }}>{a.readTime} →</span>
             </button>
           ))}
         </div>
@@ -99,8 +99,8 @@ export default function LearnHubPage() {
 
       {/* Topics navigation */}
       <Section>
-        <h2 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 800, marginBottom: 20 }}>Browse by Topic</h2>
-        <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: 20 }}>Jump to specific areas of the platform or explore related educational content.</p>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.4rem', fontWeight: 800, marginBottom: 20 }}>Browse by Topic</h2>
+        <p style={{ color: '#4A4D6B', fontSize: '0.9rem', marginBottom: 20 }}>Jump to specific areas of the platform or explore related educational content.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
           {[
             { label: '🧒 For Parents', path: '/for-parents' },
@@ -120,19 +120,19 @@ export default function LearnHubPage() {
               key={item.path}
               onClick={() => navigate(item.path)}
               style={{
-                background: 'rgba(108,71,255,0.08)',
-                border: '1px solid rgba(108,71,255,0.2)',
+                background: 'rgba(3,78,174,0.06)',
+                border: '1px solid rgba(3,78,174,0.17)',
                 borderRadius: 10,
                 padding: '12px 16px',
                 cursor: 'pointer',
-                color: 'white',
+                color: '#1A1B2E',
                 fontWeight: 600,
                 fontSize: '0.85rem',
                 textAlign: 'left',
                 transition: 'all 0.2s',
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,0.15)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,0.08)'; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(3,78,174,0.10)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(3,78,174,0.06)'; }}
             >
               {item.label}
             </button>

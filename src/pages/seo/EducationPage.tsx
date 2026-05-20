@@ -95,15 +95,15 @@ export default function EducationPage({ slug }: EducationPageProps) {
             />
 
             <Section light>
-                <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>Why Use Gesture Learning?</h2>
-                <div style={{ color: '#94a3b8', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: 30 }}>
+                <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>Why Use Gesture Learning?</h2>
+                <div style={{ color: '#4A4D6B', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: 30 }}>
                     <p style={{ marginBottom: 15 }}>Movement is the anchor to memory. When children physically swing their arm to draw a shape or grab a sorting block, they engage multiple areas of the motor cortex at once.</p>
                     <p>This kinesthetic learning accelerates reading and math readiness up to 3x faster than passive screen tapping.</p>
                 </div>
             </Section>
 
             <Section>
-                <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800, marginBottom: 24 }}>Common Questions</h2>
+                <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 24 }}>Common Questions</h2>
                 {data.faq.map(item => <FAQItem key={item.q} q={item.q} a={item.a} />)}
             </Section>
         </SeoLayout>

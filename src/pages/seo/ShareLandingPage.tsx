@@ -168,12 +168,12 @@ export default function ShareLandingPage({ slug }: { slug: string }) {
 
       {/* Shared-by notice */}
       <div style={{
-        background: 'linear-gradient(90deg, rgba(108,71,255,0.15), rgba(34,211,238,0.1))',
-        borderBottom: '1px solid rgba(108,71,255,0.25)',
+        background: 'linear-gradient(90deg, rgba(3,78,174,0.128), rgba(28,126,128,0.1))',
+        borderBottom: '1px solid rgba(3,78,174,0.212)',
         padding: '10px 24px',
         textAlign: 'center',
       }}>
-        <span style={{ color: '#a78bfa', fontSize: '0.85rem', fontWeight: 600 }}>
+        <span style={{ color: '#6C3FA4', fontSize: '0.85rem', fontWeight: 600 }}>
           👩‍🏫 A colleague shared this activity with you · Free to try · No account needed
         </span>
       </div>
@@ -188,16 +188,16 @@ export default function ShareLandingPage({ slug }: { slug: string }) {
 
       {/* What it is */}
       <Section>
-        <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800, marginBottom: 16 }}>What Is This Activity?</h2>
-        <p style={{ color: '#94a3b8', fontSize: '1.05rem', lineHeight: 1.65, marginBottom: 32 }}>{meta.whatItIs}</p>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 16 }}>What Is This Activity?</h2>
+        <p style={{ color: '#4A4D6B', fontSize: '1.05rem', lineHeight: 1.65, marginBottom: 32 }}>{meta.whatItIs}</p>
 
         {/* Skills grid */}
-        <h3 style={{ color: 'white', fontSize: '1.1rem', fontWeight: 700, marginBottom: 14 }}>Skills Developed</h3>
+        <h3 style={{ color: '#1A1B2E', fontSize: '1.1rem', fontWeight: 700, marginBottom: 14 }}>Skills Developed</h3>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 32 }}>
           {meta.skills.map(skill => (
             <span
               key={skill}
-              style={{ background: 'rgba(108,71,255,0.2)', border: '1px solid rgba(108,71,255,0.35)', color: '#c4b5fd', borderRadius: 20, padding: '6px 16px', fontSize: '0.85rem', fontWeight: 600 }}
+              style={{ background: 'rgba(3,78,174,0.16)', border: '1px solid rgba(3,78,174,0.297)', color: '#6C3FA4', borderRadius: 20, padding: '6px 16px', fontSize: '0.85rem', fontWeight: 600 }}
             >
               {skill}
             </span>
@@ -207,17 +207,17 @@ export default function ShareLandingPage({ slug }: { slug: string }) {
 
       {/* How to play */}
       <Section light>
-        <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>How to Get Started</h2>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>How to Get Started</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 32 }}>
           {meta.howToPlay.map((step, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
               <div style={{
-                width: 32, height: 32, borderRadius: '50%', background: 'rgba(108,71,255,0.25)',
-                border: '1px solid rgba(108,71,255,0.5)', color: '#a78bfa',
+                width: 32, height: 32, borderRadius: '50%', background: 'rgba(3,78,174,0.18)',
+                border: '1px solid rgba(3,78,174,0.425)', color: '#6C3FA4',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontWeight: 800, fontSize: '0.85rem', flexShrink: 0,
               }}>{i + 1}</div>
-              <p style={{ color: '#e2e8f0', fontSize: '0.95rem', lineHeight: 1.6, margin: 0, paddingTop: 4 }}>{step}</p>
+              <p style={{ color: '#1A1B2E', fontSize: '0.95rem', lineHeight: 1.6, margin: 0, paddingTop: 4 }}>{step}</p>
             </div>
           ))}
         </div>
@@ -225,11 +225,11 @@ export default function ShareLandingPage({ slug }: { slug: string }) {
         <div style={{ textAlign: 'center' }}>
           <button
             onClick={() => navigate(meta.playPath)}
-            style={{ background: 'linear-gradient(135deg, #6c47ff, #22d3ee)', color: 'white', border: 'none', borderRadius: 32, padding: '16px 40px', fontWeight: 800, fontSize: '1.05rem', cursor: 'pointer', boxShadow: '0 4px 24px rgba(108,71,255,0.3)' }}
+            style={{ background: 'linear-gradient(180deg, #1d6fd1 0%, #034eae 100%)', color: '#1A1B2E', border: 'none', borderRadius: 32, padding: '16px 40px', fontWeight: 800, fontSize: '1.05rem', cursor: 'pointer', boxShadow: '0 4px 24px rgba(3,78,174,0.255)' }}
           >
             Try It Now — It's Free ✨
           </button>
-          <div style={{ marginTop: 12, color: '#64748b', fontSize: '0.82rem' }}>
+          <div style={{ marginTop: 12, color: '#6B6F84', fontSize: '0.82rem' }}>
             No download · No login · Works on any laptop with a camera
           </div>
         </div>
@@ -237,7 +237,7 @@ export default function ShareLandingPage({ slug }: { slug: string }) {
 
       {/* Trust signals */}
       <Section>
-        <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>Why Teachers Use Draw in the Air</h2>
+        <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>Why Teachers Use Draw in the Air</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
           {[
             { icon: '🔒', title: 'Privacy First', detail: 'Camera processing happens on the device. No video is recorded, transmitted, or stored.' },
@@ -245,24 +245,24 @@ export default function ShareLandingPage({ slug }: { slug: string }) {
             { icon: '💻', title: 'Chromebook Ready', detail: 'Runs in the browser with no installation. Works immediately on any school device.' },
             { icon: '⚡', title: 'No Setup', detail: 'No accounts, no student logins, no IT requests. Open the browser and start.' },
           ].map(item => (
-            <div key={item.title} style={{ background: '#111629', border: '1px solid rgba(108,71,255,0.2)', borderRadius: 12, padding: '20px 24px' }}>
+            <div key={item.title} style={{ background: '#FFFFFF', border: '1px solid rgba(3,78,174,0.17)', borderRadius: 12, padding: '20px 24px' }}>
               <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>{item.icon}</div>
-              <div style={{ color: 'white', fontWeight: 700, marginBottom: 6 }}>{item.title}</div>
-              <div style={{ color: '#94a3b8', fontSize: '0.88rem', lineHeight: 1.55 }}>{item.detail}</div>
+              <div style={{ color: '#1A1B2E', fontWeight: 700, marginBottom: 6 }}>{item.title}</div>
+              <div style={{ color: '#4A4D6B', fontSize: '0.88rem', lineHeight: 1.55 }}>{item.detail}</div>
             </div>
           ))}
         </div>
 
         {/* Share this yourself */}
-        <div style={{ marginTop: 40, background: 'rgba(108,71,255,0.08)', border: '1px solid rgba(108,71,255,0.2)', borderRadius: 16, padding: '28px 32px', textAlign: 'center' }}>
+        <div style={{ marginTop: 40, background: 'rgba(3,78,174,0.06)', border: '1px solid rgba(3,78,174,0.17)', borderRadius: 16, padding: '28px 32px', textAlign: 'center' }}>
           <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>📤</div>
-          <h3 style={{ color: 'white', fontWeight: 700, fontSize: '1.1rem', marginBottom: 8 }}>Found this useful? Share it with another teacher.</h3>
-          <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: 16 }}>
+          <h3 style={{ color: '#1A1B2E', fontWeight: 700, fontSize: '1.1rem', marginBottom: 8 }}>Found this useful? Share it with another teacher.</h3>
+          <p style={{ color: '#4A4D6B', fontSize: '0.9rem', marginBottom: 16 }}>
             After you try an activity, use the share button in the app to send it to a colleague.
           </p>
           <button
             onClick={() => navigate(SITE.appPath)}
-            style={{ background: '#6c47ff', color: 'white', border: 'none', borderRadius: 24, padding: '10px 28px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
+            style={{ background: '#034eae', color: '#1A1B2E', border: 'none', borderRadius: 24, padding: '10px 28px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
           >
             Explore All Activities
           </button>

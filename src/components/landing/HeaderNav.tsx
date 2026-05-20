@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './landing.css';
 import { LandingCTAButton } from './LandingCTAButton';
 import { NavMetricsTicker } from './NavMetricsTicker';
+import { BrandLogo } from '../BrandLogo';
 
 interface HeaderNavProps {
   variant?: 'transparent' | 'solid';
@@ -84,11 +85,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ onTryFree }) => {
       <div className="landing-nav-container">
         <div className="landing-nav-left">
           <a href="/" onClick={handleLogoClick} style={{ display: 'block', cursor: 'pointer' }}>
-            <img
-              src="/logo.png"
-              alt="Draw In The Air"
-              className="landing-logo"
-            />
+            <BrandLogo variant="header" className="landing-logo" alt="Draw in the Air" />
           </a>
         </div>
 

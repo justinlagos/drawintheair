@@ -67,10 +67,10 @@ export default function FreeResourcesPage() {
       {/* ── Classroom Guide PDFs ─────────────────────────────── */}
       <Section light>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <h2 style={{ color: 'white', fontSize: '1.8rem', fontWeight: 800, marginBottom: 8 }}>
+          <h2 style={{ color: '#1A1B2E', fontSize: '1.8rem', fontWeight: 800, marginBottom: 8 }}>
             📥  Free Classroom Guides
           </h2>
-          <p style={{ color: '#94a3b8', fontSize: '1rem', marginBottom: 32, lineHeight: 1.6 }}>
+          <p style={{ color: '#4A4D6B', fontSize: '1rem', marginBottom: 32, lineHeight: 1.6 }}>
             Ten professionally designed PDF guides covering everything from EYFS curriculum links
             to Chromebook setup. Free to download, print, and share with colleagues.
           </p>
@@ -84,9 +84,9 @@ export default function FreeResourcesPage() {
               >
                 <div
                   style={{
-                    background: '#111629',
+                    background: '#FFFFFF',
                     borderRadius: 14,
-                    border: '1px solid rgba(108,71,255,0.2)',
+                    border: '1px solid rgba(3,78,174,0.17)',
                     padding: 20,
                     display: 'flex',
                     flexDirection: 'column',
@@ -97,7 +97,7 @@ export default function FreeResourcesPage() {
                   }}
                   onMouseEnter={e => {
                     (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px rgba(108,71,255,0.25)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px rgba(3,78,174,0.212)';
                   }}
                   onMouseLeave={e => {
                     (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
@@ -105,13 +105,13 @@ export default function FreeResourcesPage() {
                   }}
                 >
                   <div style={{ fontSize: '2rem' }}>{guide.emoji}</div>
-                  <div style={{ color: 'white', fontWeight: 700, fontSize: '0.95rem', lineHeight: 1.4 }}>{guide.title}</div>
-                  <div style={{ color: '#94a3b8', fontSize: '0.8rem', lineHeight: 1.5, flexGrow: 1 }}>{guide.desc}</div>
+                  <div style={{ color: '#1A1B2E', fontWeight: 700, fontSize: '0.95rem', lineHeight: 1.4 }}>{guide.title}</div>
+                  <div style={{ color: '#4A4D6B', fontSize: '0.8rem', lineHeight: 1.5, flexGrow: 1 }}>{guide.desc}</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                    <span style={{ background: 'rgba(108,71,255,0.15)', color: '#a78bfa', padding: '2px 8px', borderRadius: 10, fontSize: '0.7rem', fontWeight: 600 }}>
+                    <span style={{ background: 'rgba(3,78,174,0.10)', color: '#6C3FA4', padding: '2px 8px', borderRadius: 10, fontSize: '0.7rem', fontWeight: 600 }}>
                       {guide.audience}
                     </span>
-                    <span style={{ color: '#22d3ee', fontSize: '0.78rem', fontWeight: 700 }}>↓ Download PDF</span>
+                    <span style={{ color: '#1c7e80', fontSize: '0.78rem', fontWeight: 700 }}>↓ Download PDF</span>
                   </div>
                 </div>
               </a>
@@ -123,14 +123,14 @@ export default function FreeResourcesPage() {
               download="Draw-in-the-Air-Teacher-Quick-Start.pdf"
               style={{
                 display: 'inline-block',
-                background: '#6c47ff',
-                color: 'white',
+                background: '#034eae',
+                color: '#1A1B2E',
                 borderRadius: 24,
                 padding: '12px 32px',
                 fontWeight: 700,
                 fontSize: '0.95rem',
                 textDecoration: 'none',
-                boxShadow: '0 4px 14px rgba(108,71,255,0.4)',
+                boxShadow: '0 4px 14px rgba(3,78,174,0.34)',
                 marginRight: 12,
               }}
             >
@@ -141,9 +141,9 @@ export default function FreeResourcesPage() {
               download="Draw-in-the-Air-AZ-Workbook.pdf"
               style={{
                 display: 'inline-block',
-                background: 'rgba(34,211,238,0.15)',
-                color: '#22d3ee',
-                border: '1px solid rgba(34,211,238,0.4)',
+                background: 'rgba(28,126,128,0.15)',
+                color: '#1c7e80',
+                border: '1px solid rgba(28,126,128,0.4)',
                 borderRadius: 24,
                 padding: '12px 32px',
                 fontWeight: 700,
@@ -161,10 +161,10 @@ export default function FreeResourcesPage() {
       <Section>
         <div style={{ maxWidth: 860, margin: '0 auto' }}>
 
-          <h2 style={{ color: 'white', fontSize: '1.8rem', fontWeight: 800, marginBottom: 12 }}>
+          <h2 style={{ color: '#1A1B2E', fontSize: '1.8rem', fontWeight: 800, marginBottom: 12 }}>
             Offline Tracing Series (A–Z)
           </h2>
-          <p style={{ color: '#94a3b8', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: 36 }}>
+          <p style={{ color: '#4A4D6B', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: 36 }}>
             After students master large, gross-motor arm movements using Draw in the Air's camera
             technology, it helps to transition those pathways into fine-motor pencil skills.
             We've created high-contrast, easy-to-read printable alphabet sheets for every letter.
@@ -191,9 +191,9 @@ export default function FreeResourcesPage() {
                 >
                   <div
                     style={{
-                      background: '#111629',
+                      background: '#FFFFFF',
                       borderRadius: 12,
-                      border: '1px solid rgba(108,71,255,0.2)',
+                      border: '1px solid rgba(3,78,174,0.17)',
                       overflow: 'hidden',
                       display: 'flex',
                       flexDirection: 'column',
@@ -202,25 +202,25 @@ export default function FreeResourcesPage() {
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = 'translateY(-4px)';
-                      e.currentTarget.style.boxShadow = '0 10px 25px rgba(108,71,255,0.25)';
-                      e.currentTarget.style.borderColor = 'rgba(108,71,255,0.6)';
+                      e.currentTarget.style.boxShadow = '0 10px 25px rgba(3,78,174,0.212)';
+                      e.currentTarget.style.borderColor = 'rgba(3,78,174,0.51)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = 'translateY(0)';
                       e.currentTarget.style.boxShadow = 'none';
-                      e.currentTarget.style.borderColor = 'rgba(108,71,255,0.2)';
+                      e.currentTarget.style.borderColor = 'rgba(3,78,174,0.16)';
                     }}
                   >
                     {/* Letter display */}
                     <div style={{
                       padding: '20px 0 8px',
                       textAlign: 'center',
-                      background: 'rgba(108,71,255,0.07)',
+                      background: 'rgba(3,78,174,0.05)',
                     }}>
-                      <div style={{ fontSize: '2.2rem', fontWeight: 900, color: 'white', lineHeight: 1 }}>
+                      <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#1A1B2E', lineHeight: 1 }}>
                         {char}
                       </div>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#a78bfa', lineHeight: 1, marginTop: 2 }}>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#6C3FA4', lineHeight: 1, marginTop: 2 }}>
                         {char.toLowerCase()}
                       </div>
                       <div style={{ fontSize: '1.1rem', marginTop: 4 }}>{emoji}</div>
@@ -229,10 +229,10 @@ export default function FreeResourcesPage() {
                     <div style={{
                       padding: '8px 0',
                       textAlign: 'center',
-                      borderTop: '1px solid rgba(108,71,255,0.15)',
-                      background: 'rgba(34,211,238,0.04)',
+                      borderTop: '1px solid rgba(3,78,174,0.128)',
+                      background: 'rgba(28,126,128,0.04)',
                     }}>
-                      <span style={{ fontSize: '0.72rem', color: '#22d3ee', fontWeight: 700 }}>
+                      <span style={{ fontSize: '0.72rem', color: '#1c7e80', fontWeight: 700 }}>
                         ↓ PDF
                       </span>
                     </div>
@@ -244,17 +244,17 @@ export default function FreeResourcesPage() {
 
           {/* Workbook CTA */}
           <div style={{
-            background: 'linear-gradient(135deg, rgba(108,71,255,0.18), rgba(34,211,238,0.08))',
-            border: '1px solid rgba(34,211,238,0.25)',
+            background: 'linear-gradient(135deg, rgba(3,78,174,0.153), rgba(28,126,128,0.08))',
+            border: '1px solid rgba(28,126,128,0.25)',
             borderRadius: 18,
             padding: '36px 32px',
             textAlign: 'center',
           }}>
             <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>📖</div>
-            <h3 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800, marginBottom: 8 }}>
+            <h3 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 8 }}>
               Get the Full A–Z Workbook
             </h3>
-            <p style={{ color: '#cbd5e1', fontSize: '1rem', lineHeight: 1.6, marginBottom: 24, maxWidth: 480, margin: '0 auto 24px auto' }}>
+            <p style={{ color: '#4A4D6B', fontSize: '1rem', lineHeight: 1.6, marginBottom: 24, maxWidth: 480, margin: '0 auto 24px auto' }}>
               All 26 letters in a single perfectly-formatted 27-page PDF.
               Cover page, tracing guides, word examples, and free practice rows for every letter.
               Print one copy for the whole class or send home for family practice.
@@ -267,15 +267,15 @@ export default function FreeResourcesPage() {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 8,
-                  background: '#6c47ff',
-                  color: 'white',
+                  background: '#034eae',
+                  color: '#1A1B2E',
                   border: 'none',
                   borderRadius: 24,
                   padding: '14px 36px',
                   fontWeight: 700,
                   fontSize: '1rem',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 18px rgba(108,71,255,0.5)',
+                  boxShadow: '0 4px 18px rgba(3,78,174,0.425)',
                   textDecoration: 'none',
                   transition: 'transform 0.2s',
                 }}
@@ -285,7 +285,7 @@ export default function FreeResourcesPage() {
                 📥 Download Complete Workbook (PDF)
               </a>
             </div>
-            <p style={{ color: '#64748b', fontSize: '0.8rem', marginTop: 14 }}>
+            <p style={{ color: '#6B6F84', fontSize: '0.8rem', marginTop: 14 }}>
               27 pages · A4 / US Letter · Print-ready · Free to share with colleagues
             </p>
           </div>
@@ -298,10 +298,10 @@ export default function FreeResourcesPage() {
               { icon: '📖', label: 'Word examples', desc: 'Each letter includes a picture word — A for Apple, B for Ball' },
               { icon: '🖨️', label: 'Print-ready layout', desc: 'Clean margins, high contrast — prints perfectly on any home printer' },
             ].map(item => (
-              <div key={item.label} style={{ background: 'rgba(108,71,255,0.07)', borderRadius: 12, padding: '16px 18px', border: '1px solid rgba(108,71,255,0.15)' }}>
+              <div key={item.label} style={{ background: 'rgba(3,78,174,0.05)', borderRadius: 12, padding: '16px 18px', border: '1px solid rgba(3,78,174,0.128)' }}>
                 <div style={{ fontSize: '1.6rem', marginBottom: 6 }}>{item.icon}</div>
-                <div style={{ color: 'white', fontWeight: 700, fontSize: '0.9rem', marginBottom: 4 }}>{item.label}</div>
-                <div style={{ color: '#94a3b8', fontSize: '0.8rem', lineHeight: 1.5 }}>{item.desc}</div>
+                <div style={{ color: '#1A1B2E', fontWeight: 700, fontSize: '0.9rem', marginBottom: 4 }}>{item.label}</div>
+                <div style={{ color: '#4A4D6B', fontSize: '0.8rem', lineHeight: 1.5 }}>{item.desc}</div>
               </div>
             ))}
           </div>
@@ -312,10 +312,10 @@ export default function FreeResourcesPage() {
       {/* ── Related Resources ────────────────────────────────── */}
       <Section light>
         <div style={{ maxWidth: 860, margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 800, marginBottom: 8 }}>
+          <h2 style={{ color: '#1A1B2E', fontSize: '1.4rem', fontWeight: 800, marginBottom: 8 }}>
             More from Draw in the Air
           </h2>
-          <p style={{ color: '#94a3b8', marginBottom: 28 }}>
+          <p style={{ color: '#4A4D6B', marginBottom: 28 }}>
             These printables work best when paired with the interactive camera activities.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -330,9 +330,9 @@ export default function FreeResourcesPage() {
                 key={link.path}
                 href={link.path}
                 style={{
-                  background: 'rgba(108,71,255,0.12)',
-                  border: '1px solid rgba(108,71,255,0.3)',
-                  color: '#a78bfa',
+                  background: 'rgba(3,78,174,0.08)',
+                  border: '1px solid rgba(3,78,174,0.255)',
+                  color: '#6C3FA4',
                   borderRadius: 20,
                   padding: '10px 20px',
                   fontWeight: 600,
@@ -341,12 +341,12 @@ export default function FreeResourcesPage() {
                   transition: 'background 0.2s, color 0.2s',
                 }}
                 onMouseEnter={e => {
-                  (e.currentTarget as HTMLElement).style.background = '#6c47ff';
+                  (e.currentTarget as HTMLElement).style.background = '#034eae';
                   (e.currentTarget as HTMLElement).style.color = 'white';
                 }}
                 onMouseLeave={e => {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,0.12)';
-                  (e.currentTarget as HTMLElement).style.color = '#a78bfa';
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(3,78,174,0.08)';
+                  (e.currentTarget as HTMLElement).style.color = '#6C3FA4';
                 }}
               >
                 {link.label}
