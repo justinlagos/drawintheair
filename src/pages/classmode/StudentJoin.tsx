@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { dbSelect, dbInsert, subscribeToTable } from '../../lib/supabase';
+import { dbInsert, callRpc, subscribeToTable } from '../../lib/supabase';
 import { isValidCode } from '../../features/classmode/sessionCode';
 import { MODE_LABELS } from '../../features/classmode/scoreMapping';
 import type { GameModeId } from '../../features/classmode/scoreMapping';
@@ -53,6 +53,15 @@ export default function StudentJoin() {
   };
 
   // Submit code
+  //
+  // SECURITY (2026-05-21): direct `dbSelect('sessions', ...)` was retired
+  // because public.sessions is no longer readable by anon. The lookup now
+  // goes through the SECURITY DEFINER RPC public.session_lookup_by_code,
+  // which returns ONLY the join-screen fields (no teacher_id, no
+  // school_id, no metadata) and only for active sessions.
+  //
+  // See platform/supabase/migrations/20260521_security_lockdown.sql and
+  // docs/SECURITY_AUDIT_2026-05-21.md C1.
   const handleCodeSubmit = async () => {
     const code = digits.join('');
     if (!isValidCode(code)) {
@@ -60,17 +69,17 @@ export default function StudentJoin() {
       return;
     }
 
-    const { data, error: fetchErr } = await dbSelect<SessionRow[]>(
-      'sessions',
-      `code=eq.${code}&status=neq.ended&limit=1`
+    const { data, error: fetchErr } = await callRpc<SessionRow | null>(
+      'session_lookup_by_code',
+      { in_code: code },
     );
 
-    if (fetchErr || !data || data.length === 0) {
+    if (fetchErr || !data) {
       setError('No active session found with that code');
       return;
     }
 
-    setSession(data[0]);
+    setSession(data);
     setStep('name');
   };
 

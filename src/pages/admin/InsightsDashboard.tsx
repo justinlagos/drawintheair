@@ -6,9 +6,11 @@
  * ./insights/. This file is now just the orchestrator: auth gate,
  * top bar, filter bar, tab strip, content router.
  *
- * Auth-gated behind Google OAuth + an email allow-list so a leaked
- * URL doesn't expose the data. The RPCs are granted to anon — auth
- * is purely component-level.
+ * Auth-gated behind Google OAuth. The real gate is server-side:
+ * migration 20260521_security_lockdown.sql revokes EXECUTE on every
+ * dashboard_* / lios_* RPC from anon and (where applicable) gates
+ * access on public._is_admin(). The component-level checks here are
+ * UI affordances only — never trust them for security.
  */
 
 import React, { useEffect, useState } from 'react';
@@ -38,11 +40,14 @@ import { ObservabilityTab } from './insights/tabs/ObservabilityTab';
 import { PrintReport } from './insights/PrintReport';
 import './insights/insights.css';
 
-// Allow-list. Add more emails here when other admins need access.
-const ALLOWED_ADMINS = new Set<string>([
-    'mrjustinukaegbu@gmail.com',
-]);
-
+// SECURITY (2026-05-21): the client-side allow-list was removed.
+// • It leaked an admin's personal email in the public JS bundle (H7).
+// • It protected nothing — the dashboard RPCs were granted to anon, so
+//   anyone with the bundled anon key could call them directly.
+// • The authoritative gate now lives in Postgres: every dashboard_* /
+//   lios_* RPC is revoked from anon, and the executive surface checks
+//   public._is_admin() server-side. A non-admin who reaches this
+//   component sees per-tab "forbidden" errors, never data.
 const TABS: Array<{ key: TabKey; label: string }> = [
     { key: 'executive',  label: 'Executive' },
     { key: 'engagement', label: 'Engagement' },
@@ -71,9 +76,11 @@ const InsightsDashboard: React.FC = () => {
         return <div className="iv-gate"><div className="iv-gate-card">Checking sign-in…</div></div>;
     }
     if (!user) return <SignInGate />;
-    if (!ALLOWED_ADMINS.has((user.email ?? '').toLowerCase())) {
-        return <NotAllowed email={user.email ?? '(unknown)'} onSignOut={signOut} />;
-    }
+    // SECURITY: server-side gate (public._is_admin in every dashboard RPC)
+    // is the source of truth. If the signed-in user is not an admin, the
+    // RPC calls will return 42501/forbidden and each tab renders its own
+    // error. We deliberately do NOT short-circuit here based on a client
+    // allow-list — that pattern leaked an email to the public bundle.
     return <AuthenticatedDashboard email={user.email!} onSignOut={signOut} />;
 };
 
@@ -107,19 +114,8 @@ const SignInGate: React.FC = () => {
     );
 };
 
-const NotAllowed: React.FC<{ email: string; onSignOut: () => Promise<void> }> = ({ email, onSignOut }) => (
-    <div className="iv-gate">
-        <div className="iv-gate-card">
-            <h1 style={{ margin: 0, font: '700 20px Fredoka, system-ui', color: '#C13A3A' }}>
-                Access denied
-            </h1>
-            <p style={{ margin: '10px 0 20px', color: '#6B6F84' }}>
-                {email} is signed in but isn't on the insights allow-list.
-            </p>
-            <button className="iv-btn" onClick={onSignOut}>Sign out</button>
-        </div>
-    </div>
-);
+// (NotAllowed gate removed 2026-05-21 — the server-side admin assertion
+//  in each dashboard RPC is the only authoritative check.)
 
 // ── Authenticated shell ────────────────────────────────────────────────
 const AuthenticatedDashboard: React.FC<{ email: string; onSignOut: () => Promise<void> }> = ({ email, onSignOut }) => {

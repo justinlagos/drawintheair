@@ -322,6 +322,50 @@ export async function dbUpdate<T = Record<string, unknown>>(
   }
 }
 
+// ─── PostgREST RPC ───────────────────────────────────────────────────────────
+
+/**
+ * Call a Postgres RPC (SECURITY DEFINER function) via PostgREST.
+ *
+ * The `apikey` header MUST be the project anon key — this is what
+ * PostgREST authenticates the request with. The `Authorization` header
+ * carries the user JWT when available so SECURITY DEFINER functions
+ * can see auth.uid() and so Supabase request logs attribute the call.
+ *
+ * For server-gated admin RPCs (post-migration 20260521), unauthenticated
+ * callers will receive HTTP 401/403 + an SQLSTATE 42501 body. The
+ * caller is responsible for handling that as "forbidden".
+ */
+export async function callRpc<T = unknown>(
+  fn: string,
+  args: Record<string, unknown> = {},
+): Promise<PostgrestResponse<T>> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(args),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({
+        message: res.statusText,
+        code: String(res.status),
+      }));
+      return {
+        data: null,
+        error: {
+          message: err.message || res.statusText,
+          code: err.code || String(res.status),
+        },
+      };
+    }
+    const data = await res.json();
+    return { data: data as T, error: null };
+  } catch (e) {
+    return { data: null, error: { message: (e as Error).message, code: 'FETCH_ERROR' } };
+  }
+}
+
 // ─── Realtime (WebSocket) ────────────────────────────────────────────────────
 
 interface RealtimeChannel {

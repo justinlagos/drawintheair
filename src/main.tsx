@@ -15,7 +15,11 @@ import { Cookies } from './pages/Cookies.tsx'
 import { Safeguarding } from './pages/Safeguarding.tsx'
 import { Accessibility } from './pages/Accessibility.tsx'
 import { Training } from './pages/Training.tsx'
-import { Admin } from './pages/Admin.tsx'
+// Legacy PIN-gated /admin dashboard (src/pages/Admin.tsx) was removed
+// 2026-05-21 — see docs/SECURITY_AUDIT_2026-05-21.md (C3). All /admin
+// traffic now resolves to /admin/insights, which is OAuth-gated and
+// (post-migration 20260521_security_lockdown.sql) backed by RPCs that
+// assert is_admin server-side.
 import { QAPage } from './pages/QAPage.tsx'
 import SchoolPilot from './pages/SchoolPilot.tsx'
 import ParentAccess from './pages/ParentAccess.tsx'
@@ -85,7 +89,9 @@ function getRouteFromPath(path: string, hash: string): string {
   }
 
   if (path === '/admin/insights') return 'admin-insights';
-  if (path === '/admin') return 'admin';
+  // /admin is permanently retired — fold into /admin/insights, which is
+  // OAuth-gated and (after migration 20260521) server-side admin-only.
+  if (path === '/admin') return 'admin-insights';
   if (path === '/teach/observe') return 'teach-observe';
   if (path === '/transparency') return 'transparency';
   if (path === '/demo') return 'demo';
@@ -251,10 +257,6 @@ function Root() {
 
   if (route === 'training') {
     return <Training />;
-  }
-
-  if (route === 'admin') {
-    return <Admin />;
   }
 
   if (route === 'admin-insights') {
