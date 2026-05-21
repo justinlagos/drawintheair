@@ -33,7 +33,7 @@ import { TryFreeModal } from '../components/TryFreeModal';
 import { BrandLogo } from '../components/BrandLogo';
 import { SEOMeta } from '../seo/SEOMeta';
 import { logEvent } from '../lib/analytics';
-import { getSupabaseUrl, getAnonKey } from '../lib/supabase';
+import { callRpc } from '../lib/supabase';
 import './landing-v3.css';
 // NavMetricsTicker removed in v5.4 . was rendering a phantom
 // "... loading" pill in the nav even after the proof RPC resolved.
@@ -156,40 +156,38 @@ interface PublicProof {
 }
 
 async function fetchPublicProof(): Promise<PublicProof | null> {
-    // PostgREST will return EITHER the jsonb directly (when the
-    // function returns a scalar jsonb) OR an array of rows (when
-    // schema-cache thinks it's table-returning). We accept both.
+    // Defensive unwrap. PostgREST returns the function's jsonb body
+    // directly under normal config; some setups return a one-row
+    // array OR a {proof:{...}} wrap depending on schema cache state.
+    // Accept all three so the tiles never go blank.
     const unwrap = (raw: unknown): PublicProof | null => {
         if (!raw) return null;
         const obj = Array.isArray(raw) ? raw[0] : raw;
         if (!obj || typeof obj !== 'object') return null;
-        // Sometimes wrapped as { proof: {...} } when the function name
-        // matches a column name. Unwrap one level if necessary.
         const inner = (obj as { proof?: PublicProof }).proof ?? obj;
         const p = inner as Partial<PublicProof>;
-        // Sanity: at least one numeric field must be present.
         if (typeof p.distinct_devices_90d !== 'number' &&
             typeof p.activities_completed !== 'number') return null;
         return p as PublicProof;
     };
 
     const tryRpc = async (fn: string): Promise<PublicProof | null> => {
-        try {
-            const res = await fetch(`${getSupabaseUrl()}/rest/v1/rpc/${fn}`, {
-                method: 'POST',
-                headers: {
-                    apikey: getAnonKey(),
-                    Authorization: `Bearer ${getAnonKey()}`,
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                },
-                body: '{}',
-            });
-            if (!res.ok) return null;
-            const raw = await res.json();
-            return unwrap(raw);
-        } catch { return null; }
+        const { data, error } = await callRpc<unknown>(fn);
+        if (error) {
+            // Visible in DevTools for quick triage. No PII in the
+            // payload, safe to log.
+            // eslint-disable-next-line no-console
+            console.warn(`[landing-proof] ${fn} failed`, error);
+            return null;
+        }
+        const parsed = unwrap(data);
+        if (!parsed) {
+            // eslint-disable-next-line no-console
+            console.warn(`[landing-proof] ${fn} returned unexpected shape`, data);
+        }
+        return parsed;
     };
+
     const fresh = await tryRpc('dashboard_public_proof');
     if (fresh) return fresh;
     return tryRpc('landing_public_proof');

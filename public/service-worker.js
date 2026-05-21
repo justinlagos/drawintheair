@@ -22,7 +22,7 @@
 
 // v7-brand-2026-05-20: bumped to invalidate returning-user cache for the
 // new brand-mark + light SEO theme migration.
-const CACHE_VERSION = 'v7-brand-2026-05-20';
+const CACHE_VERSION = 'v8-proof-2026-05-21';
 const CACHE_NAME = `draw-in-the-air-${CACHE_VERSION}`;
 
 /** Assets to pre-cache on install for fastest first load */
