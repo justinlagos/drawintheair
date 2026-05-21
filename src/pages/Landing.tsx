@@ -35,7 +35,10 @@ import { SEOMeta } from '../seo/SEOMeta';
 import { logEvent } from '../lib/analytics';
 import { getSupabaseUrl, getAnonKey } from '../lib/supabase';
 import './landing-v3.css';
-import { NavMetricsTicker, type PublicProof as TickerProof } from '../components/landing/NavMetricsTicker';
+// NavMetricsTicker removed in v5.4 . was rendering a phantom
+// "... loading" pill in the nav even after the proof RPC resolved.
+// The tile grid below the fold is the canonical place for these
+// numbers.
 
 // ── Activity meta ─────────────────────────────────────────────────────
 interface ActivityMeta {
@@ -153,18 +156,38 @@ interface PublicProof {
 }
 
 async function fetchPublicProof(): Promise<PublicProof | null> {
-    // Phase 3: prefers the new dashboard_public_proof name. Falls back
-    // to landing_public_proof if dashboard_* is not yet deployed so
-    // the page never goes dark while the migration is rolling out.
+    // PostgREST will return EITHER the jsonb directly (when the
+    // function returns a scalar jsonb) OR an array of rows (when
+    // schema-cache thinks it's table-returning). We accept both.
+    const unwrap = (raw: unknown): PublicProof | null => {
+        if (!raw) return null;
+        const obj = Array.isArray(raw) ? raw[0] : raw;
+        if (!obj || typeof obj !== 'object') return null;
+        // Sometimes wrapped as { proof: {...} } when the function name
+        // matches a column name. Unwrap one level if necessary.
+        const inner = (obj as { proof?: PublicProof }).proof ?? obj;
+        const p = inner as Partial<PublicProof>;
+        // Sanity: at least one numeric field must be present.
+        if (typeof p.distinct_devices_90d !== 'number' &&
+            typeof p.activities_completed !== 'number') return null;
+        return p as PublicProof;
+    };
+
     const tryRpc = async (fn: string): Promise<PublicProof | null> => {
         try {
             const res = await fetch(`${getSupabaseUrl()}/rest/v1/rpc/${fn}`, {
                 method: 'POST',
-                headers: { apikey: getAnonKey(), 'Content-Type': 'application/json', Prefer: 'return=representation' },
+                headers: {
+                    apikey: getAnonKey(),
+                    Authorization: `Bearer ${getAnonKey()}`,
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                },
                 body: '{}',
             });
             if (!res.ok) return null;
-            return await res.json();
+            const raw = await res.json();
+            return unwrap(raw);
         } catch { return null; }
     };
     const fresh = await tryRpc('dashboard_public_proof');
@@ -396,7 +419,7 @@ export const Landing: React.FC = () => {
                 canonical="https://drawintheair.com/"
             />
 
-            <Nav onTryFree={() => handleTryFree('nav')} proof={proof as TickerProof | null} />
+            <Nav onTryFree={() => handleTryFree('nav')} />
             <Hero onTryFree={() => handleTryFree('hero')} />
             <HowItWorks />
             <CameraTrust />
@@ -418,7 +441,7 @@ export const Landing: React.FC = () => {
 // ═══════════════════════════════════════════════════════════════════════
 // Nav
 // ═══════════════════════════════════════════════════════════════════════
-const Nav: React.FC<{ onTryFree: () => void; proof: TickerProof | null }> = ({ onTryFree, proof }) => {
+const Nav: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
     const bounceTo = useBounceScroll();
     const [scrolled, setScrolled] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
@@ -461,7 +484,6 @@ const Nav: React.FC<{ onTryFree: () => void; proof: TickerProof | null }> = ({ o
                 <a href="/pricing">Pricing</a>
             </nav>
             <div className="lp-nav-cta">
-                <NavMetricsTicker isScrolled={scrolled} proof={proof} />
                 <motion.button
                     className="lp-btn lp-btn-primary lp-btn-magnetic lp-nav-cta-btn"
                     onClick={onTryFree}

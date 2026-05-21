@@ -1188,14 +1188,15 @@ html.lp-route body {
    on every breakpoint.
    ============================================================ */
 
-/* Nav brand — tuned for the new (wider) brand mark, aspect 1.45 */
+/* Nav brand — bumped to 60px in v5.4 (was 48px and still felt small
+   next to the Try free CTA) */
 .lp-shell .lp-nav-brand,
 .lp-shell .lp-nav-brand a { display: inline-flex !important; align-items: center !important; }
 .lp-shell .lp-nav-brand img {
-    height: 48px !important;
+    height: 60px !important;
     width: auto !important;
-    max-width: 170px !important;
-    max-height: 48px !important;
+    max-width: 210px !important;
+    max-height: 60px !important;
     object-fit: contain !important;
     display: block !important;
     flex: 0 0 auto !important;
@@ -1230,9 +1231,9 @@ html.lp-route body {
 /* Tablet / medium-mobile: scale down so the wider mark doesn't crowd the nav */
 @media (max-width: 860px) {
     .lp-shell .lp-nav-brand img {
-        height: 40px !important;
-        max-width: 144px !important;
-        max-height: 40px !important;
+        height: 48px !important;
+        max-width: 168px !important;
+        max-height: 48px !important;
     }
     .lp-shell .lp-footer-brand img {
         height: 44px !important;
@@ -1252,9 +1253,9 @@ html.lp-route body {
 }
 @media (max-width: 480px) {
     .lp-shell .lp-nav-brand img {
-        height: 34px !important;
-        max-width: 122px !important;
-        max-height: 34px !important;
+        height: 40px !important;
+        max-width: 140px !important;
+        max-height: 40px !important;
     }
     .lp-shell .lp-footer-brand img {
         height: 38px !important;
