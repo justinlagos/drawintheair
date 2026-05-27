@@ -39,41 +39,60 @@
     rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap" />
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      corePlugins: { preflight: false },
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Nunito', 'system-ui', 'sans-serif'] },
-          colors: {
-            navy: { 900: '#0a0e1a', 800: '#111629', 700: '#1a2038' },
-            cyan: { 400: '#22d3ee', 500: '#06b6d4' },
-            orange: { 400: '#fb923c', 500: '#f97316' },
-          },
-        },
-      },
-    }
-  </script>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-S4XSWT6Q09"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-S4XSWT6Q09');
-  </script>
-  <script type="text/javascript">
-    (function(c,l,a,r,i,t,y){
-      c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-      t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-      y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-    })(window, document, "clarity", "script", "vseevw9uck");
-  </script>
+  <!--
+    Tailwind is now compiled at BUILD TIME (see tailwind.config.js /
+    postcss.config.js). The old render-blocking Tailwind Play CDN script was
+    removed: it was a ~126KB external dependency that compiled CSS in the
+    browser on every load and white-screened the page if that CDN was slow or
+    blocked from a user's network. Utilities now ship in the bundled CSS.
+
+    Analytics (Google Tag + Microsoft Clarity) are deferred until AFTER the
+    app is interactive so they never compete with the critical render path on
+    slow / high-latency connections. They self-initialise from /src/main.tsx's
+    post-load hook below.
+  -->
 </head>
 
 <body>
-  <div id="root"></div>
+  <!--
+    Inline, dependency-free loading state. Shown the instant the HTML arrives,
+    BEFORE any JS/CSS bundle downloads. On a slow Nigerian mobile link this is
+    the difference between "the site is loading" and a blank white screen that
+    reads as "the site is broken". React replaces #root's contents on mount.
+  -->
+  <div id="root">
+    <div id="boot-splash" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:linear-gradient(180deg,#BEEBFF 0%,#DEF5FF 35%,#FFF6E5 75%,#FFFAEB 100%);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#3F4052;text-align:center;padding:24px;">
+      <div style="width:54px;height:54px;border:5px solid rgba(108,63,164,0.18);border-top-color:#6C3FA4;border-radius:50%;animation:dia-spin 0.9s linear infinite;"></div>
+      <div style="font-size:1.15rem;font-weight:700;color:#6C3FA4;">Draw in the Air</div>
+      <div id="boot-msg" style="font-size:0.95rem;opacity:0.8;max-width:320px;line-height:1.5;">Loading… this can take a moment on a slow connection.</div>
+    </div>
+  </div>
+  <style>
+    @keyframes dia-spin { to { transform: rotate(360deg); } }
+  </style>
+  <noscript>
+    <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:system-ui,sans-serif;color:#3F4052;">
+      Draw in the Air needs JavaScript enabled to run. Please turn on JavaScript and reload.
+    </div>
+  </noscript>
+  <!--
+    If the app bundle hasn't booted after 20s (e.g. a chunk stalled on a flaky
+    connection), swap the splash message for a friendly retry prompt instead of
+    leaving the spinner turning forever.
+  -->
+  <script>
+    (function () {
+      var t = setTimeout(function () {
+        var msg = document.getElementById('boot-msg');
+        if (msg && document.getElementById('boot-splash')) {
+          msg.innerHTML = "Still loading. If this doesn't clear, tap to retry.";
+          var sp = document.getElementById('boot-splash');
+          if (sp) { sp.style.cursor = 'pointer'; sp.onclick = function () { location.reload(); }; }
+        }
+      }, 20000);
+      window.addEventListener('dia:booted', function () { clearTimeout(t); });
+    })();
+  </script>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 

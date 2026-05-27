@@ -9,7 +9,7 @@ export const RANGE_DAYS: Record<Range, number> = { '24h': 1, '7d': 7, '30d': 30,
 
 export type TabKey =
     | 'executive' | 'engagement' | 'learning'
-    | 'retention' | 'sessions' | 'errors' | 'friction' | 'progression' | 'adaptive' | 'observations' | 'observability';
+    | 'retention' | 'sessions' | 'errors' | 'friction' | 'progression' | 'adaptive' | 'observations' | 'observability' | 'system-health';
 
 export interface FilterState {
     range: Range;

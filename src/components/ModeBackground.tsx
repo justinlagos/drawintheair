@@ -12,7 +12,7 @@
  */
 
 
-type ModeId = 'free' | 'calibration' | 'sort-and-place' | 'pre-writing' | 'word-search' | 'colour-builder' | 'balloon-math' | 'rainbow-bridge' | 'gesture-spelling';
+type ModeId = 'free' | 'calibration' | 'sort-and-place' | 'pre-writing' | 'word-search' | 'colour-builder' | 'balloon-math' | 'rainbow-bridge' | 'gesture-spelling' | 'building';
 
 interface ModeBackgroundProps {
     modeId: ModeId;
@@ -142,6 +142,9 @@ export const ModeBackground = ({ modeId }: ModeBackgroundProps) => {
             {modeId === 'free' && <FreePaintBG />}
             {modeId === 'pre-writing' && <TracingBG />}
             {modeId === 'word-search' && <WordSearchBG />}
+            {/* Building reuses the warm Free-Paint background in Phase 0;
+                Phase 1 introduces a per-world BuildingBackground. */}
+            {modeId === 'building' && <FreePaintBG />}
         </>
     );
 };

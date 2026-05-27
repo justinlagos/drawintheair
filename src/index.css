@@ -1,3 +1,10 @@
+/* Tailwind (build-time). Replaces the old runtime cdn.tailwindcss.com
+   script. preflight is disabled in tailwind.config.js, so @tailwind base
+   emits almost nothing and the app's own base styles below stay intact. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ═══════════════════════════════════════════════════════════════
    DRAW IN THE AIR — UNIFIED TOY WORLD DESIGN SYSTEM
 

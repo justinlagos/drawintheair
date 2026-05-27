@@ -1,0 +1,5 @@
+{
+  "status": "ok",
+  "service": "draw-in-the-air",
+  "note": "Static heartbeat for uptime monitors (BetterStack). Served directly by the CDN edge, independent of the SPA bundle, so it answers even if the JS app fails to boot."
+}

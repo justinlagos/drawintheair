@@ -37,6 +37,7 @@ import { ProgressionTab } from './insights/tabs/ProgressionTab';
 import { AdaptiveTab } from './insights/tabs/AdaptiveTab';
 import { ObservationsTab } from './insights/tabs/ObservationsTab';
 import { ObservabilityTab } from './insights/tabs/ObservabilityTab';
+import { SystemHealthTab } from './insights/tabs/SystemHealthTab';
 import { PrintReport } from './insights/PrintReport';
 import './insights/insights.css';
 
@@ -60,6 +61,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
     { key: 'adaptive',    label: 'Adaptive' },
     { key: 'observations', label: 'Observations' },
     { key: 'observability', label: 'Observability' },
+    { key: 'system-health', label: 'System Health' },
 ];
 
 const RANGES: Array<{ key: Range; label: string }> = [
@@ -326,6 +328,7 @@ const AuthenticatedDashboard: React.FC<{ email: string; onSignOut: () => Promise
                 {filter.tab === 'adaptive'   && <AdaptiveTab   filter={filter} />}
                 {filter.tab === 'observations' && <ObservationsTab filter={filter} />}
                 {filter.tab === 'observability' && <ObservabilityTab filter={filter} />}
+                {filter.tab === 'system-health' && <SystemHealthTab />}
             </main>
         </div>
     );

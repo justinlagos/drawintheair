@@ -18,6 +18,8 @@ import { RainbowBridgeMode } from './features/modes/rainbowBridge/RainbowBridgeM
 import { rainbowBridgeLogic } from './features/modes/rainbowBridge/rainbowBridgeLogic';
 import { GestureSpellingMode } from './features/modes/gestureSpelling/GestureSpellingMode';
 import { gestureSpellingLogic } from './features/modes/gestureSpelling/gestureSpellingLogic';
+import { BuildingMode } from './features/modes/building/BuildingMode';
+import { buildingLogic } from './features/modes/building/buildingLogic';
 import { WaveToWake } from './features/onboarding/WaveToWake';
 import { ModeSelectionMenu, type GameMode } from './features/menu/ModeSelectionMenu';
 import { AdultGate } from './features/safety/AdultGate';
@@ -51,7 +53,7 @@ const getInitialState = (): { appState: AppState; gameMode: GameMode } => {
   // Check screen param first - allows direct access to any screen
   if (screen === 'menu') return { appState: 'menu', gameMode: 'free' };
   if (screen === 'game') {
-    const validMode = (mode === 'free' || mode === 'pre-writing' || mode === 'calibration' || mode === 'sort-and-place' || mode === 'word-search' || mode === 'colour-builder' || mode === 'balloon-math' || mode === 'rainbow-bridge' || mode === 'gesture-spelling') ? mode : 'free';
+    const validMode = (mode === 'free' || mode === 'pre-writing' || mode === 'calibration' || mode === 'sort-and-place' || mode === 'word-search' || mode === 'colour-builder' || mode === 'balloon-math' || mode === 'rainbow-bridge' || mode === 'gesture-spelling' || mode === 'building') ? mode : 'free';
     return {
       appState: 'game',
       gameMode: validMode
@@ -154,6 +156,7 @@ function App() {
       'balloon-math': 'bubble-pop',         // similar quick-pop interaction
       'rainbow-bridge': 'sort-and-place',  // deliberate dwell interaction
       'gesture-spelling': 'tracing',        // deliberate precision interaction
+      'building': 'building',               // smooth-settle grab profile
     };
 
     const filterMode = modeMap[mode] || 'default';
@@ -241,6 +244,9 @@ function App() {
       case 'gesture-spelling':
         logic = gestureSpellingLogic;
         break;
+      case 'building':
+        logic = buildingLogic;
+        break;
       default:
         logic = undefined;
     }
@@ -303,7 +309,8 @@ function App() {
                                 gameMode === 'balloon-math' ? 'balloon-math' :
                                   gameMode === 'rainbow-bridge' ? 'rainbow-bridge' :
                                     gameMode === 'gesture-spelling' ? 'gesture-spelling' :
-                                      'free'
+                                      gameMode === 'building' ? 'building' :
+                                        'free'
                   }
                 />
               )}
@@ -394,6 +401,10 @@ function App() {
 
                   {gameMode === 'gesture-spelling' && (
                     <GestureSpellingMode onExit={handleExitToMenu} />
+                  )}
+
+                  {gameMode === 'building' && (
+                    <BuildingMode onExit={handleExitToMenu} />
                   )}
 
                   {/* Share with a Colleague intentionally not rendered in-game.

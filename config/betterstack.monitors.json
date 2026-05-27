@@ -1,0 +1,127 @@
+{
+  "$schema": "https://betterstack.com/docs/uptime/api/monitor/",
+  "_doc": "Declarative monitor spec for BetterStack. NOT auto-applied — paste these values when creating monitors in the BetterStack UI (or feed to their API). See docs/observability/BETTERSTACK_SETUP.md.",
+  "_version": 1,
+  "defaults": {
+    "check_frequency_sec": 60,
+    "request_timeout_sec": 30,
+    "regions": ["eu", "us", "as"],
+    "verify_ssl": true,
+    "follow_redirects": true,
+    "recovery_period_sec": 180,
+    "confirmation_period_sec": 120,
+    "remember_cookies": false,
+    "policy": "alert-on-2-consecutive-failures",
+    "maintenance_days": [],
+    "notification_channels": ["email:on-call"]
+  },
+  "monitors": [
+    {
+      "name": "Marketing — Homepage",
+      "url": "https://drawintheair.com/",
+      "method": "GET",
+      "expected_status_codes": [200],
+      "keyword_present": ["Draw in the Air"],
+      "priority": "p1",
+      "owners": ["platform"],
+      "alert_on_response_time_above_ms": 4500,
+      "notification_channels": ["email:on-call"]
+    },
+    {
+      "name": "Play — Activation surface",
+      "url": "https://drawintheair.com/play",
+      "method": "GET",
+      "expected_status_codes": [200],
+      "priority": "p1",
+      "owners": ["platform"],
+      "alert_on_response_time_above_ms": 5000,
+      "notification_channels": ["email:on-call"]
+    },
+    {
+      "name": "For Teachers — Acquisition page",
+      "url": "https://drawintheair.com/for-teachers",
+      "method": "GET",
+      "expected_status_codes": [200],
+      "priority": "p2",
+      "owners": ["growth"],
+      "notification_channels": ["email:on-call"]
+    },
+    {
+      "name": "Class Mode — Teacher console",
+      "url": "https://drawintheair.com/class",
+      "method": "GET",
+      "expected_status_codes": [200],
+      "priority": "p1",
+      "owners": ["classroom"],
+      "notification_channels": ["email:on-call"]
+    },
+    {
+      "name": "Admin Insights — Auth-gated route",
+      "url": "https://drawintheair.com/admin/insights",
+      "method": "GET",
+      "expected_status_codes": [200, 401, 403],
+      "_note": "Should return *some* response — 401/403 is fine, indicates auth gate is active. A 500 here means the admin shell crashed.",
+      "priority": "p2",
+      "owners": ["platform"],
+      "notification_channels": ["email:on-call"]
+    },
+    {
+      "name": "Transparency page",
+      "url": "https://drawintheair.com/transparency",
+      "method": "GET",
+      "expected_status_codes": [200],
+      "priority": "p3",
+      "owners": ["growth"],
+      "notification_channels": ["email:on-call"]
+    },
+    {
+      "name": "Supabase health — public proof RPC",
+      "url": "https://${SUPABASE_PROJECT_REF}.supabase.co/rest/v1/rpc/dashboard_public_proof",
+      "method": "POST",
+      "headers": {
+        "apikey": "${SUPABASE_ANON_KEY}",
+        "Authorization": "Bearer ${SUPABASE_ANON_KEY}",
+        "Content-Type": "application/json"
+      },
+      "body": "{}",
+      "expected_status_codes": [200],
+      "priority": "p1",
+      "owners": ["platform"],
+      "alert_on_response_time_above_ms": 3000,
+      "_note": "Replace ${SUPABASE_PROJECT_REF} and ${SUPABASE_ANON_KEY} in the BetterStack monitor with your real values. The anon key is OK to use here — it's the same one that ships in the public bundle.",
+      "notification_channels": ["email:on-call"]
+    },
+    {
+      "name": "Main JS bundle reachable",
+      "url": "https://drawintheair.com/assets/index.js",
+      "method": "HEAD",
+      "expected_status_codes": [200, 304],
+      "_note": "Detects when the latest deploy left the bundle behind a 404 or wrong path. The exact filename will change per build — keep this monitor pointing at index.html and let it check the bundle URL contained in the HTML if BetterStack supports follow-link checks. Otherwise replace with the hashed filename you actually emit.",
+      "priority": "p1",
+      "owners": ["platform"],
+      "notification_channels": ["email:on-call"]
+    }
+  ],
+  "ssl_monitors": [
+    {
+      "domain": "drawintheair.com",
+      "alert_before_expiry_days": 14,
+      "priority": "p2",
+      "notification_channels": ["email:on-call"]
+    }
+  ],
+  "status_pages": [
+    {
+      "name": "Draw in the Air — Status",
+      "subdomain": "status.drawintheair.com",
+      "monitors_included": [
+        "Marketing — Homepage",
+        "Play — Activation surface",
+        "Class Mode — Teacher console",
+        "Supabase health — public proof RPC"
+      ],
+      "public": false,
+      "_note": "Keep private until BetterStack monitors have been stable for at least 14 days, then optionally make public for schools."
+    }
+  ]
+}

@@ -23,6 +23,19 @@
  */
 
 import { dbInsert } from './supabase';
+import {
+    trackEvent as obsTrackEvent,
+    identifyPseudonymous,
+    setObservabilityContext as obsSetContext,
+    recordCameraRequested,
+    recordCameraGranted,
+    recordCameraDenied,
+    recordTrackerInitStarted,
+    recordTrackerInitSucceeded,
+    recordTrackerInitFailed,
+    recordClassroomSyncFailure,
+    setActiveClassSessions,
+} from './observability';
 
 // ════════════════════════════════════════════════════════════════════
 // Event vocabulary
@@ -75,6 +88,21 @@ export type EventName =
     | 'stage_started'               // meta.stage_id, .stage_index
     | 'stage_completed'             // meta.stage_id, time_to_first_correct_ms, time_to_all_correct_ms
     | 'chapter_unlocked'
+
+    // ── Building mode ──
+    | 'build_world_selected'        // meta.world_id
+    | 'build_object_started'        // stage_id = object id; meta.world, .build_type
+    | 'piece_hovered'               // debounced 400ms; meta.piece_id, .semantic_role, .dwell_ms
+    | 'piece_grabbed'               // meta.piece_id
+    | 'placement_attempt'           // meta.piece_id, .target_zone_id, .distance_to_target
+    | 'successful_snap'             // meta.piece_id, .target_zone_id, .time_since_grab_ms, .was_first_attempt
+    | 'wrong_piece_attempt'         // meta.piece_id, .attempted_zone_id, .attempted_zone_role
+    | 'hesitation_detected'         // meta.available_pieces[]
+    | 'assist_escalated'            // meta.piece_id, .new_tolerance
+    | 'build_object_completed'      // value_number = duration_ms; meta.world, .build_type, .total_attempts, .time_to_first_snap_ms
+    | 'build_abandoned'             // meta.world, .build_type, .progress_pct, .reason
+    | 'sandbox_combination_created' // Phase 3+; meta.combination_signature
+    | 'sandbox_animated'            // Phase 3+; meta.combination_signature
 
     // ── Adult gate ──
     | 'adult_gate_attempt'          // Hold begun
@@ -936,6 +964,57 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
     eventQueue.push(row);
     persistQueue();
 
+    // ── Observability fan-out ──────────────────────────────────────────────
+    // Mirror funnel-relevant events to PostHog and bump the in-memory
+    // health registry. PostHog drops anything not on its allow-list, so
+    // safe to fan out indiscriminately. LIOS / analytics_events behaviour
+    // is unchanged — this is purely additive.
+    try {
+        // Update health counters for the events the System Health
+        // panel cares about.
+        // String compare (not `case` against the EventName union)
+        // because the fan-out is forward-compatible with new event
+        // names — e.g. `classroom_sync_failure` may be added to the
+        // LIOS vocabulary later without breaking this switch today.
+        const n: string = name;
+        if (n === 'camera_requested')           recordCameraRequested();
+        else if (n === 'camera_granted')        recordCameraGranted();
+        else if (n === 'camera_denied' || n === 'camera_retry_failed') recordCameraDenied();
+        else if (n === 'tracker_init_started')   recordTrackerInitStarted();
+        else if (n === 'tracker_init_succeeded') recordTrackerInitSucceeded();
+        else if (n === 'tracker_init_failed')    recordTrackerInitFailed();
+        else if (n === 'classroom_sync_failure') recordClassroomSyncFailure();
+
+        // Mirror to PostHog with a small, privacy-vetted property set.
+        // PostHog itself enforces the property allow-list — we still
+        // pass coarse fields only, never raw meta.
+        obsTrackEvent(name as string, {
+            game_mode: opts.game_mode,
+            stage_id: opts.stage_id,
+            // Pseudonymous IDs only — never names.
+            session_id: getOrCreateSession().sessionId,
+            // Surface a few well-known meta keys but nothing free-form.
+            duration_ms: opts.meta?.duration_ms as number | undefined,
+            init_duration_ms: opts.meta?.init_duration_ms as number | undefined,
+            delegate: opts.meta?.delegate as string | undefined,
+            code: opts.meta?.code as string | undefined,
+            world_id: opts.meta?.world_id as string | undefined,
+            object_id: opts.meta?.object_id as string | undefined,
+            piece_id: opts.meta?.piece_id as string | undefined,
+            target_zone_id: opts.meta?.target_zone_id as string | undefined,
+            was_first_attempt: opts.meta?.was_first_attempt as boolean | undefined,
+            reason: opts.meta?.reason as string | undefined,
+            cta_source: opts.meta?.source as string | undefined,
+        });
+
+        // setActiveClassSessions is exported only so callers OUTSIDE
+        // analytics.ts (e.g. the class conductor) can mutate it. Silence
+        // unused-import warnings for tree-shaking.
+        void setActiveClassSessions;
+    } catch {
+        // Observability must NEVER break LIOS.
+    }
+
     // Mirror item_dropped into the learning_attempts table when the
     // meta carries the necessary fields. Mode logic files therefore
     // never have to know about that table.
@@ -1202,7 +1281,20 @@ export function initAnalytics(): void {
 
     // Materialise the device_id on app boot so it's always present in
     // every event row even before the first explicit logEvent call.
-    getOrCreateDeviceId();
+    const deviceId = getOrCreateDeviceId();
+
+    // Hand the pseudonymous IDs to the observability layer so Sentry
+    // events and PostHog identities carry them. No names, no PII —
+    // pseudonymous device id only.
+    try {
+        if (deviceId) identifyPseudonymous(deviceId);
+        obsSetContext({
+            deviceId: deviceId ?? undefined,
+            sessionId: session?.sessionId,
+        });
+    } catch {
+        /* never let observability break analytics init */
+    }
 
     // Expose a lightweight global for one-off debugging from devtools.
     // Not used by gtag — that lives in index.html and runs independently.

@@ -22,7 +22,7 @@
 
 // v7-brand-2026-05-20: bumped to invalidate returning-user cache for the
 // new brand-mark + light SEO theme migration.
-const CACHE_VERSION = 'v8-proof-2026-05-21';
+const CACHE_VERSION = 'v9-ng-reliability-2026-05-27';
 const CACHE_NAME = `draw-in-the-air-${CACHE_VERSION}`;
 
 /** Assets to pre-cache on install for fastest first load */
@@ -163,11 +163,24 @@ self.addEventListener('fetch', (event) => {
 // ─── Strategies ────────────────────────────────────────────────────────
 
 /**
- * Network-first: try network, fall back to cache, fall back to offline page
- * for navigation requests.
+ * How long to wait for the network before falling back to cache in the
+ * network-first strategy. On stalled / very-high-latency mobile links (a
+ * common Nigeria failure mode) a bare fetch() can hang for tens of seconds
+ * before erroring, during which a returning user sees nothing. Racing the
+ * fetch against this timeout means we serve cached JS/CSS/HTML quickly when
+ * the network is effectively dead, instead of hanging.
+ */
+const NETWORK_TIMEOUT_MS = 6000;
+
+/**
+ * Network-first: try network (with a timeout), fall back to cache, fall back
+ * to the offline page for navigation requests.
  */
 function networkFirst(request) {
-    return fetch(request)
+    const timed = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('network timeout')), NETWORK_TIMEOUT_MS);
+    });
+    return Promise.race([fetch(request), timed])
         .then((response) => {
             // Cache successful responses for offline fallback
             if (response.ok) {

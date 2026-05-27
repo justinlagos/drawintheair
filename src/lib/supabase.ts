@@ -3,6 +3,12 @@
  * Uses native fetch() for PostgREST + GoTrue, and WebSocket for Realtime.
  */
 
+// Observability — bump the health registry on RPC failure so the System
+// Health panel can show "Supabase RPC failures: N" without us having to
+// instrument every caller. The import is one-way (health → nothing),
+// so there's no circular-import risk.
+import { recordSupabaseRpcFailure } from './observability/health';
+
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string) || '';
 const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || '';
 
@@ -351,6 +357,14 @@ export async function callRpc<T = unknown>(
         message: res.statusText,
         code: String(res.status),
       }));
+      // 401/403 are expected for non-admin callers of admin RPCs — those
+      // are auth gates, not failures. Only count 5xx + 4xx-other as
+      // health-relevant failures.
+      const status = res.status;
+      const isAuthGate = status === 401 || status === 403;
+      if (!isAuthGate) {
+        try { recordSupabaseRpcFailure(fn); } catch { /* never break the rpc */ }
+      }
       return {
         data: null,
         error: {
@@ -362,6 +376,7 @@ export async function callRpc<T = unknown>(
     const data = await res.json();
     return { data: data as T, error: null };
   } catch (e) {
+    try { recordSupabaseRpcFailure(fn); } catch { /* never break the rpc */ }
     return { data: null, error: { message: (e as Error).message, code: 'FETCH_ERROR' } };
   }
 }

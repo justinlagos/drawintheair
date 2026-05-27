@@ -50,13 +50,14 @@ const DEFAULT_CONFIG: OneEuroFilterConfig = {
 /**
  * Filter Profile Mode - Maps to game modes
  */
-export type FilterProfileMode = 
+export type FilterProfileMode =
     | 'bubble-pop'
     | 'tracing'
     | 'free-paint'
     | 'sort-and-place'
     | 'word-search'
     | 'menu'
+    | 'building'
     | 'default';
 
 /**
@@ -93,6 +94,11 @@ export const FILTER_PROFILES: Record<FilterProfileMode, OneEuroFilterConfig> = {
         minCutoff: 2.5,  // Very responsive for menu navigation
         beta: 0.02,      // Highly adaptive
         dCutoff: 1.5
+    },
+    'building': {
+        minCutoff: 1.8,  // Slightly smoother than sort-and-place so
+        beta: 0.012,     // pieces settle before snap commit.
+        dCutoff: 1.0
     },
     'default': {
         minCutoff: 2.0,  // Current default

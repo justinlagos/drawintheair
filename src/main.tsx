@@ -1,63 +1,104 @@
 import React, { StrictMode, useState, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import App from './App.tsx'
+// App (the game engine — camera, hand-tracking, activities) is lazy-loaded
+// via lazyWithRetry below so its weight stays off the landing critical path.
+// Only the /play and /app routes pull it in.
 import { Landing } from './pages/Landing.tsx'
 import { DemoLoader } from './pages/DemoLoader.tsx'
-import { FAQ } from './pages/FAQ.tsx'
-import { Schools } from './pages/Schools.tsx'
-import { ParentsLanding } from './pages/ParentsLanding.tsx'
-import { Pricing } from './pages/Pricing.tsx'
-import Teachers from './pages/Teachers.tsx'
-import { Privacy } from './pages/Privacy.tsx'
-import { Terms } from './pages/Terms.tsx'
-import { Cookies } from './pages/Cookies.tsx'
-import { Safeguarding } from './pages/Safeguarding.tsx'
-import { Accessibility } from './pages/Accessibility.tsx'
-import { Training } from './pages/Training.tsx'
+// NOTE: Landing + DemoLoader stay eagerly imported on purpose — Landing is
+// the most common entry point (no extra round-trip on the hot path) and
+// DemoLoader is the shared Suspense fallback (it can't be lazy itself).
+// Every other top-level page below is lazy-loaded via lazyWithRetry so it
+// no longer bloats the initial bundle; a single top-level <Suspense> in the
+// render tree covers them all.
 // Legacy PIN-gated /admin dashboard (src/pages/Admin.tsx) was removed
 // 2026-05-21 — see docs/SECURITY_AUDIT_2026-05-21.md (C3). All /admin
 // traffic now resolves to /admin/insights, which is OAuth-gated and
 // (post-migration 20260521_security_lockdown.sql) backed by RPCs that
 // assert is_admin server-side.
-import { QAPage } from './pages/QAPage.tsx'
-import SchoolPilot from './pages/SchoolPilot.tsx'
-import ParentAccess from './pages/ParentAccess.tsx'
+// QAPage, SchoolPilot, ParentAccess are lazy-loaded below (see lazy consts).
 import { initAnalytics } from './lib/analytics.ts'
-import { ErrorBoundary } from './components/ErrorBoundary.tsx'
+import { ErrorBoundary, ScopedErrorBoundary } from './components/ErrorBoundary.tsx'
+import {
+  initObservability,
+  setObservabilityContext,
+  trackEvent,
+  captureError,
+} from './lib/observability'
 import { AuthProvider } from './context/AuthContext.tsx'
 import { KidStyles } from './styles/KidStyles.tsx'
+import { lazyWithRetry } from './lib/lazyWithRetry.tsx'
+
+// ── Observability bootstrap ────────────────────────────────────────────────
+// Initialise Sentry + PostHog BEFORE React mounts so even the very first
+// render error gets reported. Safe to call when env vars are missing —
+// each subsystem silently no-ops in that case.
+initObservability();
+
+// Capture global errors that escape React entirely (e.g. unhandled
+// promise rejections, async listeners). React's own boundary still
+// catches render errors via the ErrorBoundary tree below.
+if (typeof window !== 'undefined') {
+  window.addEventListener('error', (e) => {
+    if (e?.error) captureError(e.error, { scope: 'unknown' });
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    captureError(e?.reason ?? new Error('Unhandled rejection'), { scope: 'unknown' });
+  });
+}
+
+// The game engine. Default export. Heaviest single route — kept out of the
+// initial bundle so landing/marketing visitors never download it.
+const App = lazyWithRetry(() => import('./App.tsx'));
+
+// Top-level pages — lazy-loaded so they no longer ship in the initial
+// bundle. Named exports are unwrapped to { default } for React.lazy.
+const FAQ = lazyWithRetry(() => import('./pages/FAQ.tsx').then((m) => ({ default: m.FAQ })));
+const Schools = lazyWithRetry(() => import('./pages/Schools.tsx').then((m) => ({ default: m.Schools })));
+const ParentsLanding = lazyWithRetry(() => import('./pages/ParentsLanding.tsx').then((m) => ({ default: m.ParentsLanding })));
+const Pricing = lazyWithRetry(() => import('./pages/Pricing.tsx').then((m) => ({ default: m.Pricing })));
+const Teachers = lazyWithRetry(() => import('./pages/Teachers.tsx'));
+const Privacy = lazyWithRetry(() => import('./pages/Privacy.tsx').then((m) => ({ default: m.Privacy })));
+const Terms = lazyWithRetry(() => import('./pages/Terms.tsx').then((m) => ({ default: m.Terms })));
+const Cookies = lazyWithRetry(() => import('./pages/Cookies.tsx').then((m) => ({ default: m.Cookies })));
+const Safeguarding = lazyWithRetry(() => import('./pages/Safeguarding.tsx').then((m) => ({ default: m.Safeguarding })));
+const Accessibility = lazyWithRetry(() => import('./pages/Accessibility.tsx').then((m) => ({ default: m.Accessibility })));
+const Training = lazyWithRetry(() => import('./pages/Training.tsx').then((m) => ({ default: m.Training })));
+const QAPage = lazyWithRetry(() => import('./pages/QAPage.tsx').then((m) => ({ default: m.QAPage })));
+const SchoolPilot = lazyWithRetry(() => import('./pages/SchoolPilot.tsx'));
+const ParentAccess = lazyWithRetry(() => import('./pages/ParentAccess.tsx'));
 
 // SEO Lazy Imports
-const EmbedPage = React.lazy(() => import('./pages/seo/EmbedPage.tsx'));
-const PressPage = React.lazy(() => import('./pages/seo/PressPage.tsx'));
-const FreeResourcesPage = React.lazy(() => import('./pages/seo/FreeResourcesPage.tsx'));
+const EmbedPage = lazyWithRetry(() => import('./pages/seo/EmbedPage.tsx'));
+const PressPage = lazyWithRetry(() => import('./pages/seo/PressPage.tsx'));
+const FreeResourcesPage = lazyWithRetry(() => import('./pages/seo/FreeResourcesPage.tsx'));
 
-const TracePage = React.lazy(() => import('./pages/seo/TracePage.tsx'));
-const LearnArticlePage = React.lazy(() => import('./pages/seo/LearnArticlePage.tsx'));
-const LearnHubPage = React.lazy(() => import('./pages/seo/LearnHubPage.tsx'));
-const EducationPage = React.lazy(() => import('./pages/seo/EducationPage.tsx'));
-const ActivityPage = React.lazy(() => import('./pages/seo/ActivityPage.tsx'));
-const SpecialActivityPage = React.lazy(() => import('./pages/seo/SpecialActivityPage.tsx'));
+const TracePage = lazyWithRetry(() => import('./pages/seo/TracePage.tsx'));
+const LearnArticlePage = lazyWithRetry(() => import('./pages/seo/LearnArticlePage.tsx'));
+const LearnHubPage = lazyWithRetry(() => import('./pages/seo/LearnHubPage.tsx'));
+const EducationPage = lazyWithRetry(() => import('./pages/seo/EducationPage.tsx'));
+const ActivityPage = lazyWithRetry(() => import('./pages/seo/ActivityPage.tsx'));
+const SpecialActivityPage = lazyWithRetry(() => import('./pages/seo/SpecialActivityPage.tsx'));
 
 // Education audience pages (were missing from router — critical fix)
-const ForTeachersPage = React.lazy(() => import('./pages/seo/ForTeachersPage.tsx'));
-const ForParentsPage = React.lazy(() => import('./pages/seo/ForParentsPage.tsx'));
+const ForTeachersPage = lazyWithRetry(() => import('./pages/seo/ForTeachersPage.tsx'));
+const ForParentsPage = lazyWithRetry(() => import('./pages/seo/ForParentsPage.tsx'));
 
 // Growth Engine — Phase 1 Use-Case Landing Pages
-const UseCasePage = React.lazy(() => import('./pages/seo/UseCasePage.tsx'));
+const UseCasePage = lazyWithRetry(() => import('./pages/seo/UseCasePage.tsx'));
 
 // Growth Engine — Share Landing Page
-const ShareLandingPage = React.lazy(() => import('./pages/seo/ShareLandingPage.tsx'));
+const ShareLandingPage = lazyWithRetry(() => import('./pages/seo/ShareLandingPage.tsx'));
 
 // Admin — internal analytics insights (auth-gated, allow-list)
-const InsightsDashboard = React.lazy(() => import('./pages/admin/InsightsDashboard.tsx'));
-const TeachObservePage  = React.lazy(() => import('./pages/teach/TeachObservePage.tsx'));
-const TransparencyPage  = React.lazy(() => import('./pages/TransparencyPage.tsx'));
+const InsightsDashboard = lazyWithRetry(() => import('./pages/admin/InsightsDashboard.tsx'));
+const TeachObservePage  = lazyWithRetry(() => import('./pages/teach/TeachObservePage.tsx'));
+const TransparencyPage  = lazyWithRetry(() => import('./pages/TransparencyPage.tsx'));
 
 // Setup guides — idiot-proof quick-start, print-optimised for A4.
-const TeacherSetupGuide = React.lazy(() => import('./pages/setup/TeacherSetupGuide.tsx'));
-const ParentSetupGuide  = React.lazy(() => import('./pages/setup/ParentSetupGuide.tsx'));
+const TeacherSetupGuide = lazyWithRetry(() => import('./pages/setup/TeacherSetupGuide.tsx'));
+const ParentSetupGuide  = lazyWithRetry(() => import('./pages/setup/ParentSetupGuide.tsx'));
 
 // Class Mode v2 — conductor model. One persistent surface per role.
 //   /class            → TeacherClassConsole  (replaces TeacherDashboard +
@@ -66,8 +107,8 @@ const ParentSetupGuide  = React.lazy(() => import('./pages/setup/ParentSetupGuid
 //                       StudentGameScreen)
 // The legacy lobby/round/results/join-play routes are kept as redirects
 // to avoid breaking any in-the-wild bookmarks.
-const TeacherClassConsole = React.lazy(() => import('./pages/classmode/TeacherClassConsole.tsx'));
-const StudentClassClient  = React.lazy(() => import('./pages/classmode/StudentClassClient.tsx'));
+const TeacherClassConsole = lazyWithRetry(() => import('./pages/classmode/TeacherClassConsole.tsx'));
+const StudentClassClient  = lazyWithRetry(() => import('./pages/classmode/StudentClassClient.tsx'));
 
 // Helper function to determine route from pathname
 function getRouteFromPath(path: string, hash: string): string {
@@ -174,6 +215,16 @@ function Root() {
       const hash = window.location.hash;
       const newRoute = getRouteFromPath(path, hash);
       setRoute(newRoute);
+
+      // Tell observability about the new route so any subsequent
+      // error carries it as a tag — and emit a route_view funnel
+      // event for PostHog. LIOS already handles its own page events.
+      try {
+        setObservabilityContext({ route: path });
+        trackEvent('route_view', { route: path });
+      } catch {
+        /* never let observability crash the router */
+      }
     };
 
     // Handle initial load - ensure route matches current path
@@ -201,17 +252,17 @@ function Root() {
 
   if (route === 'play') {
     return (
-      <ErrorBoundary>
+      <ScopedErrorBoundary scope="gamemode">
         <App />
-      </ErrorBoundary>
+      </ScopedErrorBoundary>
     );
   }
 
   if (route === 'app') {
     return (
-      <ErrorBoundary>
+      <ScopedErrorBoundary scope="gamemode">
         <App />
-      </ErrorBoundary>
+      </ScopedErrorBoundary>
     );
   }
 
@@ -261,9 +312,11 @@ function Root() {
 
   if (route === 'admin-insights') {
     return (
-      <React.Suspense fallback={<DemoLoader />}>
-        <InsightsDashboard />
-      </React.Suspense>
+      <ScopedErrorBoundary scope="insights">
+        <React.Suspense fallback={<DemoLoader />}>
+          <InsightsDashboard />
+        </React.Suspense>
+      </ScopedErrorBoundary>
     );
   }
 
@@ -290,19 +343,21 @@ function Root() {
   // ── Class Mode routes (conductor v1) ──────────────────────────────────────
   if (route === 'class-console') {
     return (
-      <React.Suspense fallback={<DemoLoader />}>
-        <TeacherClassConsole />
-      </React.Suspense>
+      <ScopedErrorBoundary scope="classmode">
+        <React.Suspense fallback={<DemoLoader />}>
+          <TeacherClassConsole />
+        </React.Suspense>
+      </ScopedErrorBoundary>
     );
   }
 
   if (route === 'student-client') {
     return (
-      <ErrorBoundary>
+      <ScopedErrorBoundary scope="classmode">
         <React.Suspense fallback={<DemoLoader />}>
           <StudentClassClient />
         </React.Suspense>
-      </ErrorBoundary>
+      </ScopedErrorBoundary>
     );
   }
 
@@ -478,17 +533,100 @@ function Root() {
     );
   }
 
-  return <Landing />;
+  return (
+    <ScopedErrorBoundary scope="landing">
+      <Landing />
+    </ScopedErrorBoundary>
+  );
 }
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <KidStyles />
     <AuthProvider>
-      <Root />
+      <ErrorBoundary scope="boundary">
+        {/* Single top-level Suspense covers every lazy page (top-level + SEO
+            routes). Individual routes may still nest their own Suspense; that
+            is fine. DemoLoader is the shared, eagerly-loaded fallback. */}
+        <React.Suspense fallback={<DemoLoader />}>
+          <Root />
+        </React.Suspense>
+      </ErrorBoundary>
     </AuthProvider>
   </StrictMode>,
 )
+
+// ---------- Signal first paint to the inline boot splash ----------
+// index.html shows a dependency-free spinner immediately and arms a 20s
+// "still loading" fallback. Tell it we've mounted so it stops that timer.
+try {
+  window.dispatchEvent(new Event('dia:booted'));
+} catch {
+  /* no-op */
+}
+
+// ---------- Deferred third-party analytics ----------
+// GA4 (gtag) and Microsoft Clarity used to load synchronously in <head>,
+// competing with the critical app bundle for bandwidth on slow / high-latency
+// connections. We now inject them only once the page is idle or fully loaded,
+// so they can never block or delay first render. Both are wrapped so a failure
+// to load (e.g. the tag host is unreachable from a given ISP) never affects the
+// app itself.
+function loadDeferredAnalytics(): void {
+  const w = window as unknown as Record<string, unknown>;
+  if (w.__diaAnalyticsLoaded) return;
+  w.__diaAnalyticsLoaded = true;
+
+  // Google Analytics 4
+  try {
+    const GA_ID = 'G-S4XSWT6Q09';
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+    document.head.appendChild(s);
+    const dl = (w.dataLayer = (w.dataLayer as unknown[]) || []);
+    const gtag = (...args: unknown[]) => { dl.push(args); };
+    w.gtag = gtag;
+    gtag('js', new Date());
+    gtag('config', GA_ID);
+  } catch {
+    /* analytics must never break the app */
+  }
+
+  // Microsoft Clarity
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const c = window as unknown as Record<string, any>;
+    if (!c.clarity) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const stub: any = (...args: unknown[]) => {
+        (stub.q = stub.q || []).push(args);
+      };
+      stub.q = [];
+      c.clarity = stub;
+    }
+    const t = document.createElement('script');
+    t.async = true;
+    t.src = 'https://www.clarity.ms/tag/vseevw9uck';
+    const y = document.getElementsByTagName('script')[0];
+    y.parentNode?.insertBefore(t, y);
+  } catch {
+    /* no-op */
+  }
+}
+
+if (typeof window !== 'undefined') {
+  const schedule = () => {
+    const ric = (window as unknown as Record<string, any>).requestIdleCallback;
+    if (typeof ric === 'function') {
+      ric(loadDeferredAnalytics, { timeout: 4000 });
+    } else {
+      setTimeout(loadDeferredAnalytics, 2500);
+    }
+  };
+  if (document.readyState === 'complete') schedule();
+  else window.addEventListener('load', schedule);
+}
 
 // ---------- Service Worker Registration ----------
 // Register only in production to avoid interfering with Vite HMR in dev.
