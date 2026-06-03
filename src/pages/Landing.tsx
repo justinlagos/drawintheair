@@ -58,7 +58,7 @@ function Icon({ name, size = 20, ...p }: { name: keyof typeof ICONS; size?: numb
 /* =====================================================================
    Scroll reveal + gesture trail (visible-first; animation is enhancement)
    ===================================================================== */
-function useReveal(rootRef: React.RefObject<HTMLElement>) {
+function useReveal(rootRef: React.RefObject<HTMLElement | null>) {
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;

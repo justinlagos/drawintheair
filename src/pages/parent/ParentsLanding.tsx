@@ -31,7 +31,7 @@ function PlayIcon() {
   );
 }
 
-function useReveal(rootRef: React.RefObject<HTMLElement>) {
+function useReveal(rootRef: React.RefObject<HTMLElement | null>) {
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;

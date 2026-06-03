@@ -274,7 +274,7 @@ function BillingInner() {
                 <p>No charge during your 14-day trial.</p>
               </div>
               <div className="tl-meta">
-                {sub?.trial_start ? new Date(sub.trial_start).toLocaleDateString() : 'Recent'}
+                Recent
               </div>
             </div>
             {periodEnd && (

@@ -34,7 +34,7 @@ function ArrowIcon({ size = 17 }: { size?: number }) {
   );
 }
 
-function useReveal(rootRef: React.RefObject<HTMLElement>) {
+function useReveal(rootRef: React.RefObject<HTMLElement | null>) {
   useEffect(() => {
     const root = rootRef.current; if (!root) return;
     let raf = 0, ticking = false;
