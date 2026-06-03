@@ -1,349 +1,365 @@
-import React, { useState } from 'react';
-import { LegalPageLayout } from '../components/landing/LegalPageLayout';
+/**
+ * /pricing. Calm-direction pricing page with audience toggle.
+ *
+ * Tabs: Parents / Teachers / Schools. Each shows its own plan grid.
+ * Family plan prices ($4.99/mo, $54.99/yr) are the live Stripe ones.
+ * Do not change without updating stripe_price_map.
+ */
 
-const platformUrl = typeof window !== 'undefined'
-  ? (import.meta as any).env?.VITE_PLATFORM_URL || 'https://app.drawintheair.com'
-  : 'https://app.drawintheair.com';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  CalmFooter, FAQList, GestureTrail, SectionHead,
+} from './Landing';
+import { HeaderNav } from '../components/landing/HeaderNav';
+import '../components/landing/landing-calm.css';
 
-const PLANS = [
-  {
-    name: 'Free',
-    description: 'For families & casual use',
-    price: '£0',
-    period: 'forever',
-    cta: 'Play Free Now',
-    ctaHref: '/play',
-    external: false,
-    highlight: false,
-    features: [
-      'All 9 activities',
-      'Unlimited play sessions',
-      'Hand gesture tracking',
-      'Works on any device',
-      'No account needed',
-    ],
+function ArrowIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+function useReveal(rootRef: React.RefObject<HTMLElement>) {
+  useEffect(() => {
+    const root = rootRef.current; if (!root) return;
+    let raf = 0, ticking = false;
+    const pass = () => {
+      ticking = false;
+      const h = window.innerHeight;
+      root.querySelectorAll('.reveal:not(.in)').forEach((el) => {
+        if (el.getBoundingClientRect().top < h - 40) el.classList.add('in');
+      });
+    };
+    const onScroll = () => { if (!ticking) { ticking = true; raf = requestAnimationFrame(pass); } };
+    pass();
+    const r1 = requestAnimationFrame(() => { root.classList.add('anim'); });
+    const t1 = window.setTimeout(pass, 140);
+    const t2 = window.setTimeout(pass, 450);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(raf); cancelAnimationFrame(r1);
+      clearTimeout(t1); clearTimeout(t2);
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, [rootRef]);
+}
+
+// ── Tab data ────────────────────────────────────────────────────────────
+
+type Audience = 'parents' | 'teachers' | 'schools';
+
+const AUDIENCE_INTRO: Record<Audience, { eyebrow: string; h1: React.ReactNode; lead: string }> = {
+  parents: {
+    eyebrow: 'For families',
+    h1: <>Honest pricing. <span className="grad">Plain language.</span></>,
+    lead: 'Pick what suits your family. Either plan includes 14 days free, up to 2 learners, and full access.',
   },
-  {
-    name: 'Teacher Pro',
-    description: 'Classroom mode & analytics',
-    price: '£4.99',
-    period: '/month',
-    cta: 'Start 5-Day Free Trial',
-    ctaHref: `${platformUrl}/auth/login`,
-    external: true,
-    highlight: true,
-    tag: 'Most Popular',
-    features: [
-      'Everything in Free',
-      'Classroom mode',
-      'Live leaderboards',
-      'AI learning analytics',
-      'Session replay',
-      'Student performance reports',
-      'Up to 30 students per session',
-    ],
+  teachers: {
+    eyebrow: 'For teachers',
+    h1: <>A plan for your <span className="grad">classroom.</span></>,
+    lead: 'Start with a free pilot. Upgrade when your classroom is ready for live mode, analytics, and printable activity guides.',
   },
-  {
-    name: 'School',
-    description: 'Whole-school licence',
-    price: 'From £299',
-    period: '/year',
-    cta: 'Get in Touch',
-    ctaHref: 'mailto:partnership@drawintheair.com',
-    external: true,
-    highlight: false,
-    features: [
-      'Everything in Teacher Pro',
-      'Unlimited teacher accounts',
-      'School-wide analytics',
-      'Dedicated onboarding',
-      'Priority support',
-      'GDPR data agreement',
-      'Custom branding',
-    ],
+  schools: {
+    eyebrow: 'For schools',
+    h1: <>One licence for the <span className="grad">whole school.</span></>,
+    lead: 'Whole-school access, admin dashboard, bulk class management, and onboarding support. Pricing scales with your setting.',
   },
+};
+
+// Parents (Family monthly + yearly)
+const FAMILY_FEATS = [
+  '14-day free trial',
+  'Up to 2 learners included',
+  'Full activity library',
+  'Plain-English progress reports',
+  'Gentle parental controls',
+  'Cancel anytime',
 ];
 
-const COMPARISON = [
-  { feature: 'All 9 activities', free: true, pro: true, school: true },
-  { feature: 'Unlimited play', free: true, pro: true, school: true },
-  { feature: 'Classroom mode', free: false, pro: true, school: true },
-  { feature: 'Live leaderboards', free: false, pro: true, school: true },
-  { feature: 'AI analytics', free: false, pro: true, school: true },
-  { feature: 'Session replay', free: false, pro: true, school: true },
-  { feature: 'Student reports', free: false, pro: true, school: true },
-  { feature: 'Multi-teacher management', free: false, pro: false, school: true },
-  { feature: 'School-wide dashboard', free: false, pro: false, school: true },
-  { feature: 'Unlimited students', free: false, pro: false, school: true },
+const FAMILY_PLANS = [
+  { name: 'Monthly', tagline: 'Try it for a month.',     amt: '$4.99',  per: '/month', cta: 'Start free trial', variant: 'secondary' as const, featured: false, save: undefined as string | undefined },
+  { name: 'Yearly',  tagline: 'Best value for the year.', amt: '$54.99', per: '/year',  cta: 'Start free trial', variant: 'primary'   as const, featured: true,  save: 'Save $5' },
 ];
 
-const FAQS = [
-  { q: 'Is it really free forever?', a: 'Yes. The free plan gives unlimited access to all 9 activities — no account, no credit card, no expiry. Upgrade only for classroom tools.' },
-  { q: 'What happens after the 5-day trial?', a: "After the trial ends you can upgrade to Teacher Pro or continue on the free plan. We don't auto-charge — no surprises." },
-  { q: 'Do students need accounts or emails?', a: 'No. Students enter just their first name at the start of a class session. No accounts, no emails, no GDPR issues.' },
-  { q: 'Does it work on school Chromebooks?', a: 'Yes. Draw in the Air is browser-based and tested on Chromebooks with the front-facing camera. No installation required.' },
-  { q: 'Can we pay annually?', a: 'Yes. Annual billing for Teacher Pro saves you 2 months. Contact us for school annual invoicing and PO billing.' },
+// Teachers (Free pilot + Teacher Pro)
+const TEACHER_PILOT_FEATS = [
+  'One classroom, up to 30 learners',
+  'Live classroom mode',
+  'Core activity library',
+  'No card required',
+  'Cancel anytime',
 ];
 
-/* ── Responsive CSS injected once ────────────────────────────────────────── */
-const PRICING_CSS = `
-  .pricing-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    align-items: start;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-  @media (max-width: 900px) {
-    .pricing-grid {
-      grid-template-columns: 1fr;
-      max-width: 420px;
-    }
-  }
-  .pricing-card {
-    border-radius: 16px;
-    padding: 2rem 1.5rem;
-    position: relative;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .pricing-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.1);
-  }
-  .pricing-card--highlight {
-    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-    border: 2px solid #f97316;
-    box-shadow: 0 8px 32px rgba(249,115,22,0.3);
-    transform: scale(1.02);
-  }
-  .pricing-card--highlight:hover {
-    transform: scale(1.02) translateY(-4px);
-    box-shadow: 0 16px 48px rgba(249,115,22,0.35);
-  }
-  .pricing-card--default {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  }
-  .pricing-cta-btn {
-    display: block;
-    width: 100%;
-    text-align: center;
-    padding: 14px 20px;
-    border-radius: 10px;
-    font-size: 0.95rem;
-    font-weight: 700;
-    text-decoration: none;
-    margin: 20px 0;
-    cursor: pointer;
-    transition: opacity 0.15s ease, transform 0.15s ease;
-    border: none;
-  }
-  .pricing-cta-btn:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-  }
-  .pricing-table tr:nth-child(even) {
-    background: #f8fafc;
-  }
-  .pricing-table tr:nth-child(odd) {
-    background: #fff;
-  }
-`;
+const TEACHER_PRO_FEATS = [
+  'Everything in Pilot',
+  'Unlimited classrooms',
+  'Session history and analytics',
+  'Plain-English class insights',
+  'Printable activity guides',
+  'Playlist builder',
+];
+
+const TEACHER_PLANS = [
+  { name: 'Free Pilot', tagline: 'Try it with one class.',  amt: 'Free', per: '',          desc: '',                                                            feats: TEACHER_PILOT_FEATS, cta: 'Start free pilot',    variant: 'secondary' as const, featured: false, to: '/teacher/signup', save: undefined as string | undefined },
+  { name: 'Teacher Pro', tagline: 'The full classroom kit.', amt: '$8',   per: 'per month', desc: '',                                                            feats: TEACHER_PRO_FEATS,   cta: 'Start free trial',     variant: 'primary'   as const, featured: true,  to: '/teacher/signup', save: 'Most popular' },
+];
+
+// Schools (Whole school)
+const SCHOOL_FEATS = [
+  'Every teacher included',
+  'Whole-school analytics',
+  'Admin dashboard and reporting',
+  'Bulk class management',
+  'Single sign-on (SSO) options',
+  'Onboarding and priority support',
+  'Annual or termly billing',
+  'EYFS curriculum mapping',
+];
+
+const SCHOOL_PLANS = [
+  { name: 'School Licence', tagline: 'One licence, every classroom.', amt: 'Custom', per: 'per school', desc: 'Priced by school size. Book a call and we will size it with you.', feats: SCHOOL_FEATS, cta: 'Talk to us',           variant: 'primary'   as const, featured: true,  to: '/teacher/signup', save: undefined as string | undefined },
+];
+
+// FAQ (audience-aware)
+const FAQ_BY_AUDIENCE: Record<Audience, { q: string; a: string }[]> = {
+  parents: [
+    { q: 'What does the Family plan cost?',          a: 'Monthly is $4.99 a month and Yearly is $54.99 a year, which saves you $5. Both include a 14-day free trial, up to 2 learners, the full activity library, and you can cancel anytime.' },
+    { q: 'Do I need a card for the free trial?',     a: 'You start the 14-day trial when you create your account. We remind you before it ends, and you can cancel in one tap, no questions asked.' },
+    { q: 'How many children can I add?',             a: 'Two are included on the Family plan. You can add more siblings any time for $2 per learner per month.' },
+    { q: 'Can my child use it without an account?',  a: 'Yes. Anyone can play Free Paint without an account. Saving progress, controls, and reports require a parent account.' },
+  ],
+  teachers: [
+    { q: 'How do I start a free pilot?',             a: 'Create a teacher account and you are in. One class, up to 30 learners, no card required.' },
+    { q: 'What does Teacher Pro unlock?',            a: 'Unlimited classrooms, session history, analytics, plain-English class insights, printable guides, and the playlist builder.' },
+    { q: 'Do children need accounts?',               a: 'No. Children join a class with a short code on the screen. They never log in, never have a profile.' },
+    { q: 'Can I cancel anytime?',                    a: 'Yes. Cancel from your account page. We never auto-renew without a clear notice.' },
+  ],
+  schools: [
+    { q: 'How is school pricing decided?',           a: 'Priced per setting based on size and the number of classrooms. Book a call and we will give you a quote in writing the same day.' },
+    { q: 'Do you offer SSO?',                        a: 'Yes. Google Workspace, Microsoft Entra ID, and most SAML providers. We work with your IT lead on rollout.' },
+    { q: 'Is there onboarding support?',             a: 'Every school licence includes a kickoff call, training for staff, and priority support from a named contact during the first term.' },
+    { q: 'Can we pay annually or termly?',           a: 'Both. Whatever fits your school budget cycle.' },
+  ],
+};
+
+// ── Page ────────────────────────────────────────────────────────────────
 
 export const Pricing: React.FC = () => {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const navigate = useNavigate();
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  useReveal(rootRef);
+
+  // Default tab can be deep-linked via ?for=teachers / ?for=schools.
+  const [audience, setAudience] = useState<Audience>(() => {
+    if (typeof window === 'undefined') return 'parents';
+    const q = new URLSearchParams(window.location.search).get('for');
+    return q === 'teachers' || q === 'schools' ? q : 'parents';
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    if (audience === 'parents') url.searchParams.delete('for');
+    else url.searchParams.set('for', audience);
+    window.history.replaceState(null, '', url.toString());
+  }, [audience]);
+
+  const intro = AUDIENCE_INTRO[audience];
 
   return (
-    <LegalPageLayout heroTitle="Pricing">
-      <style>{PRICING_CSS}</style>
+    <div ref={rootRef} className="lp-shell">
+      <GestureTrail />
+      <HeaderNav />
+      <div className="page" data-screen-label="Pricing">
 
-      {/* Hero */}
-      <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-        <span style={{
-          display: 'inline-block', background: '#fff7ed', color: '#f97316',
-          borderRadius: 50, padding: '5px 16px', fontSize: '0.78rem', fontWeight: 700,
-          letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 12,
-        }}>
-          Transparent pricing
-        </span>
-        <p style={{ fontSize: '1.15rem', color: '#475569', maxWidth: 560, margin: '0 auto', lineHeight: 1.6 }}>
-          Free for families. Affordable for teachers. Scalable for schools.
-        </p>
-      </div>
-
-      {/* Plan cards — 3 in a row */}
-      <div className="pricing-grid">
-        {PLANS.map((plan) => {
-          const h = plan.highlight;
-          return (
-            <div
-              key={plan.name}
-              className={`pricing-card ${h ? 'pricing-card--highlight' : 'pricing-card--default'}`}
-            >
-              {plan.tag && (
-                <div style={{
-                  position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
-                  background: '#ea580c', color: '#fff', borderRadius: 50, padding: '4px 16px',
-                  fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.07em', whiteSpace: 'nowrap',
-                }}>
-                  {plan.tag}
-                </div>
-              )}
-
-              <div style={{ fontSize: '1.3rem', fontWeight: 800, color: h ? '#fff' : '#0f172a', marginBottom: 4 }}>
-                {plan.name}
+        {/* HERO */}
+        <section className="hero" data-screen-label="Pricing hero" style={{ paddingBottom: 0 }}>
+          <div className="hero-orb" />
+          <div className="wrap">
+            <div className="sec-head reveal" style={{ marginBottom: 0 }}>
+              <div className="eyebrow" style={{ justifyContent: 'center' }}>
+                <span className="ic-chip" aria-hidden="true">{'\u{1F4B3}'}</span> {intro.eyebrow}
               </div>
-              <div style={{ fontSize: '0.88rem', color: h ? 'rgba(255,255,255,0.85)' : '#64748b', marginBottom: 20 }}>
-                {plan.description}
-              </div>
-
-              <div style={{ marginBottom: 4 }}>
-                <span style={{ fontSize: '2.4rem', fontWeight: 800, color: h ? '#fff' : '#0f172a', lineHeight: 1 }}>
-                  {plan.price}
-                </span>
-                <span style={{ fontSize: '0.9rem', color: h ? 'rgba(255,255,255,0.7)' : '#64748b', marginLeft: 4 }}>
-                  {plan.period}
-                </span>
-              </div>
-
-              <a
-                href={plan.ctaHref}
-                {...(plan.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                className="pricing-cta-btn"
-                style={{
-                  background: h ? '#fff' : '#f97316',
-                  color: h ? '#f97316' : '#fff',
-                }}
-                onClick={!plan.external ? (e) => { e.preventDefault(); window.location.pathname = plan.ctaHref; } : undefined}
-              >
-                {plan.cta}
-              </a>
-
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, borderTop: h ? '1px solid rgba(255,255,255,0.2)' : '1px solid #f1f5f9', paddingTop: 16 }}>
-                {plan.features.map((f) => (
-                  <li key={f} style={{
-                    display: 'flex', alignItems: 'flex-start', gap: 8,
-                    fontSize: '0.88rem', color: h ? 'rgba(255,255,255,0.92)' : '#374151', marginBottom: 10,
-                  }}>
-                    <span style={{
-                      width: 20, height: 20, borderRadius: '50%', flexShrink: 0, marginTop: 1,
-                      background: h ? 'rgba(255,255,255,0.2)' : '#fff7ed',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: h ? '#fff' : '#f97316', fontSize: 11, fontWeight: 900,
-                    }}>
-                      ✓
-                    </span>
-                    {f}
-                  </li>
+              <h1 className="h1" style={{ marginTop: 18 }}>
+                {intro.h1}
+              </h1>
+              <p className="lead" style={{ marginTop: 16 }}>
+                {intro.lead}
+              </p>
+              <div className="pricing-tabs reveal" role="tablist" aria-label="Pricing audience" style={{ marginTop: 28 }}>
+                {(['parents', 'teachers', 'schools'] as Audience[]).map((a) => (
+                  <button
+                    key={a}
+                    role="tab"
+                    aria-selected={audience === a}
+                    type="button"
+                    className={`pricing-tab ${audience === a ? 'on' : ''}`}
+                    onClick={() => setAudience(a)}
+                  >
+                    {a === 'parents' ? 'Parents' : a === 'teachers' ? 'Teachers' : 'Schools'}
+                  </button>
                 ))}
-              </ul>
+              </div>
             </div>
-          );
-        })}
-      </div>
-
-      {/* Feature comparison table */}
-      <div style={{ padding: '3.5rem 0 2rem', maxWidth: 1200, margin: '0 auto' }}>
-        <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0f172a', textAlign: 'center', marginBottom: '1.5rem' }}>
-          Full feature comparison
-        </h2>
-        <div style={{ overflowX: 'auto', borderRadius: 12, border: '1px solid #e2e8f0', background: '#fff' }}>
-          <table className="pricing-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#f8fafc' }}>
-                <th style={{ padding: '14px 20px', textAlign: 'left', fontSize: '0.88rem', fontWeight: 700, color: '#0f172a', borderBottom: '2px solid #e2e8f0' }}>Feature</th>
-                <th style={{ padding: '14px 20px', textAlign: 'center', fontSize: '0.88rem', fontWeight: 700, color: '#0f172a', borderBottom: '2px solid #e2e8f0' }}>Free</th>
-                <th style={{ padding: '14px 20px', textAlign: 'center', fontSize: '0.88rem', fontWeight: 700, color: '#f97316', borderBottom: '2px solid #e2e8f0' }}>Teacher Pro</th>
-                <th style={{ padding: '14px 20px', textAlign: 'center', fontSize: '0.88rem', fontWeight: 700, color: '#0f172a', borderBottom: '2px solid #e2e8f0' }}>School</th>
-              </tr>
-            </thead>
-            <tbody>
-              {COMPARISON.map((row) => (
-                <tr key={row.feature}>
-                  <td style={{ padding: '13px 20px', textAlign: 'left', fontSize: '0.88rem', color: '#374151', borderBottom: '1px solid #f1f5f9' }}>{row.feature}</td>
-                  <td style={{ padding: '13px 20px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>
-                    {row.free ? <span style={{ color: '#22c55e', fontWeight: 700, fontSize: '1rem' }}>✓</span> : <span style={{ color: '#cbd5e1' }}>—</span>}
-                  </td>
-                  <td style={{ padding: '13px 20px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>
-                    {row.pro ? <span style={{ color: '#22c55e', fontWeight: 700, fontSize: '1rem' }}>✓</span> : <span style={{ color: '#cbd5e1' }}>—</span>}
-                  </td>
-                  <td style={{ padding: '13px 20px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>
-                    {row.school ? <span style={{ color: '#22c55e', fontWeight: 700, fontSize: '1rem' }}>✓</span> : <span style={{ color: '#cbd5e1' }}>—</span>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* FAQ */}
-      <div style={{ padding: '1rem 0 2.5rem', maxWidth: 800, margin: '0 auto' }}>
-        <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0f172a', textAlign: 'center', marginBottom: '1.5rem' }}>
-          Common questions
-        </h2>
-        {FAQS.map((item, i) => (
-          <div key={i} style={{
-            borderRadius: 10,
-            border: openFaq === i ? '1px solid #f97316' : '1px solid #e2e8f0',
-            background: '#fff', marginBottom: 10, overflow: 'hidden',
-            transition: 'border-color 0.2s',
-          }}>
-            <button
-              style={{
-                width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '18px 20px', background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: '1rem', fontWeight: 600, color: '#0f172a', textAlign: 'left', gap: 12,
-              }}
-              onClick={() => setOpenFaq(openFaq === i ? null : i)}
-            >
-              <span>{item.q}</span>
-              <span style={{ fontSize: '1.2rem', color: '#f97316', flexShrink: 0, transition: 'transform 0.2s', transform: openFaq === i ? 'rotate(45deg)' : 'none' }}>+</span>
-            </button>
-            {openFaq === i && <div style={{ padding: '0 20px 18px', fontSize: '0.93rem', color: '#475569', lineHeight: 1.65 }}>{item.a}</div>}
           </div>
-        ))}
-      </div>
+        </section>
 
-      {/* Final CTA */}
-      <div style={{
-        background: 'linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%)',
-        borderRadius: 16, padding: '3rem 2rem', textAlign: 'center', border: '1px solid #fed7aa',
-      }}>
-        <h2 style={{ fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', fontWeight: 800, color: '#0f172a', marginBottom: 12 }}>
-          Ready to get started?
-        </h2>
-        <p style={{ fontSize: '1rem', color: '#64748b', marginBottom: 28 }}>
-          Join teachers across the UK transforming early years learning.
-        </p>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a
-            href="/play"
-            onClick={(e) => { e.preventDefault(); window.location.pathname = '/play'; }}
-            style={{
-              display: 'inline-block', background: '#f97316', color: '#fff', padding: '14px 30px',
-              borderRadius: 10, fontWeight: 700, textDecoration: 'none', fontSize: '1rem',
-              transition: 'opacity 0.15s',
-            }}
-          >
-            Play Free Now
-          </a>
-          <a
-            href={`${platformUrl}/auth/login`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-block', background: '#fff', color: '#0f172a', padding: '14px 30px',
-              borderRadius: 10, fontWeight: 700, textDecoration: 'none', fontSize: '1rem',
-              border: '1px solid #e2e8f0', transition: 'opacity 0.15s',
-            }}
-          >
-            Start Free Trial
-          </a>
-        </div>
+        {/* PARENTS PANEL */}
+        {audience === 'parents' && (
+          <section className="section" data-screen-label="Family plans" style={{ paddingTop: 48 }}>
+            <div className="wrap" style={{ maxWidth: 920 }}>
+              <div className="price-grid two">
+                {FAMILY_PLANS.map((p, i) => (
+                  <div key={p.name} className={`price-card reveal d${i + 1} ${p.featured ? 'featured' : ''}`}>
+                    {p.save && <span className="save-badge">{'★'} {p.save}</span>}
+                    <div className="price-name">{p.name}</div>
+                    <div className="price-tagline">{p.tagline}</div>
+                    <div className="price-tag">
+                      <span className="price-amt">{p.amt}</span>
+                      <span className="price-per">{p.per}</span>
+                    </div>
+                    <ul className="price-list">
+                      {FAMILY_FEATS.map((f) => (
+                        <li key={f}><span className="check">{'✓'}</span>{f}</li>
+                      ))}
+                    </ul>
+                    <button
+                      type="button"
+                      className={`btn btn-${p.variant} md`}
+                      style={{ width: '100%' }}
+                      onClick={() => navigate('/parent/signup')}
+                    >
+                      {p.cta} <ArrowIcon size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <p className="auth-alt" style={{ marginTop: 28 }}>
+                Already have an account? <Link to="/parent/login">Sign in</Link>
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* TEACHERS PANEL */}
+        {audience === 'teachers' && (
+          <section className="section" data-screen-label="Teacher plans" style={{ paddingTop: 48 }}>
+            <div className="wrap" style={{ maxWidth: 920 }}>
+              <div className="price-grid two">
+                {TEACHER_PLANS.map((p, i) => (
+                  <div key={p.name} className={`price-card reveal d${i + 1} ${p.featured ? 'featured' : ''}`}>
+                    {p.save && <span className="save-badge">{'★'} {p.save}</span>}
+                    <div className="price-name">{p.name}</div>
+                    <div className="price-tagline">{p.tagline}</div>
+                    <div className="price-tag">
+                      <span className="price-amt">{p.amt}</span>
+                      {p.per && <span className="price-per">{p.per}</span>}
+                    </div>
+                    <ul className="price-list">
+                      {p.feats.map((f) => (
+                        <li key={f}><span className="check">{'✓'}</span>{f}</li>
+                      ))}
+                    </ul>
+                    <Link to={p.to} className={`btn btn-${p.variant} md`} style={{ width: '100%' }}>
+                      {p.cta} <ArrowIcon size={16} />
+                    </Link>
+                  </div>
+                ))}
+              </div>
+              <p className="auth-alt" style={{ marginTop: 28 }}>
+                Already teaching with us? <Link to="/teacher/login">Sign in</Link>
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* SCHOOLS PANEL */}
+        {audience === 'schools' && (
+          <section className="section" data-screen-label="School plans" style={{ paddingTop: 48 }}>
+            <div className="wrap" style={{ maxWidth: 720 }}>
+              {SCHOOL_PLANS.map((p, i) => (
+                <div key={p.name} className={`price-card reveal d${i + 1} ${p.featured ? 'featured' : ''}`} style={{ maxWidth: 640, margin: '0 auto' }}>
+                  {p.featured && <span className="price-badge">Most popular</span>}
+                  <div className="price-name">{p.name}</div>
+                  <div className="price-tagline">{p.tagline}</div>
+                  <div className="price-tag">
+                    <span className="price-amt">{p.amt}</span>
+                    {p.per && <span className="price-per">{p.per}</span>}
+                  </div>
+                  <p className="price-desc">{p.desc}</p>
+                  <ul className="price-list">
+                    {p.feats.map((f) => (
+                      <li key={f}><span className="check">{'✓'}</span>{f}</li>
+                    ))}
+                  </ul>
+                  <Link to={p.to} className={`btn btn-${p.variant} md`} style={{ width: '100%' }}>
+                    {p.cta} <ArrowIcon size={16} />
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* AUDIENCE-AWARE FAQ */}
+        <section className="section section-tint" data-screen-label="Pricing FAQ">
+          <div className="wrap">
+            <SectionHead eyebrow="Frequently asked" title="Pricing questions." />
+            <FAQList items={FAQ_BY_AUDIENCE[audience]} />
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="section section-stage" data-screen-label="Pricing CTA">
+          <div className="wrap">
+            <div className="cta-banner reveal">
+              <h2 className="h2">
+                {audience === 'schools' ? 'Bring active learning to every classroom.' :
+                 audience === 'teachers' ? 'Set up your classroom in under five minutes.' :
+                 'Start your 14-day free trial.'}
+              </h2>
+              <p className="lead">
+                {audience === 'schools' ? 'Whole-school access, admin reporting, and onboarding support.' :
+                 audience === 'teachers' ? 'Free pilot, no card required. Upgrade when you are ready.' :
+                 'Up to 2 learners, the full activity library, and cancel anytime.'}
+              </p>
+              <div className="cta-actions">
+                {audience === 'parents' && (
+                  <>
+                    <Link to="/parent/signup" className="btn btn-secondary lg">Start free trial</Link>
+                    <Link to="/teachers" className="btn btn-ghost lg" style={{ color: 'inherit' }}>
+                      For teachers and schools <ArrowIcon size={17} />
+                    </Link>
+                  </>
+                )}
+                {audience === 'teachers' && (
+                  <>
+                    <Link to="/teacher/signup" className="btn btn-secondary lg">Start free pilot</Link>
+                    <Link to="/teachers" className="btn btn-ghost lg" style={{ color: 'inherit' }}>
+                      Learn how it works <ArrowIcon size={17} />
+                    </Link>
+                  </>
+                )}
+                {audience === 'schools' && (
+                  <>
+                    <Link to="/teacher/signup" className="btn btn-secondary lg">Book a school demo</Link>
+                    <Link to="/teachers" className="btn btn-ghost lg" style={{ color: 'inherit' }}>
+                      See classroom mode <ArrowIcon size={17} />
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
       </div>
-    </LegalPageLayout>
+      <CalmFooter />
+    </div>
   );
 };
+
+export default Pricing;

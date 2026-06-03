@@ -158,6 +158,121 @@ export async function signOut() {
   notifyAuthListeners(null);
 }
 
+// ─── Email + password auth (parent accounts) ────────────────────────────────
+//
+// These wrap Supabase's GoTrue endpoints so the parent signup / login pages
+// don't need to import a separate SDK. They return either a populated
+// SupabaseUser (with session persisted + listeners notified) or an error
+// message safe to display in-UI.
+//
+// Privacy note: the email signup form is the only place we collect the
+// parent's email. We never collect child emails — children don't have
+// auth accounts (see migration 0004 docstring).
+
+export type AuthResult =
+  | { ok: true; user: SupabaseUser }
+  | { ok: false; error: string };
+
+function adoptSession(json: {
+  access_token?: string;
+  refresh_token?: string;
+  expires_in?: number;
+  user?: SupabaseUser;
+}): SupabaseUser | null {
+  if (!json?.access_token || !json?.user) return null;
+  const session: SupabaseSession = {
+    access_token: json.access_token,
+    refresh_token: json.refresh_token || '',
+    expires_at: Math.floor(Date.now() / 1000) + (json.expires_in || 3600),
+    user: json.user,
+  };
+  persistSession(session);
+  notifyAuthListeners(json.user);
+  return json.user;
+}
+
+/**
+ * Create a new parent account. Sets raw_user_meta_data.role = 'parent' so the
+ * on_auth_user_created_parent trigger (migration 0007) creates the matching
+ * parent_profiles row.
+ */
+export async function signUpWithEmail(
+  email: string,
+  password: string,
+  displayName?: string,
+): Promise<AuthResult> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email.trim(),
+        password,
+        data: {
+          role: 'parent',
+          display_name: displayName?.trim() || undefined,
+        },
+      }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { ok: false, error: json?.error_description || json?.msg || res.statusText };
+    }
+    const user = adoptSession(json);
+    if (user) return { ok: true, user };
+    // No session returned ⇒ email confirmation is on; surface the user record
+    // so the UI can show "check your email" without erroring.
+    if (json?.user) return { ok: true, user: json.user };
+    return { ok: false, error: 'No session returned by Supabase.' };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+/** Sign in an existing parent. */
+export async function signInWithEmail(email: string, password: string): Promise<AuthResult> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email: email.trim(), password }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { ok: false, error: json?.error_description || json?.msg || 'Sign-in failed.' };
+    }
+    const user = adoptSession(json);
+    if (!user) return { ok: false, error: 'No session returned by Supabase.' };
+    return { ok: true, user };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+/** Send a password-reset email. Always returns ok to avoid email enumeration. */
+export async function requestPasswordReset(email: string, redirectTo?: string): Promise<{ ok: true }> {
+  try {
+    await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email.trim(),
+        redirect_to: redirectTo || `${window.location.origin}/parent/login`,
+      }),
+    });
+  } catch { /* swallow — never reveal whether the address exists */ }
+  return { ok: true };
+}
+
 /**
  * Call on app init — handles OAuth redirect callback.
  * Checks URL hash for access_token (Supabase implicit flow).

@@ -156,7 +156,36 @@ export type EventName =
     | 'demo_request_form_submit'
     | 'for_teachers_page_view'
     | 'for_parents_page_view'
-    | 'share_button_clicked';       // social share / colleague share
+    | 'share_button_clicked'        // social share / colleague share
+
+    // ── Parent subscription funnel (no child PII; only ids / counts) ──
+    | 'parent_signup_started'       // Email/Password form submitted
+    | 'parent_signup_completed'     // Account created (auth.users insert succeeded)
+    | 'parent_login_success'
+    | 'parent_login_failed'
+    | 'parent_trial_started'        // Stripe Checkout session created in trial mode
+    | 'parent_subscription_started' // Webhook: customer.subscription.created → active/trialing
+    | 'parent_subscription_cancelled'
+    | 'parent_paywall_viewed'       // meta.reason: 'save_progress' | 'dashboard' | 'trial_ended' | 'premium_mode'
+    | 'parent_checkout_started'     // Redirect to Stripe Checkout fired
+    | 'parent_checkout_completed'   // checkout.session.completed webhook
+    | 'parent_portal_opened'        // Customer Portal redirect fired
+    | 'parent_child_profile_created'   // meta.active_count (NOT nickname)
+    | 'parent_child_profile_archived'
+    | 'parent_child_profile_restored'
+    | 'parent_child_profile_deleted'
+    | 'parent_child_session_saved'  // Game session attached to a child profile
+    | 'parent_dashboard_viewed'
+    | 'parent_report_viewed'        // Weekly summary opened
+    | 'parent_controls_updated'
+    | 'parent_data_exported'
+    | 'parent_account_deletion_requested'
+
+    // ── Teacher funnel (no learner PII; only teacher contact info) ──
+    | 'teacher_signup_started'
+    | 'teacher_signup_completed'
+    | 'teacher_login_success'
+    | 'teacher_login_failed';
 
 export type AgeBand = '4-5' | '6-7' | '8-9' | '10-11' | '12+';
 
@@ -251,6 +280,13 @@ interface LearningRow {
     client_seq: number;
     client_ts: string;
     context: SessionContextKind;
+
+    // Parent subscription layer (migration 0004). NULL for school /
+    // anonymous learners — RLS policy `attempts_school_rows` covers
+    // those. When a parent picks a child profile from the dashboard,
+    // the selected id is mirrored here so progress saves to the right
+    // learner. Reads from sessionStorage to stay decoupled from React.
+    child_profile_id: string | null;
 
     // LIOS Sprint 3 — gesture-quality scalars (Document A §2.1).
     // Computed locally on-device by GestureSampler (or by the game
@@ -1046,6 +1082,16 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
             // it's queryable without a JSON traversal.
             const gq = (m.gesture_quality ?? {}) as GestureQualityBlock;
 
+            // Read the selected child id from sessionStorage so we
+            // don't have to pipe React state through every call site.
+            // Falsy / missing ⇒ NULL ⇒ the row falls under the
+            // attempts_school_rows RLS policy (school / anonymous).
+            let childProfileId: string | null = null;
+            try {
+                const raw = sessionStorage.getItem('dita-selected-child');
+                if (raw && /^[0-9a-f-]{36}$/i.test(raw)) childProfileId = raw;
+            } catch { /* private mode etc. */ }
+
             learningQueue.push({
                 occurred_at: row.occurred_at,
                 session_id: ctx.sessionId,
@@ -1070,6 +1116,12 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
                 client_ts: row.client_ts,
                 context: row.context,
 
+                // Parent-subscription wiring: attach the selected child
+                // when one is set. The RLS check `attempts_one_subject`
+                // enforces that exactly one of learner_id / child_profile_id
+                // is non-null per row.
+                child_profile_id: childProfileId,
+
                 // Gesture-quality columns — null when the game mode
                 // didn't supply a gesture_quality block. NEVER store
                 // raw coordinates; the block is scalar-only.
@@ -1087,6 +1139,102 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
             persistLearningQueue();
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────
+    // EXTENDED MIRROR — many game modes don't fire `item_dropped`. To
+    // keep the parent dashboard's child_activity_summary populated for
+    // EVERY mode, also mirror well-defined "win" events into
+    // learning_attempts as a single was_correct=true row.
+    //
+    // Aggregation triggers (bump_child_activity_summary /
+    // bump_child_learning_state) roll these rows up into the dashboard
+    // tables. Only fires when a child is selected — anonymous /play is
+    // unaffected.
+    // ─────────────────────────────────────────────────────────────────
+    const WIN_EVENTS = new Set<EventName>([
+        'mode_completed',
+        'stage_completed',
+        'tracing_letter_completed',
+        'wordsearch_word_found',
+        'wordsearch_level_complete',
+        'bubblepop_round_complete',
+        'colourbuilder_match_made',
+        'balloonmath_balloon_popped',
+        'rainbowbridge_match_made',
+        'spellingstars_word_complete',
+        'build_object_completed',
+        'successful_snap',
+    ]);
+    if (WIN_EVENTS.has(name) && opts.game_mode) {
+        let childProfileId: string | null = null;
+        try {
+            const raw = sessionStorage.getItem('dita-selected-child');
+            if (raw && /^[0-9a-f-]{36}$/i.test(raw)) childProfileId = raw;
+        } catch { /* private mode etc. */ }
+
+        // Only mirror when a child is bound — otherwise the row would
+        // duplicate work the existing item_dropped mirror handles for
+        // school/anonymous attribution.
+        if (childProfileId) {
+            const m = opts.meta ?? {};
+            const itemKey =
+                (m.itemKey as string | undefined) ??
+                (m.item_key as string | undefined) ??
+                (m.stage_id as string | undefined) ??
+                (m.piece_id as string | undefined) ??
+                (m.word as string | undefined) ??
+                (m.letter as string | undefined) ??
+                (m.balloon_id as string | undefined) ??
+                name; // last resort: event name itself
+            const ctx = getOrCreateSession();
+            learningQueue.push({
+                occurred_at: row.occurred_at,
+                session_id: ctx.sessionId,
+                device_id: getOrCreateDeviceId(),
+                game_mode: opts.game_mode,
+                stage_id: opts.stage_id ?? (m.stage_id as string | undefined) ?? null,
+                stage_index: (m.stage_index as number | undefined) ?? null,
+                item_key: String(itemKey),
+                age_band: ctx.ageBand,
+                was_correct: true,
+                attempt_number: nextAttemptNumber(String(itemKey)),
+                ms_to_attempt: (m.action_duration_ms as number | undefined)
+                              ?? (m.duration_ms as number | undefined)
+                              ?? (m.time_to_first_correct_ms as number | undefined)
+                              ?? null,
+                expected_value: null,
+                actual_value: null,
+                meta: { ...(m as Record<string, unknown>), _mirror_source: name },
+                event_uid: row.event_uid,
+                client_seq: row.client_seq,
+                client_ts: row.client_ts,
+                context: row.context,
+                child_profile_id: childProfileId,
+                gq_path_accuracy_pct: null,
+                gq_path_efficiency: null,
+                gq_spatial_error_mean_px: null,
+                gq_velocity_variance: null,
+                gq_pause_count: null,
+                gq_directional_changes: null,
+                gq_time_to_first_movement_ms: null,
+                gq_time_to_completion_ms: null,
+                gq_corrections_in_stroke: null,
+                gq_n_samples: null,
+            });
+            persistLearningQueue();
+        }
+    }
+
+    // Surface a lightweight window-level event so other UI surfaces (e.g.
+    // the SaveProgressNudge for anonymous /play conversion) can listen
+    // without importing the whole analytics pipeline. No PII, just the
+    // event name. Wrap in try so a missing CustomEvent polyfill never
+    // breaks the analytics path.
+    try {
+        if (typeof window !== 'undefined' && typeof CustomEvent === 'function') {
+            window.dispatchEvent(new CustomEvent('dita:analytics-event', { detail: { name } }));
+        }
+    } catch { /* never break logEvent */ }
 
     if (eventQueue.length >= FLUSH_BATCH_SIZE) flush();
 

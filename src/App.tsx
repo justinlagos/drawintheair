@@ -22,6 +22,9 @@ import { BuildingMode } from './features/modes/building/BuildingMode';
 import { buildingLogic } from './features/modes/building/buildingLogic';
 import { WaveToWake } from './features/onboarding/WaveToWake';
 import { ModeSelectionMenu, type GameMode } from './features/menu/ModeSelectionMenu';
+import { ChildProfileSelector } from './features/parent/ChildProfileSelector';
+import { LearnerGreeting } from './features/parent/LearnerGreeting';
+import { SaveProgressNudge } from './features/parent/SaveProgressNudge';
 import { AdultGate } from './features/safety/AdultGate';
 import { MagicCursor } from './components/MagicCursor';
 import { ModeBackground } from './components/ModeBackground';
@@ -342,11 +345,24 @@ function App() {
 
               {/* State: Menu */}
               {appState === 'menu' && (
-                <ModeSelectionMenu
-                  onSelect={handleModeSelect}
-                  onBack={handleBackToLanding}
-                  trackingResults={frameRef.current.results}
-                />
+                <>
+                  {/* Child profile picker — renders nothing for anonymous
+                       /play users (no account, no children). Signed-in
+                       parents see it once per session so progress saves
+                       to the right learner. */}
+                  <ChildProfileSelector />
+                  {/* Warm greeting by nickname for parent-linked learners.
+                       Anonymous /play visitors never see it. */}
+                  <LearnerGreeting />
+                  {/* "Save this progress?" appears once for anonymous /play
+                       visitors after their first successful round. */}
+                  <SaveProgressNudge />
+                  <ModeSelectionMenu
+                    onSelect={handleModeSelect}
+                    onBack={handleBackToLanding}
+                    trackingResults={frameRef.current.results}
+                  />
+                </>
               )}
 
               {/* State: Game */}

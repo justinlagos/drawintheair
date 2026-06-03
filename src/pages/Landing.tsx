@@ -1,1380 +1,669 @@
 /**
- * Landing v5. cinematic, conversion-first.
+ * Landing.tsx, Calm-direction home page.
  *
- * Changes vs v4:
- *  - All icons swapped for transparent (no white bg) ChatGPT 3D renders.
- *  - Em dashes removed from all copy. Sentences read clean.
- *  - Camera trust redesigned to match the green-shield-on-scan-frame mock.
- *  - Hero re-composed: floating 3D icons over a tilted device frame that
- *    plays the Free Paint clip on load. No more single-photo card.
- *  - Floating orbs constrained inside the hero section (no edge cuts).
- *  - Game cards tightened: 4 by 3 aspect, smaller frames, padding bumps,
- *    inner device-style border. Reads "cute", not "fullscreen video".
- *  - Real-kid proof section added: two portrait clips from in-store
- *    sessions, framed as device mock-ups.
- *  - Rainbow Bridge + Bubble Pop now have real gameplay video.
- *  - Heavier Framer Motion choreography: parallax tilt on the hero
- *    device, magnetic CTA shimmer, scroll-driven section reveals,
- *    spring lift on every card, ticker count-ups, looping float
- *    decorations on every section header.
+ * Full rewrite ported from the offline approved prototype (template.html +
+ * src2 / src3.jsx). Sections, in order:
+ *   1. Sticky nav (HeaderNav)
+ *   2. Hero with floating photo + activity card + hero-loop video
+ *   3. Pull-quote band ("Movement is the curriculum.")
+ *   4. Live demo strip (free-paint gameplay video)
+ *   5. Proof band (4 stats)
+ *   6. How it works (4 numbered steps)
+ *   7. Activities grid (8 tiles, 1 with video preview)
+ *   8. For home split (parent-child-screen.jpg + bullets)
+ *   9. For schools split (classroom.jpg + bullets)
+ *  10. Early-usage stats
+ *  11. FAQ accordion
+ *  12. CTA banner
+ *  13. Calm-direction Footer (inlined)
+ *
+ * Routing: react-router-dom (paths, not hash).
+ * Gesture trail: on by default for marketing pages.
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import {
-    animate,
-    motion,
-    useInView,
-    useReducedMotion,
-    useScroll,
-    useTransform,
-    type Variants,
-} from 'framer-motion';
-import { TryFreeModal } from '../components/TryFreeModal';
+import { Link, useNavigate } from 'react-router-dom';
+import { HeaderNav } from '../components/landing/HeaderNav';
 import { BrandLogo } from '../components/BrandLogo';
-import { SEOMeta } from '../seo/SEOMeta';
-import { logEvent } from '../lib/analytics';
-import { callRpc } from '../lib/supabase';
-import './landing-v3.css';
-// NavMetricsTicker removed in v5.4 . was rendering a phantom
-// "... loading" pill in the nav even after the proof RPC resolved.
-// The tile grid below the fold is the canonical place for these
-// numbers.
+import '../components/landing/landing-calm.css';
 
-// ── Activity meta ─────────────────────────────────────────────────────
-interface ActivityMeta {
-    id: string;
-    name: string;
-    tagline: string;
-    body: string;
-    accent: string;
-    videoWebm?: string;
-    videoMp4?: string;
-    poster: string;
-}
-
-const MAIN_GAMES: ActivityMeta[] = [
-    {
-        id: 'free',
-        name: 'Free Paint',
-        tagline: 'FREE PAINT',
-        body: 'Draw in the air with colours and watch your art come alive.',
-        accent: '#FF6B6B',
-        videoWebm: '/landing-videos/free-paint.webm',
-        videoMp4: '/landing-videos/free-paint.mp4',
-        poster: '/landing-videos/free-paint.jpg',
-    },
-    {
-        id: 'calibration',
-        name: 'Bubble Pop',
-        tagline: 'BUBBLE POP',
-        body: 'Pop bubbles with your moves and rack up points.',
-        accent: '#55DDE0',
-        videoWebm: '/landing-videos/bubble-pop.webm',
-        videoMp4: '/landing-videos/bubble-pop.mp4',
-        poster: '/landing-videos/bubble-pop.jpg',
-    },
-    {
-        id: 'pre-writing',
-        name: 'Tracing',
-        tagline: 'TRACING',
-        body: 'Trace letters and shapes to build recognition.',
-        accent: '#6C3FA4',
-        videoWebm: '/landing-videos/tracing.webm',
-        videoMp4: '/landing-videos/tracing.mp4',
-        poster: '/landing-videos/tracing.jpg',
-    },
-    {
-        id: 'gesture-spelling',
-        name: 'Spelling Stars',
-        tagline: 'SPELLING STARS',
-        body: 'Find letters, build words, and earn stars.',
-        accent: '#FFB14D',
-        videoWebm: '/landing-videos/spelling-stars.webm',
-        videoMp4: '/landing-videos/spelling-stars.mp4',
-        poster: '/landing-videos/spelling-stars.jpg',
-    },
-];
-
-const NEXT_STEP: ActivityMeta[] = [
-    {
-        id: 'sort-and-place',
-        name: 'Match & Sort',
-        tagline: 'SORT & PLACE',
-        body: 'Pick up objects with a pinch, drop them where they belong.',
-        accent: '#7ED957',
-        videoWebm: '/landing-videos/sort-place.webm',
-        videoMp4: '/landing-videos/sort-place.mp4',
-        poster: '/landing-videos/sort-place.jpg',
-    },
-    {
-        id: 'rainbow-bridge',
-        name: 'Rainbow Bridge',
-        tagline: 'RAINBOW BRIDGE',
-        body: 'Match colours in order and watch the rainbow grow.',
-        accent: '#FF8E8E',
-        videoWebm: '/landing-videos/rainbow-bridge.webm',
-        videoMp4: '/landing-videos/rainbow-bridge.mp4',
-        poster: '/landing-videos/rainbow-bridge.jpg',
-    },
-    {
-        id: 'word-search',
-        name: 'Word Hunt',
-        tagline: 'WORD SEARCH',
-        body: 'Find hidden words by sweeping your hand through letters.',
-        accent: '#55DDE0',
-        videoWebm: '/landing-videos/word-search.webm',
-        videoMp4: '/landing-videos/word-search.mp4',
-        poster: '/landing-videos/word-search.jpg',
-    },
-    {
-        id: 'balloon-math',
-        name: 'Balloon Math',
-        tagline: 'BALLOON MATH',
-        body: 'Pop the answer balloon to solve early arithmetic.',
-        accent: '#FFD84D',
-        videoWebm: '/landing-videos/balloon-math.webm',
-        videoMp4: '/landing-videos/balloon-math.mp4',
-        poster: '/landing-videos/balloon-math.jpg',
-    },
-];
-
-const SKILLS = [
-    { id: 'abc',    icon: '/landing-icons/abc.png',    title: 'Letters & Sounds',  body: 'Trace letters in the air and hear them come to life.',    age: 'Ages 3 to 7' },
-    { id: 'shapes', icon: '/landing-icons/shapes.png', title: 'Shapes & Patterns', body: 'Explore shapes, colours, and simple patterns.',           age: 'Ages 3 to 7' },
-    { id: 'math',   icon: '/landing-icons/math.png',   title: 'Early Math',        body: 'Count, compare, and solve with movement.',                age: 'Ages 3 to 7' },
-    { id: 'brain',  icon: '/landing-icons/brain.png',  title: 'Focus & Memory',    body: 'Games that build attention, memory, and listening.',      age: 'Ages 3 to 7' },
-];
-
-// ── Public proof RPC ──────────────────────────────────────────────────
-interface PublicProof {
-    distinct_devices_90d: number;
-    activities_completed: number;
-    mode_plays: number;
-    tracker_success_pct: number;
-    items_touched: number;
-    items_mastered: number;
-}
-
-async function fetchPublicProof(): Promise<PublicProof | null> {
-    // Defensive unwrap. PostgREST returns the function's jsonb body
-    // directly under normal config; some setups return a one-row
-    // array OR a {proof:{...}} wrap depending on schema cache state.
-    // Accept all three so the tiles never go blank.
-    const unwrap = (raw: unknown): PublicProof | null => {
-        if (!raw) return null;
-        const obj = Array.isArray(raw) ? raw[0] : raw;
-        if (!obj || typeof obj !== 'object') return null;
-        const inner = (obj as { proof?: PublicProof }).proof ?? obj;
-        const p = inner as Partial<PublicProof>;
-        if (typeof p.distinct_devices_90d !== 'number' &&
-            typeof p.activities_completed !== 'number') return null;
-        return p as PublicProof;
-    };
-
-    const tryRpc = async (fn: string): Promise<PublicProof | null> => {
-        const { data, error } = await callRpc<unknown>(fn);
-        if (error) {
-            // Visible in DevTools for quick triage. No PII in the
-            // payload, safe to log.
-            // eslint-disable-next-line no-console
-            console.warn(`[landing-proof] ${fn} failed`, error);
-            return null;
-        }
-        const parsed = unwrap(data);
-        if (!parsed) {
-            // eslint-disable-next-line no-console
-            console.warn(`[landing-proof] ${fn} returned unexpected shape`, data);
-        }
-        return parsed;
-    };
-
-    const fresh = await tryRpc('dashboard_public_proof');
-    if (fresh) return fresh;
-    return tryRpc('landing_public_proof');
-}
-
-// ── PublicProof cache (stale-while-revalidate) ───────────────
-// Old behaviour: first paint always showed a shimmer skeleton until
-// the Supabase RPC returned. If the RPC was slow or down, the
-// skeleton lived forever — exactly what was reported.
-//
-// New behaviour:
-//   1. On mount we read the last-known PublicProof from localStorage
-//      and seed React state with it. First paint shows real numbers
-//      from the last successful fetch — never invented.
-//   2. We still call the RPC in the background to refresh. Successful
-//      responses update state AND the cache.
-//   3. If the RPC fails AND we have no cache (true first-time visit
-//      with a broken RPC), we flip a loadFailed flag after a short
-//      timeout. Tiles then render an em-dash instead of the infinite
-//      skeleton. No fake numbers — just an honest "no data yet".
-const PROOF_CACHE_KEY = 'dita.lp.proof.v1';
-const PROOF_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-const PROOF_LOAD_TIMEOUT_MS = 6000;                  // 6s before "—"
-
-function readCachedProof(): PublicProof | null {
-    if (typeof window === 'undefined') return null;
-    try {
-        const raw = window.localStorage.getItem(PROOF_CACHE_KEY);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw) as { ts?: number; data?: PublicProof };
-        if (!parsed?.data || typeof parsed.ts !== 'number') return null;
-        if (Date.now() - parsed.ts > PROOF_CACHE_TTL_MS) return null;
-        return parsed.data;
-    } catch {
-        return null;
-    }
-}
-
-function writeCachedProof(data: PublicProof) {
-    if (typeof window === 'undefined') return;
-    try {
-        window.localStorage.setItem(
-            PROOF_CACHE_KEY,
-            JSON.stringify({ ts: Date.now(), data }),
-        );
-    } catch {
-        /* quota exceeded / private mode — non-fatal */
-    }
-}
-
-// ── Motion primitives ─────────────────────────────────────────────────
-const fadeUp: Variants = {
-    hidden: { opacity: 0, y: 28 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+/* =====================================================================
+   Icons (Lucide-style inline SVGs, stroke 1.85)
+   ===================================================================== */
+const ICONS: Record<string, string> = {
+  play: 'M6 4l13 8-13 8V4z',
+  arrow: 'M5 12h14M13 6l6 6-6 6',
+  chevron: 'M6 9l6 6 6-6',
 };
-const stagger: Variants = {
-    hidden: {},
-    show: { transition: { staggerChildren: 0.08, delayChildren: 0.04 } },
-};
-const popIn: Variants = {
-    hidden: { opacity: 0, scale: 0.85, y: 14 },
-    show: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
-};
-
-// ── Count-up animation ────────────────────────────────────────────────
-function useCountUp(target: number | undefined, duration = 1400): number {
-    const [val, setVal] = useState(0);
-    const prefersReduced = useReducedMotion();
-    useEffect(() => {
-        if (target == null) return;
-        if (prefersReduced) { setVal(target); return; }
-        const start = performance.now();
-        let raf = 0;
-        const tick = (now: number) => {
-            const t = Math.min(1, (now - start) / duration);
-            const eased = 1 - Math.pow(1 - t, 3);
-            setVal(Math.round(target * eased));
-            if (t < 1) raf = requestAnimationFrame(tick);
-        };
-        raf = requestAnimationFrame(tick);
-        return () => cancelAnimationFrame(raf);
-    }, [target, duration, prefersReduced]);
-    return val;
-}
-
-const fmtNum = (n: number) => n.toLocaleString();
-
-// ── Bounce-scroll to a section by id ──────────────────────────────────
-// Framer-driven spring scroll with a subtle overshoot so the destination
-// lands with character.
-function bounceScrollTo(id: string, prefersReduced: boolean) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const navOffset = 80;
-    const target = el.getBoundingClientRect().top + window.scrollY - navOffset;
-    if (prefersReduced) {
-        window.scrollTo({ top: target, behavior: 'auto' });
-        return;
-    }
-    const start = window.scrollY;
-    const controls = animate(start, target, {
-        type: 'spring',
-        stiffness: 90,
-        damping: 18,
-        mass: 1.1,
-        onUpdate: v => window.scrollTo(0, v),
-    });
-    return () => controls.stop();
-}
-
-// Use within a component so it picks up the user's reduced-motion preference.
-function useBounceScroll() {
-    const prefersReduced = useReducedMotion() ?? false;
-    return (id: string) => bounceScrollTo(id, prefersReduced);
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// Main component
-// ═══════════════════════════════════════════════════════════════════════
-export const Landing: React.FC = () => {
-    const [tryFreeOpen, setTryFreeOpen] = useState(false);
-    // Seed proof state from localStorage so first paint shows real,
-    // previously-fetched numbers instead of a forever-skeleton.
-    const [proof, setProof] = useState<PublicProof | null>(() => readCachedProof());
-    const [proofLoadFailed, setProofLoadFailed] = useState(false);
-    const hasTrackedView = useRef(false);
-
-    // Mark <html> so landing-v3.css can override the global :root
-    // night-theme background. Without this, macOS rubber-band
-    // overscroll and Chrome's paint-fallback expose the dark
-    // --world-bg-0 canvas behind the light landing — the "black
-    // space on scroll" issue. Cleaned up on unmount so the app
-    // shell goes back to its night-theme canvas.
-    useEffect(() => {
-        const root = document.documentElement;
-        root.classList.add('lp-route');
-        return () => { root.classList.remove('lp-route'); };
-    }, []);
-
-    useEffect(() => {
-        if (hasTrackedView.current) return;
-        hasTrackedView.current = true;
-        logEvent('landing_view');
-        const startedAt = Date.now();
-        let engaged = false;
-        let maxScroll = 0;
-        const mark = (cause: string) => {
-            if (engaged) return; engaged = true;
-            logEvent('landing_engaged', { meta: { cause, ms_to_engage: Date.now() - startedAt } });
-        };
-        const onScroll = () => {
-            const doc = document.documentElement;
-            const px = window.scrollY + window.innerHeight;
-            const pct = Math.min(100, Math.round((px / Math.max(1, doc.scrollHeight)) * 100));
-            if (pct > maxScroll) maxScroll = pct;
-            if (window.scrollY > window.innerHeight * 0.4) mark('scroll_below_hero');
-        };
-        const onPointer = () => mark('pointer_move');
-        const onUnload = () => logEvent('landing_unload', {
-            value_number: Date.now() - startedAt,
-            meta: { time_on_page_ms: Date.now() - startedAt, scroll_depth_pct: maxScroll, engaged },
-        });
-        window.addEventListener('scroll', onScroll, { passive: true });
-        window.addEventListener('pointermove', onPointer, { once: true });
-        window.addEventListener('beforeunload', onUnload);
-        return () => {
-            window.removeEventListener('scroll', onScroll);
-            window.removeEventListener('pointermove', onPointer);
-            window.removeEventListener('beforeunload', onUnload);
-        };
-    }, []);
-
-    // Phase 3: live proof. Fetch on mount, then refresh every 60s
-    // while the tab is visible. Investors who keep the tab open
-    // (or leave it backgrounded and come back) see live growth, not
-    // a frozen snapshot. Visibility check avoids hammering the RPC
-    // for backgrounded tabs.
-    //
-    // SWR shape: state is already seeded from localStorage in the
-    // useState initialiser above; this effect refreshes in the
-    // background. On success we update both state and cache. If the
-    // first fetch hasn't produced a value within PROOF_LOAD_TIMEOUT_MS
-    // AND we have no cached data either, we flip proofLoadFailed so
-    // ProofTile can render an em-dash instead of an infinite skel.
-    useEffect(() => {
-        let mounted = true;
-        let resolvedOnce = false;
-        const load = () => {
-            if (document.visibilityState !== 'visible') return;
-            fetchPublicProof().then(p => {
-                if (!mounted) return;
-                if (p) {
-                    resolvedOnce = true;
-                    setProof(p);
-                    setProofLoadFailed(false);
-                    writeCachedProof(p);
-                }
-            });
-        };
-        load();
-        const id = window.setInterval(load, 60_000);
-        const failTimer = window.setTimeout(() => {
-            if (!mounted) return;
-            if (!resolvedOnce) setProofLoadFailed(true);
-        }, PROOF_LOAD_TIMEOUT_MS);
-        const onVisibility = () => { if (document.visibilityState === 'visible') load(); };
-        document.addEventListener('visibilitychange', onVisibility);
-        return () => {
-            mounted = false;
-            window.clearInterval(id);
-            window.clearTimeout(failTimer);
-            document.removeEventListener('visibilitychange', onVisibility);
-        };
-    }, []);
-
-    const handleTryFree = (source: string) => {
-        logEvent('cta_click', { meta: { source, target: 'try_free_modal', variant: 'landing_v5' } });
-        logEvent('try_free_clicked', { meta: { source, variant: 'landing_v5' } });
-        setTryFreeOpen(true);
-    };
-
-    return (
-        <div className="lp-shell">
-            <SEOMeta
-                title="Draw in the Air. Movement-based learning for kids"
-                description="Children practise letters, shapes, spelling, and early maths by moving their hands in front of a webcam. No apps. No touchscreen. No special hardware."
-                canonical="https://drawintheair.com/"
-            />
-
-            <Nav onTryFree={() => handleTryFree('nav')} />
-            <Hero onTryFree={() => handleTryFree('hero')} />
-            <HowItWorks />
-            <CameraTrust />
-            <Skills />
-            <MainGames onTryFree={() => handleTryFree('main_games')} />
-            <NextSteps />
-            <RealKidProof />
-            <Parents onTryFree={() => handleTryFree('parents')} />
-            <Teachers />
-            <LiveProof proof={proof} loadFailed={proofLoadFailed} />
-            <FinalCTA onTryFree={() => handleTryFree('final_cta')} />
-            <Footer />
-
-            <TryFreeModal open={tryFreeOpen} onClose={() => setTryFreeOpen(false)} />
-        </div>
-    );
-};
-
-// ═══════════════════════════════════════════════════════════════════════
-// Nav
-// ═══════════════════════════════════════════════════════════════════════
-const Nav: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
-    const bounceTo = useBounceScroll();
-    const [scrolled, setScrolled] = useState(false);
-    const [menuOpen, setMenuOpen] = useState(false);
-
-    useEffect(() => {
-        const onScroll = () => setScrolled(window.scrollY > 60);
-        onScroll();
-        window.addEventListener('scroll', onScroll, { passive: true });
-        return () => window.removeEventListener('scroll', onScroll);
-    }, []);
-
-    useEffect(() => {
-        document.body.style.overflow = menuOpen ? 'hidden' : '';
-        return () => { document.body.style.overflow = ''; };
-    }, [menuOpen]);
-
-    const go = (id: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
-        e.preventDefault();
-        logEvent('nav_click', { meta: { target: id } });
-        setMenuOpen(false);
-        bounceTo(id);
-    };
-
-    return (
-        <motion.header
-            className={`lp-nav ${scrolled ? 'lp-nav-scrolled' : ''} ${menuOpen ? 'lp-nav-open' : ''}`}
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        >
-            <a href="#hero" className="lp-nav-brand" aria-label="Draw in the Air home" onClick={go('hero')}>
-                <BrandLogo variant="header" />
-            </a>
-            <nav className="lp-nav-links" aria-label="Primary">
-                <a href="#how-it-works" onClick={go('how-it-works')}>How it works</a>
-                <a href="#activities" onClick={go('activities')}>Activities</a>
-                <a href="#real-proof" onClick={go('real-proof')}>Proof</a>
-                <a href="#parents" onClick={go('parents')}>For parents</a>
-                <a href="#teachers" onClick={go('teachers')}>For teachers</a>
-                <a href="/pricing">Pricing</a>
-            </nav>
-            <div className="lp-nav-cta">
-                <motion.button
-                    className="lp-btn lp-btn-primary lp-btn-magnetic lp-nav-cta-btn"
-                    onClick={onTryFree}
-                    whileHover={{ scale: 1.04 }}
-                    whileTap={{ scale: 0.96 }}
-                    transition={{ type: 'spring', stiffness: 380, damping: 18 }}
-                >
-                    Try free
-                </motion.button>
-                <button
-                    className="lp-nav-burger"
-                    aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-                    aria-expanded={menuOpen}
-                    onClick={() => setMenuOpen(o => !o)}
-                >
-                    <span className={`lp-burger-line ${menuOpen ? 'a' : ''}`} />
-                    <span className={`lp-burger-line ${menuOpen ? 'b' : ''}`} />
-                    <span className={`lp-burger-line ${menuOpen ? 'c' : ''}`} />
-                </button>
-            </div>
-
-            <motion.div
-                className="lp-nav-drawer"
-                initial={false}
-                animate={menuOpen ? { opacity: 1, y: 0, pointerEvents: 'auto' } : { opacity: 0, y: -12, pointerEvents: 'none' }}
-                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                aria-hidden={!menuOpen}
-            >
-                <a href="#how-it-works" onClick={go('how-it-works')}>How it works</a>
-                <a href="#activities" onClick={go('activities')}>Activities</a>
-                <a href="#real-proof" onClick={go('real-proof')}>Proof</a>
-                <a href="#parents" onClick={go('parents')}>For parents</a>
-                <a href="#teachers" onClick={go('teachers')}>For teachers</a>
-                <a href="/pricing">Pricing</a>
-                <button
-                    className="lp-btn lp-btn-primary lp-btn-lg lp-nav-drawer-cta"
-                    onClick={() => { setMenuOpen(false); onTryFree(); }}
-                >
-                    Try Draw in the Air
-                </button>
-            </motion.div>
-        </motion.header>
-    );
-};
-
-// ═══════════════════════════════════════════════════════════════════════
-// Hero. floating 3D icons over an animated device frame
-// ═══════════════════════════════════════════════════════════════════════
-const Hero: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
-    const heroRef = useRef<HTMLElement | null>(null);
-    const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
-    const visualY = useTransform(scrollYProgress, [0, 1], ['0%', '-12%']);
-    const visualScale = useTransform(scrollYProgress, [0, 1], [1, 0.92]);
-    const prefersReduced = useReducedMotion();
-
-    // Scroll-linked parallax was the biggest single source of
-    // scroll-time jank: useTransform writes inline transforms on
-    // every scroll frame to a large rotated layer that already
-    // costs a lot to repaint. Gate it behind real desktop hardware
-    // (mouse, hover-capable, wide viewport) so touch devices,
-    // tablets and small laptops scroll smoothly. Hooks themselves
-    // must still run unconditionally — we just skip applying the
-    // motion values to the `style` prop.
-    const [enableParallax, setEnableParallax] = useState(false);
-    useEffect(() => {
-        if (prefersReduced) return;
-        if (typeof window === 'undefined' || !window.matchMedia) return;
-        const mq = window.matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)');
-        const apply = () => setEnableParallax(mq.matches);
-        apply();
-        mq.addEventListener?.('change', apply);
-        return () => mq.removeEventListener?.('change', apply);
-    }, [prefersReduced]);
-
-    // Defer the hero loop video until after first paint. Poster shows
-    // instantly; the <video> mounts ~250ms later so the browser is not
-    // racing to decode 280 KB of webm at the same moment React is
-    // hydrating the rest of the landing.
-    const [videoReady, setVideoReady] = useState(false);
-    useEffect(() => {
-        if (prefersReduced) return;
-        type IdleWindow = Window & {
-            requestIdleCallback?: (cb: () => void) => number;
-            cancelIdleCallback?: (h: number) => void;
-        };
-        const w = window as IdleWindow;
-        const hasIdle = typeof w.requestIdleCallback === 'function';
-        const t = hasIdle && w.requestIdleCallback
-            ? w.requestIdleCallback(() => setVideoReady(true))
-            : window.setTimeout(() => setVideoReady(true), 250);
-        return () => {
-            if (hasIdle && w.cancelIdleCallback) w.cancelIdleCallback(t);
-            else window.clearTimeout(t as number);
-        };
-    }, [prefersReduced]);
-
-    return (
-        <section ref={heroRef} className="lp-hero" id="hero">
-            <FloatingOrb className="lp-orb-1" />
-            <FloatingOrb className="lp-orb-2" />
-            <FloatingOrb className="lp-orb-3" />
-
-            <div className="lp-hero-inner">
-                <motion.div className="lp-hero-copy" variants={stagger} initial="hidden" animate="show">
-                    <motion.div className="lp-eyebrow lp-eyebrow-green" variants={fadeUp}>
-                        <span className="lp-dot" /> Movement-based learning . Ages 3 to 7
-                    </motion.div>
-                    <motion.h1 className="lp-hero-headline" variants={fadeUp}>
-                        Learning starts when children{' '}
-                        <span className="lp-hero-accent">
-                            move
-                            <svg className="lp-hero-underline" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden>
-                                <motion.path d="M2 10 Q40 2 100 8 T198 6"
-                                    fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round"
-                                    initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
-                                    transition={{ duration: 1.0, delay: 0.5, ease: 'easeOut' }} />
-                            </svg>
-                        </span>.
-                    </motion.h1>
-                    <motion.p className="lp-hero-sub" variants={fadeUp}>
-                        Draw in the Air turns any webcam into a fun, interactive learning space.
-                        <strong> No downloads. No controllers. Just your child's hand.</strong>
-                    </motion.p>
-                    <motion.div className="lp-hero-ctas" variants={fadeUp}>
-                        <button className="lp-btn lp-btn-primary lp-btn-lg lp-btn-magnetic" onClick={onTryFree}>
-                            Try it free in your browser
-                            <span className="lp-btn-arrow" aria-hidden>→</span>
-                        </button>
-                        <a className="lp-btn lp-btn-ghost lp-btn-lg" href="#how-it-works">
-                            <svg viewBox="0 0 12 12" width="14" height="14" aria-hidden style={{ marginRight: 2 }}>
-                                <path d="M3 1.5l7 4.5-7 4.5z" fill="currentColor" />
-                            </svg>
-                            See how it works
-                        </a>
-                    </motion.div>
-                    <motion.div className="lp-hero-trust" variants={fadeUp}>
-                        <TrustChip icon="✓" label="No downloads" />
-                        <TrustChip icon="📱" label="Works on any device" />
-                        <TrustChip icon="🔒" label="Private &amp; secure" />
-                    </motion.div>
-                </motion.div>
-
-                <motion.div
-                    className="lp-hero-visual"
-                    style={enableParallax ? { y: visualY, scale: visualScale } : undefined}
-                    initial={{ opacity: 0, y: 24 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
-                >
-                    <div className="lp-hero-stage">
-                        <motion.div
-                            className="lp-hero-device"
-                            initial={{ rotate: -2 }}
-                            animate={prefersReduced ? undefined : { rotate: [-2, 0.6, -2] }}
-                            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-                        >
-                            <span className="lp-hero-device-brand">
-                                <BrandLogo variant="compact" decorative /> Draw in the Air
-                            </span>
-                            {videoReady ? (
-                                <video
-                                    className="lp-hero-device-screen"
-                                    poster="/landing-videos/hero-loop.jpg"
-                                    autoPlay muted loop playsInline preload="metadata"
-                                    aria-hidden
-                                >
-                                    <source src="/landing-videos/hero-loop.webm" type="video/webm" />
-                                    <source src="/landing-videos/hero-loop.mp4" type="video/mp4" />
-                                </video>
-                            ) : (
-                                <img
-                                    className="lp-hero-device-screen"
-                                    src="/landing-videos/hero-loop.jpg"
-                                    alt=""
-                                    aria-hidden
-                                    decoding="async"
-                                    fetchPriority="high"
-                                />
-                            )}
-                            <div className="lp-hero-device-bar">
-                                <span className="lp-hero-device-stat"><span aria-hidden>⭐</span><strong>Star Collector</strong></span>
-                                <span className="lp-hero-device-stat"><strong>Level 3</strong></span>
-                                <span className="lp-hero-device-stat"><strong>420 points</strong></span>
-                            </div>
-                        </motion.div>
-
-                        {/* Motion budget: keep two of the four hero icons
-                            looping (star + hand) so the hero still reads
-                            as alive, and render trophy + crown as static
-                            decoration. Net saving: 2 of the 4 continuous
-                            Framer rAF drivers in the hero. */}
-                        <motion.img
-                            src="/landing-icons/smiley-star.png" alt="" className="lp-hero-float lp-hero-float-star"
-                            animate={prefersReduced ? undefined : { y: [0, -14, 0], rotate: [0, 8, 0] }}
-                            transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
-                        />
-                        <img
-                            src="/landing-icons/trophy.png" alt=""
-                            className="lp-hero-float lp-hero-float-trophy"
-                            loading="lazy" decoding="async"
-                        />
-                        <img
-                            src="/landing-icons/crown-star.png" alt=""
-                            className="lp-hero-float lp-hero-float-crown"
-                            loading="lazy" decoding="async"
-                        />
-                        <motion.img
-                            src="/landing-icons/hand.png" alt="" className="lp-hero-float lp-hero-float-hand"
-                            animate={prefersReduced ? undefined : { y: [0, 10, 0], rotate: [-4, 4, -4] }}
-                            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
-                        />
-
-                        <HandTrail />
-                    </div>
-                </motion.div>
-            </div>
-        </section>
-    );
-};
-
-const TrustChip: React.FC<{ icon: string; label: React.ReactNode }> = ({ icon, label }) => (
-    <span className="lp-chip"><span aria-hidden>{icon}</span>{label}</span>
-);
-
-const HandTrail: React.FC = () => {
-    const prefersReduced = useReducedMotion();
-    if (prefersReduced) return null;
-    // Motion budget: was 3 SVG circles each animating cx/cy/opacity
-    // through 5 keyframes infinitely — 3 simultaneous rAF drivers on
-    // top of the already-heavy hero. Reduced to a single circle.
-    // Visually you still get the "trail" suggestion; the eye fills
-    // the rest from the floating icons around the device.
-    return (
-        <svg className="lp-hero-trail" viewBox="0 0 400 280" aria-hidden>
-            <motion.circle
-                cx="60" cy="220" r="6"
-                fill="#FFD84D"
-                animate={{
-                    cx: [60, 140, 240, 320, 60],
-                    cy: [220, 100, 150, 70, 220],
-                    opacity: [0.3, 0.95, 0.85, 0.6, 0.3],
-                }}
-                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-            />
-        </svg>
-    );
-};
-
-const FloatingOrb: React.FC<{ className: string }> = ({ className }) => {
-    // Motion budget: the orbs used to bob 14 px and pulse opacity
-    // 0.45→0.65→0.45 forever. The bob is imperceptible at this scale
-    // and the opacity pulse is invisible against the page gradient.
-    // Three orbs × infinite rAF = three composite layers redrawn on
-    // every frame for no visible payoff. Now static.
-    return <div className={`lp-orb ${className}`} aria-hidden />;
-};
-
-// ═══════════════════════════════════════════════════════════════════════
-// How it works
-// ═══════════════════════════════════════════════════════════════════════
-const HowItWorks: React.FC = () => {
-    const steps = [
-        { n: 1, icon: '/landing-icons/hand.png',        title: 'Move your hand',           body: 'Your child waves, points, or draws in the air.' },
-        { n: 2, icon: '/landing-icons/star-trail.png',  title: 'We track movement',        body: 'Our camera only detects movement, not who they are.' },
-        { n: 3, icon: '/landing-icons/smiley-star.png', title: 'Earn points & feedback',    body: 'Instant encouragement keeps them engaged and motivated.' },
-        { n: 4, icon: '/landing-icons/trophy.png',      title: 'Build skills & confidence', body: 'Small wins add up to big learning breakthroughs.' },
-    ];
-    return (
-        <section id="how-it-works" className="lp-section">
-            <SectionHead
-                eyebrow="HOW IT WORKS"
-                title={<>From a wave to a win in four short steps.</>}
-                sub="Our movement tracking makes learning natural, rewarding, and screen time that parents can feel good about."
-            />
-            <motion.ol
-                className="lp-steps"
-                variants={stagger} initial="hidden"
-                whileInView="show" viewport={{ once: true, amount: 0.2 }}
-            >
-                {steps.map((s, i) => (
-                    <motion.li key={s.n} className="lp-step" variants={popIn}>
-                        <div className="lp-step-num">{s.n}</div>
-                        <img className="lp-step-icon" src={s.icon} alt="" />
-                        <h3>{s.title}</h3>
-                        <p>{s.body}</p>
-                        {i < steps.length - 1 && <span className="lp-step-arrow" aria-hidden>→</span>}
-                    </motion.li>
-                ))}
-            </motion.ol>
-        </section>
-    );
-};
-
-// ═══════════════════════════════════════════════════════════════════════
-// Camera trust . Redesigned: shield sits ON the scan-frame backdrop
-// ═══════════════════════════════════════════════════════════════════════
-const CameraTrust: React.FC = () => {
-    const prefersReduced = useReducedMotion();
-    // Motion budget: shield bobbed forever, even while the user was
-    // miles away in another section. Pause it off-view so we only
-    // pay rAF cost when someone is actually looking.
-    const sectionRef = useRef<HTMLElement | null>(null);
-    const inView = useInView(sectionRef, { amount: 0.2 });
-    const shieldAnimate = !prefersReduced && inView
-        ? { y: [0, -10, 0], rotate: [-2, 2, -2] }
-        : undefined;
-    return (
-        <section ref={sectionRef} className="lp-section-trust-wrap">
-            <motion.div
-                className="lp-trust-card"
-                variants={fadeUp} initial="hidden"
-                whileInView="show" viewport={{ once: true, amount: 0.35 }}
-            >
-                <div className="lp-trust-stage">
-                    <img src="/landing-icons/scan-banner.png" alt="" className="lp-trust-frame" loading="lazy" decoding="async" />
-                    <motion.img
-                        src="/landing-icons/shield.png" alt=""
-                        className="lp-trust-shield"
-                        animate={shieldAnimate}
-                        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-                    />
-                </div>
-                <div className="lp-trust-copy">
-                    <p className="lp-trust-lead">
-                        Your child's privacy comes first. Draw in the Air uses advanced movement
-                        detection. We never store video, images, or audio.
-                    </p>
-                    <h2>The camera only detects movement.</h2>
-                    <ul className="lp-trust-list">
-                        <li><Check />No video or photos are stored</li>
-                        <li><Check />No personal data collected</li>
-                        <li><Check />Works offline after it loads</li>
-                        <li><Check />COPPA &amp; GDPR friendly</li>
-                    </ul>
-                    <a className="lp-btn lp-btn-primary lp-btn-magnetic" href="/privacy">
-                        See our privacy promise
-                    </a>
-                </div>
-            </motion.div>
-        </section>
-    );
-};
-
-const Check: React.FC = () => (
-    <svg viewBox="0 0 16 16" width="20" height="20" aria-hidden className="lp-check">
-        <circle cx="8" cy="8" r="8" fill="#7ED957" />
-        <path d="M4.5 8.5l2.2 2.2L11.5 6" stroke="#fff" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-);
-
-// ═══════════════════════════════════════════════════════════════════════
-// Skills they build
-// ═══════════════════════════════════════════════════════════════════════
-const Skills: React.FC = () => (
-    <section className="lp-section">
-        <SectionHead
-            eyebrow="SKILLS THEY BUILD"
-            title={<>First win, then challenge.</>}
-            sub="Short, focused activities build the foundations for early learning while keeping children active and engaged."
-        />
-        <motion.div
-            className="lp-skills-grid"
-            variants={stagger} initial="hidden"
-            whileInView="show" viewport={{ once: true, amount: 0.2 }}
-        >
-            {SKILLS.map(s => (
-                <motion.div key={s.id} className="lp-skill-card" variants={popIn}
-                    whileHover={{ y: -8, transition: { type: 'spring', stiffness: 300, damping: 18 } }}
-                >
-                    <img src={s.icon} alt="" className="lp-skill-icon" />
-                    <h3>{s.title}</h3>
-                    <p>{s.body}</p>
-                    <span className="lp-skill-age">{s.age}</span>
-                </motion.div>
-            ))}
-        </motion.div>
-    </section>
-);
-
-// ═══════════════════════════════════════════════════════════════════════
-// Main games . Tighter, cuter framing
-// ═══════════════════════════════════════════════════════════════════════
-const MainGames: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => (
-    <section id="activities" className="lp-section">
-        <SectionHead
-            eyebrow="WHERE CONFIDENCE BEGINS"
-            title={<>Games that make learning an adventure.</>}
-        />
-        <motion.div
-            className="lp-game-grid"
-            variants={stagger} initial="hidden"
-            whileInView="show" viewport={{ once: true, amount: 0.1 }}
-        >
-            {MAIN_GAMES.map(g => <GameCard key={g.id} game={g} primary />)}
-        </motion.div>
-        <div className="lp-game-foot">
-            <button className="lp-btn lp-btn-ghost" onClick={onTryFree}>
-                View all games →
-            </button>
-        </div>
-    </section>
-);
-
-const NextSteps: React.FC = () => (
-    <section className="lp-section">
-        <SectionHead
-            eyebrow="NEXT-STEP ACTIVITIES"
-            title={<>Once confidence is built.</>}
-        />
-        <motion.div
-            className="lp-game-grid lp-game-grid-4"
-            variants={stagger} initial="hidden"
-            whileInView="show" viewport={{ once: true, amount: 0.1 }}
-        >
-            {NEXT_STEP.map(g => <GameCard key={g.id} game={g} primary={false} />)}
-        </motion.div>
-    </section>
-);
-
-const GameCard: React.FC<{ game: ActivityMeta; primary: boolean }> = ({ game, primary }) => {
-    // Activity previews: only mount the <video> element AFTER the
-    // card scrolls into view. Posters show until then. This avoids
-    // browsers downloading + decoding 6+ webm streams on first load,
-    // which is what was making the landing sluggish on mid-tier
-    // phones. IntersectionObserver flips visible once, never goes
-    // back . once mounted the video keeps playing in the background
-    // and the browser handles tab/visibility itself.
-    const [visible, setVisible] = useState(false);
-    const cardRef = useRef<HTMLDivElement | null>(null);
-    const prefersReduced = useReducedMotion();
-
-    useEffect(() => {
-        const card = cardRef.current;
-        if (!card || prefersReduced) return;
-
-        let observer: IntersectionObserver | null = null;
-        try {
-            observer = new IntersectionObserver(
-                entries => {
-                    if (entries.some(e => e.isIntersecting)) {
-                        setVisible(true);
-                        observer?.disconnect();
-                    }
-                },
-                // Pre-load 10% of a viewport before the card enters.
-                // Was 25%, which mounted 3–5 videos in quick succession
-                // during a fast downward scroll and caused decode
-                // contention. 10% gives enough lead time for the
-                // poster to show without thrashing.
-                { threshold: 0.1, rootMargin: '0px 0px 10% 0px' }
-            );
-            observer.observe(card);
-        } catch {
-            // Old browsers: just show the video.
-            setVisible(true);
-        }
-
-        return () => { observer?.disconnect(); };
-    }, [prefersReduced]);
-
-    const showVideo = visible && !prefersReduced && Boolean(game.videoWebm);
-
-    return (
-        <motion.div
-            ref={cardRef}
-            className={`lp-game-card ${primary ? '' : 'lp-game-card-small'}`}
-            variants={popIn}
-            whileHover={{ y: -8 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-            style={{ '--accent': game.accent } as React.CSSProperties}
-        >
-            <div className="lp-game-frame">
-                <div className="lp-game-screen">
-                    {/* Keep the poster <img> mounted at all times. The
-                        <video> overlays on top once IntersectionObserver
-                        flips visible=true. This means there is never a
-                        moment where the screen wrapper's background
-                        shows through — eliminating the "grey/black box
-                        flashing into view" artefact from the scroll
-                        recording. The poster is decoded async so it
-                        doesn't compete with the hero on first paint. */}
-                    <img
-                        className="lp-game-media"
-                        src={game.poster}
-                        alt={`${game.name} preview`}
-                        loading="lazy"
-                        decoding="async"
-                    />
-                    {showVideo && (
-                        <video
-                            className="lp-game-media"
-                            poster={game.poster}
-                            muted playsInline loop autoPlay preload="metadata"
-                            aria-hidden
-                        >
-                            <source src={game.videoWebm} type="video/webm" />
-                            {game.videoMp4 && <source src={game.videoMp4} type="video/mp4" />}
-                        </video>
-                    )}
-                </div>
-                <span className="lp-game-tag" style={{ background: game.accent }}>{game.tagline}</span>
-            </div>
-            <div className="lp-game-meta">
-                <h3>{game.name}</h3>
-                <p>{game.body}</p>
-            </div>
-        </motion.div>
-    );
-};
-
-// ═══════════════════════════════════════════════════════════════════════
-// Real-kid proof . Two clips of children playing in-store
-// ═══════════════════════════════════════════════════════════════════════
-const RealKidProof: React.FC = () => {
-    const prefersReduced = useReducedMotion();
-    // Motion budget: deco star bobs only while this section is in view.
-    const sectionRef = useRef<HTMLElement | null>(null);
-    const inView = useInView(sectionRef, { amount: 0.2 });
-    const decoAnimate = !prefersReduced && inView
-        ? { y: [0, -10, 0], rotate: [0, 6, 0] }
-        : undefined;
-    return (
-        <section ref={sectionRef} id="real-proof" className="lp-section lp-section-realproof">
-            <SectionHead
-                eyebrow="REAL CHILDREN. REAL MOMENTS."
-                title={<>The first hand they raise is the moment learning begins.</>}
-                sub="Caught on camera at our in-store demo days. No script, no setup. Just curious kids who walked up and started moving."
-            />
-            <motion.div
-                className="lp-realproof-grid"
-                variants={stagger} initial="hidden"
-                whileInView="show" viewport={{ once: true, amount: 0.15 }}
-            >
-                <RealKidCard
-                    webm="/landing-videos/real-kid-1.webm"
-                    mp4="/landing-videos/real-kid-1.mp4"
-                    poster="/landing-videos/real-kid-1.jpg"
-                    caption="Popping bubbles with a wave"
-                    sub="First-time player"
-                />
-                <RealKidCard
-                    webm="/landing-videos/real-kid-2.webm"
-                    mp4="/landing-videos/real-kid-2.mp4"
-                    poster="/landing-videos/real-kid-2.jpg"
-                    caption="First time, hand already up"
-                    sub="Walked up, started playing"
-                />
-            </motion.div>
-            {!prefersReduced && (
-                <motion.img
-                    src="/landing-icons/smiley-star.png" alt="" className="lp-realproof-deco"
-                    animate={decoAnimate}
-                    transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-                />
-            )}
-        </section>
-    );
-};
-
-const RealKidCard: React.FC<{
-    webm: string; mp4: string; poster: string; caption: string; sub: string;
-}> = ({ webm, mp4, poster, caption, sub }) => {
-    // Lazy-mount the <video> for the same reason as game cards .
-    // browsers don't even fetch the webm/mp4 until the card is in
-    // view. Two real-kid videos at 700 KB each used to start
-    // downloading on first paint even though they're well below
-    // the fold.
-    const [visible, setVisible] = useState(false);
-    const cardRef = useRef<HTMLDivElement | null>(null);
-    const prefersReduced = useReducedMotion();
-
-    useEffect(() => {
-        const card = cardRef.current;
-        if (!card || prefersReduced) return;
-        let observer: IntersectionObserver | null = null;
-        try {
-            observer = new IntersectionObserver(
-                entries => {
-                    if (entries.some(e => e.isIntersecting)) {
-                        setVisible(true);
-                        observer?.disconnect();
-                    }
-                },
-                // Tightened from 25% to 10% to avoid simultaneous
-                // mounts of these (700 KB-ish each) clips during
-                // a fast scroll.
-                { threshold: 0.1, rootMargin: '0px 0px 10% 0px' }
-            );
-            observer.observe(card);
-        } catch {
-            setVisible(true);
-        }
-        return () => { observer?.disconnect(); };
-    }, [prefersReduced]);
-
-    return (
-        <motion.div
-            ref={cardRef}
-            className="lp-realproof-card"
-            variants={popIn}
-            whileHover={{ y: -6, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
-        >
-            <div className="lp-realproof-phone">
-                {/* Same poster-under-video stack as GameCard. The phone
-                    bezel is intentionally dark, so this matters less
-                    visually, but keeping the poster mounted prevents
-                    the brief dark-screen flash between observer mount
-                    and the first video frame decoding. */}
-                <img
-                    className="lp-realproof-video"
-                    src={poster}
-                    alt={caption}
-                    loading="lazy"
-                    decoding="async"
-                />
-                {visible && !prefersReduced && (
-                    <video
-                        className="lp-realproof-video"
-                        poster={poster}
-                        muted playsInline loop preload="metadata" autoPlay
-                    >
-                        <source src={webm} type="video/webm" />
-                        <source src={mp4} type="video/mp4" />
-                    </video>
-                )}
-            </div>
-            <div className="lp-realproof-caption">
-                <strong>{caption}</strong>
-                <span>{sub}</span>
-            </div>
-        </motion.div>
-    );
-};
-
-// ═══════════════════════════════════════════════════════════════════════
-// Parents
-// ═══════════════════════════════════════════════════════════════════════
-const Parents: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => (
-    <section id="parents" className="lp-section lp-section-parents">
-        <motion.div
-            className="lp-split"
-            variants={stagger} initial="hidden"
-            whileInView="show" viewport={{ once: true, amount: 0.3 }}
-        >
-            <motion.div className="lp-split-copy" variants={fadeUp}>
-                <span className="lp-eyebrow lp-eyebrow-coral">FOR PARENTS</span>
-                <h2>Screen time that gets children moving.</h2>
-                <p>
-                    Research shows that movement boosts focus, mood, and learning. Draw in the Air
-                    turns screen time into a healthy, active experience.
-                </p>
-                <div className="lp-cta-row">
-                    <button className="lp-btn lp-btn-primary lp-btn-lg lp-btn-magnetic" onClick={onTryFree}>
-                        Try it at home
-                    </button>
-                    <a className="lp-btn lp-btn-ghost lp-btn-lg" href="/parents/setup">
-                        See parent guide
-                    </a>
-                </div>
-            </motion.div>
-            <motion.div className="lp-split-visual" variants={fadeUp}>
-                <img
-                    src="/landing-images/parent-child-screen.jpg"
-                    alt="A parent and child playing Draw in the Air together on a TV"
-                    loading="lazy"
-                    decoding="async"
-                />
-                <motion.img
-                    src="/landing-icons/kids-reading.png"
-                    alt=""
-                    className="lp-split-icon-corner"
-                    whileHover={{ rotate: 4 }}
-                    loading="lazy"
-                />
-                <div className="lp-floating-stat lp-floating-stat-br">
-                    <strong>5 min a day</strong>
-                    <span>can make a difference</span>
-                </div>
-            </motion.div>
-        </motion.div>
-    </section>
-);
-
-// ═══════════════════════════════════════════════════════════════════════
-// Teachers
-// ═══════════════════════════════════════════════════════════════════════
-const Teachers: React.FC = () => (
-    <section id="teachers" className="lp-section lp-section-teachers">
-        <motion.div
-            className="lp-split lp-split-reverse"
-            variants={stagger} initial="hidden"
-            whileInView="show" viewport={{ once: true, amount: 0.3 }}
-        >
-            <motion.div className="lp-split-copy" variants={fadeUp}>
-                <span className="lp-eyebrow lp-eyebrow-aqua">FOR TEACHERS</span>
-                <h2>Built for real classrooms.</h2>
-                <p>
-                    Use Draw in the Air on any device in your classroom. No accounts needed for
-                    students, and easy to manage for teachers.
-                </p>
-                <div className="lp-cta-row">
-                    <a className="lp-btn lp-btn-primary lp-btn-lg lp-btn-magnetic" href="/teachers/setup">
-                        See teacher tools
-                    </a>
-                    <a className="lp-btn lp-btn-ghost lp-btn-lg" href="/teachers/setup">
-                        Teacher resources
-                    </a>
-                </div>
-            </motion.div>
-            <motion.div className="lp-split-visual" variants={fadeUp}>
-                <img
-                    src="/landing-images/classroom.jpg"
-                    alt="A teacher leading a class with multiple children moving"
-                    loading="lazy"
-                    decoding="async"
-                />
-                <motion.img
-                    src="/landing-icons/globe.png"
-                    alt=""
-                    className="lp-split-icon-corner"
-                    whileHover={{ rotate: -4 }}
-                    loading="lazy"
-                />
-                <div className="lp-floating-stat lp-floating-stat-bl">
-                    <strong>Loved by teachers</strong>
-                    <span>and early learners</span>
-                </div>
-            </motion.div>
-        </motion.div>
-    </section>
-);
-
-// ═══════════════════════════════════════════════════════════════════════
-// Live proof . Real RPC numbers
-// ═══════════════════════════════════════════════════════════════════════
-const LiveProof: React.FC<{ proof: PublicProof | null; loadFailed: boolean }> = ({ proof, loadFailed }) => (
-    <section className="lp-section lp-section-proof">
-        <SectionHead
-            eyebrow="EARLY USAGE"
-            title={<>Trusted by families and educators.</>}
-            sub="Aggregate platform numbers, updated live. We don't track individual children. These are anonymous device-level counts."
-        />
-        <motion.div
-            className="lp-proof-grid"
-            variants={stagger} initial="hidden"
-            whileInView="show" viewport={{ once: true, amount: 0.2 }}
-        >
-            <ProofTile icon="/landing-icons/star-books.png"  value={proof?.distinct_devices_90d} loadFailed={loadFailed} label="Children learning"   sub="last 90 days" />
-            <ProofTile icon="/landing-icons/smiley-star.png" value={proof?.activities_completed} loadFailed={loadFailed} label="Activities completed" sub="finished and counted" />
-            <ProofTile icon="/landing-icons/crown-star.png"  value={proof?.items_mastered}        loadFailed={loadFailed} label="Items mastered"      sub="5 plus attempts, 80 percent acc." />
-            <ProofTile icon="/landing-icons/globe.png"       value={proof?.tracker_success_pct}   loadFailed={loadFailed} suffix="%" label="Tracker success" sub="clean hand-tracking starts" />
-        </motion.div>
-    </section>
-);
-
-const ProofTile: React.FC<{
-    icon: string; value: number | undefined; label: string; sub: string; suffix?: string; loadFailed: boolean;
-}> = ({ icon, value, label, sub, suffix, loadFailed }) => {
-    const n = useCountUp(value, 1400);
-    // Render priority:
-    //   1. We have a value -> show the real, animated number.
-    //   2. No value yet AND fetch has been timing out -> show "—".
-    //      Honest empty state. Never invents a number.
-    //   3. No value yet AND still fetching -> shimmer skel.
-    return (
-        <motion.div className="lp-proof-tile" variants={popIn}
-            whileHover={{ y: -6, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
-        >
-            <img src={icon} alt="" className="lp-proof-icon" loading="lazy" decoding="async" />
-            <div className="lp-proof-num">
-                {value == null
-                    ? (loadFailed ? <span aria-hidden>—</span> : <span className="lp-proof-skel" />)
-                    : <>{fmtNum(n)}{suffix ?? ''}</>
-                }
-            </div>
-            <div className="lp-proof-label">{label}</div>
-            <div className="lp-proof-sub">{sub}</div>
-        </motion.div>
-    );
-};
-
-// ═══════════════════════════════════════════════════════════════════════
-// Final CTA
-// ═══════════════════════════════════════════════════════════════════════
-const FinalCTA: React.FC<{ onTryFree: () => void }> = ({ onTryFree }) => {
-    const prefersReduced = useReducedMotion();
-    // Motion budget: was three decos all bobbing forever. Dropped the
-    // third one entirely (the layout reads cleaner without it) and
-    // gated the remaining two behind in-view so they only bob while
-    // someone has scrolled to the final CTA.
-    const sectionRef = useRef<HTMLElement | null>(null);
-    const inView = useInView(sectionRef, { amount: 0.3 });
-    const deco1Animate = !prefersReduced && inView
-        ? { y: [0, -12, 0], rotate: [0, 6, 0] }
-        : undefined;
-    const deco2Animate = !prefersReduced && inView
-        ? { y: [0, 10, 0], rotate: [0, -4, 0] }
-        : undefined;
-    return (
-    <section ref={sectionRef} className="lp-section lp-section-final">
-        <motion.div
-            className="lp-final"
-            variants={fadeUp} initial="hidden"
-            whileInView="show" viewport={{ once: true, amount: 0.35 }}
-        >
-            <motion.img src="/landing-icons/star-books.png" alt=""
-                className="lp-final-deco lp-final-deco-1"
-                animate={deco1Animate}
-                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <motion.img src="/landing-icons/smiley-star.png" alt=""
-                className="lp-final-deco lp-final-deco-2"
-                animate={deco2Animate}
-                transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
-            />
-            <h2>
-                <span className="lp-final-line">Let them <span className="lp-final-emph">move</span>.</span>
-                <span className="lp-final-line">Let them <span className="lp-final-emph">learn</span>.</span>
-            </h2>
-            <p>Open Draw in the Air in your browser and turn any space into a learning space.</p>
-            <div className="lp-cta-row">
-                <button className="lp-btn lp-btn-primary lp-btn-lg lp-btn-magnetic" onClick={onTryFree}>
-                    Try Draw in the Air free
-                    <span className="lp-btn-arrow" aria-hidden>→</span>
-                </button>
-                <a className="lp-btn lp-btn-ghost lp-btn-lg" href="#how-it-works">
-                    See how it works
-                </a>
-            </div>
-            <div className="lp-hero-trust" style={{ marginTop: 24, justifyContent: 'center' }}>
-                <TrustChip icon="✓" label="No downloads" />
-                <TrustChip icon="📱" label="Works on any device" />
-                <TrustChip icon="🔒" label="Private &amp; secure" />
-            </div>
-        </motion.div>
-    </section>
-    );
-};
-
-// ═══════════════════════════════════════════════════════════════════════
-// Footer
-// ═══════════════════════════════════════════════════════════════════════
-const Footer: React.FC = () => (
-    <footer className="lp-footer">
-        <div className="lp-footer-inner">
-            <div className="lp-footer-brand">
-                <BrandLogo variant="footer" />
-                <p>Movement-based learning for curious kids.</p>
-            </div>
-            <div className="lp-footer-cols">
-                <div>
-                    <h4>Product</h4>
-                    <a href="#how-it-works">How it works</a>
-                    <a href="#activities">Activities</a>
-                    <a href="/pricing">Pricing</a>
-                </div>
-                <div>
-                    <h4>For parents</h4>
-                    <a href="/parents/setup">Parent guide</a>
-                    <a href="/parents/setup">Screen time &amp; kids</a>
-                    <a href="/parents/setup">FAQ</a>
-                </div>
-                <div>
-                    <h4>For teachers</h4>
-                    <a href="/teachers/setup">Teacher tools</a>
-                    <a href="/teachers/setup">Classroom ideas</a>
-                    <a href="/teachers/setup">Resources</a>
-                </div>
-                <div>
-                    <h4>Company</h4>
-                    <a href="/about">About us</a>
-                    <a href="/privacy">Privacy</a>
-                    <a href="/safeguarding">Terms</a>
-                </div>
-            </div>
-        </div>
-        <div className="lp-footer-fine">
-            © {new Date().getFullYear()} Draw in the Air. All rights reserved.
-        </div>
-    </footer>
-);
-
-// ═══════════════════════════════════════════════════════════════════════
-// Shared section head
-// ═══════════════════════════════════════════════════════════════════════
-const SectionHead: React.FC<{ eyebrow: string; title: React.ReactNode; sub?: string }> = ({ eyebrow, title, sub }) => (
-    <motion.div className="lp-section-head" variants={stagger} initial="hidden"
-        whileInView="show" viewport={{ once: true, amount: 0.5 }}
+function Icon({ name, size = 20, ...p }: { name: keyof typeof ICONS; size?: number } & React.SVGProps<SVGSVGElement>) {
+  const filled = name === 'play';
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill={filled ? 'currentColor' : 'none'}
+      stroke={filled ? 'none' : 'currentColor'}
+      strokeWidth="1.85"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...p}
     >
-        <motion.span className="lp-eyebrow lp-eyebrow-plum" variants={fadeUp}>{eyebrow}</motion.span>
-        <motion.h2 variants={fadeUp}>{title}</motion.h2>
-        {sub && <motion.p className="lp-section-sub" variants={fadeUp}>{sub}</motion.p>}
-    </motion.div>
-);
+      <path d={ICONS[name]} />
+    </svg>
+  );
+}
+
+/* =====================================================================
+   Scroll reveal + gesture trail (visible-first; animation is enhancement)
+   ===================================================================== */
+function useReveal(rootRef: React.RefObject<HTMLElement>) {
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    let raf = 0, ticking = false;
+    const pass = () => {
+      ticking = false;
+      const h = window.innerHeight;
+      root.querySelectorAll('.reveal:not(.in)').forEach((el) => {
+        if (el.getBoundingClientRect().top < h - 40) el.classList.add('in');
+      });
+    };
+    const onScroll = () => { if (!ticking) { ticking = true; raf = requestAnimationFrame(pass); } };
+    pass();
+    const r1 = requestAnimationFrame(() => { root.classList.add('anim'); });
+    const t1 = window.setTimeout(pass, 140);
+    const t2 = window.setTimeout(pass, 450);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(raf);
+      cancelAnimationFrame(r1);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, [rootRef]);
+}
+
+export function GestureTrail() {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    const canvas = ref.current; if (!canvas) return;
+    const ctx = canvas.getContext('2d'); if (!ctx) return;
+    let raf = 0, w = 0, h = 0, dpr = 1;
+    const pts: { x: number; y: number; t: number }[] = [];
+    const resize = () => {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = canvas.width = window.innerWidth * dpr;
+      h = canvas.height = window.innerHeight * dpr;
+      canvas.style.width = window.innerWidth + 'px';
+      canvas.style.height = window.innerHeight + 'px';
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    const move = (e: PointerEvent) => {
+      pts.push({ x: e.clientX * dpr, y: e.clientY * dpr, t: performance.now() });
+      if (pts.length > 18) pts.shift();
+    };
+    window.addEventListener('pointermove', move, { passive: true });
+    const draw = () => {
+      ctx.clearRect(0, 0, w, h);
+      const now = performance.now();
+      for (let i = 1; i < pts.length; i++) {
+        const p0 = pts[i - 1], p1 = pts[i];
+        const age = (now - p1.t) / 700; if (age > 1) continue;
+        const a = (1 - age) * (i / pts.length);
+        const mix = i / pts.length;
+        const r = Math.round(138 + (123 - 138) * mix);
+        const g = Math.round(102 + (182 - 102) * mix);
+        const b = Math.round(240 + (255 - 240) * mix);
+        ctx.strokeStyle = `rgba(${r},${g},${b},${a * 0.85})`;
+        ctx.lineWidth = (1 - age) * 9 * dpr;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+      }
+      if (pts.length) {
+        const p = pts[pts.length - 1];
+        const age = (now - p.t) / 700;
+        if (age < 1) {
+          ctx.fillStyle = `rgba(123,182,255,${(1 - age) * 0.6})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 7 * dpr * (1 - age), 0, 7);
+          ctx.fill();
+        }
+      }
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('pointermove', move);
+    };
+  }, []);
+  return <canvas ref={ref} className="trail-canvas" aria-hidden="true" />;
+}
+
+/* =====================================================================
+   Section head, FAQ, ActivityGrid (shared marketing primitives)
+   ===================================================================== */
+export function SectionHead({
+  eyebrow, tone, title, lead,
+}: { eyebrow?: string; tone?: 'mint' | 'sky' | 'sun' | 'peach'; title: string; lead?: string }) {
+  return (
+    <div className="sec-head reveal">
+      {eyebrow && (
+        <div className={`eyebrow ${tone ? 'is-' + tone : ''}`}>
+          <span className="dot" />{eyebrow}
+        </div>
+      )}
+      <h2 className="h2" dangerouslySetInnerHTML={{ __html: title }} />
+      {lead && <p className="lead">{lead}</p>}
+    </div>
+  );
+}
+
+export function FAQList({ items }: { items: { q: string; a: string }[] }) {
+  const [open, setOpen] = useState(0);
+  return (
+    <div className="faq">
+      {items.map((f, i) => (
+        <div key={i} className={`faq-item ${open === i ? 'open' : ''}`}>
+          <button
+            type="button"
+            className="faq-q"
+            onClick={() => setOpen(open === i ? -1 : i)}
+            aria-expanded={open === i}
+          >
+            <span>{f.q}</span><span className="faq-icon">+</span>
+          </button>
+          <div className="faq-a-wrap"><div className="faq-a"><p>{f.a}</p></div></div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const TONE: Record<string, { tag: string; soft: string }> = {
+  lavender: { tag: 'var(--lavender-700)', soft: 'var(--lavender-100)' },
+  mint:     { tag: 'var(--mint-700)',     soft: 'var(--mint-100)' },
+  sky:      { tag: 'var(--sky-700)',      soft: 'var(--sky-100)' },
+  sun:      { tag: 'var(--sun-600)',      soft: 'var(--sun-100)' },
+  peach:    { tag: 'var(--peach-600)',    soft: 'var(--peach-100)' },
+};
+
+export type ActivityTile = {
+  id: string; icon: string; title: string; sub: string;
+  cat: string; tone: keyof typeof TONE; video?: string; poster?: string;
+};
+
+const ACTIVITIES: ActivityTile[] = [
+  { id: 'bubble',  icon: '\u{1FAE7}', title: 'Bubble Pop',     sub: 'Warm up your hands',    cat: 'Warm-up',  tone: 'peach' },
+  { id: 'paint',   icon: '\u{1F3A8}', title: 'Free Paint',     sub: 'Create anything',       cat: 'Creative', tone: 'lavender' },
+  { id: 'trace',   icon: '\u{270F}\u{FE0F}',  title: 'Tracing',        sub: 'Follow the path',       cat: 'Learning', tone: 'mint' },
+  { id: 'sort',    icon: '\u{1F5C2}\u{FE0F}', title: 'Sort & Place',   sub: 'Think and sort',        cat: 'Puzzle',   tone: 'sky' },
+  { id: 'word',    icon: '\u{1F50D}', title: 'Word Search',    sub: 'Find the words',        cat: 'Puzzle',   tone: 'sun' },
+  { id: 'balloon', icon: '\u{1F388}', title: 'Balloon Math',   sub: 'Pop the right number',  cat: 'Learning', tone: 'peach' },
+  { id: 'rainbow', icon: '\u{1F308}', title: 'Rainbow Bridge', sub: 'Match the colours',     cat: 'Learning', tone: 'sky' },
+  { id: 'spell',   icon: '\u{270D}\u{FE0F}',  title: 'Spelling Stars', sub: 'Spell the word',        cat: 'Learning', tone: 'lavender' },
+];
+
+export function ActivityGrid({ limit }: { limit?: number }) {
+  const list = limit ? ACTIVITIES.slice(0, limit) : ACTIVITIES;
+  return (
+    <div className="acts">
+      {list.map((a, i) => (
+        <button key={a.id} type="button" className={`act reveal d${(i % 4) + 1}`}>
+          {a.video ? (
+            <div className="act-media">
+              <video
+                src={a.video}
+                poster={a.poster}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+              />
+            </div>
+          ) : null}
+          <span className="act-ico" style={{ background: TONE[a.tone].soft }} aria-hidden="true">{a.icon}</span>
+          <div className="act-cat" style={{ color: TONE[a.tone].tag, background: TONE[a.tone].soft }}>{a.cat}</div>
+          <div className="act-title">{a.title}</div>
+          <div className="act-sub">{a.sub}</div>
+          <span className="act-go"><Icon name="arrow" size={16} /></span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* =====================================================================
+   Page-specific data (Calm direction copy only)
+   ===================================================================== */
+const HOW_STEPS = [
+  { num: '01', img: '/landing-assets/icons/globe.png',      title: 'Open the page',     text: 'Any browser, any laptop. Camera permission is the only setup.' },
+  { num: '02', img: '/landing-assets/icons/hand.png',       title: 'Wave to start',     text: 'Five small waves wake the canvas and calibrate the tracker.' },
+  { num: '03', img: '/landing-assets/icons/shapes.png',     title: 'Pick an activity',  text: 'Point and hold for 1.5 seconds. No tap, no click, no controller.' },
+  { num: '04', img: '/landing-assets/icons/star-smile.png', title: 'Move to learn',     text: 'Draw, trace, pop and sort. The hand is the input, always.' },
+];
+
+const HOME_FAQ = [
+  { q: "How is my child's privacy protected?", a: 'No video, no audio, and no images are ever stored or sent anywhere. The camera frame is processed entirely inside the browser tab and discarded each frame. The product runs without a server connection once loaded.' },
+  { q: 'What ages is it designed for?',         a: 'The interaction is built for children aged 3 to 7. Younger children play the warm-up and free-paint modes; from age 5 onward, tracing, spelling, and maths activities open up. Adult supervision is recommended for the first session.' },
+  { q: 'Does it really not need special hardware?', a: 'Just a modern browser (Chrome, Edge, Safari 15+) and a webcam. Most laptops from the last five years work. No phone, no tablet, no controller, no glove.' },
+  { q: 'How is this different from a touchscreen?', a: 'A touchscreen needs only a wrist movement. Draw in the Air rewards whole-arm movement, how 3 to 7 year-olds naturally develop fine motor control. It is designed for a laptop and webcam, not a tablet.' },
+  { q: 'Is it free for parents?', a: 'Yes. The full activity set is free for individual families. Schools join a pilot programme; we set the first classroom session up with you personally.' },
+];
+
+const TRUST_STATS = [
+  { img: 'books-star.png',  n: '4,300+',   label: 'Children learning',     sub: 'last 90 days' },
+  { img: 'star-smile.png',  n: '128,000+', label: 'Activities completed',  sub: 'finished and counted' },
+  { img: 'badge-crown.png', n: '47,000+',  label: 'Items mastered',        sub: '5+ attempts, 80% accuracy' },
+  { img: 'globe.png',       n: '96%',      label: 'Tracker success',       sub: 'clean hand-tracking starts' },
+];
+
+const PROOF_STATS = [
+  { n: '5,000+', l: 'Children reached' },
+  { n: '200+',   l: 'UK classrooms' },
+  { n: 'EYFS',   l: 'Curriculum aligned' },
+  { n: '100%',   l: 'Frames stay on-device' },
+];
+
+/* =====================================================================
+   Calm Footer (inlined for visual consistency)
+   ===================================================================== */
+export function CalmFooter() {
+  return (
+    <footer className="footer" data-screen-label="Footer">
+      <div className="wrap">
+        <div className="footer-grid">
+          <div className="footer-brand">
+            <BrandLogo variant="footer" alt="Draw in the Air" />
+            <p className="footer-tag">
+              Movement-first learning for children aged 3 to 7. Built for the browser. Built for families and classrooms.
+            </p>
+            <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
+              <Link to="/parent/signup" className="btn btn-primary sm">Try free</Link>
+            </div>
+          </div>
+          <div>
+            <h5>Product</h5>
+            <ul>
+              <li><Link to="/">How it works</Link></li>
+              <li><Link to="/">Activities</Link></li>
+              <li><Link to="/pricing">Pricing</Link></li>
+              <li><Link to="/privacy">Privacy</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h5>For Schools</h5>
+            <ul>
+              <li><Link to="/teachers">For teachers</Link></li>
+              <li><Link to="/teachers">Pilot programme</Link></li>
+              <li><Link to="/for-teachers">EYFS mapping</Link></li>
+              <li><Link to="/teachers">Classroom guides</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h5>Company</h5>
+            <ul>
+              <li><Link to="/about">About</Link></li>
+              <li><Link to="/press">Press kit</Link></li>
+              <li><Link to="/free-resources">Free resources</Link></li>
+              <li><Link to="/transparency">Transparency</Link></li>
+            </ul>
+          </div>
+        </div>
+        <div className="footer-legal">
+          <span>{'©'} 2026 Draw in the Air Ltd, EYFS aligned, Made in the UK</span>
+          <div style={{ display: 'flex', gap: 20 }}>
+            <Link to="/parent/login">Family login</Link>
+            <Link to="/teacher/login">Teacher login</Link>
+            <Link to="/privacy">Privacy</Link>
+            <Link to="/terms">Terms</Link>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+/* =====================================================================
+   Landing page component
+   ===================================================================== */
+export const Landing: React.FC = () => {
+  const navigate = useNavigate();
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  useReveal(rootRef);
+
+  const go = (path: string) => navigate(path);
+
+  return (
+    <div ref={rootRef} className="lp-shell">
+      <GestureTrail />
+      <HeaderNav />
+      <div className="page" data-screen-label="Home">
+
+        {/* HERO */}
+        <section className="hero" data-screen-label="01 Hero">
+          <div className="hero-orb" />
+          <img
+            className="hero-deco trail float"
+            src="/landing-assets/icons/trail-star.png"
+            alt=""
+            aria-hidden="true"
+          />
+          <div className="wrap">
+            <div className="hero-grid">
+              <div>
+                <div className="eyebrow reveal">
+                  <span className="dot" />EYFS aligned, free for families
+                </div>
+                <h1 className="h1 reveal d1">
+                  Screen time that <span className="grad">makes you smile.</span>
+                </h1>
+                <p className="lead reveal d2">
+                  Watch your child practise letters, numbers, and creativity using just their hands. No touchscreen. No controller. Just natural movement and imagination.
+                </p>
+                <div className="hero-actions reveal d3">
+                  <button
+                    type="button"
+                    className="btn btn-primary hero-cta lg"
+                    onClick={() => go('/parent/signup')}
+                  >
+                    <Icon name="play" size={18} />Try free now
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary lg"
+                    onClick={() => go('/teachers')}
+                  >
+                    For schools
+                  </button>
+                </div>
+                <div className="hero-trust reveal d4">
+                  <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{1F512}'}</span> No data stored</span>
+                  <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{2728}'}</span> 14 days free</span>
+                  <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{26A1}'}</span> Works instantly</span>
+                </div>
+              </div>
+
+              {/* Hero visual: child-drawing-light photo + 3 floating cards.
+                  fl-2 is a small autoplaying hero-loop gameplay clip so
+                  visitors see real motion within a second. */}
+              <div className="hero-visual reveal d2">
+                <div className="photo hero-photo float">
+                  <img src="/landing-assets/child-drawing-light.jpg" alt="A child tracing a letter in the air with their finger" />
+                </div>
+                <div className="hero-floater fl-1 float s2">
+                  <span className="emoji" aria-hidden="true">{'\u{270F}\u{FE0F}'}</span>
+                  <div>
+                    <div className="ftitle">Tracing the letter A</div>
+                    <div className="meta">+2 stars earned</div>
+                  </div>
+                </div>
+                <div className="hero-floater fl-2 video-floater float s3" aria-hidden="true">
+                  <video
+                    poster="/landing-videos/hero-loop.jpg"
+                    autoPlay muted loop playsInline preload="metadata"
+                  >
+                    <source src="/landing-videos/hero-loop.webm" type="video/webm" />
+                    <source src="/landing-videos/hero-loop.mp4" type="video/mp4" />
+                  </video>
+                </div>
+                <div className="hero-floater fl-3 float">
+                  <span className="emoji" aria-hidden="true">{'\u{1F3A8}'}</span>
+                  <div>
+                    <div className="ftitle">Free paint</div>
+                    <div className="meta">3 colours, M brush</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* PULL QUOTE BAND */}
+        <section className="section section-stage" data-screen-label="Pull quote">
+          <div className="wrap-content center reveal">
+            <p className="quote" style={{ fontSize: 'clamp(26px,3.4vw,40px)', lineHeight: 1.3, color: 'var(--ink-900)' }}>
+              {'“'}Movement is the curriculum. The screen is just the canvas.{'”'}
+            </p>
+            <div className="pill-note" style={{ marginTop: 22, justifyContent: 'center' }}>
+              The Draw in the Air principle
+            </div>
+          </div>
+        </section>
+
+        {/* LIVE DEMO STRIP (single embedded gameplay clip) */}
+        <section className="section section-ink" data-screen-label="Live demo strip">
+          <div className="wrap">
+            <div className="demo-strip">
+              <div className="reveal">
+                <div className="eyebrow is-sky" style={{ color: 'var(--sky-300)' }}>
+                  <span className="dot" style={{ background: 'var(--sky-400)' }} />See it move
+                </div>
+                <h2 className="h2" style={{ color: '#fff', marginTop: 16 }}>
+                  Real gameplay, <br />no edits.
+                </h2>
+                <p className="lead" style={{ color: 'rgba(255,255,255,0.74)', marginTop: 16 }}>
+                  A clip from Balloon Math, captured live. Every pop is a finger in the air, every count is a confident jab. This is what a session actually looks like.
+                </p>
+                <div className="hero-actions">
+                  <button
+                    type="button"
+                    className="btn btn-reward lg"
+                    onClick={() => go('/parent/signup')}
+                  >
+                    Try it with your child
+                  </button>
+                </div>
+              </div>
+              <div className="reveal d2">
+                <div className="demo-frame">
+                  <video
+                    poster="/landing-videos/balloon-math.jpg"
+                    autoPlay muted loop playsInline preload="metadata"
+                  >
+                    <source src="/landing-videos/balloon-math.webm" type="video/webm" />
+                    <source src="/landing-videos/balloon-math.mp4" type="video/mp4" />
+                  </video>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* PROOF BAND */}
+        <section className="section section-tint" data-screen-label="Proof band">
+          <div className="wrap">
+            <div className="stats">
+              {PROOF_STATS.map((s, i) => (
+                <div key={s.l} className={`stat reveal d${i + 1}`}>
+                  <div className="stat-num">{s.n}</div>
+                  <div className="stat-lbl">{s.l}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* HOW IT WORKS */}
+        <section className="section" data-screen-label="How it works">
+          <div className="wrap">
+            <SectionHead
+              eyebrow="How it works"
+              title="Four steps. No download."
+              lead="From URL to first stroke in under a minute. The whole interaction lives in the browser tab."
+            />
+            <div className="steps">
+              {HOW_STEPS.map((s, i) => (
+                <div key={s.num} className={`step reveal d${i + 1}`}>
+                  <div className="step-num">{s.num}</div>
+                  <img className="step-img" src={s.img} alt="" />
+                  <div className="step-title">{s.title}</div>
+                  <p className="step-text">{s.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ACTIVITIES */}
+        <section className="section section-tint" data-screen-label="Activities">
+          <div className="wrap">
+            <SectionHead
+              eyebrow="Eight ways to play"
+              tone="mint"
+              title="Eight activities. <span class='grad'>One gesture.</span>"
+              lead="Every activity uses the same pinch-to-draw, point-to-select interaction. Children learn the language once, then explore freely."
+            />
+            <ActivityGrid />
+            <div className="center mt-cta reveal">
+              <button
+                type="button"
+                className="btn btn-primary md"
+                onClick={() => go('/parent/signup')}
+              >
+                Start playing free <Icon name="arrow" size={17} />
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* FOR HOME */}
+        <section className="section" data-screen-label="For home">
+          <div className="wrap">
+            <div className="split">
+              <div className="split-media reveal">
+                <div className="photo">
+                  <img src="/landing-assets/parent-child-screen.jpg" alt="A parent and child playing together at a laptop" />
+                </div>
+              </div>
+              <div className="reveal d1">
+                <div className="eyebrow is-peach"><span className="dot" />For home</div>
+                <h2 className="h2" style={{ marginTop: 16 }}>Screen time that actually means something.</h2>
+                <p className="lead" style={{ marginTop: 16 }}>
+                  Draw in the Air turns any webcam session into an active, physical learning moment. Children get up, move, and practise real skills, you get peace of mind.
+                </p>
+                <div className="bullets">
+                  {[
+                    'EYFS and early-literacy aligned',
+                    'No registration for free activities',
+                    'Works on any laptop or tablet with a camera',
+                    'Children stay safe, no data collected',
+                  ].map((b) => (
+                    <div className="bullet" key={b}>
+                      <span className="check">{'✓'}</span>
+                      <span className="txt">{b}</span>
+                    </div>
+                  ))}
+                </div>
+                <Link to="/parents" className="btn btn-primary md">
+                  Explore for parents <Icon name="arrow" size={17} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* FOR SCHOOLS */}
+        <section className="section section-stage" data-screen-label="For schools">
+          <div className="wrap">
+            <div className="split flip">
+              <div className="split-media reveal">
+                <div className="photo">
+                  <img src="/landing-assets/classroom.jpg" alt="Children using Draw in the Air together in a classroom" />
+                </div>
+              </div>
+              <div className="reveal d1">
+                <div className="eyebrow is-sky"><span className="dot" />For schools</div>
+                <h2 className="h2" style={{ marginTop: 16 }}>Whole-class movement, EYFS aligned.</h2>
+                <p className="lead" style={{ marginTop: 16 }}>
+                  A free, browser-based tool that fits your existing classroom setup. One laptop, one webcam, one projector, the whole class moves together.
+                </p>
+                <div className="bullets">
+                  {[
+                    'EYFS-mapped activities across communication, maths and expressive arts',
+                    'No installs and no accounts for children',
+                    'A quiet teacher dashboard: usage, sessions, engagement',
+                    'Pilot programme, we set up your first session with you',
+                  ].map((b) => (
+                    <div className="bullet" key={b}>
+                      <span className="check">{'✓'}</span>
+                      <span className="txt">{b}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <Link to="/teachers" className="btn btn-primary md">Start a pilot</Link>
+                  <Link to="/teachers" className="btn btn-ghost md">
+                    Read the EYFS mapping <Icon name="arrow" size={16} />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* EARLY USAGE */}
+        <section className="section" data-screen-label="Early usage">
+          <div className="wrap">
+            <SectionHead
+              eyebrow="Early usage"
+              title="Trusted by families and educators."
+              lead="Aggregate platform numbers, updated live. We do not track individual children. These are anonymous, device-level counts."
+            />
+            <div className="tstats">
+              {TRUST_STATS.map((s, i) => (
+                <div key={s.label} className={`tstat reveal d${i + 1}`}>
+                  <img src={`/landing-assets/icons/${s.img}`} alt="" />
+                  <div className="tstat-num">{s.n}</div>
+                  <div className="tstat-label">{s.label}</div>
+                  <div className="tstat-sub">{s.sub}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section className="section section-tint" data-screen-label="FAQ">
+          <div className="wrap">
+            <SectionHead eyebrow="Frequently asked" title="The questions parents ask first." />
+            <FAQList items={HOME_FAQ} />
+          </div>
+        </section>
+
+        {/* CTA BANNER */}
+        <section className="section" data-screen-label="CTA">
+          <div className="wrap">
+            <div className="cta-banner reveal">
+              <h2 className="h2">Ready to see them light up?</h2>
+              <p className="lead">
+                Start your 14-day free trial. Up to 2 learners, the full activity library, and cancel anytime. Works on any laptop with a webcam.
+              </p>
+              <div className="cta-actions">
+                <Link to="/parent/signup" className="btn btn-secondary lg">Start free trial</Link>
+                <Link to="/teachers" className="btn btn-ghost lg" style={{ color: 'inherit' }}>
+                  Book a school demo <Icon name="arrow" size={17} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+      <CalmFooter />
+    </div>
+  );
+};
 
 export default Landing;

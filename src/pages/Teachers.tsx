@@ -1,124 +1,297 @@
 /**
- * Teachers — Kid-UI bright sky version
- * Wrapped in LegalPageLayout so it inherits the new theme automatically.
+ * /teachers. Calm-direction public marketing page for schools and teachers.
+ *
+ * Sections:
+ *   1. Hero ("Whole-class movement, zero setup.") + classroom photo +
+ *      live leaderboard floating card
+ *   2. Teacher value cards (3 + 1 ready guides card)
+ *   3. Classroom mode section-ink (split with live leaderboard preview)
+ *   4. Pilot programme steps (3 + ready-to-start CTA card)
+ *   5. Teacher FAQ
+ *   6. Teacher CTA banner
  */
 
-import React, { useState } from 'react';
-import { LegalPageLayout } from '../components/landing/LegalPageLayout';
-import { KidButton } from '../components/kid-ui';
-import { tokens } from '../styles/tokens';
+import React, { useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  CalmFooter, FAQList, GestureTrail, SectionHead,
+} from './Landing';
+import { HeaderNav } from '../components/landing/HeaderNav';
+import '../components/landing/landing-calm.css';
 
-const platformUrl = typeof window !== 'undefined'
-  ? (import.meta as { env?: { VITE_PLATFORM_URL?: string } }).env?.VITE_PLATFORM_URL || 'https://app.drawintheair.com'
-  : 'https://app.drawintheair.com';
+function ArrowIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  );
+}
 
-const FEATURES: { icon: string; title: string; desc: string; color: string; bg: string }[] = [
-  { icon: '🏫', title: 'Class Mode', desc: 'Run whole-class sessions with a live leaderboard. Students join with a 4-digit code, no accounts.', color: tokens.colors.deepPlum, bg: '#EAE0FB' },
-  { icon: '📊', title: 'Analytics Dashboard', desc: 'Per-student and session-level performance data. Track improvement over time.', color: tokens.colors.aqua, bg: '#D6F0FF' },
-  { icon: '🤖', title: 'AI Insights', desc: 'AI-generated teaching suggestions based on your class data. Powered by Claude.', color: tokens.colors.coral, bg: '#FFE2EC' },
-  { icon: '📋', title: 'Session Replay', desc: 'Review any previous class session. See exactly which activities ran and how students performed.', color: tokens.colors.warmOrange, bg: '#FFE9CF' },
-  { icon: '🎯', title: 'EYFS & KS1 Aligned', desc: 'Every activity maps to Physical Development, Literacy, and Mathematics curricula.', color: tokens.colors.meadowGreen, bg: '#DCF5C9' },
-  { icon: '💻', title: 'Chromebook Ready', desc: 'Tested on school Chromebooks. Browser-based, nothing to install.', color: tokens.colors.sunshine, bg: '#FFF1B5' },
+function useReveal(rootRef: React.RefObject<HTMLElement>) {
+  useEffect(() => {
+    const root = rootRef.current; if (!root) return;
+    let raf = 0, ticking = false;
+    const pass = () => {
+      ticking = false;
+      const h = window.innerHeight;
+      root.querySelectorAll('.reveal:not(.in)').forEach((el) => {
+        if (el.getBoundingClientRect().top < h - 40) el.classList.add('in');
+      });
+    };
+    const onScroll = () => { if (!ticking) { ticking = true; raf = requestAnimationFrame(pass); } };
+    pass();
+    const r1 = requestAnimationFrame(() => { root.classList.add('anim'); });
+    const t1 = window.setTimeout(pass, 140);
+    const t2 = window.setTimeout(pass, 450);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(raf); cancelAnimationFrame(r1);
+      clearTimeout(t1); clearTimeout(t2);
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, [rootRef]);
+}
+
+const LEADERBOARD = [
+  { m: '\u{1F947}', name: 'Amara', s: 980 },
+  { m: '\u{1F948}', name: 'Jacob', s: 940 },
+  { m: '\u{1F949}', name: 'Priya', s: 870 },
+  { m: '4',          name: 'Leah',  s: 820 },
 ];
 
-const STEPS = [
-  { step: '1', title: 'Sign up free', desc: 'Create a teacher account with Google. Your 5-day Pro trial starts immediately.' },
-  { step: '2', title: 'Open Class Mode', desc: 'Create a new session, choose an activity, and configure settings.' },
-  { step: '3', title: 'Students join', desc: 'Display the 4-digit code. Students go to drawintheair.com/join and enter it.' },
-  { step: '4', title: 'Play together', desc: 'Run the session with a live leaderboard. Review results when finished.' },
+const TEACHER_VALUE = [
+  { icon: '\u{1F5C2}\u{FE0F}', title: 'EYFS-mapped',           text: 'Activities tagged across communication, language, mathematics, and expressive arts.' },
+  { icon: '\u{1F5A5}\u{FE0F}', title: 'One device, whole class', text: 'A single laptop, webcam and projector. The class moves together, no logins for children.' },
+  { icon: '\u{1F4CA}',          title: 'Quiet analytics',        text: 'Usage by week, sessions per child, average engagement. Plain English, no dashboards to babysit.' },
 ];
 
-const TESTIMONIALS = [
-  { quote: "My class loves it. They don't even realise they're practising letter formation, they just think it's a game.", author: 'Miss Davies', role: 'Reception Teacher, Wiltshire', tint: tokens.colors.coral },
-  { quote: 'The fact that nothing is recorded and there are no student accounts made it an instant yes from our Head.', author: 'Mr Osei', role: 'Year 1 Teacher, Birmingham', tint: tokens.colors.aqua },
-  { quote: 'I used it as a movement break after lunch and the focus afterwards was noticeably better.', author: 'Mrs Thornton', role: 'EYFS Lead, Bristol', tint: tokens.colors.meadowGreen },
+const PILOT_STEPS = [
+  { num: '01', title: 'Book a 20-minute call', text: 'We learn your setup and year group, and answer your safeguarding questions.' },
+  { num: '02', title: 'We set up session one', text: 'We join your first classroom session live and calibrate the room with you.' },
+  { num: '03', title: 'You run it solo',        text: 'Most teachers are independent by week two. We stay one message away.' },
 ];
 
-const FAQS = [
-  { q: 'Do I need a school IT department to set it up?', a: 'No. Draw in the Air is browser-based and runs on any device with a camera. No installation, no IT tickets, no admin rights needed.' },
-  { q: 'How do students join a class session?', a: "Students visit drawintheair.com/join, enter the 4-digit code you display, and type their first name. That's it. No accounts." },
-  { q: 'Is there a free version?', a: 'Yes. All 9 activities are free forever. Teacher Pro (£4.99/month) unlocks Classroom Mode, analytics, and AI insights.' },
-  { q: 'Can I use it for intervention or SEND support?', a: 'Absolutely. The gesture-based input is often more accessible for children with motor difficulties, dyslexia, or attention challenges.' },
-  { q: 'Does it work as a movement break?', a: 'Yes — one of the most popular use cases. A 5-minute Bubble Pop or shape activity between lessons is an excellent brain break.' },
+const TEACHER_FAQ = [
+  { q: 'Do children need accounts?',         a: 'No. Children never log in. You open the activity on the class device, pupils join the movement, not a system. Teacher accounts exist only for analytics and classroom mode.' },
+  { q: 'What about our IT restrictions?',    a: 'It runs in the browser with no install. We provide a Chromebook setup guide and the exact domains to allow-list for your network team.' },
+  { q: 'Is there a cost to pilot?',          a: 'The pilot is free, and the full activity set is free to use in class. School licences add admin analytics and whole-school reporting.' },
 ];
 
 export const Teachers: React.FC = () => {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  useReveal(rootRef);
 
   return (
-    <LegalPageLayout heroTitle="Built for teachers." eyebrow="For Teachers">
-      <p style={{ fontSize: '1.15rem', textAlign: 'center', maxWidth: 640, margin: '0 auto 32px' }}>
-        Run live class sessions where every child practises letters, numbers, and shapes using hand gestures. Live leaderboard, analytics, and AI insights — built for busy teachers.
-      </p>
+    <div ref={rootRef} className="lp-shell">
+      <GestureTrail />
+      <HeaderNav />
+      <div className="page" data-screen-label="For Teachers">
 
-      <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 28 }}>
-        <a href={`${platformUrl}/auth/login`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-          <KidButton variant="primary" size="lg">Start Free 5-Day Trial</KidButton>
-        </a>
-        <a href="/play" style={{ textDecoration: 'none' }}>
-          <KidButton variant="secondary" size="lg">See It First →</KidButton>
-        </a>
-      </div>
-      <div style={{ display: 'flex', gap: 18, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 56, fontSize: '0.9rem', fontWeight: 600, opacity: 0.85 }}>
-        <span>✓ No credit card</span>
-        <span>✓ 5-day free trial</span>
-        <span>✓ No student accounts</span>
-        <span>✓ Works on Chromebooks</span>
-      </div>
-
-      <h2>Everything you need to run great sessions</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginTop: 18, marginBottom: 36 }}>
-        {FEATURES.map((f) => (
-          <div key={f.title} style={{ background: '#FFFFFF', border: '2px solid rgba(108,63,164,0.12)', borderRadius: 20, padding: 20 }}>
-            <div style={{ width: 48, height: 48, borderRadius: 14, background: f.bg, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.6rem', marginBottom: 10, boxShadow: tokens.shadow.inset }}>
-              {f.icon}
-            </div>
-            <h3 style={{ fontFamily: tokens.fontFamily.display, fontSize: '1.05rem', fontWeight: 700, color: tokens.colors.charcoal, marginBottom: 4 }}>{f.title}</h3>
-            <p style={{ fontSize: '0.92rem', lineHeight: 1.55, opacity: 0.8, margin: 0 }}>{f.desc}</p>
-          </div>
-        ))}
-      </div>
-
-      <h2>From sign-up to first class session in minutes</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginTop: 18, marginBottom: 36 }}>
-        {STEPS.map((s) => (
-          <div key={s.step} style={{ textAlign: 'center', background: '#F4FAFF', border: '2px solid rgba(108,63,164,0.10)', borderRadius: 18, padding: 18 }}>
-            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(180deg, #7E4FB8 0%, #6C3FA4 100%)', color: '#FFFFFF', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontFamily: tokens.fontFamily.display, fontWeight: 700, marginBottom: 10 }}>{s.step}</div>
-            <h3 style={{ fontFamily: tokens.fontFamily.display, fontSize: '1rem', fontWeight: 700, color: tokens.colors.charcoal, marginBottom: 4 }}>{s.title}</h3>
-            <p style={{ fontSize: '0.86rem', lineHeight: 1.55, opacity: 0.78, margin: 0 }}>{s.desc}</p>
-          </div>
-        ))}
-      </div>
-
-      <h2>What teachers say</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginTop: 18, marginBottom: 36 }}>
-        {TESTIMONIALS.map((t) => (
-          <div key={t.author} style={{ background: 'linear-gradient(165deg, #FFFFFF 0%, #F4FAFF 100%)', border: '2px solid rgba(108,63,164,0.10)', borderRadius: 20, padding: 18 }}>
-            <p style={{ fontStyle: 'italic', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: 12 }}>"{t.quote}"</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: t.tint, color: '#FFFFFF', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontFamily: tokens.fontFamily.display, fontWeight: 700 }}>{t.author.charAt(0)}</div>
+        {/* HERO */}
+        <section className="hero" data-screen-label="Teachers hero">
+          <div className="hero-orb" />
+          <div className="wrap">
+            <div className="hero-grid">
               <div>
-                <div style={{ fontFamily: tokens.fontFamily.display, fontWeight: 700, fontSize: '0.88rem' }}>{t.author}</div>
-                <div style={{ fontSize: '0.78rem', opacity: 0.65 }}>{t.role}</div>
+                <div className="eyebrow is-sky reveal">
+                  <span className="dot" />For teachers and schools
+                </div>
+                <h1 className="h1 reveal d1">
+                  Whole-class movement, <span className="grad">zero setup.</span>
+                </h1>
+                <p className="lead reveal d2">
+                  Run an EYFS-aligned movement break or literacy starter from one laptop and a webcam. No installs, no child accounts, no IT ticket. Open the URL, the class plays.
+                </p>
+                <div className="hero-actions reveal d3">
+                  <Link to="/teacher/signup" className="btn btn-primary hero-cta lg">Start a pilot</Link>
+                  <Link to="/pricing" className="btn btn-secondary lg">View school plans</Link>
+                </div>
+                <div className="hero-trust reveal d4">
+                  <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{1F3EB}'}</span> EYFS aligned</span>
+                  <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{1F512}'}</span> GDPR compliant</span>
+                  <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{26A1}'}</span> No installs</span>
+                </div>
+              </div>
+              <div className="hero-visual reveal d2">
+                <div className="photo hero-photo float">
+                  <img src="/landing-assets/classroom.jpg" alt="A teacher running Draw in the Air with a class" />
+                </div>
+                <div className="hero-floater fl-1 float s2" style={{ minWidth: 190 }}>
+                  <div style={{ width: '100%' }}>
+                    <div className="meta" style={{ textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+                      Live, 28 active
+                    </div>
+                    {LEADERBOARD.slice(0, 3).map((r) => (
+                      <div key={r.name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '2px 0' }}>
+                        <span style={{ fontWeight: 600, color: 'var(--ink-900)' }}>{r.m} {r.name}</span>
+                        <span style={{ fontWeight: 700, color: 'var(--lavender-600)', fontFamily: 'var(--font-mono)' }}>{r.s}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        ))}
-      </div>
+        </section>
 
-      <h2>Teacher questions answered</h2>
-      <div style={{ marginTop: 18, marginBottom: 16 }}>
-        {FAQS.map((item, i) => (
-          <div key={i} style={{ borderRadius: 16, border: `2px solid ${openFaq === i ? tokens.colors.deepPlum : 'rgba(108,63,164,0.12)'}`, background: '#FFFFFF', marginBottom: 10, overflow: 'hidden' }}>
-            <button onClick={() => setOpenFaq(openFaq === i ? null : i)} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: tokens.fontFamily.display, fontSize: '1rem', fontWeight: 700, color: tokens.colors.charcoal, textAlign: 'left' }}>
-              <span>{item.q}</span>
-              <span style={{ color: tokens.colors.deepPlum, fontSize: '1.4rem', fontWeight: 700, flexShrink: 0, marginLeft: 12 }}>{openFaq === i ? '−' : '+'}</span>
-            </button>
-            {openFaq === i && <div style={{ padding: '0 18px 16px', fontSize: '0.93rem', lineHeight: 1.65, opacity: 0.85 }}>{item.a}</div>}
+        {/* VALUE */}
+        <section className="section" data-screen-label="Teacher value">
+          <div className="wrap">
+            <SectionHead eyebrow="Built for the classroom" tone="sky" title="Less admin. More movement." />
+            <div className="steps">
+              {TEACHER_VALUE.map((v, i) => (
+                <div key={v.title} className={`step reveal d${i + 1}`}>
+                  <div className="step-icon">{v.icon}</div>
+                  <div className="step-title">{v.title}</div>
+                  <p className="step-text">{v.text}</p>
+                </div>
+              ))}
+              <div
+                className="step reveal d4"
+                style={{ background: 'var(--sky-50)', borderColor: 'var(--sky-200)' }}
+              >
+                <div className="step-icon">{'\u{1F4DA}'}</div>
+                <div className="step-title">Ten ready guides</div>
+                <p className="step-text">Quick-start, five-day movement plan, SEND inclusion, Chromebook setup. All printable.</p>
+              </div>
+            </div>
           </div>
-        ))}
+        </section>
+
+        {/* CLASSROOM MODE */}
+        <section className="section section-ink" data-screen-label="Classroom mode">
+          <div className="wrap">
+            <div className="split">
+              <div className="reveal">
+                <div className="eyebrow is-sky" style={{ color: 'var(--sky-300)' }}>
+                  <span className="dot" style={{ background: 'var(--sky-400)' }} />Classroom mode
+                </div>
+                <h2 className="h2" style={{ color: '#fff', marginTop: 16 }}>Run your whole class at once.</h2>
+                <p className="lead" style={{ color: 'rgba(255,255,255,0.74)', marginTop: 16 }}>
+                  A live class view shows energy in the room in real time. Start an activity, watch engagement, and download a session report when you are done.
+                </p>
+                <div className="bullets">
+                  {[
+                    'Live class energy view',
+                    'A single shared device, no child logins',
+                    'Session analytics after every class',
+                    'Plain-English insights and suggestions',
+                  ].map((b) => (
+                    <div className="bullet" key={b}>
+                      <span className="check" style={{ background: 'rgba(91,206,154,0.2)' }}>{'✓'}</span>
+                      <span className="txt" style={{ color: 'rgba(255,255,255,0.8)' }}>{b}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="reveal d2">
+                <div
+                  className="card"
+                  style={{ padding: 24, background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.12)' }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: '#fff' }}>Reception, Letter A</span>
+                    <span className="pill-note" style={{ color: 'var(--mint-300)' }}>
+                      <span style={{ width: 8, height: 8, borderRadius: 999, background: 'var(--mint-400)', display: 'inline-block' }} />
+                      28 active
+                    </span>
+                  </div>
+                  {LEADERBOARD.map((r) => (
+                    <div
+                      key={r.name}
+                      style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.08)',
+                      }}
+                    >
+                      <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>{r.m} {r.name}</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--sky-300)' }}>{r.s}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div style={{ marginTop: 56 }} className="reveal">
+              <div className="demo-frame">
+                <video
+                  poster="/landing-videos/tracing.jpg"
+                  autoPlay muted loop playsInline preload="metadata"
+                >
+                  <source src="/landing-videos/tracing.webm" type="video/webm" />
+                  <source src="/landing-videos/tracing.mp4" type="video/mp4" />
+                </video>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* PILOT */}
+        <section className="section section-tint" data-screen-label="Pilot programme">
+          <div className="wrap">
+            <SectionHead
+              eyebrow="Pilot programme"
+              tone="mint"
+              title="We set up session one with you."
+              lead="No procurement maze. Three light steps from first call to a class that runs it themselves."
+            />
+            <div className="steps">
+              {PILOT_STEPS.map((s, i) => (
+                <div key={s.num} className={`step reveal d${i + 1}`} style={{ gridColumn: 'span 1' }}>
+                  <div className="step-num">{s.num}</div>
+                  <div className="step-title" style={{ marginTop: 14 }}>{s.title}</div>
+                  <p className="step-text">{s.text}</p>
+                </div>
+              ))}
+              <div
+                className="step reveal d4"
+                style={{
+                  display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                  background: 'var(--lavender-500)', borderColor: 'var(--lavender-500)',
+                }}
+              >
+                <div className="step-title" style={{ color: '#fff' }}>Ready to start?</div>
+                <p className="step-text" style={{ color: 'rgba(255,255,255,0.85)' }}>Book your pilot call this week.</p>
+                <Link
+                  to="/teacher/signup"
+                  className="btn btn-reward sm"
+                  style={{ marginTop: 12, alignSelf: 'flex-start' }}
+                >
+                  Start a pilot
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* TEACHER FAQ */}
+        <section className="section" data-screen-label="Teacher FAQ">
+          <div className="wrap">
+            <SectionHead eyebrow="Frequently asked" title="What schools ask first." />
+            <FAQList items={TEACHER_FAQ} />
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="section" data-screen-label="Teacher CTA">
+          <div className="wrap">
+            <div className="cta-banner reveal">
+              <h2 className="h2">Bring movement into your classroom.</h2>
+              <p className="lead">
+                Start a free pilot. We will run your first session with you and leave you a printable activity pack.
+              </p>
+              <div className="cta-actions">
+                <Link to="/teacher/signup" className="btn btn-secondary lg">Start a pilot</Link>
+                <Link to="/pricing" className="btn btn-ghost lg" style={{ color: 'inherit' }}>
+                  View school plans <ArrowIcon size={17} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
       </div>
-    </LegalPageLayout>
+      <CalmFooter />
+    </div>
   );
 };
 

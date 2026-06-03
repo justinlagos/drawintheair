@@ -71,6 +71,7 @@ export interface CaptureErrorOptions {
         | 'gamemode'
         | 'insights'
         | 'landing'
+        | 'parent'
         | 'unknown';
     /** Free-form extras. Sanitized by beforeSend; do NOT pass PII here. */
     extras?: Record<string, string | number | boolean | null | undefined>;

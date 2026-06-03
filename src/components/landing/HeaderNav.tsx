@@ -1,202 +1,184 @@
-import React, { useState, useEffect } from 'react';
-import './landing.css';
-import { LandingCTAButton } from './LandingCTAButton';
-import { NavMetricsTicker } from './NavMetricsTicker';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BrandLogo } from '../BrandLogo';
+import './landing-calm.css';
 
 interface HeaderNavProps {
-  variant?: 'transparent' | 'solid';
+  /** Optional override for the Try-free CTA click handler. */
   onTryFree?: () => void;
 }
 
+const NAV_LINKS: { id: string; label: string; href: string }[] = [
+  { id: 'home',     label: 'Home',         href: '/' },
+  { id: 'parents',  label: 'For Parents',  href: '/parents' },
+  { id: 'teachers', label: 'For Teachers', href: '/teachers' },
+  { id: 'pricing',  label: 'Pricing',      href: '/pricing' },
+  { id: 'about',    label: 'About',        href: '/about' },
+];
+
+function useScrolled(threshold = 50) {
+  const [s, setS] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setS(window.scrollY > threshold);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [threshold]);
+  return s;
+}
+
+function ChevronIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+/**
+ * HeaderNav, Calm-direction landing nav.
+ *
+ * Sticky transparent nav that crystallises into glass on scroll, with a
+ * five-link rail (Home, For Parents, For Teachers, Pricing, About), a
+ * context-aware Log in control, and a primary Try free CTA. Mobile uses
+ * a hamburger that drops the rail in a stacked sheet.
+ */
 export const HeaderNav: React.FC<HeaderNavProps> = ({ onTryFree }) => {
-  const [activeSection, setActiveSection] = useState('');
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const pathname = window.location.pathname;
-  const isLandingPage = pathname === '/' || pathname === '';
+  const scrolled = useScrolled(50);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const path = location.pathname;
 
   useEffect(() => {
-    if (!isLandingPage) return;
+    if (!menuOpen) return;
+    const close = () => setMenuOpen(false);
+    window.addEventListener('click', close);
+    return () => window.removeEventListener('click', close);
+  }, [menuOpen]);
 
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+  // Close mobile sheet when the route changes.
+  useEffect(() => { setMobileOpen(false); }, [path]);
 
-      // Determine active section
-      const sections = ['how-it-works', 'modes', 'schools', 'faq'];
-      const scrollPosition = window.scrollY + 150;
+  const activeId =
+    path === '/'          ? 'home'     :
+    path.startsWith('/parents')  ? 'parents'  :
+    path.startsWith('/teachers') ? 'teachers' :
+    path.startsWith('/pricing')  ? 'pricing'  :
+    path.startsWith('/about')    ? 'about'    :
+    '';
 
-      for (let i = sections.length - 1; i >= 0; i--) {
-        const element = document.getElementById(sections[i]);
-        if (element && element.offsetTop <= scrollPosition) {
-          setActiveSection(sections[i]);
-          break;
-        }
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Initial check
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isLandingPage]);
-
-  const scrollTo = (id: string) => {
-    setMobileMenuOpen(false); // Close mobile menu on navigation
-    if (!isLandingPage) {
-      window.location.pathname = '/';
-      setTimeout(() => {
-        const element = document.getElementById(id);
-        if (element) {
-          const offset = 80;
-          const elementPosition = element.getBoundingClientRect().top;
-          const offsetPosition = elementPosition + window.pageYOffset - offset;
-          window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-        }
-      }, 100);
+  const onTryFreeClick = (e: React.MouseEvent) => {
+    if (onTryFree) {
+      e.preventDefault();
+      onTryFree();
       return;
     }
-    const element = document.getElementById(id);
-    if (element) {
-      const offset = 80; // Account for sticky nav
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - offset;
-      window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-    }
-  };
-
-  const handleLogoClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    window.location.pathname = '/';
+    navigate('/parent/signup');
   };
 
-  const handleNavClick = (e: React.MouseEvent, target: string) => {
-    e.preventDefault();
-    if (target.startsWith('#')) {
-      scrollTo(target.substring(1));
-    } else {
-      window.location.pathname = target;
-    }
-  };
-
-  const platformUrl = import.meta.env.VITE_PLATFORM_URL || 'https://app.drawintheair.com';
+  // Context-aware login: teacher page -> Teacher login, parent page -> Family
+  // login, everywhere else -> a tidy dropdown offering both.
+  let loginControl: React.ReactNode;
+  if (activeId === 'teachers') {
+    loginControl = (
+      <Link to="/teacher/login" className="btn btn-ghost sm">Teacher login</Link>
+    );
+  } else if (activeId === 'parents') {
+    loginControl = (
+      <Link to="/parent/login" className="btn btn-ghost sm">Family login</Link>
+    );
+  } else {
+    loginControl = (
+      <div className="nav-login" onClick={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          className={`btn btn-ghost sm nav-login-btn ${menuOpen ? 'open' : ''}`}
+          onClick={() => setMenuOpen((o) => !o)}
+          aria-expanded={menuOpen}
+        >
+          Log in <ChevronIcon />
+        </button>
+        {menuOpen && (
+          <div className="nav-menu">
+            <button
+              type="button"
+              className="nav-menu-item"
+              onClick={() => { setMenuOpen(false); navigate('/parent/login'); }}
+            >
+              <span className="nmi-ic" style={{ background: 'var(--peach-100)' }} aria-hidden="true">{'\u{1F3E0}'}</span>
+              <span>
+                <strong>Family login</strong>
+                <em>For parents at home</em>
+              </span>
+            </button>
+            <button
+              type="button"
+              className="nav-menu-item"
+              onClick={() => { setMenuOpen(false); navigate('/teacher/login'); }}
+            >
+              <span className="nmi-ic" style={{ background: 'var(--sky-100)' }} aria-hidden="true">{'\u{1F34E}'}</span>
+              <span>
+                <strong>Teacher login</strong>
+                <em>For schools and classrooms</em>
+              </span>
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <nav className={`landing-nav ${isScrolled ? 'landing-nav-scrolled' : ''}`}>
-      <div className="landing-nav-container">
-        <div className="landing-nav-left">
-          <a href="/" onClick={handleLogoClick} style={{ display: 'block', cursor: 'pointer' }}>
-            <BrandLogo variant="header" className="landing-logo" alt="Draw in the Air" />
+    <nav className={`nav ${scrolled ? 'scrolled' : ''}`} data-screen-label="Nav">
+      <div className="wrap row">
+        <Link to="/" className="nav-logo" aria-label="Draw in the Air, home">
+          <BrandLogo variant="header" alt="Draw in the Air" />
+        </Link>
+        <div className="nav-links">
+          {NAV_LINKS.map((l) => (
+            <Link
+              key={l.id}
+              to={l.href}
+              className={`nav-link ${activeId === l.id ? 'active' : ''}`}
+            >
+              {l.label}
+            </Link>
+          ))}
+        </div>
+        <span className="nav-spacer" />
+        <div className="nav-cta">
+          {loginControl}
+          <a href="/parent/signup" className="btn btn-primary sm" onClick={onTryFreeClick}>
+            Try free
           </a>
         </div>
-
-        {/* Desktop Navigation */}
-        <div className="landing-nav-links desktop-only">
-          <a
-            href="#how-it-works"
-            onClick={(e) => handleNavClick(e, '#how-it-works')}
-            className={`landing-nav-link ${activeSection === 'how-it-works' ? 'active' : ''}`}
-          >
-            How It Works
-          </a>
-          <a
-            href="#modes"
-            onClick={(e) => handleNavClick(e, '#modes')}
-            className={`landing-nav-link ${activeSection === 'modes' ? 'active' : ''}`}
-          >
-            Activities
-          </a>
-          <a
-            href="/parents"
-            onClick={(e) => handleNavClick(e, '/parents')}
-            className="landing-nav-link"
-          >
-            For Parents
-          </a>
-          <a
-            href="/teachers"
-            onClick={(e) => handleNavClick(e, '/teachers')}
-            className="landing-nav-link"
-          >
-            For Teachers
-          </a>
-          <a
-            href="/schools"
-            onClick={(e) => handleNavClick(e, '/schools')}
-            className={`landing-nav-link ${activeSection === 'schools' ? 'active' : ''}`}
-          >
-            For Schools
-          </a>
-          <a
-            href="/faq"
-            onClick={(e) => handleNavClick(e, '/faq')}
-            className="landing-nav-link"
-          >
-            FAQ
-          </a>
-        </div>
-
-        {/* CTA Buttons */}
-        <div className="landing-nav-actions">
-          <a
-            href={platformUrl + '/auth/login'}
-            className="nav-cta-secondary"
-            style={{ color: 'inherit' }}
-          >
-            Teacher Login
-          </a>
-          <NavMetricsTicker isScrolled={isScrolled} />
-          <LandingCTAButton
-            variant="primary"
-            size="sm"
-            href="/play"
-            label="Try Free"
-            onClick={(e) => {
-              e.preventDefault();
-              if (onTryFree) {
-                onTryFree();
-              } else {
-                window.location.pathname = '/play';
-              }
-            }}
-          />
-          <LandingCTAButton
-            variant="secondary"
-            size="sm"
-            href="/schools"
-            label="School Pilot"
-            className="desktop-only"
-          />
-        </div>
-
-        {/* Mobile Menu Toggle */}
         <button
-          className="landing-nav-hamburger mobile-only"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          type="button"
+          className="nav-burger"
           aria-label="Toggle menu"
-          aria-expanded={mobileMenuOpen}
+          aria-expanded={mobileOpen}
+          onClick={() => setMobileOpen((o) => !o)}
         >
-          <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
-          <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
-          <span className={`hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
+          <span aria-hidden="true" />
         </button>
       </div>
-
-      {/* Mobile Menu Dropdown */}
-      {mobileMenuOpen && (
-        <div className="landing-nav-mobile-menu">
-          <a href="#how-it-works" onClick={(e) => handleNavClick(e, '#how-it-works')}>How It Works</a>
-          <a href="#modes" onClick={(e) => handleNavClick(e, '#modes')}>Activities</a>
-          <a href="/parents" onClick={(e) => handleNavClick(e, '/parents')}>For Parents</a>
-          <a href="/teachers" onClick={(e) => handleNavClick(e, '/teachers')}>For Teachers</a>
-          <a href="/schools" onClick={(e) => handleNavClick(e, '/schools')}>For Schools</a>
-          <a href="/faq" onClick={(e) => handleNavClick(e, '/faq')}>FAQ</a>
-          <a href={platformUrl + '/auth/login'} style={{ color: 'inherit' }}>Teacher Login</a>
-          <LandingCTAButton
-            variant="secondary"
-            size="md"
-            href="/schools"
-            label="School Pilot"
-          />
+      {mobileOpen && (
+        <div className="nav-mobile">
+          <div className="wrap">
+            {NAV_LINKS.map((l) => (
+              <Link key={l.id} to={l.href}>{l.label}</Link>
+            ))}
+            <Link to="/parent/login">Family login</Link>
+            <Link to="/teacher/login">Teacher login</Link>
+            <div className="nav-mobile-cta">
+              <a href="/parent/signup" className="btn btn-primary md" onClick={onTryFreeClick}>
+                Try free
+              </a>
+            </div>
+          </div>
         </div>
       )}
     </nav>

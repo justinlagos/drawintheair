@@ -13,6 +13,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { type HandLandmarkerResult } from '@mediapipe/tasks-vision';
+import { useParentAccess } from '../parent/useParentAccess';
+import { PremiumLockModal } from '../parent/PremiumLockModal';
 
 export type GameMode = 'calibration' | 'free' | 'pre-writing' | 'sort-and-place' | 'word-search' | 'colour-builder' | 'balloon-math' | 'rainbow-bridge' | 'gesture-spelling' | 'building';
 
@@ -24,6 +26,8 @@ interface ModeOption {
     accentColor: string;
     accentGlow: string;
     category: string;
+    /** 'free' = always playable; 'premium' = requires parent subscription/trial. */
+    tier: 'free' | 'premium';
 }
 
 /**
@@ -52,7 +56,8 @@ const MODES: ModeOption[] = [
         icon: '🎨',
         accentColor: '#9B59B6',
         accentGlow: 'rgba(155, 89, 182, 0.35)',
-        category: 'Creative'
+        category: 'Creative',
+        tier: 'free',
     },
     {
         id: 'calibration',
@@ -61,7 +66,8 @@ const MODES: ModeOption[] = [
         icon: '🫧',
         accentColor: '#FF8C42',
         accentGlow: 'rgba(255, 140, 66, 0.35)',
-        category: 'Warm-up'
+        category: 'Warm-up',
+        tier: 'free',
     },
     {
         id: 'pre-writing',
@@ -70,7 +76,8 @@ const MODES: ModeOption[] = [
         icon: '✏️',
         accentColor: '#2ECC71',
         accentGlow: 'rgba(46, 204, 113, 0.35)',
-        category: 'Learning'
+        category: 'Learning',
+        tier: 'free',
     },
     {
         id: 'gesture-spelling',
@@ -79,7 +86,8 @@ const MODES: ModeOption[] = [
         icon: '✍️',
         accentColor: '#A855F7',
         accentGlow: 'rgba(168, 85, 247, 0.35)',
-        category: 'Learning'
+        category: 'Learning',
+        tier: 'premium',
     },
     {
         id: 'sort-and-place',
@@ -88,7 +96,8 @@ const MODES: ModeOption[] = [
         icon: '🗂️',
         accentColor: '#3498DB',
         accentGlow: 'rgba(52, 152, 219, 0.35)',
-        category: 'Puzzle'
+        category: 'Puzzle',
+        tier: 'premium',
     },
     {
         id: 'word-search',
@@ -97,7 +106,8 @@ const MODES: ModeOption[] = [
         icon: '🔍',
         accentColor: '#F1C40F',
         accentGlow: 'rgba(241, 196, 15, 0.35)',
-        category: 'Puzzle'
+        category: 'Puzzle',
+        tier: 'premium',
     },
     {
         id: 'balloon-math',
@@ -106,7 +116,8 @@ const MODES: ModeOption[] = [
         icon: '🎈',
         accentColor: '#FF6B6B',
         accentGlow: 'rgba(255, 107, 107, 0.35)',
-        category: 'Learning'
+        category: 'Learning',
+        tier: 'premium',
     },
     {
         id: 'rainbow-bridge',
@@ -115,7 +126,8 @@ const MODES: ModeOption[] = [
         icon: '🌈',
         accentColor: '#00BCD4',
         accentGlow: 'rgba(0, 188, 212, 0.35)',
-        category: 'Learning'
+        category: 'Learning',
+        tier: 'premium',
     }
 ];
 
@@ -137,9 +149,10 @@ interface GameCardProps {
     hoverProgress: number;
     onClick: () => void;
     compact?: boolean;
+    locked?: boolean;
 }
 
-const GameCard = ({ mode, featured, isHovered, isSelected, hoverProgress, onClick, compact }: GameCardProps) => {
+const GameCard = ({ mode, featured, isHovered, isSelected, hoverProgress, onClick, compact, locked }: GameCardProps) => {
     const [pressed, setPressed] = useState(false);
 
     return (
@@ -200,6 +213,46 @@ const GameCard = ({ mode, featured, isHovered, isSelected, hoverProgress, onClic
                 opacity: pressed ? 0.6 : 1,
                 transition: 'opacity 100ms ease',
             }} />
+
+            {/* Premium lock badge — appears top-right when this game requires a subscription. */}
+            {locked && (
+                <div
+                    aria-label="Premium game — ask a grown-up to unlock"
+                    style={{
+                        position: 'absolute',
+                        top: 10, right: 10,
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        padding: '6px 11px',
+                        borderRadius: 999,
+                        background: 'linear-gradient(135deg, #6C3FA4, #5A2F8C)',
+                        color: '#fff',
+                        font: '800 11px/1 Nunito, system-ui, sans-serif',
+                        letterSpacing: '0.06em', textTransform: 'uppercase',
+                        boxShadow: '0 6px 14px rgba(108, 63, 164, 0.40)',
+                        zIndex: 4,
+                    }}
+                >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <rect x="3" y="11" width="18" height="11" rx="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Family
+                </div>
+            )}
+
+            {/* Soft dim wash over locked games so they read as "preview". */}
+            {locked && (
+                <div
+                    aria-hidden
+                    style={{
+                        position: 'absolute', inset: 0,
+                        background: 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(108, 63, 164, 0.10) 100%)',
+                        pointerEvents: 'none',
+                        zIndex: 3,
+                        borderRadius: 'inherit',
+                    }}
+                />
+            )}
 
             {/* Dwell progress bar at bottom */}
             {isHovered && hoverProgress > 0 && (
@@ -324,6 +377,8 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
     const [hoveredMode, setHoveredMode] = useState<GameMode | null>(null);
     const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
     const [hoverProgress, setHoverProgress] = useState(0);
+    const [lockedPrompt, setLockedPrompt] = useState<ModeOption | null>(null);
+    const { hasAccess } = useParentAccess();
     const hoverStartTime = useRef<number | null>(null);
     const cardRefs = useRef<Map<GameMode, DOMRect>>(new Map());
     const getScreenInfo = useCallback(() => {
@@ -410,9 +465,16 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
 
     const handleSelect = useCallback((mode: ModeOption) => {
         if (selectedMode) return;
+        // Premium gate: if this is a paid-tier game and the visitor has no
+        // active parent subscription/trial, surface the upgrade prompt
+        // instead of starting the game.
+        if (mode.tier === 'premium' && !hasAccess) {
+            setLockedPrompt(mode);
+            return;
+        }
         setSelectedMode(mode.id);
         setTimeout(() => onSelect(mode.id), 200);
-    }, [selectedMode, onSelect]);
+    }, [selectedMode, onSelect, hasAccess]);
 
     // Featured mode = first (Bubble Pop, the warm-up)
     const featured = MODES[0];
@@ -542,6 +604,7 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
                                 <GameCard
                                     mode={mode}
                                     compact
+                                    locked={mode.tier === 'premium' && !hasAccess}
                                     isHovered={hoveredMode === mode.id}
                                     isSelected={selectedMode === mode.id}
                                     hoverProgress={hoveredMode === mode.id ? hoverProgress : 0}
@@ -562,6 +625,7 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
                                 <GameCard
                                     mode={mode}
                                     compact
+                                    locked={mode.tier === 'premium' && !hasAccess}
                                     isHovered={hoveredMode === mode.id}
                                     isSelected={selectedMode === mode.id}
                                     hoverProgress={hoveredMode === mode.id ? hoverProgress : 0}
@@ -582,6 +646,7 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
                             <GameCard
                                 mode={featured}
                                 featured
+                                locked={featured.tier === 'premium' && !hasAccess}
                                 isHovered={hoveredMode === featured.id}
                                 isSelected={selectedMode === featured.id}
                                 hoverProgress={hoveredMode === featured.id ? hoverProgress : 0}
@@ -599,6 +664,7 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
                                 <div key={mode.id} style={{ height: isTablet ? '150px' : '180px' }}>
                                     <GameCard
                                         mode={mode}
+                                        locked={mode.tier === 'premium' && !hasAccess}
                                         isHovered={hoveredMode === mode.id}
                                         isSelected={selectedMode === mode.id}
                                         hoverProgress={hoveredMode === mode.id ? hoverProgress : 0}
@@ -635,6 +701,16 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
                     </span>
                 </div>
             </div>
+
+            {/* Premium upgrade prompt — appears when an anonymous viewer taps
+                a paid-tier game. Kid-safe copy, adult call-to-action. */}
+            {lockedPrompt && (
+                <PremiumLockModal
+                    gameTitle={lockedPrompt.title}
+                    gameIcon={lockedPrompt.icon}
+                    onClose={() => setLockedPrompt(null)}
+                />
+            )}
         </div>
     );
 };

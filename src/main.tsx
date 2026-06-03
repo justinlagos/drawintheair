@@ -27,8 +27,10 @@ import {
   captureError,
 } from './lib/observability'
 import { AuthProvider } from './context/AuthContext.tsx'
+import { ParentProvider } from './context/ParentContext.tsx'
 import { KidStyles } from './styles/KidStyles.tsx'
 import { lazyWithRetry } from './lib/lazyWithRetry.tsx'
+import { BrowserRouter } from 'react-router-dom'
 
 // ── Observability bootstrap ────────────────────────────────────────────────
 // Initialise Sentry + PostHog BEFORE React mounts so even the very first
@@ -56,9 +58,12 @@ const App = lazyWithRetry(() => import('./App.tsx'));
 // bundle. Named exports are unwrapped to { default } for React.lazy.
 const FAQ = lazyWithRetry(() => import('./pages/FAQ.tsx').then((m) => ({ default: m.FAQ })));
 const Schools = lazyWithRetry(() => import('./pages/Schools.tsx').then((m) => ({ default: m.Schools })));
-const ParentsLanding = lazyWithRetry(() => import('./pages/ParentsLanding.tsx').then((m) => ({ default: m.ParentsLanding })));
+// ParentsLanding (old marketing page) and ParentAccess (legacy /parent) were
+// removed in the route consolidation. /parents now serves the subscription
+// landing, /parent redirects to /parent/dashboard.
 const Pricing = lazyWithRetry(() => import('./pages/Pricing.tsx').then((m) => ({ default: m.Pricing })));
 const Teachers = lazyWithRetry(() => import('./pages/Teachers.tsx'));
+const About    = lazyWithRetry(() => import('./pages/About.tsx'));
 const Privacy = lazyWithRetry(() => import('./pages/Privacy.tsx').then((m) => ({ default: m.Privacy })));
 const Terms = lazyWithRetry(() => import('./pages/Terms.tsx').then((m) => ({ default: m.Terms })));
 const Cookies = lazyWithRetry(() => import('./pages/Cookies.tsx').then((m) => ({ default: m.Cookies })));
@@ -67,7 +72,7 @@ const Accessibility = lazyWithRetry(() => import('./pages/Accessibility.tsx').th
 const Training = lazyWithRetry(() => import('./pages/Training.tsx').then((m) => ({ default: m.Training })));
 const QAPage = lazyWithRetry(() => import('./pages/QAPage.tsx').then((m) => ({ default: m.QAPage })));
 const SchoolPilot = lazyWithRetry(() => import('./pages/SchoolPilot.tsx'));
-const ParentAccess = lazyWithRetry(() => import('./pages/ParentAccess.tsx'));
+// ParentAccess removed in route consolidation; /parent now redirects.
 
 // SEO Lazy Imports
 const EmbedPage = lazyWithRetry(() => import('./pages/seo/EmbedPage.tsx'));
@@ -110,6 +115,25 @@ const ParentSetupGuide  = lazyWithRetry(() => import('./pages/setup/ParentSetupG
 const TeacherClassConsole = lazyWithRetry(() => import('./pages/classmode/TeacherClassConsole.tsx'));
 const StudentClassClient  = lazyWithRetry(() => import('./pages/classmode/StudentClassClient.tsx'));
 
+// ── Parent subscription layer (signup → trial → dashboard → billing) ──
+// Each page is lazy so it never bloats the marketing/landing bundle.
+const ParentsLandingV2  = lazyWithRetry(() => import('./pages/parent/ParentsLanding.tsx'));
+const ParentSignup      = lazyWithRetry(() => import('./pages/parent/Signup.tsx'));
+const ParentLogin       = lazyWithRetry(() => import('./pages/parent/Login.tsx'));
+const ParentDashboard   = lazyWithRetry(() => import('./pages/parent/Dashboard.tsx'));
+const ParentChildren    = lazyWithRetry(() => import('./pages/parent/Children.tsx'));
+const ParentBilling     = lazyWithRetry(() => import('./pages/parent/Billing.tsx'));
+const ParentAccount     = lazyWithRetry(() => import('./pages/parent/Account.tsx'));
+const ParentPrivacy     = lazyWithRetry(() => import('./pages/parent/Privacy.tsx'));
+const ParentSubscribe   = lazyWithRetry(() => import('./pages/parent/Subscribe.tsx'));
+
+// ── Teacher auth (free-pilot signup → sign-in → /class console) ──
+// Teachers don't have a paid plan in this release. Signup creates an
+// auth.users row + teacher_profiles row (via migration 0008 trigger)
+// and lands the user in TeacherClassConsole (/class).
+const TeacherSignup = lazyWithRetry(() => import('./pages/teacher/Signup.tsx'));
+const TeacherLogin  = lazyWithRetry(() => import('./pages/teacher/Login.tsx'));
+
 // Helper function to determine route from pathname
 function getRouteFromPath(path: string, hash: string): string {
   // Check for debug=qa in query params
@@ -142,10 +166,25 @@ function getRouteFromPath(path: string, hash: string): string {
   if (path === '/schools/training') return 'training';
   if (path === '/schools') return 'schools';
   if (path === '/school') return 'school';
-  if (path === '/parents') return 'parents';
-  if (path === '/parent') return 'parent';
+  // Parent subscription layer — order matters; deeper paths first.
+  // /parent/* = authenticated parent app. /parents = public marketing.
+  if (path === '/parent/signup') return 'parent-signup';
+  if (path === '/parent/login') return 'parent-login';
+  // Teacher auth — sits next to parent so the role split is obvious.
+  if (path === '/teacher/signup') return 'teacher-signup';
+  if (path === '/teacher/login') return 'teacher-login';
+  if (path === '/parent/dashboard') return 'parent-dashboard';
+  if (path === '/parent/children') return 'parent-children';
+  if (path === '/parent/billing') return 'parent-billing';
+  if (path === '/parent/account') return 'parent-account';
+  if (path === '/parent/privacy') return 'parent-privacy';
+  if (path === '/subscribe' || path === '/trial') return 'parent-subscribe';
+  if (path === '/parents') return 'parents-marketing';
+  // Bare /parent is a legacy entry — redirect to the dashboard.
+  if (path === '/parent') return 'parent-redirect';
   if (path === '/teachers') return 'teachers';
   if (path === '/pricing') return 'pricing';
+  if (path === '/about') return 'about';
   if (path === '/privacy') return 'privacy';
   if (path === '/terms') return 'terms';
   if (path === '/cookies') return 'cookies';
@@ -274,8 +313,128 @@ function Root() {
     return <Schools />;
   }
 
-  if (route === 'parents') {
-    return <ParentsLanding />;
+  // /parents is the PUBLIC family-plan marketing page. /parent (bare) is a
+  // legacy entry that quietly redirects to /parent/dashboard so any links in
+  // emails / bookmarks land somewhere sensible.
+  if (route === 'parents-marketing') {
+    return (
+      <ScopedErrorBoundary scope="parent">
+        <ParentProvider>
+          <React.Suspense fallback={<DemoLoader />}>
+            <ParentsLandingV2 />
+          </React.Suspense>
+        </ParentProvider>
+      </ScopedErrorBoundary>
+    );
+  }
+  if (route === 'parent-redirect') {
+    if (typeof window !== 'undefined') {
+      // Use replace so the back button doesn't bounce the user back to /parent.
+      window.location.replace('/parent/dashboard');
+    }
+    return <DemoLoader />;
+  }
+  // ── Parent subscription routes ──────────────────────────────────────────
+  if (route === 'parent-signup') {
+    return (
+      <ScopedErrorBoundary scope="parent">
+        <React.Suspense fallback={<DemoLoader />}>
+          <ParentSignup />
+        </React.Suspense>
+      </ScopedErrorBoundary>
+    );
+  }
+  if (route === 'parent-login') {
+    return (
+      <ScopedErrorBoundary scope="parent">
+        <React.Suspense fallback={<DemoLoader />}>
+          <ParentLogin />
+        </React.Suspense>
+      </ScopedErrorBoundary>
+    );
+  }
+  // ── Teacher auth routes ────────────────────────────────────────────────
+  if (route === 'teacher-signup') {
+    return (
+      <ScopedErrorBoundary scope="classmode">
+        <React.Suspense fallback={<DemoLoader />}>
+          <TeacherSignup />
+        </React.Suspense>
+      </ScopedErrorBoundary>
+    );
+  }
+  if (route === 'teacher-login') {
+    return (
+      <ScopedErrorBoundary scope="classmode">
+        <React.Suspense fallback={<DemoLoader />}>
+          <TeacherLogin />
+        </React.Suspense>
+      </ScopedErrorBoundary>
+    );
+  }
+  if (route === 'parent-dashboard') {
+    return (
+      <ScopedErrorBoundary scope="parent">
+        <ParentProvider>
+          <React.Suspense fallback={<DemoLoader />}>
+            <ParentDashboard />
+          </React.Suspense>
+        </ParentProvider>
+      </ScopedErrorBoundary>
+    );
+  }
+  if (route === 'parent-children') {
+    return (
+      <ScopedErrorBoundary scope="parent">
+        <ParentProvider>
+          <React.Suspense fallback={<DemoLoader />}>
+            <ParentChildren />
+          </React.Suspense>
+        </ParentProvider>
+      </ScopedErrorBoundary>
+    );
+  }
+  if (route === 'parent-billing') {
+    return (
+      <ScopedErrorBoundary scope="parent">
+        <ParentProvider>
+          <React.Suspense fallback={<DemoLoader />}>
+            <ParentBilling />
+          </React.Suspense>
+        </ParentProvider>
+      </ScopedErrorBoundary>
+    );
+  }
+  if (route === 'parent-account') {
+    return (
+      <ScopedErrorBoundary scope="parent">
+        <ParentProvider>
+          <React.Suspense fallback={<DemoLoader />}>
+            <ParentAccount />
+          </React.Suspense>
+        </ParentProvider>
+      </ScopedErrorBoundary>
+    );
+  }
+  if (route === 'parent-privacy') {
+    return (
+      <ScopedErrorBoundary scope="parent">
+        <React.Suspense fallback={<DemoLoader />}>
+          <ParentPrivacy />
+        </React.Suspense>
+      </ScopedErrorBoundary>
+    );
+  }
+  if (route === 'parent-subscribe') {
+    return (
+      <ScopedErrorBoundary scope="parent">
+        <ParentProvider>
+          <React.Suspense fallback={<DemoLoader />}>
+            <ParentSubscribe />
+          </React.Suspense>
+        </ParentProvider>
+      </ScopedErrorBoundary>
+    );
   }
 
   if (route === 'teachers') {
@@ -284,6 +443,10 @@ function Root() {
 
   if (route === 'pricing') {
     return <Pricing />;
+  }
+
+  if (route === 'about') {
+    return <About />;
   }
 
   if (route === 'privacy') {
@@ -363,10 +526,6 @@ function Root() {
 
   if (route === 'school') {
     return <SchoolPilot />;
-  }
-
-  if (route === 'parent') {
-    return <ParentAccess />;
   }
 
   // Growth Engine Pages
@@ -543,16 +702,22 @@ function Root() {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <KidStyles />
-    <AuthProvider>
-      <ErrorBoundary scope="boundary">
-        {/* Single top-level Suspense covers every lazy page (top-level + SEO
-            routes). Individual routes may still nest their own Suspense; that
-            is fine. DemoLoader is the shared, eagerly-loaded fallback. */}
-        <React.Suspense fallback={<DemoLoader />}>
-          <Root />
-        </React.Suspense>
-      </ErrorBoundary>
-    </AuthProvider>
+    {/* BrowserRouter is mounted at the root so parent pages can use
+        react-router-dom's <Link>/useNavigate. The legacy if-chain
+        router in <Root> stays the source of truth for which page to
+        render; BrowserRouter just provides the navigation context. */}
+    <BrowserRouter>
+      <AuthProvider>
+        <ErrorBoundary scope="boundary">
+          {/* Single top-level Suspense covers every lazy page (top-level + SEO
+              routes). Individual routes may still nest their own Suspense; that
+              is fine. DemoLoader is the shared, eagerly-loaded fallback. */}
+          <React.Suspense fallback={<DemoLoader />}>
+            <Root />
+          </React.Suspense>
+        </ErrorBoundary>
+      </AuthProvider>
+    </BrowserRouter>
   </StrictMode>,
 )
 

@@ -3,10 +3,11 @@ import { HeaderNav } from '../components/landing/HeaderNav';
 import { Footer } from '../components/landing/Footer';
 import { BackToTop } from '../components/landing/BackToTop';
 import '../components/landing/landing.css';
+import '../components/landing/landing-calm.css';
 
 export const Training: React.FC = () => {
   return (
-    <div className="landing-page">
+    <div className="lp-shell landing-page">
       <HeaderNav />
       <div className="landing-content-page">
         <section className="landing-section">
