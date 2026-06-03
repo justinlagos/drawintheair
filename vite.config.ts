@@ -39,10 +39,18 @@ export default defineConfig({
         // — Rollup only loads a vendor chunk when something needs it.
         manualChunks(id) {
           if (!id.includes('node_modules')) return undefined;
+          // Co-locate every library that captures React at module scope
+          // (e.g. react-helmet-async runs `B.version.split(...)` at the top
+          // level of its chunk). If React lives in a different chunk and the
+          // eval order races, we hit a temporal-dead-zone "Cannot access 'B'
+          // before initialization" runtime crash. Keeping these together
+          // guarantees they evaluate after React in the same module graph.
           if (
             id.includes('/react-dom/') ||
             id.includes('/react/') ||
             id.includes('react-router') ||
+            id.includes('react-helmet-async') ||
+            id.includes('use-sync-external-store') ||
             id.includes('scheduler')
           ) {
             return 'react-vendor';
@@ -50,7 +58,7 @@ export default defineConfig({
           if (id.includes('framer-motion')) return 'motion';
           if (id.includes('@sentry')) return 'sentry';
           if (id.includes('posthog')) return 'posthog';
-          // @mediapipe is intentionally NOT grouped here — it is loaded via
+          // @mediapipe is intentionally NOT grouped here. It is loaded via
           // dynamic import only on the trace/play pages, and Rollup's
           // automatic splitting already keeps it off the landing critical path.
           return 'vendor';
