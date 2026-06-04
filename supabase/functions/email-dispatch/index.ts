@@ -13,15 +13,15 @@
  *
  * Each send is recorded so no email is ever sent twice.
  *
- * Provider: Resend (https://resend.com). Requires secrets:
+ * Provider: Resend (https://resend.com). Requires secret:
  *   RESEND_API_KEY      re_...           (resend.com/api-keys)
- *   EMAIL_FROM          "Draw in the Air <hello@drawintheair.com>"
- *                       (domain must be verified in Resend)
- *   EMAIL_CRON_SECRET   shared secret; must equal app_private.secrets
- *                       row 'email_cron_key' (set by migration 0015)
+ * Optional:
+ *   EMAIL_FROM          defaults to "Draw in the Air <hello@drawintheair.com>"
  *
  * Auth: NOT user-JWT gated (cron has no user). Guarded by the
- * x-cron-key header instead.
+ * x-cron-key header, validated against app_private.secrets row
+ * 'email_cron_key' (created by migration 0015) via the service-role
+ * client, so no extra env secret is needed.
  */
 
 // @ts-ignore esm.sh URL imports are valid in Deno
@@ -100,23 +100,22 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
 Deno.serve(async (req: Request) => {
   const headers = { 'Content-Type': 'application/json' };
 
-  // Cron-key gate. Without the configured secret, refuse politely.
-  const expected = Deno.env.get('EMAIL_CRON_SECRET');
-  if (!expected) {
-    return new Response(JSON.stringify({ error: 'Email not configured: set EMAIL_CRON_SECRET and RESEND_API_KEY secrets.' }), { status: 503, headers });
-  }
-  if (req.headers.get('x-cron-key') !== expected) {
-    return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers });
-  }
-  if (!Deno.env.get('RESEND_API_KEY')) {
-    return new Response(JSON.stringify({ error: 'Email not configured: set RESEND_API_KEY secret.' }), { status: 503, headers });
-  }
-
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     { auth: { persistSession: false } },
   );
+
+  // Cron-key gate: validate the x-cron-key header against the value in
+  // app_private.secrets, read via the service-role-only RPC
+  // get_email_cron_key (migration 0016).
+  const { data: expected } = await supabase.rpc('get_email_cron_key');
+  if (!expected || req.headers.get('x-cron-key') !== expected) {
+    return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers });
+  }
+  if (!Deno.env.get('RESEND_API_KEY')) {
+    return new Response(JSON.stringify({ error: 'Email not configured: set RESEND_API_KEY secret.' }), { status: 503, headers });
+  }
 
   const { data: subs, error } = await supabase
     .from('parent_subscriptions')
