@@ -68,16 +68,21 @@ export default function TeacherLogin() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (loading) return; // double-submit guard
     setLoading(true);
     setError(null);
     const result = await signInWithEmail(email, password);
     setLoading(false);
     if (!result.ok) {
       logEvent('teacher_login_failed');
-      // Generic error to prevent email enumeration. Don't surface the raw
-      // Supabase error (which distinguishes "Email not confirmed" vs
-      // "Invalid login credentials" vs "User not found").
-      setError('That email and password did not match. Try again.');
+      // Generic error to prevent email enumeration, EXCEPT the unconfirmed-
+      // email case: that one needs an actionable message (the user holds
+      // valid credentials, so nothing is being enumerated).
+      setError(
+        result.error.toLowerCase().includes('confirm')
+          ? result.error
+          : 'That email and password did not match. Try again.',
+      );
       return;
     }
     logEvent('teacher_login_success');

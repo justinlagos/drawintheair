@@ -15,6 +15,7 @@ import {
   signUpWithEmail,
   signInWithGoogle,
   setRoleIntent,
+  resendConfirmation,
 } from '../../lib/supabase';
 import { recordConsent } from '../../lib/parentApi';
 import { logEvent } from '../../lib/analytics';
@@ -42,9 +43,18 @@ export default function ParentSignup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmEmail, setConfirmEmail] = useState(false);
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
+
+  async function handleResend() {
+    if (resendState === 'sending') return;
+    setResendState('sending');
+    const res = await resendConfirmation(email);
+    setResendState(res.ok ? 'sent' : 'failed');
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (loading) return; // double-submit guard
     if (!agreeTerms || !agreePrivacy) {
       setError('Please confirm the two consent boxes so we can create your account.');
       return;
@@ -180,9 +190,25 @@ export default function ParentSignup() {
                   to start your free trial.
                 </p>
                 <p className="auth-alt" style={{ marginTop: 16 }}>
-                  Didn't get it? Check your spam folder, or try again in a few minutes.
+                  Didn't get it? Check your spam folder first.
                 </p>
-                <Link to="/parent/login" className="btn btn-primary btn-lg btn-block" style={{ marginTop: 16 }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-block"
+                  style={{ marginTop: 12 }}
+                  disabled={resendState === 'sending' || resendState === 'sent'}
+                  onClick={handleResend}
+                >
+                  {resendState === 'sending' ? 'Sending...'
+                    : resendState === 'sent' ? 'Confirmation email re-sent'
+                    : 'Resend confirmation email'}
+                </button>
+                {resendState === 'failed' && (
+                  <p className="form-error" role="alert" style={{ marginTop: 10 }}>
+                    We couldn't resend it just now. Please wait a little while and try again.
+                  </p>
+                )}
+                <Link to="/parent/login" className="btn btn-primary btn-lg btn-block" style={{ marginTop: 12 }}>
                   Go to sign in
                 </Link>
               </section>

@@ -68,16 +68,21 @@ export default function ParentLogin() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (loading) return; // double-submit guard
     setLoading(true);
     setError(null);
     const result = await signInWithEmail(email, password);
     setLoading(false);
     if (!result.ok) {
       logEvent('parent_login_failed');
-      // Generic error to prevent email enumeration. The raw Supabase error
-      // distinguishes "Email not confirmed" vs "Invalid login credentials"
-      // vs "User not found", surface only a unified message.
-      setError('That email and password did not match. Try again.');
+      // Generic error to prevent email enumeration, EXCEPT the unconfirmed-
+      // email case: that one needs an actionable message (the user holds
+      // valid credentials, so nothing is being enumerated).
+      setError(
+        result.error.toLowerCase().includes('confirm')
+          ? result.error
+          : 'That email and password did not match. Try again.',
+      );
       return;
     }
     logEvent('parent_login_success');

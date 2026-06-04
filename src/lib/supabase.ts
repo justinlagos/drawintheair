@@ -262,10 +262,20 @@ export function friendlyAuthError(
   const code = (json?.error_code || json?.code || '').toString().toLowerCase();
   const lower = raw.toLowerCase();
 
-  // Rate limiting (HTTP 429, or GoTrue's over_email_send_rate_limit /
-  // over_request_rate_limit codes, or the bare message).
+  // Email-send rate limiting. This is a SERVER-side budget (Supabase's
+  // built-in mail service allows only a couple of emails per hour until
+  // custom SMTP is configured), not the user clicking too much. Say so
+  // honestly instead of blaming the user.
+  if (code === 'over_email_send_rate_limit' || lower.includes('email rate limit')) {
+    return 'We can’t send another sign-up email just yet because of a temporary sending limit on our side. Please try again in about an hour — or sign in if your account was already created.';
+  }
+  // General request rate limiting (HTTP 429, over_request_rate_limit).
   if (status === 429 || code.includes('rate_limit') || lower.includes('rate limit')) {
     return 'Too many attempts. Please wait a few minutes and try again.';
+  }
+  // Unconfirmed email trying to sign in — a dead end unless we say what to do.
+  if (code === 'email_not_confirmed' || lower.includes('email not confirmed')) {
+    return 'Your email isn’t confirmed yet. Tap the link in your confirmation email first — or use “Resend confirmation” if it never arrived.';
   }
   // Duplicate account.
   if (code === 'user_already_exists' || lower.includes('already registered') || lower.includes('already been registered')) {
@@ -491,6 +501,24 @@ export async function updatePassword(newPassword: string): Promise<AuthResult> {
     }
     clearPendingRecovery();
     return { ok: true, user: (json as SupabaseUser) ?? currentSession.user };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+/** Re-send the signup confirmation email (GoTrue /resend). */
+export async function resendConfirmation(email: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/resend`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'signup', email: email.trim() }),
+    });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      return { ok: false, error: friendlyAuthError(res.status, json, 'Could not resend the email.') };
+    }
+    return { ok: true };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }

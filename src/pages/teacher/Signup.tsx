@@ -12,7 +12,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { BrandLogo } from '../../components/BrandLogo';
 import { I } from '../parent/_shared';
-import { signInWithGoogle, setRoleIntent } from '../../lib/supabase';
+import { signInWithGoogle, setRoleIntent, resendConfirmation } from '../../lib/supabase';
 import { signUpTeacher } from '../../lib/teacherApi';
 import { logEvent } from '../../lib/analytics';
 import '../parent/parent.css';
@@ -28,9 +28,18 @@ export default function TeacherSignup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmEmail, setConfirmEmail] = useState(false);
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
+
+  async function handleResend() {
+    if (resendState === 'sending') return;
+    setResendState('sending');
+    const res = await resendConfirmation(email);
+    setResendState(res.ok ? 'sent' : 'failed');
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (loading) return; // double-submit guard
     if (!agreeTerms) {
       setError('Please confirm the consent box so we can create your account.');
       return;
@@ -122,9 +131,25 @@ export default function TeacherSignup() {
                   to open your classroom.
                 </p>
                 <p className="auth-alt" style={{ marginTop: 16 }}>
-                  Didn't get it? Check your spam folder, or try again in a few minutes.
+                  Didn't get it? Check your spam folder first.
                 </p>
-                <Link to="/teacher/login" className="btn btn-primary btn-lg btn-block" style={{ marginTop: 16 }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-block"
+                  style={{ marginTop: 12 }}
+                  disabled={resendState === 'sending' || resendState === 'sent'}
+                  onClick={handleResend}
+                >
+                  {resendState === 'sending' ? 'Sending...'
+                    : resendState === 'sent' ? 'Confirmation email re-sent'
+                    : 'Resend confirmation email'}
+                </button>
+                {resendState === 'failed' && (
+                  <p className="form-error" role="alert" style={{ marginTop: 10 }}>
+                    We couldn't resend it just now. Please wait a little while and try again.
+                  </p>
+                )}
+                <Link to="/teacher/login" className="btn btn-primary btn-lg btn-block" style={{ marginTop: 12 }}>
                   Go to sign in
                 </Link>
               </section>
