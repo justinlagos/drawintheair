@@ -1,5 +1,5 @@
 /**
- * KidBadge — reward indicator: star, medal, coin, shield.
+ * KidBadge, reward indicator: star, medal, coin, shield.
  *
  * Spec: Sunshine, Deep Plum, Coral, Aqua tones. Soft 2.5D feel.
  * Use for level rewards, achievements, sticker spots.

@@ -76,7 +76,7 @@ export function useVisionLoop({
                 noteTwoHandsSeen();
             }
 
-            // Deliver results immediately — hot path, no state update
+            // Deliver results immediately, hot path, no state update
             onResultsRef.current({ handLandmarkerResult: result, timestamp: loopStart });
             frameCountRef.current++;
         }
@@ -135,7 +135,7 @@ export function useVisionLoop({
             lastFpsReportRef.current = loopStart;
         }
 
-        // Schedule next tick — account for time spent in detection
+        // Schedule next tick, account for time spent in detection
         const elapsed2 = Date.now() - loopStart;
         const nextDelay = Math.max(0, TARGET_INTERVAL_MS - elapsed2);
         timerRef.current = setTimeout(runLoop, nextDelay);

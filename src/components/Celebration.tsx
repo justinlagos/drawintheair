@@ -1,5 +1,5 @@
 /**
- * Celebration 2.0 — Bright-sky three-act reward overlay.
+ * Celebration 2.0, Bright-sky three-act reward overlay.
  *
  * Three acts, choreographed across `duration`:
  *   1. Build-up   (0-15%): scrim fades in, hero icon flies up
@@ -7,7 +7,7 @@
  *                           ascending arpeggio fanfare
  *   3. Wind-down  (50-100%): everything holds, then auto-dismisses cleanly
  *
- * Backwards-compatible API — every existing prop on the v1 Celebration
+ * Backwards-compatible API, every existing prop on the v1 Celebration
  * still works. New `stars` prop adds 1-3 star earn animation.
  *
  * Performance:
@@ -50,7 +50,7 @@ interface StaticParticle {
     rotation: number;
 }
 
-// Bright-sky confetti — drawn from the kid-bright palette, not the neon v1 set.
+// Bright-sky confetti, drawn from the kid-bright palette, not the neon v1 set.
 const CONFETTI_COLORS = [
     tokens.colors.sunshine,
     tokens.colors.coral,
@@ -97,7 +97,7 @@ const playArpeggio = () => {
             osc.stop(t0 + 0.5);
         });
 
-        // Final shimmer — brief high G to crown the chord
+        // Final shimmer, brief high G to crown the chord
         const shimmer = ctx.createOscillator();
         const sgain = ctx.createGain();
         shimmer.connect(sgain);
@@ -111,7 +111,7 @@ const playArpeggio = () => {
         shimmer.start(sStart);
         shimmer.stop(sStart + 0.65);
     } catch {
-        // Audio not supported — silent fallback
+        // Audio not supported, silent fallback
     }
 };
 
@@ -168,7 +168,7 @@ export const Celebration = ({
     // Consolidated so there's only one source of truth for show transitions.
     useEffect(() => {
         if (show) {
-            // Synchronizing visible with show — intentional state follow.
+            // Synchronizing visible with show, intentional state follow.
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setVisible(true);
 
@@ -181,7 +181,7 @@ export const Celebration = ({
                 );
             }
 
-            // Auto-dismiss timer — fires onComplete and hides the overlay.
+            // Auto-dismiss timer, fires onComplete and hides the overlay.
             timerRef.current = window.setTimeout(() => {
                 setVisible(false);
                 onCompleteRef.current?.();
@@ -193,7 +193,7 @@ export const Celebration = ({
             };
         }
 
-        // show flipped false — parent dismissed externally. Cancel any
+        // show flipped false, parent dismissed externally. Cancel any
         // pending timers and hide the overlay so the popup doesn't persist
         // (the Batch 1 bug fix preserved here).
         if (timerRef.current) clearTimeout(timerRef.current);
@@ -259,7 +259,7 @@ export const Celebration = ({
                 pointerEvents: 'none',
             }}
         >
-            {/* Sky-tint scrim — soft, not heavy. Fades in during build-up. */}
+            {/* Sky-tint scrim, soft, not heavy. Fades in during build-up. */}
             <div
                 style={{
                     position: 'absolute',
@@ -269,7 +269,7 @@ export const Celebration = ({
                 }}
             />
 
-            {/* Confetti — climax timing, runs through wind-down */}
+            {/* Confetti, climax timing, runs through wind-down */}
             {showConfetti && !reduced && particles.map((p, i) => (
                 <div
                     key={i}

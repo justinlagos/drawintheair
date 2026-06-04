@@ -1,26 +1,32 @@
 /* =====================================================================
    /transparency - public trust, safety and learning quality page
    Human-first redesign. Warm, calm, parent-friendly.
+   Aligned 2026-06 with the Calm design system (landing-calm.css):
+   cream paper, lavender accent, Outfit display + Nunito body.
    No em dashes anywhere on this page.
    ===================================================================== */
 
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700&display=swap');
+
 .tx-shell {
-    --plum: #6C3FA4;
-    --plum-soft: rgba(108, 63, 164, 0.08);
-    --aqua: #55DDE0;
-    --good: #1f7a3a;
-    --warm: #FFB14D;
-    --bad: #C13A3A;
-    --paper: #FAF7FF;
-    --paper-2: #F3EFFA;
+    /* --plum kept as the variable name to avoid touching every rule;
+       its VALUE is now the Calm lavender accent. */
+    --plum: #8A66F0;
+    --plum-soft: rgba(138, 102, 240, 0.10);
+    --aqua: #5A99F2;
+    --good: #2E9D68;
+    --warm: #F0AC1F;
+    --bad: #D85E40;
+    --paper: #FFFDF7;
+    --paper-2: #F4EFFF;
     --card: #FFFFFF;
-    --line: rgba(63, 64, 82, 0.10);
-    --ink: #1A1B2E;
+    --line: rgba(31, 27, 46, 0.10);
+    --ink: #1F1B2E;
     --flat: #4F5168;
     --flat-soft: #7D7F95;
     min-height: 100vh;
     background:
-        radial-gradient(1200px 600px at 50% -10%, rgba(108, 63, 164, 0.08), transparent 60%),
+        radial-gradient(1200px 600px at 50% -10%, rgba(138, 102, 240, 0.10), transparent 60%),
         var(--paper);
     color: var(--ink);
     font: 16px/1.6 Nunito, system-ui, sans-serif;
@@ -71,7 +77,7 @@
 }
 .tx-hero h1 {
     margin: 0 0 18px;
-    font: 700 44px/1.1 Fredoka, system-ui, sans-serif;
+    font: 700 44px/1.1 Outfit, system-ui, sans-serif;
     letter-spacing: -0.015em;
     color: var(--ink);
 }
@@ -104,7 +110,7 @@
     margin-top: 2px;
 }
 .tx-badge-title {
-    font: 700 14px Fredoka, system-ui, sans-serif;
+    font: 700 14px Outfit, system-ui, sans-serif;
     color: var(--ink);
     margin-bottom: 4px;
 }
@@ -135,7 +141,7 @@
 .tx-explainer { margin-bottom: 28px; }
 .tx-explainer-title {
     margin: 0 0 16px;
-    font: 700 24px Fredoka, system-ui, sans-serif;
+    font: 700 24px Outfit, system-ui, sans-serif;
     color: var(--ink);
 }
 .tx-explainer-grid {
@@ -156,7 +162,7 @@
     margin-bottom: 10px;
 }
 .tx-explainer-card-title {
-    font: 700 15px Fredoka, system-ui, sans-serif;
+    font: 700 15px Outfit, system-ui, sans-serif;
     color: var(--ink);
     margin-bottom: 6px;
     line-height: 1.35;
@@ -178,12 +184,12 @@
 }
 .tx-card h2 {
     margin: 0 0 8px;
-    font: 700 26px Fredoka, system-ui, sans-serif;
+    font: 700 26px Outfit, system-ui, sans-serif;
     color: var(--ink);
 }
 .tx-card h3 {
     margin: 22px 0 8px;
-    font: 700 16px Fredoka, system-ui, sans-serif;
+    font: 700 16px Outfit, system-ui, sans-serif;
     color: var(--ink);
 }
 .tx-card-sub {
@@ -226,7 +232,7 @@
 }
 .tx-legend-pct {
     margin-left: auto;
-    font: 700 17px Fredoka, system-ui, sans-serif;
+    font: 700 17px Outfit, system-ui, sans-serif;
     color: var(--ink);
 }
 .tx-legend-note {
@@ -256,7 +262,7 @@
     margin-bottom: 8px;
 }
 .tx-insight-headline {
-    font: 700 16px/1.4 Fredoka, system-ui, sans-serif;
+    font: 700 16px/1.4 Outfit, system-ui, sans-serif;
     color: var(--ink);
     margin-bottom: 8px;
 }
@@ -279,7 +285,7 @@
     padding: 20px 18px;
 }
 .tx-impact-value {
-    font: 700 36px Fredoka, system-ui, sans-serif;
+    font: 700 36px Outfit, system-ui, sans-serif;
     color: var(--plum);
     line-height: 1;
     letter-spacing: -0.01em;
@@ -317,7 +323,7 @@
     margin-bottom: 10px;
 }
 .tx-privacy-title {
-    font: 700 14.5px Fredoka, system-ui, sans-serif;
+    font: 700 14.5px Outfit, system-ui, sans-serif;
     color: var(--ink);
     margin-bottom: 6px;
 }
@@ -333,7 +339,7 @@
     border-color: rgba(108, 63, 164, 0.16);
 }
 .tx-philosophy-lede {
-    font: 600 18px/1.55 Fredoka, system-ui, sans-serif;
+    font: 600 18px/1.55 Outfit, system-ui, sans-serif;
     color: var(--ink);
     margin: 0 0 14px;
 }
@@ -359,7 +365,7 @@
     display: flex; flex-direction: column; gap: 4px;
 }
 .tx-global-stat strong {
-    font: 700 28px Fredoka, system-ui, sans-serif;
+    font: 700 28px Outfit, system-ui, sans-serif;
     color: var(--plum);
     line-height: 1;
 }

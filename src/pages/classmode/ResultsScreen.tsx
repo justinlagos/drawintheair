@@ -1,5 +1,5 @@
 /**
- * Results Screen — shown after each round.
+ * Results Screen, shown after each round.
  * Podium for top 3, round stats, and next actions.
  */
 
@@ -134,7 +134,7 @@ export default function ResultsScreen() {
       <div className="cm-topbar">
         <div className="cm-topbar-left">
           <span className="cm-topbar-title">
-            {modeLabel?.icon} {modeLabel?.title} — Round {session.round} Results
+            {modeLabel?.icon} {modeLabel?.title}, Round {session.round} Results
           </span>
         </div>
       </div>

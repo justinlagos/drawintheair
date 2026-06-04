@@ -50,7 +50,7 @@ export const CTASection: React.FC<CTASectionProps> = ({ onGetSchoolPack }) => {
                 window.location.pathname = '/play';
               }}
             >
-              Start Free — No Signup
+              Start Free, No Signup
             </a>
             <a 
               href="/schools"

@@ -1,11 +1,18 @@
 // src/pages/seo/SeoLayout.tsx
 // Shared layout for all SEO content pages.
-// Migrated May 2026 — light premium theme + new brand logo.
+// Rebuilt June 2026 on the Calm design system (landing-calm.css):
+// lp-shell + HeaderNav + CalmFooter. The internal SEO link hub
+// (A-Z trace links, activities, learning links) is preserved as a
+// Calm-styled tinted section above the footer because those links
+// carry SEO value. The exported helpers (navigate, Breadcrumb,
+// FAQItem, PageHero, Section) keep identical signatures so all
+// consuming pages work without edits.
 
 import React, { useState } from 'react';
-import './seo-theme.css';
 import { SITE } from '../../seo/seo-config';
-import { BrandLogo } from '../../components/BrandLogo';
+import { HeaderNav } from '../../components/landing/HeaderNav';
+import { CalmFooter } from '../Landing';
+import '../../components/landing/landing-calm.css';
 
 // ─── Navigation ─────────────────────────────────────────────────────────────
 
@@ -14,16 +21,7 @@ export function navigate(path: string) {
   window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
-const NAV_LINKS = [
-  { label: 'Home',          path: '/' },
-  { label: 'Letter Tracing',path: '/letter-tracing' },
-  { label: 'Activities',    path: '/activities/bubble-pop' },
-  { label: 'For Parents',   path: '/for-parents' },
-  { label: 'For Teachers',  path: '/for-teachers' },
-  { label: 'Learn',         path: '/learn' },
-];
-
-const FOOTER_COLS = [
+const LINK_HUB_COLS = [
   {
     title: 'Trace Letters',
     links: 'ABCDEFGHIJKLM'.split('').map(l => ({ label: `Trace ${l}`, path: `/trace-${l.toLowerCase()}` })),
@@ -59,6 +57,16 @@ const FOOTER_COLS = [
       { label: 'Free Resources',  path: '/free-resources' },
     ],
   },
+  {
+    title: 'More',
+    links: [
+      { label: 'Embed Widget',    path: '/embed' },
+      { label: 'Press Kit',       path: '/press' },
+      { label: 'Free Resources',  path: '/free-resources' },
+      { label: 'AI for Kids',     path: '/learn/ai-for-kids' },
+      { label: 'Privacy Policy',  path: '/privacy' },
+    ],
+  },
 ];
 
 // ─── SeoLayout ───────────────────────────────────────────────────────────────
@@ -68,152 +76,67 @@ interface SeoLayoutProps {
 }
 
 export function SeoLayout({ children }: SeoLayoutProps) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-
   return (
-    <div
-      className="seo-root"
-      data-seo-theme="light"
-      aria-label="Draw in the Air"
-    >
-      {/* ── NAVIGATION ── */}
-      <header className="seo-nav">
-        <div className="seo-nav-inner">
-          {/* Logo */}
-          <button className="seo-nav-logo" onClick={() => navigate('/')} aria-label="Go to homepage">
-            <BrandLogo variant="header" />
-          </button>
-
-          {/* Desktop links */}
-          <nav className="seo-nav-links" aria-label="Main navigation">
-            {NAV_LINKS.map(link => (
-              <button
-                key={link.path}
-                className="seo-nav-link"
-                onClick={() => navigate(link.path)}
-              >
-                {link.label}
-              </button>
-            ))}
-          </nav>
-
-          {/* Actions */}
-          <div className="seo-nav-actions">
-            <button className="seo-btn-cta" onClick={() => navigate(SITE.appPath)}>
-              Try Free ✨
-            </button>
-            {/* Hamburger */}
-            <button
-              className="seo-hamburger"
-              onClick={() => setMobileOpen(o => !o)}
-              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={mobileOpen}
-            >
-              <span />
-              <span />
-              <span />
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile menu */}
-        {mobileOpen && (
-          <nav className="seo-mobile-menu" aria-label="Mobile navigation">
-            {NAV_LINKS.map(link => (
-              <button
-                key={link.path}
-                className="seo-mobile-link"
-                onClick={() => { navigate(link.path); setMobileOpen(false); }}
-              >
-                {link.label}
-              </button>
-            ))}
-            <button
-              className="seo-mobile-cta"
-              onClick={() => { navigate(SITE.appPath); setMobileOpen(false); }}
-            >
-              Try Free ✨
-            </button>
-          </nav>
-        )}
-      </header>
+    <div className="lp-shell" aria-label="Draw in the Air">
+      <HeaderNav />
 
       {/* ── MAIN CONTENT ── */}
-      <main>
+      <main className="page">
         {children}
+
+        {/* ── CTA BAND ── */}
+        <section className="section section-stage">
+          <div className="wrap">
+            <div className="cta-banner">
+              <h2 className="h2">Ready to Draw in the Air?</h2>
+              <p className="lead">Free, no download, no account. Just open your browser and start drawing!</p>
+              <div className="cta-actions">
+                <button className="btn btn-secondary lg" onClick={() => navigate(SITE.appPath)}>
+                  Start Drawing, It's Free ✨
+                </button>
+              </div>
+              <p style={{ marginTop: 18, marginBottom: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.78)', fontWeight: 600 }}>
+                No download · No login · Works on any laptop with a camera
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── SEO LINK HUB, internal links carry SEO value ── */}
+        <section className="section section-tint" aria-label="Explore Draw in the Air" style={{ paddingTop: 'clamp(40px, 6vw, 64px)', paddingBottom: 'clamp(40px, 6vw, 64px)' }}>
+          <div className="wrap">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 24 }}>
+              {LINK_HUB_COLS.map((col, i) => (
+                <div key={i}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--lavender-700, #5C3FB0)', marginBottom: 12 }}>
+                    {col.title}
+                  </div>
+                  <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                    {col.links.map(link => (
+                      <li key={link.path} style={{ marginBottom: 7 }}>
+                        <button
+                          className="seo-hub-link"
+                          style={{ padding: 0, fontSize: '0.85rem', color: 'var(--ink-700, #3A3450)', opacity: 0.85, textAlign: 'left' }}
+                          onClick={() => navigate(link.path)}
+                        >
+                          {link.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+          <style>{`
+            .lp-shell .seo-hub-link { transition: color 160ms ease, opacity 160ms ease; }
+            .lp-shell .seo-hub-link:hover { color: var(--lavender-600, #7350D8); opacity: 1; }
+          `}</style>
+        </section>
       </main>
 
-      {/* ── CTA BAND ── */}
-      <section className="seo-cta-band">
-        <div className="seo-cta-band-inner">
-          <BrandLogo
-            variant="hero"
-            height={72}
-            raster
-            style={{ margin: '0 auto 14px' }}
-          />
-          <h2>Ready to Draw in the Air?</h2>
-          <p>Free, no download, no account. Just open your browser and start drawing!</p>
-          <button className="seo-cta-band-btn" onClick={() => navigate(SITE.appPath)}>
-            Start Drawing — It's Free ✨
-          </button>
-          <div className="seo-cta-band-note">
-            No download · No login · Works on any laptop with a camera
-          </div>
-        </div>
-      </section>
-
       {/* ── FOOTER ── */}
-      <footer className="seo-footer">
-        <div className="seo-footer-grid">
-          {FOOTER_COLS.map((col, i) => (
-            <div key={i}>
-              <div className="seo-footer-col-title">{col.title}</div>
-              <ul className="seo-footer-list">
-                {col.links.map(link => (
-                  <li key={link.path}>
-                    <button className="seo-footer-link" onClick={() => navigate(link.path)}>
-                      {link.label}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-          {/* More */}
-          <div>
-            <div className="seo-footer-col-title">More</div>
-            <ul className="seo-footer-list">
-              {[
-                { label: 'Embed Widget',    path: '/embed' },
-                { label: 'Press Kit',       path: '/press' },
-                { label: 'Free Resources',  path: '/free-resources' },
-                { label: 'AI for Kids',     path: '/learn/ai-for-kids' },
-                { label: 'Privacy Policy',  path: '/privacy' },
-              ].map(link => (
-                <li key={link.path}>
-                  <button className="seo-footer-link" onClick={() => navigate(link.path)}>
-                    {link.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        <div className="seo-footer-bottom">
-          <div className="seo-footer-copy">
-            © {new Date().getFullYear()} Draw in the Air. Free for families and classrooms everywhere.
-          </div>
-          <div className="seo-footer-legal">
-            {['/privacy', '/terms', '/cookies', '/safeguarding'].map(path => (
-              <button key={path} className="seo-footer-link" onClick={() => navigate(path)}>
-                {path.slice(1).replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-              </button>
-            ))}
-          </div>
-        </div>
-      </footer>
+      <CalmFooter />
     </div>
   );
 }
@@ -225,22 +148,22 @@ interface BreadcrumbProps {
 }
 export function Breadcrumb({ items }: BreadcrumbProps) {
   return (
-    <nav className="seo-breadcrumb" aria-label="Breadcrumb">
-      <ol className="seo-breadcrumb-list">
+    <nav aria-label="Breadcrumb" style={{ padding: '18px 0 0' }}>
+      <ol style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, listStyle: 'none', margin: 0, padding: 0, fontSize: '0.82rem' }}>
         {items.map((item, i) => (
           <React.Fragment key={i}>
-            {i > 0 && <li className="seo-breadcrumb-sep" aria-hidden>›</li>}
+            {i > 0 && <li aria-hidden style={{ color: 'var(--ink-400, #908AA3)' }}>›</li>}
             <li>
               {item.path
                 ? (
                   <button
-                    className="seo-breadcrumb-link"
                     onClick={() => navigate(item.path!)}
+                    style={{ padding: 0, fontSize: 'inherit', fontWeight: 600, color: 'var(--lavender-700, #5C3FB0)' }}
                   >
                     {item.label}
                   </button>
                 )
-                : <span className="seo-breadcrumb-current">{item.label}</span>
+                : <span style={{ color: 'var(--ink-500, #6B6580)', fontWeight: 600 }}>{item.label}</span>
               }
             </li>
           </React.Fragment>
@@ -254,16 +177,17 @@ interface FAQItemProps { q: string; a: string }
 export function FAQItem({ q, a }: FAQItemProps) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="seo-faq-item">
+    <div className={`faq-item ${open ? 'open' : ''}`} style={{ marginBottom: 12 }}>
       <button
-        className="seo-faq-btn"
+        type="button"
+        className="faq-q"
         onClick={() => setOpen(!open)}
         aria-expanded={open}
       >
         <span>{q}</span>
-        <span className="seo-faq-toggle" aria-hidden>{open ? '−' : '+'}</span>
+        <span className="faq-icon" aria-hidden>+</span>
       </button>
-      {open && <p className="seo-faq-answer">{a}</p>}
+      <div className="faq-a-wrap"><div className="faq-a"><p>{a}</p></div></div>
     </div>
   );
 }
@@ -277,19 +201,29 @@ interface PageHeroProps {
 }
 export function PageHero({ badge, title, subtitle, emoji, cta }: PageHeroProps) {
   return (
-    <div className="seo-hero">
-      <div className="seo-hero-inner">
-        {badge && <div className="seo-hero-badge">{badge}</div>}
-        {emoji && <span className="seo-hero-emoji">{emoji}</span>}
-        <h1 className="seo-hero-title">{title}</h1>
-        <p className={`seo-hero-subtitle${cta ? ' has-cta' : ''}`}>{subtitle}</p>
-        {cta && (
-          <button className="seo-hero-cta" onClick={() => navigate(cta.path)}>
-            {cta.label}
-          </button>
-        )}
+    <section className="hero" style={{ paddingBottom: 24 }}>
+      <div className="hero-orb" />
+      <div className="wrap">
+        <div className="sec-head" style={{ marginBottom: 0 }}>
+          {badge && (
+            <div className="eyebrow" style={{ justifyContent: 'center' }}>
+              {emoji ? <span className="ic-chip" aria-hidden="true">{emoji}</span> : <span className="dot" />}
+              {badge}
+            </div>
+          )}
+          {!badge && emoji && <div style={{ fontSize: '2.4rem' }} aria-hidden="true">{emoji}</div>}
+          <h1 className="h1" style={{ marginTop: 18, fontSize: 'clamp(34px, 5vw, 60px)' }}>{title}</h1>
+          <p className="lead" style={{ marginTop: 16 }}>{subtitle}</p>
+          {cta && (
+            <div className="cta-actions" style={{ justifyContent: 'center', marginTop: 28, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <button className="btn btn-primary lg" onClick={() => navigate(cta.path)}>
+                {cta.label}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -300,8 +234,11 @@ interface SectionProps {
 }
 export function Section({ children, light, className = '' }: SectionProps) {
   return (
-    <section className={`seo-section${light ? ' seo-section-light' : ''} ${className}`.trim()}>
-      <div className="seo-section-inner">
+    <section
+      className={`section${light ? ' section-tint' : ''} ${className}`.trim()}
+      style={{ paddingTop: 'clamp(44px, 6vw, 72px)', paddingBottom: 'clamp(44px, 6vw, 72px)' }}
+    >
+      <div className="wrap" style={{ maxWidth: 980 }}>
         {children}
       </div>
     </section>

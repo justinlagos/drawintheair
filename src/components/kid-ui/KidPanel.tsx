@@ -1,5 +1,5 @@
 /**
- * KidPanel — soft, tactile rounded card.
+ * KidPanel, soft, tactile rounded card.
  *
  * Used for HUDs, instruction surfaces, generic content containers.
  * Spec: 24-36px radius, soft shadow, generous padding, optional sky tint.

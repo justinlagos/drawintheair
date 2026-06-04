@@ -1,5 +1,5 @@
 /**
- * Shape illustrations — circle, oval, square, rectangle, triangle, star,
+ * Shape illustrations, circle, oval, square, rectangle, triangle, star,
  * heart, diamond. Used by Sort & Place "Curved vs Straight" stage.
  *
  * Each shape:

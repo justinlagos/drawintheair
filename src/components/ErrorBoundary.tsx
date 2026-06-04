@@ -2,12 +2,12 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { captureError, type CaptureErrorOptions } from '../lib/observability';
 
 /**
- * ErrorBoundary — top-level safety net.
+ * ErrorBoundary, top-level safety net.
  *
  * Wraps a subtree, catches render-time errors, reports them through
  * the observability layer (Sentry + in-memory health registry), and
  * shows a friendly fallback. NEVER shows stack traces, error
- * messages, or anything technical — this is a child-facing surface.
+ * messages, or anything technical, this is a child-facing surface.
  *
  * Use the `scope` prop to tell observability which subsystem
  * crashed. Useful scopes: 'camera', 'tracker', 'gamemode',
@@ -22,7 +22,7 @@ interface ErrorBoundaryProps {
     scope?: NonNullable<CaptureErrorOptions['scope']>;
     /** Optional callback that fires after the error has been reported. */
     onError?: (error: Error, errorInfo: ErrorInfo) => void;
-    /** Friendly message override — keep it warm, never technical. */
+    /** Friendly message override, keep it warm, never technical. */
     message?: string;
 }
 
@@ -42,7 +42,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     }
 
     componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-        // Console log preserved for local dev — Sentry handles prod.
+        // Console log preserved for local dev, Sentry handles prod.
         console.error('Draw in the Air ErrorBoundary:', error, errorInfo);
 
         // Report through the observability layer. The scope tag lets us

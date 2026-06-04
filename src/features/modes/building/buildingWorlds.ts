@@ -1,11 +1,11 @@
 /**
- * Building Mode — world + object catalogue.
+ * Building Mode, world + object catalogue.
  *
  * Phase 0 ships one object: the Flower Vase in Guided mode.
  *
  * Holding state: pieces use the AI-generated clay sprites (alpha-
  * matted via rembg). These come from independent renders so they
- * don't share perspective/lighting — that's the open visual debt
+ * don't share perspective/lighting, that's the open visual debt
  * tracked in /docs/BUILDING_MODE_ROADMAP.md. When the proper master
  * image lands (single source rendered in one scene), we will move
  * back to a master-and-slice approach so pieces reconstruct one

@@ -5,7 +5,7 @@
  * sign-in card on the right. Matches the zip design directly.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -15,7 +15,11 @@ import {
   signInWithEmail,
   signInWithGoogle,
   requestPasswordReset,
+  hasPendingRecovery,
+  updatePassword,
+  setRoleIntent,
 } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 import { logEvent } from '../../lib/analytics';
 import './parent.css';
 
@@ -31,6 +35,7 @@ export default function ParentLogin() {
       ? rawNext
       : '/parent/dashboard';
 
+  const { user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -38,6 +43,28 @@ export default function ParentLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resetSent, setResetSent] = useState(false);
+
+  // Password recovery: the email link signs the user in silently and lands
+  // here. Show a set-new-password card instead of the sign-in form.
+  const [recoveryMode, setRecoveryMode] = useState(hasPendingRecovery());
+  const [newPw, setNewPw] = useState('');
+  const [newPw2, setNewPw2] = useState('');
+  useEffect(() => {
+    if (hasPendingRecovery()) setRecoveryMode(true);
+  }, [user]);
+
+  async function handleSetNewPassword(e: FormEvent) {
+    e.preventDefault();
+    if (newPw.length < 8) { setError('Please use at least 8 characters for your new password.'); return; }
+    if (newPw !== newPw2) { setError('Those passwords do not match. Try again.'); return; }
+    setLoading(true);
+    setError(null);
+    const result = await updatePassword(newPw);
+    setLoading(false);
+    if (!result.ok) { setError(result.error); return; }
+    logEvent('parent_password_reset_completed');
+    navigate(next);
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -160,6 +187,47 @@ export default function ParentLogin() {
 
           {/* ── Right form ─────────────────────────────────────────── */}
           <main className="auth-form-col">
+            {recoveryMode ? (
+            <section className="auth-card pop">
+              <h2>Set a new password</h2>
+              <p style={{ marginTop: 6 }}>
+                You're signed in from your reset link{user?.email ? <> as <strong>{user.email}</strong></> : null}.
+                Choose a new password to finish.
+              </p>
+              <form onSubmit={handleSetNewPassword} className="stack">
+                <div>
+                  <label className="flabel" htmlFor="pa-reset-pw">New password</label>
+                  <input
+                    id="pa-reset-pw"
+                    className="input"
+                    type="password"
+                    required
+                    value={newPw}
+                    autoComplete="new-password"
+                    placeholder="At least 8 characters"
+                    onChange={(e) => setNewPw(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="flabel" htmlFor="pa-reset-pw2">Repeat new password</label>
+                  <input
+                    id="pa-reset-pw2"
+                    className="input"
+                    type="password"
+                    required
+                    value={newPw2}
+                    autoComplete="new-password"
+                    placeholder="Same password again"
+                    onChange={(e) => setNewPw2(e.target.value)}
+                  />
+                </div>
+                {error && <p className="form-error" role="alert">{error}</p>}
+                <button type="submit" disabled={loading} className="btn btn-primary btn-lg btn-block">
+                  {loading ? 'Saving...' : 'Save new password'}
+                </button>
+              </form>
+            </section>
+            ) : (
             <section className="auth-card pop">
               <h2>Sign in to your account</h2>
               <form onSubmit={handleSubmit} className="stack">
@@ -236,7 +304,7 @@ export default function ParentLogin() {
 
                 <button
                   type="button"
-                  onClick={() => signInWithGoogle(next)}
+                  onClick={() => { setRoleIntent('parent'); signInWithGoogle(next); }}
                   className="btn-google"
                 >
                   <I.Google size={18} /> Continue with Google
@@ -247,6 +315,7 @@ export default function ParentLogin() {
                 </p>
               </form>
             </section>
+            )}
           </main>
         </div>
       </div>

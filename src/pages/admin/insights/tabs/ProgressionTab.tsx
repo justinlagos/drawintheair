@@ -1,16 +1,16 @@
 /**
- * Progression tab — Document A §7.1 Learner Progression Dashboard.
+ * Progression tab, Document A §7.1 Learner Progression Dashboard.
  *
  * For a single pseudonymous learner, render the chart family that
  * earns the platform its first credible "this child measurably
  * improved over time" claim:
  *
- *   • Learner picker — top 25 most-active devices in the window
- *   • Summary card — attempts / items / sessions / accuracy / cred.
- *   • Four-state mini KPI — Exposed/Acquired/Mastered/Decayed
- *   • θ-over-time line chart — top 6 most-practised items
- *   • Mastery episode timeline — state transitions in reverse order
- *   • Recent attempts strip — last 20, with credibility tier
+ *   • Learner picker, top 25 most-active devices in the window
+ *   • Summary card, attempts / items / sessions / accuracy / cred.
+ *   • Four-state mini KPI, Exposed/Acquired/Mastered/Decayed
+ *   • θ-over-time line chart, top 6 most-practised items
+ *   • Mastery episode timeline, state transitions in reverse order
+ *   • Recent attempts strip, last 20, with credibility tier
  *
  * Motor-precision, confidence, decay-probe, transfer-probe curves
  * wait for the data they need (Sprint 3 gesture quality + later).
@@ -87,7 +87,7 @@ const LearnerPicker: React.FC<{
 }> = ({ learners, selected, onSelect }) => (
     <div className="iv-col-12">
         <Card title="Learners (most active first)"
-              meta={`${learners.length} pseudonymous learners — pick one to drill in`}>
+              meta={`${learners.length} pseudonymous learners, pick one to drill in`}>
             <TableWrap>
                 <table className="iv-table" style={{ fontSize: 12 }}>
                     <thead>
@@ -118,7 +118,7 @@ const LearnerPicker: React.FC<{
                                     <td style={{ fontFamily: 'ui-monospace, monospace' }}>
                                         {l.device_id.slice(0, 8)}{isSelected && ' ←'}
                                     </td>
-                                    <td>{l.age_band ?? '—'}</td>
+                                    <td>{l.age_band ?? '-'}</td>
                                     <td>{fmtNum(l.n_attempts)}</td>
                                     <td>{fmtNum(l.n_sessions)}</td>
                                     <td>{fmtNum(l.n_distinct_items)}</td>
@@ -128,7 +128,7 @@ const LearnerPicker: React.FC<{
                                         </Tag>
                                     </td>
                                     <td>{fmtPct(l.accuracy != null ? l.accuracy * 100 : null)}</td>
-                                    <td>{l.mean_credibility != null ? l.mean_credibility.toFixed(2) : '—'}</td>
+                                    <td>{l.mean_credibility != null ? l.mean_credibility.toFixed(2) : '-'}</td>
                                 </tr>
                             );
                         })}
@@ -156,14 +156,14 @@ const LearnerProfile: React.FC<{
                 <Kpi label="Attempts" value={fmtNum(s.n_attempts)} sub={`${fmtNum(s.n_sessions)} sessions`} />
                 <Kpi label="Items touched" value={fmtNum(s.n_distinct_items)} sub="distinct (item × mode)" />
                 <Kpi label="Accuracy" value={fmtPct(s.accuracy != null ? s.accuracy * 100 : null)}
-                     sub={`mean credibility ${s.mean_credibility?.toFixed(2) ?? '—'}`} />
+                     sub={`mean credibility ${s.mean_credibility?.toFixed(2) ?? '-'}`} />
                 <Kpi label="Mastered" value={fmtNum(st.mastered)}
                      sub={`Acquired ${st.acquired} · Exposed ${st.exposed} · Decayed ${st.decayed}`} />
             </div>
 
-            {/* θ-over-time trajectories — the chart that earns this dashboard */}
+            {/* θ-over-time trajectories, the chart that earns this dashboard */}
             <div className="iv-col-12">
-                <Card title="θ over time — top practised items"
+                <Card title="θ over time, top practised items"
                       meta="Learner skill rating per (item × mode). Up = getting stronger.">
                     {data.trajectories.length === 0
                         ? <Empty message="Not enough multi-day data yet to chart trajectories." />
@@ -176,7 +176,7 @@ const LearnerProfile: React.FC<{
                 <Card title="Mastery state transitions"
                       meta={`${data.transitions.length} most recent`}>
                     {data.transitions.length === 0
-                        ? <Empty message="No transitions yet — learner is brand new." />
+                        ? <Empty message="No transitions yet, learner is brand new." />
                         : (
                             <TableWrap>
                                 <table className="iv-table" style={{ fontSize: 12 }}>
@@ -241,7 +241,7 @@ const LearnerProfile: React.FC<{
                                                         a.credibility_tier === 'A' ? 'green' :
                                                         a.credibility_tier === 'B' ? 'aqua' :
                                                         a.credibility_tier === 'C' ? 'coral' : 'gray'
-                                                    }>{a.credibility_tier ?? '—'}</Tag>
+                                                    }>{a.credibility_tier ?? '-'}</Tag>
                                                 </td>
                                             </tr>
                                         ))}
@@ -302,7 +302,7 @@ const TrajectoryChart: React.FC<{ trajectories: ProgressionTrajectory[] }> = ({ 
                     </g>
                 );
             })}
-            {/* x-axis labels — show first, middle, last */}
+            {/* x-axis labels, show first, middle, last */}
             {[days[0], days[Math.floor(days.length / 2)], days[days.length - 1]].map((day, i) => (
                 <text key={`${day}-${i}`} x={xOf(day)} y={H - 12} textAnchor="middle"
                       fontSize="10" fill="#6B6F84"
@@ -322,7 +322,7 @@ const TrajectoryChart: React.FC<{ trajectories: ProgressionTrajectory[] }> = ({ 
                               strokeLinecap="round" strokeLinejoin="round" />
                         {t.series.map((p, j) => (
                             <circle key={j} cx={xOf(p.day)} cy={yOf(p.theta)} r={3.5} fill={colour}>
-                                <title>{`${t.item_key} (${modeLabel(t.game_mode)}) — ${p.day}: θ=${p.theta.toFixed(2)}, ${p.n_attempts} attempts`}</title>
+                                <title>{`${t.item_key} (${modeLabel(t.game_mode)}), ${p.day}: θ=${p.theta.toFixed(2)}, ${p.n_attempts} attempts`}</title>
                             </circle>
                         ))}
                     </g>
@@ -346,7 +346,7 @@ const TrajectoryChart: React.FC<{ trajectories: ProgressionTrajectory[] }> = ({ 
     );
 };
 
-// ── Mini KPI card (local — the shared Kpi component is in components.tsx
+// ── Mini KPI card (local, the shared Kpi component is in components.tsx
 //    but adds a delta slot we don't need here) ──────────────────────
 
 const Kpi: React.FC<{ label: string; value: string; sub?: string }> = ({ label, value, sub }) => (

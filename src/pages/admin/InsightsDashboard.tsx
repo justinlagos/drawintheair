@@ -1,5 +1,5 @@
 /**
- * /admin/insights — analytics insights dashboard, v2.
+ * /admin/insights, analytics insights dashboard, v2.
  *
  * Investor-grade redesign (2026-05-12). The 941-line monolith was
  * broken into a tabbed shell + per-tab components under
@@ -10,7 +10,7 @@
  * migration 20260521_security_lockdown.sql revokes EXECUTE on every
  * dashboard_* / lios_* RPC from anon and (where applicable) gates
  * access on public._is_admin(). The component-level checks here are
- * UI affordances only — never trust them for security.
+ * UI affordances only, never trust them for security.
  */
 
 import React, { useEffect, useState } from 'react';
@@ -43,7 +43,7 @@ import './insights/insights.css';
 
 // SECURITY (2026-05-21): the client-side allow-list was removed.
 // • It leaked an admin's personal email in the public JS bundle (H7).
-// • It protected nothing — the dashboard RPCs were granted to anon, so
+// • It protected nothing, the dashboard RPCs were granted to anon, so
 //   anyone with the bundled anon key could call them directly.
 // • The authoritative gate now lives in Postgres: every dashboard_* /
 //   lios_* RPC is revoked from anon, and the executive surface checks
@@ -82,7 +82,7 @@ const InsightsDashboard: React.FC = () => {
     // is the source of truth. If the signed-in user is not an admin, the
     // RPC calls will return 42501/forbidden and each tab renders its own
     // error. We deliberately do NOT short-circuit here based on a client
-    // allow-list — that pattern leaked an email to the public bundle.
+    // allow-list, that pattern leaked an email to the public bundle.
     return <AuthenticatedDashboard email={user.email!} onSignOut={signOut} />;
 };
 
@@ -116,7 +116,7 @@ const SignInGate: React.FC = () => {
     );
 };
 
-// (NotAllowed gate removed 2026-05-21 — the server-side admin assertion
+// (NotAllowed gate removed 2026-05-21, the server-side admin assertion
 //  in each dashboard RPC is the only authoritative check.)
 
 // ── Authenticated shell ────────────────────────────────────────────────
@@ -137,7 +137,7 @@ const AuthenticatedDashboard: React.FC<{ email: string; onSignOut: () => Promise
     // ── LIOS Unified Export ─────────────────────────────────────────
     // Single click, parallel-fetches every dashboard RPC, bundles the
     // result client-side, downloads as a single JSON. Per-section
-    // failures don't kill the export — they appear as `null` in the
+    // failures don't kill the export, they appear as `null` in the
     // bundle so the recipient can still consume what succeeded.
     const [exporting, setExporting] = useState(false);
     const [exportProgress, setExportProgress] = useState<string>('');
@@ -206,7 +206,7 @@ const AuthenticatedDashboard: React.FC<{ email: string; onSignOut: () => Promise
         }
     };
 
-    // Dedicated report view — auto-prints once loaded.
+    // Dedicated report view, auto-prints once loaded.
     if (reportMode) {
         return <PrintReport range={filter.range} email={email} />;
     }
@@ -272,7 +272,7 @@ const AuthenticatedDashboard: React.FC<{ email: string; onSignOut: () => Promise
                         <button className="iv-btn" onClick={handleShare} title="Copy a permalink to this view">
                             Share
                         </button>
-                        <button className="iv-btn" onClick={handlePrint} title="Print or save as PDF — investor-friendly layout">
+                        <button className="iv-btn" onClick={handlePrint} title="Print or save as PDF, investor-friendly layout">
                             Print
                         </button>
                         {!shareMode && (

@@ -57,6 +57,13 @@ function DashboardInner() {
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
   const activeChildren = overview?.children.filter(c => c.status === 'active') ?? [];
 
+  // 7-day trial countdown. trial_end comes from parent_subscriptions and is
+  // the single source of truth (server-side).
+  const trialEnd = overview?.subscription?.trial_end ? new Date(overview.subscription.trial_end) : null;
+  const trialDaysLeft = trialEnd
+    ? Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / 86_400_000))
+    : null;
+
   return (
     <ParentShell>
       <motion.div
@@ -75,6 +82,30 @@ function DashboardInner() {
             Here's how each of your learners is doing today, in plain English. No jargon, no scores.
           </p>
         </motion.header>
+
+        {/* ── Trial countdown ────────────────────────────────────── */}
+        {subscriptionState === 'trial_active' && trialDaysLeft !== null && (
+          <motion.div variants={stagger.item}>
+            <Card>
+              <div className="row between" style={{ flexWrap: 'wrap', gap: 16 }}>
+                <div className="row gap-3" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span className="itile itile-sun"><I.Hourglass size={20} /></span>
+                  <div>
+                    <strong style={{ fontFamily: 'var(--font-display)' }}>
+                      {trialDaysLeft === 0
+                        ? 'Your free trial ends today'
+                        : `${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} left in your free trial`}
+                    </strong>
+                    <p className="muted" style={{ margin: '2px 0 0', fontSize: 'var(--text-sm)' }}>
+                      Everything stays unlocked while your trial runs. Add a plan any time to keep going.
+                    </p>
+                  </div>
+                </div>
+                <Link to="/parent/billing" className="btn btn-primary btn-sm">Choose a plan</Link>
+              </div>
+            </Card>
+          </motion.div>
+        )}
 
         {/* ── Plan strip ─────────────────────────────────────────── */}
         <motion.div variants={stagger.item}>

@@ -1,5 +1,5 @@
 /**
- * Student Join Flow — code entry → name entry → waiting room.
+ * Student Join Flow, code entry → name entry → waiting room.
  * No account required. Students join with a 4-digit code + first name.
  */
 
@@ -32,7 +32,7 @@ export default function StudentJoin() {
   const [studentRank] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Handle digit input — auto-advance focus
+  // Handle digit input, auto-advance focus
   const handleDigitChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
     const newDigits = [...digits];
@@ -100,7 +100,7 @@ export default function StudentJoin() {
     );
 
     if (insertErr) {
-      // Name taken — append number
+      // Name taken, append number
       if (insertErr.code === '23505') {
         for (let i = 2; i <= 9; i++) {
           const altName = `${joinName}${i}`;
@@ -116,7 +116,7 @@ export default function StudentJoin() {
           }
         }
         if (!studentId) {
-          setError('Could not join — try a different name');
+          setError('Could not join, try a different name');
           return;
         }
       } else {
@@ -170,7 +170,7 @@ export default function StudentJoin() {
     return unsub;
   }, [session, step]);
 
-  // When playing — navigate to StudentGameScreen
+  // When playing, navigate to StudentGameScreen
   useEffect(() => {
     if (step === 'playing' && session && studentId) {
       // Store game params

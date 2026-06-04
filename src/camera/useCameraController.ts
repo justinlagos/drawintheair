@@ -50,7 +50,7 @@ export function useCameraController(): UseCameraControllerResult {
     }, []);
 
     const startCamera = useCallback(async (options: StartCameraOptions = {}) => {
-        // Already running — do nothing. Only stopCamera or an explicit restartCamera can trigger a new request.
+        // Already running, do nothing. Only stopCamera or an explicit restartCamera can trigger a new request.
         if (streamRef.current?.active || isRequestingRef.current) return;
 
         isRequestingRef.current = true;
@@ -58,7 +58,7 @@ export function useCameraController(): UseCameraControllerResult {
         setState(prev => ({ ...prev, status: 'requesting', errorCode: null }));
 
         // Activation funnel: a single camera_requested event per startCamera
-        // call. Profile fallbacks below are an internal retry — they don't
+        // call. Profile fallbacks below are an internal retry, they don't
         // count as separate user-facing requests.
         const cameraRequestedAt = Date.now();
         logEvent('camera_requested', { meta: { profile_id: options.profileId ?? 'auto' } });
@@ -92,7 +92,7 @@ export function useCameraController(): UseCameraControllerResult {
 
                 const video = videoRef.current;
                 if (!video) {
-                    // No video element yet — cleanup and abort
+                    // No video element yet, cleanup and abort
                     stream.getTracks().forEach(t => t.stop());
                     streamRef.current = null;
                     isRequestingRef.current = false;
@@ -123,7 +123,7 @@ export function useCameraController(): UseCameraControllerResult {
                     });
                 }
 
-                // autoplay may be blocked by browser policy — non-fatal
+                // autoplay may be blocked by browser policy, non-fatal
                 await video.play().catch(() => { /* silent */ });
 
                 const track = stream.getVideoTracks()[0];

@@ -1,17 +1,17 @@
 /**
- * Adaptive tab — engineering observability for the LIOS Adaptive
+ * Adaptive tab, engineering observability for the LIOS Adaptive
  * Engine v1 (Document B §5 + §6.2).
  *
  * Surfaces:
  *   • Total decisions made
- *   • Regime distribution — what state was each learner in?
- *   • Recovery-step ladder — how often does step N fire?
- *   • Hard-invariant fire counts — which guards have caught bad picks?
+ *   • Regime distribution, what state was each learner in?
+ *   • Recovery-step ladder, how often does step N fire?
+ *   • Hard-invariant fire counts, which guards have caught bad picks?
  *   • Scaffold + reward distributions
  *   • Per-game-mode throughput
- *   • Recent decision log — full audit row with reasoning
+ *   • Recent decision log, full audit row with reasoning
  *
- * Engineering-only — admin allow-list gates the dashboard. The teacher
+ * Engineering-only, admin allow-list gates the dashboard. The teacher
  * surface ships once the bandit upgrade (v2) replaces the rule layer.
  */
 
@@ -91,7 +91,7 @@ export const AdaptiveTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
 
     return (
         <>
-            {/* Engineering banner — same pattern as Friction tab */}
+            {/* Engineering banner, same pattern as Friction tab */}
             <div className="iv-col-12">
                 <div style={{
                     background: 'rgba(193, 58, 58, 0.06)',
@@ -99,10 +99,10 @@ export const AdaptiveTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                     borderRadius: 12, padding: '12px 16px', marginBottom: 16,
                     font: '13px/1.4 Nunito, system-ui, sans-serif', color: '#C13A3A',
                 }}>
-                    <strong>Adaptive Engine v1 — engineering observability.</strong>{' '}
+                    <strong>Adaptive Engine v1, engineering observability.</strong>{' '}
                     Rule-based recommendation layer. The bandit (v2) replaces this
                     in Sprint 7 once enough decisions are logged. Every decision
-                    here is auditable — click a row to expand its full reasoning.
+                    here is auditable, click a row to expand its full reasoning.
                 </div>
             </div>
 
@@ -161,7 +161,7 @@ export const AdaptiveTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                 <Card title="Recovery state machine"
                       meta="How often each recovery step fires">
                     {f.by_recovery_step.length === 0
-                        ? <Empty message="No recovery branches fired yet — no learner has hit 3 consecutive failures." />
+                        ? <Empty message="No recovery branches fired yet, no learner has hit 3 consecutive failures." />
                         : (
                             <table className="iv-table" style={{ fontSize: 12 }}>
                                 <thead>
@@ -266,7 +266,7 @@ export const AdaptiveTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                                         <tr key={m.game_mode}>
                                             <td>{modeLabel(m.game_mode)}</td>
                                             <td>{fmtNum(m.n)}</td>
-                                            <td>{m.mean_p_expected != null ? m.mean_p_expected.toFixed(2) : '—'}</td>
+                                            <td>{m.mean_p_expected != null ? m.mean_p_expected.toFixed(2) : '-'}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -275,10 +275,10 @@ export const AdaptiveTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                 </Card>
             </div>
 
-            {/* Recent decisions — the auditable log */}
+            {/* Recent decisions, the auditable log */}
             <div className="iv-col-12">
                 <Card title="Recent decisions"
-                      meta={`Last ${f.recent.length} — click to expand reasoning`}>
+                      meta={`Last ${f.recent.length}, click to expand reasoning`}>
                     {f.recent.length === 0
                         ? <Empty message="No decisions recorded yet." />
                         : (
@@ -312,7 +312,7 @@ export const AdaptiveTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                                                     }}>{REGIME_TONES[r.regime].label}</span>
                                                 </td>
                                                 <td>{modeLabel(r.game_mode)}</td>
-                                                <td>{r.current_item ?? '—'}</td>
+                                                <td>{r.current_item ?? '-'}</td>
                                                 <td>{r.next_item ?? <em style={{ color: '#FF6B6B' }}>break</em>}</td>
                                                 <td>
                                                     <span style={{
@@ -328,17 +328,17 @@ export const AdaptiveTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                                                         borderRadius: 4, fontSize: 10,
                                                     }}>{r.reward_intensity}</span>
                                                 </td>
-                                                <td>{r.p_expected != null ? r.p_expected.toFixed(2) : '—'}</td>
-                                                <td>{r.recovery_step ?? '—'}</td>
+                                                <td>{r.p_expected != null ? r.p_expected.toFixed(2) : '-'}</td>
+                                                <td>{r.recovery_step ?? '-'}</td>
                                                 <td style={{ fontFamily: 'ui-monospace, monospace', fontSize: 10 }}>
                                                     {r.invariants_applied.length > 0
                                                         ? r.invariants_applied.join(', ')
-                                                        : '—'}
+                                                        : '-'}
                                                 </td>
                                                 <td title={r.reasoning ?? ''}
                                                     style={{ maxWidth: 360, overflow: 'hidden',
                                                              textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {r.reasoning ?? '—'}
+                                                    {r.reasoning ?? '-'}
                                                 </td>
                                             </tr>
                                         ))}

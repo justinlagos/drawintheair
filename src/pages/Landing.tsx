@@ -77,6 +77,11 @@ function useReveal(rootRef: React.RefObject<HTMLElement | null>) {
     const t2 = window.setTimeout(pass, 450);
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll, { passive: true });
+    // Reveal content that mounts AFTER initial load (conditional sections,
+    // tab panels). Freshly-mounted .reveal elements must never depend on a
+    // scroll event to become visible.
+    const mo = new MutationObserver(onScroll);
+    mo.observe(root, { childList: true, subtree: true });
     return () => {
       cancelAnimationFrame(raf);
       cancelAnimationFrame(r1);
@@ -84,6 +89,7 @@ function useReveal(rootRef: React.RefObject<HTMLElement | null>) {
       clearTimeout(t2);
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
+      mo.disconnect();
     };
   }, [rootRef]);
 }
@@ -306,8 +312,8 @@ export function CalmFooter() {
             <h5>For Schools</h5>
             <ul>
               <li><Link to="/teachers">For teachers</Link></li>
-              <li><Link to="/teachers">Pilot programme</Link></li>
-              <li><Link to="/for-teachers">EYFS mapping</Link></li>
+              <li><Link to="/schools">Pilot programme</Link></li>
+              <li><Link to="/for-teachers#eyfs-mapping">EYFS mapping</Link></li>
               <li><Link to="/teachers">Classroom guides</Link></li>
             </ul>
           </div>
@@ -390,7 +396,7 @@ export const Landing: React.FC = () => {
                 </div>
                 <div className="hero-trust reveal d4">
                   <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{1F512}'}</span> No data stored</span>
-                  <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{2728}'}</span> 14 days free</span>
+                  <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{2728}'}</span> 7 days free</span>
                   <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{26A1}'}</span> Works instantly</span>
                 </div>
               </div>
@@ -604,7 +610,7 @@ export const Landing: React.FC = () => {
                 </div>
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                   <Link to="/teachers" className="btn btn-primary md">Start a pilot</Link>
-                  <Link to="/teachers" className="btn btn-ghost md">
+                  <Link to="/for-teachers#eyfs-mapping" className="btn btn-ghost md">
                     Read the EYFS mapping <Icon name="arrow" size={16} />
                   </Link>
                 </div>
@@ -648,7 +654,7 @@ export const Landing: React.FC = () => {
             <div className="cta-banner reveal">
               <h2 className="h2">Ready to see them light up?</h2>
               <p className="lead">
-                Start your 14-day free trial. Up to 2 learners, the full activity library, and cancel anytime. Works on any laptop with a webcam.
+                Start your 7-day free trial. Up to 2 learners, the full activity library, and cancel anytime. Works on any laptop with a webcam.
               </p>
               <div className="cta-actions">
                 <Link to="/parent/signup" className="btn btn-secondary lg">Start free trial</Link>

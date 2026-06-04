@@ -1,8 +1,8 @@
 /**
- * KidChip — small rounded white card for score / timer / status.
+ * KidChip, small rounded white card for score / timer / status.
  *
  * Spec: small rounded white card, icon + bold number, soft shadow.
- * NOT a serious dashboard — keep it friendly, not data-dense.
+ * NOT a serious dashboard, keep it friendly, not data-dense.
  *
  * Variants:
  *   - score:   sunshine star + number

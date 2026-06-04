@@ -204,7 +204,7 @@ export const QAPage = () => {
                     <div>
                         <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>FPS</div>
                         <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: fps !== null && fps >= 30 ? '#00f5d4' : '#ff6b6b' }}>
-                            {fps ?? '—'}
+                            {fps ?? '-'}
                         </div>
                     </div>
                 </div>

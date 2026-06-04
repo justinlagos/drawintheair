@@ -1,10 +1,10 @@
 /**
- * Food illustrations — apple, banana, pizza, cake.
+ * Food illustrations, apple, banana, pizza, cake.
  * Used by Sort & Place "Food vs Toys" stage.
  *
- * Iconic 2.5D-styled silhouettes — bold simple forms a 4-year-old can name
+ * Iconic 2.5D-styled silhouettes, bold simple forms a 4-year-old can name
  * at a glance. Intrinsic colours (red apple, yellow banana, etc.) so the
- * stage data colour is ignored — the food's identity IS its colour.
+ * stage data colour is ignored, the food's identity IS its colour.
  */
 
 import type { KidIconDef } from '../kidIcons';
@@ -21,7 +21,7 @@ export const FOOD_ICONS: Record<string, KidIconDef> = {
                     <stop offset="100%" stop-color="#A82E2E"/>
                 </radialGradient>
             </defs>
-            <!-- Apple body — slightly heart-bottom shape -->
+            <!-- Apple body, slightly heart-bottom shape -->
             <path d="M 50 22 C 36 20 22 26 20 44 C 18 64 28 88 50 90 C 72 88 82 64 80 44 C 78 26 64 20 50 22 Z"
                   fill="#E84545"/>
             <path d="M 50 22 C 36 20 22 26 20 44 C 18 64 28 88 50 90 C 72 88 82 64 80 44 C 78 26 64 20 50 22 Z"
@@ -101,7 +101,7 @@ export const FOOD_ICONS: Record<string, KidIconDef> = {
             <rect x="14" y="48" width="72" height="42" rx="6" fill="#F4C2C2"/>
             <!-- Layer filling stripe -->
             <rect x="14" y="62" width="72" height="6" fill="#A86B6B"/>
-            <!-- Frosting top — wavy -->
+            <!-- Frosting top, wavy -->
             <path d="M 14 48 Q 22 40 28 48 Q 36 40 42 48 Q 50 40 56 48 Q 64 40 72 48 Q 80 40 86 48 L 86 56 Q 80 50 72 56 Q 64 50 56 56 Q 50 50 42 56 Q 36 50 28 56 Q 22 50 14 56 Z"
                   fill="#FFFFFF"/>
             <!-- Frosting drips -->

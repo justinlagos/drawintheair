@@ -1,5 +1,5 @@
 /**
- * Toy illustrations — teddy, toy car, balloon, controller.
+ * Toy illustrations, teddy, toy car, balloon, controller.
  * Used by Sort & Place "Food vs Toys" stage.
  *
  * Friendly chunky silhouettes that read clearly at small size.
@@ -46,7 +46,7 @@ export const TOY_ICONS: Record<string, KidIconDef> = {
         viewBox: { w: 100, h: 100 },
         intrinsicColor: true,
         body: `
-            <!-- Chunky toy-car body — exaggerated rounded shape -->
+            <!-- Chunky toy-car body, exaggerated rounded shape -->
             <path d="M 14 64 L 14 50 Q 14 44 22 40 L 30 30 Q 34 24 44 24 L 64 24 Q 72 24 76 30 L 84 40 Q 90 44 90 50 L 90 64 Q 90 72 80 72 L 20 72 Q 14 72 14 64 Z"
                   fill="#FF6B6B"/>
             <!-- Window -->
@@ -81,7 +81,7 @@ export const TOY_ICONS: Record<string, KidIconDef> = {
                     <stop offset="100%" stop-color="#D84B7A"/>
                 </radialGradient>
             </defs>
-            <!-- Balloon body — classic teardrop -->
+            <!-- Balloon body, classic teardrop -->
             <path d="M 50 14 C 28 14 18 38 18 52 C 18 70 32 80 48 82 L 50 82 L 52 82 C 68 80 82 70 82 52 C 82 38 72 14 50 14 Z"
                   fill="#FF6B9D"/>
             <path d="M 50 14 C 28 14 18 38 18 52 C 18 70 32 80 48 82 L 50 82 L 52 82 C 68 80 82 70 82 52 C 82 38 72 14 50 14 Z"

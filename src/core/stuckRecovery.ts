@@ -17,11 +17,11 @@
  *
  * The thresholds match the analytics definition of `stuck_moment` (30 s)
  * so the dashboard's stuck-rate metric and the in-product helper fire on
- * the same trigger. SOFT and MEDIUM are pre-stuck nudges — they fire
+ * the same trigger. SOFT and MEDIUM are pre-stuck nudges, they fire
  * before the dashboard counts the moment as stuck, giving us a chance to
  * recover the kid before it lands as a metric.
  *
- * No React state, no observers — modes drive their own render off the
+ * No React state, no observers, modes drive their own render off the
  * returned level. The service only owns the per-mode idle timer.
  */
 
@@ -29,9 +29,9 @@ import { logEvent } from '../lib/analytics';
 
 export type RecoveryLevel = 'NONE' | 'SOFT' | 'MEDIUM' | 'STRONG';
 
-const SOFT_AFTER_MS   = 5_000;   // first nudge — visual ghost
-const MEDIUM_AFTER_MS = 12_000;  // second nudge — voice cue
-const STRONG_AFTER_MS = 30_000;  // matches `stuck_moment` definition — animated helper
+const SOFT_AFTER_MS   = 5_000;   // first nudge, visual ghost
+const MEDIUM_AFTER_MS = 12_000;  // second nudge, voice cue
+const STRONG_AFTER_MS = 30_000;  // matches `stuck_moment` definition, animated helper
 
 interface ModeRecord {
     lastProgressAt: number;
@@ -70,7 +70,7 @@ export const recordProgress = (modeId: string, now: number = Date.now()): void =
 /**
  * Call once per frame from inside the mode's per-frame logic. Returns the
  * current recovery level. The level is monotonic within a single idle
- * stretch — once we hit MEDIUM we stay there (or escalate) until the kid
+ * stretch, once we hit MEDIUM we stay there (or escalate) until the kid
  * makes progress or the stage is reset.
  */
 export const tick = (modeId: string, now: number = Date.now()): RecoveryLevel => {
@@ -84,7 +84,7 @@ export const tick = (modeId: string, now: number = Date.now()): RecoveryLevel =>
 
     // Fire the `stuck_detected` analytics event exactly once per idle stretch
     // when we reach STRONG. The dashboard's stuck rate counts these.
-    // (Existing schema name — keep as-is so the RPC continues to aggregate.)
+    // (Existing schema name, keep as-is so the RPC continues to aggregate.)
     if (level === 'STRONG' && !rec.stuckEventLogged) {
         rec.stuckEventLogged = true;
         try {
@@ -96,7 +96,7 @@ export const tick = (modeId: string, now: number = Date.now()): RecoveryLevel =>
                 },
             });
         } catch {
-            // Best-effort — analytics failures must not break gameplay.
+            // Best-effort, analytics failures must not break gameplay.
         }
     }
 
@@ -106,12 +106,12 @@ export const tick = (modeId: string, now: number = Date.now()): RecoveryLevel =>
 
 /**
  * Returns whether the recovery level has just transitioned upward this
- * frame — useful for one-shot effects like "speak the voice cue once when
+ * frame, useful for one-shot effects like "speak the voice cue once when
  * MEDIUM is reached" without the mode needing to track previous state.
  */
 export const justEscalatedTo = (modeId: string, level: RecoveryLevel, now: number = Date.now()): boolean => {
     const rec = ensure(modeId, now);
-    // Snapshot the previous-frame level BEFORE we tick — tick() mutates
+    // Snapshot the previous-frame level BEFORE we tick, tick() mutates
     // rec.lastLevel as part of normal operation, so reading it after the
     // tick would always equal the current level.
     const previousLevel = rec.lastLevel;
@@ -133,7 +133,7 @@ export const resetStage = (modeId: string, now: number = Date.now()): void => {
 };
 
 /**
- * Debug / testing helper — pull the current snapshot for a mode.
+ * Debug / testing helper, pull the current snapshot for a mode.
  */
 export const inspect = (modeId: string): { idleMs: number; level: RecoveryLevel; stuckLogged: boolean } | null => {
     const rec = modes.get(modeId);

@@ -1,9 +1,9 @@
 /**
- * Lightweight Supabase client — zero dependencies.
+ * Lightweight Supabase client, zero dependencies.
  * Uses native fetch() for PostgREST + GoTrue, and WebSocket for Realtime.
  */
 
-// Observability — bump the health registry on RPC failure so the System
+// Observability, bump the health registry on RPC failure so the System
 // Health panel can show "Supabase RPC failures: N" without us having to
 // instrument every caller. The import is one-way (health → nothing),
 // so there's no circular-import risk.
@@ -62,8 +62,13 @@ function loadSession(): SupabaseSession | null {
     const raw = localStorage.getItem('sb-session');
     if (!raw) return null;
     const session = JSON.parse(raw) as SupabaseSession;
-    // Check expiry (with 60s buffer)
+    // Expired access token: keep the session if we hold a refresh token
+    // (scheduleTokenRefresh exchanges it on boot). Only a session with no
+    // refresh token is truly dead. This is what makes "keep me signed in"
+    // real — previously every session silently died after ~1 hour, which
+    // also broke the Stripe checkout/portal calls with 401s.
     if (session.expires_at && Date.now() / 1000 > session.expires_at - 60) {
+      if (session.refresh_token) return session;
       localStorage.removeItem('sb-session');
       return null;
     }
@@ -73,12 +78,76 @@ function loadSession(): SupabaseSession | null {
   }
 }
 
+// ─── Token refresh ───────────────────────────────────────────────────────────
+
+let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+let refreshInFlight: Promise<boolean> | null = null;
+
+/** Exchange the refresh token for a fresh access token. Safe to call
+ *  concurrently — calls coalesce onto one network request. */
+export async function refreshSession(): Promise<boolean> {
+  if (!currentSession?.refresh_token) return false;
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = (async () => {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: currentSession!.refresh_token }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json?.access_token || !json?.user) {
+        // Refresh token rejected (revoked / already used): session is over.
+        persistSession(null);
+        notifyAuthListeners(null);
+        return false;
+      }
+      const session: SupabaseSession = {
+        access_token: json.access_token,
+        refresh_token: json.refresh_token || currentSession!.refresh_token,
+        expires_at: Math.floor(Date.now() / 1000) + (json.expires_in || 3600),
+        user: json.user,
+      };
+      persistSession(session);
+      scheduleTokenRefresh();
+      return true;
+    } catch {
+      return false; // transient network failure — keep the session, retry later
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+  return refreshInFlight;
+}
+
+/** Keep the access token alive for as long as the tab is open. */
+function scheduleTokenRefresh() {
+  if (typeof window === 'undefined') return;
+  if (refreshTimer) clearTimeout(refreshTimer);
+  if (!currentSession?.refresh_token || !currentSession.expires_at) return;
+  // Refresh 5 minutes before expiry (immediately if already past that).
+  const ms = Math.max(0, (currentSession.expires_at - 300) * 1000 - Date.now());
+  refreshTimer = setTimeout(() => { void refreshSession(); }, ms);
+}
+
+/** Await a valid (non-expired) access token before calling an
+ *  authenticated endpoint such as the Stripe edge functions. */
+export async function ensureFreshSession(): Promise<void> {
+  if (!currentSession) return;
+  if (currentSession.expires_at && Date.now() / 1000 > currentSession.expires_at - 60) {
+    await refreshSession();
+  }
+}
+
 function notifyAuthListeners(user: SupabaseUser | null) {
   authListeners.forEach(fn => fn(user));
 }
 
-// Initialize session from storage
+// Initialize session from storage and keep it alive.
 currentSession = loadSession();
+if (typeof window !== 'undefined' && currentSession) {
+  scheduleTokenRefresh();
+}
 
 // ─── Auth helpers ────────────────────────────────────────────────────────────
 
@@ -105,7 +174,7 @@ export function getAccessToken(): string {
 
 /**
  * The project's public anon key. Use this in the `apikey` header on
- * any direct fetch to PostgREST or Edge Functions — the `apikey`
+ * any direct fetch to PostgREST or Edge Functions, the `apikey`
  * header MUST be the anon (or service_role) key, NEVER a user JWT.
  * Pass the user JWT only via `Authorization: Bearer` if needed.
  */
@@ -166,12 +235,57 @@ export async function signOut() {
 // message safe to display in-UI.
 //
 // Privacy note: the email signup form is the only place we collect the
-// parent's email. We never collect child emails — children don't have
+// parent's email. We never collect child emails, children don't have
 // auth accounts (see migration 0004 docstring).
 
 export type AuthResult =
-  | { ok: true; user: SupabaseUser }
+  | { ok: true; user: SupabaseUser; needsEmailConfirm?: boolean }
   | { ok: false; error: string };
+
+/**
+ * Translate raw GoTrue error payloads into messages a parent or teacher
+ * can act on. We keep the real failure intact (never hide errors), but:
+ *   • rate limits get a clear "wait a few minutes" instruction instead of
+ *     the raw "email rate limit exceeded" string,
+ *   • duplicate accounts get a "sign in instead" nudge,
+ *   • email-validation failures stop sounding like the user's address is
+ *     broken when it's usually a typo (or a mail-delivery restriction).
+ * Anything we don't recognise falls through verbatim, real errors must
+ * stay visible.
+ */
+export function friendlyAuthError(
+  status: number,
+  json: { error_description?: string; msg?: string; error_code?: string; code?: string } | null,
+  fallback: string,
+): string {
+  const raw = (json?.error_description || json?.msg || fallback || '').trim();
+  const code = (json?.error_code || json?.code || '').toString().toLowerCase();
+  const lower = raw.toLowerCase();
+
+  // Rate limiting (HTTP 429, or GoTrue's over_email_send_rate_limit /
+  // over_request_rate_limit codes, or the bare message).
+  if (status === 429 || code.includes('rate_limit') || lower.includes('rate limit')) {
+    return 'Too many attempts. Please wait a few minutes and try again.';
+  }
+  // Duplicate account.
+  if (code === 'user_already_exists' || lower.includes('already registered') || lower.includes('already been registered')) {
+    return 'This email already has an account. Please sign in instead, or use “Forgot password” if you can’t remember it.';
+  }
+  // Email validation. GoTrue says "Unable to validate email address:
+  // invalid format" for malformed input, and "Email address … is invalid"
+  // when the auth service refuses the address (often an SMTP/config
+  // restriction, not the user's fault).
+  if (lower.includes('invalid format')) {
+    return 'That email address doesn’t look right. Please check for typos and try again.';
+  }
+  if (code === 'email_address_invalid' || /email address.*invalid/.test(lower)) {
+    return 'We couldn’t accept that email address. Please double-check it, or try a different address. If this keeps happening, contact us, it may be an issue on our side.';
+  }
+  if (code === 'weak_password' || lower.includes('password should be')) {
+    return 'Please choose a longer password (at least 8 characters).';
+  }
+  return raw || 'Something went wrong creating your account. Please try again.';
+}
 
 function adoptSession(json: {
   access_token?: string;
@@ -188,7 +302,24 @@ function adoptSession(json: {
   };
   persistSession(session);
   notifyAuthListeners(json.user);
+  scheduleTokenRefresh();
   return json.user;
+}
+
+/**
+ * Adopt a session object obtained outside this module (e.g. the teacher
+ * signup helper in teacherApi.ts). Keeps the in-memory session, the
+ * persisted copy, and every auth listener in sync, writing straight to
+ * localStorage is NOT enough, because getUser()/authHeaders() read the
+ * module-level session, not storage.
+ */
+export function adoptExternalSession(json: {
+  access_token?: string;
+  refresh_token?: string;
+  expires_in?: number;
+  user?: SupabaseUser;
+}): SupabaseUser | null {
+  return adoptSession(json);
 }
 
 /**
@@ -219,14 +350,32 @@ export async function signUpWithEmail(
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      return { ok: false, error: json?.error_description || json?.msg || res.statusText };
+      return { ok: false, error: friendlyAuthError(res.status, json, res.statusText) };
     }
     const user = adoptSession(json);
     if (user) return { ok: true, user };
-    // No session returned ⇒ email confirmation is on; surface the user record
-    // so the UI can show "check your email" without erroring.
-    if (json?.user) return { ok: true, user: json.user };
-    return { ok: false, error: 'No session returned by Supabase.' };
+    // No session in the response ⇒ email confirmation is enabled.
+    // GoTrue also returns an OBFUSCATED user (identities: []) here when
+    // the email already belongs to an account, to prevent enumeration.
+    // Treat that as a duplicate so we don't strand the user on a
+    // "check your email" screen for a mail that will never arrive.
+    if (json?.user) {
+      const identities = (json.user as { identities?: unknown[] }).identities;
+      if (Array.isArray(identities) && identities.length === 0) {
+        return {
+          ok: false,
+          error: 'This email already has an account. Please sign in instead, or use “Forgot password” if you can’t remember it.',
+        };
+      }
+      // Genuine new account awaiting email confirmation.
+      return { ok: true, user: json.user, needsEmailConfirm: true };
+    }
+    // Truly empty 2xx response, extremely rare; tell the user what to do
+    // rather than dead-ending with an internal-sounding message.
+    return {
+      ok: false,
+      error: 'We couldn’t finish creating your account. Please try again in a moment, or sign in if you already have an account.',
+    };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }
@@ -245,11 +394,103 @@ export async function signInWithEmail(email: string, password: string): Promise<
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      return { ok: false, error: json?.error_description || json?.msg || 'Sign-in failed.' };
+      return { ok: false, error: friendlyAuthError(res.status, json, 'Sign-in failed.') };
     }
     const user = adoptSession(json);
-    if (!user) return { ok: false, error: 'No session returned by Supabase.' };
+    if (!user) {
+      return {
+        ok: false,
+        error: 'We couldn’t start your session. Please try signing in again.',
+      };
+    }
     return { ok: true, user };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+// ─── Account roles (tenant isolation, migration 0013) ───────────────────────
+
+export interface AccountRoles { parent: boolean; teacher: boolean; admin: boolean }
+
+let rolesCache: { userId: string; roles: AccountRoles } | null = null;
+
+/** Which areas this signed-in account has explicitly signed up for. */
+export async function getAccountRoles(): Promise<AccountRoles | null> {
+  const user = getUser();
+  if (!user) return null;
+  if (rolesCache && rolesCache.userId === user.id) return rolesCache.roles;
+  const { data } = await callRpc<AccountRoles>('get_account_roles');
+  if (!data) return null;
+  rolesCache = { userId: user.id, roles: data };
+  return data;
+}
+
+export function clearRolesCache() { rolesCache = null; }
+
+/** Explicitly opt this account into the parent (family) area. */
+export async function registerParentAccount(): Promise<boolean> {
+  const { error } = await callRpc('register_parent');
+  clearRolesCache();
+  return !error;
+}
+
+/** Explicitly opt this account into the teacher (classroom) area. */
+export async function registerTeacherAccount(fullName?: string, schoolName?: string): Promise<boolean> {
+  const { error } = await callRpc('register_teacher', {
+    in_full_name: fullName ?? null,
+    in_school_name: schoolName ?? null,
+  });
+  clearRolesCache();
+  return !error;
+}
+
+/** Stash which role the user is explicitly signing up for before an OAuth
+ *  round-trip, so the destination area can finish registration. */
+export function setRoleIntent(role: 'parent' | 'teacher') {
+  try { sessionStorage.setItem('dia-role-intent', role); } catch { /* ignore */ }
+}
+export function consumeRoleIntent(expected: 'parent' | 'teacher'): boolean {
+  try {
+    const v = sessionStorage.getItem('dia-role-intent');
+    if (v === expected) {
+      sessionStorage.removeItem('dia-role-intent');
+      return true;
+    }
+  } catch { /* ignore */ }
+  return false;
+}
+
+/** True while the user arrived via a password-recovery email link and has
+ *  not yet set a new password. Set by handleAuthCallback. */
+export function hasPendingRecovery(): boolean {
+  try { return sessionStorage.getItem('dia-recovery') === '1'; } catch { return false; }
+}
+export function clearPendingRecovery() {
+  try { sessionStorage.removeItem('dia-recovery'); } catch { /* ignore */ }
+}
+
+/** Set a new password for the signed-in user (used by the recovery flow). */
+export async function updatePassword(newPassword: string): Promise<AuthResult> {
+  if (!currentSession?.access_token) {
+    return { ok: false, error: 'Your reset link has expired. Please request a new one.' };
+  }
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      method: 'PUT',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${currentSession.access_token}`,
+      },
+      body: JSON.stringify({ password: newPassword }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { ok: false, error: friendlyAuthError(res.status, json, 'Could not update your password.') };
+    }
+    clearPendingRecovery();
+    return { ok: true, user: (json as SupabaseUser) ?? currentSession.user };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }
@@ -269,12 +510,12 @@ export async function requestPasswordReset(email: string, redirectTo?: string): 
         redirect_to: redirectTo || `${window.location.origin}/parent/login`,
       }),
     });
-  } catch { /* swallow — never reveal whether the address exists */ }
+  } catch { /* swallow, never reveal whether the address exists */ }
   return { ok: true };
 }
 
 /**
- * Call on app init — handles OAuth redirect callback.
+ * Call on app init, handles OAuth redirect callback.
  * Checks URL hash for access_token (Supabase implicit flow).
  */
 export async function handleAuthCallback(): Promise<SupabaseUser | null> {
@@ -284,6 +525,9 @@ export async function handleAuthCallback(): Promise<SupabaseUser | null> {
   const accessToken = params.get('access_token');
   const refreshToken = params.get('refresh_token');
   const expiresIn = params.get('expires_in');
+  // GoTrue labels the link type: 'recovery' (password reset), 'signup'
+  // (email confirmation), 'magiclink', or absent for OAuth.
+  const linkType = params.get('type');
 
   if (accessToken) {
     // Fetch user from token
@@ -304,8 +548,25 @@ export async function handleAuthCallback(): Promise<SupabaseUser | null> {
         };
         persistSession(session);
         notifyAuthListeners(user);
+        scheduleTokenRefresh();
         // Clean URL hash
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
+
+        // Password recovery: remember that this session came from a reset
+        // link so the login pages show the "set a new password" form
+        // instead of a confusing signed-out screen.
+        if (linkType === 'recovery') {
+          try { sessionStorage.setItem('dia-recovery', '1'); } catch { /* ignore */ }
+        }
+
+        // Email-confirmation links redirect to the site root. Don't strand
+        // a freshly confirmed parent or teacher on the landing page; take
+        // them to their area based on the role they signed up with.
+        if (linkType === 'signup' && window.location.pathname === '/') {
+          const role = (user.user_metadata as { role?: string } | undefined)?.role;
+          if (role === 'parent') { window.location.replace('/parent/dashboard'); return user; }
+          if (role === 'teacher') { window.location.replace('/class'); return user; }
+        }
 
         // Honour any return-to path stashed by signInWithGoogle.
         // Allow-list internal paths only (must start with '/') so a
@@ -323,10 +584,18 @@ export async function handleAuthCallback(): Promise<SupabaseUser | null> {
 
         return user;
       }
-    } catch { /* fall through */ }
+      // Token didn't resolve to a user (revoked/expired). Clean up so the
+      // app doesn't sit behind the OAuth-callback loader forever.
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      try { sessionStorage.removeItem('sb-return-to'); } catch { /* ignore */ }
+    } catch {
+      // Network failure fetching the user, same cleanup, same reason.
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      try { sessionStorage.removeItem('sb-return-to'); } catch { /* ignore */ }
+    }
   }
 
-  // No hash — try existing session
+  // No hash, try existing session
   const existing = loadSession();
   if (existing) {
     currentSession = existing;
@@ -382,7 +651,7 @@ export async function dbInsert<T = Record<string, unknown>>(
     // ignoreDuplicates is set and the table has a UNIQUE constraint
     // (we add one on event_uid in 20260519_lios_event_envelope.sql),
     // duplicate rows in a bulk insert are silently skipped instead
-    // of failing the whole batch — exactly what an offline-queue
+    // of failing the whole batch, exactly what an offline-queue
     // retry needs.
     const preferParts = [
       options?.returning !== false ? 'return=representation' : 'return=minimal',
@@ -448,7 +717,7 @@ export async function dbUpdate<T = Record<string, unknown>>(
 /**
  * Call a Postgres RPC (SECURITY DEFINER function) via PostgREST.
  *
- * The `apikey` header MUST be the project anon key — this is what
+ * The `apikey` header MUST be the project anon key, this is what
  * PostgREST authenticates the request with. The `Authorization` header
  * carries the user JWT when available so SECURITY DEFINER functions
  * can see auth.uid() and so Supabase request logs attribute the call.
@@ -472,7 +741,7 @@ export async function callRpc<T = unknown>(
         message: res.statusText,
         code: String(res.status),
       }));
-      // 401/403 are expected for non-admin callers of admin RPCs — those
+      // 401/403 are expected for non-admin callers of admin RPCs, those
       // are auth gates, not failures. Only count 5xx + 4xx-other as
       // health-relevant failures.
       const status = res.status;

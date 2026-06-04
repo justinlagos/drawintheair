@@ -1,5 +1,5 @@
 /**
- * PostHog — product behaviour analytics for Draw in the Air.
+ * PostHog, product behaviour analytics for Draw in the Air.
  *
  * Owns: funnel telemetry (camera grant → tracker → first activity →
  * completion), classroom flows, building mode interactions. Strictly
@@ -29,7 +29,7 @@ import posthog from 'posthog-js';
 
 /**
  * Events we forward to PostHog. The list mirrors a subset of LIOS
- * EventName — funnel and product-behaviour events only. Learning
+ * EventName, funnel and product-behaviour events only. Learning
  * telemetry stays in LIOS where it belongs.
  *
  * Adding to this list is a privacy review.
@@ -122,14 +122,14 @@ export const PH_PROPERTY_ALLOWLIST = new Set<string>([
     'scroll_depth_pct',
     'init_duration_ms',
     'delegate',             // 'GPU' | 'CPU' for tracker
-    'code',                 // failure code (no message — codes only)
+    'code',                 // failure code (no message, codes only)
     'mode',                 // game mode for build_world_selected etc.
     'world_id',
     'object_id',
     'piece_id',
     'target_zone_id',
     'was_first_attempt',
-    'reason',               // 'back_button' | 'tab_hidden' etc. — bounded set
+    'reason',               // 'back_button' | 'tab_hidden' etc., bounded set
     'attempt_count',
 ]);
 
@@ -184,7 +184,7 @@ function whitelistProps(props: Record<string, unknown> | undefined): Record<stri
     for (const [k, v] of Object.entries(props)) {
         if (!PH_PROPERTY_ALLOWLIST.has(k)) continue;
         if (v === undefined) continue;
-        // Coerce non-primitives to safe shapes — primitives + short strings + bounded arrays only.
+        // Coerce non-primitives to safe shapes, primitives + short strings + bounded arrays only.
         if (
             typeof v === 'string' ||
             typeof v === 'number' ||
@@ -199,7 +199,7 @@ function whitelistProps(props: Record<string, unknown> | undefined): Record<stri
             );
             if (filtered.length <= 32) out[k] = filtered;
         }
-        // Objects deliberately dropped — keep events flat.
+        // Objects deliberately dropped, keep events flat.
     }
     return out;
 }
@@ -223,7 +223,7 @@ export function initPostHog(): void {
 
     posthog.init(key, {
         api_host: host,
-        // Privacy-first defaults — every one of these matters.
+        // Privacy-first defaults, every one of these matters.
         autocapture: false,
         capture_pageview: false,
         capture_pageleave: false,
@@ -241,7 +241,7 @@ export function initPostHog(): void {
         person_profiles: 'identified_only',
         // Never persist across tabs in a way that could pick up other users.
         persistence: 'memory',
-        // Drop GET params from properties — they can carry tokens.
+        // Drop GET params from properties, they can carry tokens.
         sanitize_properties: (properties) => {
             if (properties.$current_url) {
                 try {
@@ -275,7 +275,7 @@ export function initPostHog(): void {
 /**
  * Track a product-analytics event. Drops anything not on the
  * event/property allow-list. Safe to call before init / when PostHog
- * is disabled — it silently no-ops.
+ * is disabled, it silently no-ops.
  */
 export function trackEvent(
     name: string,
@@ -283,7 +283,7 @@ export function trackEvent(
 ): void {
     if (!active) return;
     if (!PH_EVENT_ALLOWLIST.has(name)) {
-        // Unknown event — silently drop. We do NOT want a stray event
+        // Unknown event, silently drop. We do NOT want a stray event
         // to leak through with un-vetted properties.
         return;
     }
@@ -308,7 +308,7 @@ export function identifyPseudonymous(deviceId: string): void {
     }
 }
 
-/** Reset PostHog identity — call on sign-out or class session end. */
+/** Reset PostHog identity, call on sign-out or class session end. */
 export function resetPostHog(): void {
     if (!active) return;
     try {

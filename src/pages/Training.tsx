@@ -1,18 +1,18 @@
 import React from 'react';
 import { HeaderNav } from '../components/landing/HeaderNav';
-import { Footer } from '../components/landing/Footer';
+import { CalmFooter } from './Landing';
 import { BackToTop } from '../components/landing/BackToTop';
-import '../components/landing/landing.css';
 import '../components/landing/landing-calm.css';
 
 export const Training: React.FC = () => {
   return (
-    <div className="lp-shell landing-page">
+    <div className="lp-shell">
       <HeaderNav />
-      <div className="landing-content-page">
-        <section className="landing-section">
-          <h1 className="landing-page-title">Teacher Training Manual</h1>
-          <div className="landing-content-text">
+      <div className="page" data-screen-label="Teacher training">
+        <section className="section" style={{ paddingTop: 120 }}>
+          <div className="wrap-content" style={{ maxWidth: 760, margin: '0 auto', padding: '0 22px' }}>
+          <h1 className="h1" style={{ marginBottom: 24 }}>Teacher Training Manual</h1>
+          <div style={{ lineHeight: 1.7 }}>
             <p><strong>Version:</strong> 1.0</p>
             <p><strong>Last updated:</strong> {new Date().toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
 
@@ -21,7 +21,7 @@ export const Training: React.FC = () => {
 
             <h2>Getting Started</h2>
             <p>Before your first session, ensure you have:</p>
-            <ul className="landing-content-list">
+            <ul >
               <li>A device with a camera (laptop, tablet, or desktop with webcam)</li>
               <li>A modern web browser (Chrome, Edge, Safari, or Firefox)</li>
               <li>Camera permission granted in the browser</li>
@@ -38,7 +38,7 @@ export const Training: React.FC = () => {
 
             <h2>Using the Platform</h2>
             <p>Draw In The Air uses simple hand gestures:</p>
-            <ul className="landing-content-list">
+            <ul >
               <li><strong>Wave to start:</strong> Move hand side to side to begin</li>
               <li><strong>Pinch to draw and select:</strong> Bring thumb and index finger together</li>
               <li><strong>Open hand to pause:</strong> Spread fingers wide</li>
@@ -46,7 +46,7 @@ export const Training: React.FC = () => {
 
             <h2>Activity Modes</h2>
             <p>Each mode supports different learning outcomes:</p>
-            <ul className="landing-content-list">
+            <ul >
               <li><strong>Free Paint:</strong> Creative expression and motor control</li>
               <li><strong>Tracing A to Z:</strong> Letter formation and early writing</li>
               <li><strong>Bubble Pop:</strong> Attention, reaction, and hand control</li>
@@ -55,7 +55,7 @@ export const Training: React.FC = () => {
             </ul>
 
             <h2>Best Practices</h2>
-            <ul className="landing-content-list">
+            <ul >
               <li>Start with short sessions (5-10 minutes) and build up</li>
               <li>Use during focused activity time with small groups</li>
               <li>Provide clear instructions and demonstrate gestures</li>
@@ -75,9 +75,10 @@ export const Training: React.FC = () => {
               <strong>Training enquiries:</strong> <a href="mailto:partnership@drawintheair.com">partnership@drawintheair.com</a>
             </p>
           </div>
+          </div>
         </section>
       </div>
-      <Footer />
+      <CalmFooter />
       <BackToTop />
     </div>
   );

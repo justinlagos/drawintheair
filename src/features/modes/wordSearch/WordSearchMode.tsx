@@ -40,7 +40,7 @@ const DEFAULT_SETTINGS: WordSearchSettings = {
     chapter: 1
 };
 
-// Chapter themes (environment themes) — 6 chapters of progressive difficulty.
+// Chapter themes (environment themes), 6 chapters of progressive difficulty.
 const CHAPTER_THEMES: Record<Chapter, Theme> = {
     1: 'animals',
     2: 'nature',
@@ -50,7 +50,7 @@ const CHAPTER_THEMES: Record<Chapter, Theme> = {
     6: 'toys',
 };
 
-// Chapter environment configs — bright Kid-UI palette per chapter.
+// Chapter environment configs, bright Kid-UI palette per chapter.
 const CHAPTER_ENVIRONMENTS: Record<Chapter, {
     backgroundGradient: string;
     accentColor: string;
@@ -441,11 +441,11 @@ export const WordSearchMode = ({ frameRef, showSettings = false, onCloseSettings
                     </div>
                 </div>
 
-                {/* Centre and right intentionally minimal — AdultGate handles the lock icon */}
+                {/* Centre and right intentionally minimal, AdultGate handles the lock icon */}
                 <div style={{ width: isCompact ? '50px' : '100px' }} />
             </div>
 
-            {/* PROGRESS STRIP — Kid-UI cream pill with bright dots */}
+            {/* PROGRESS STRIP, Kid-UI cream pill with bright dots */}
             <div style={{
                 position: 'fixed',
                 top: isCompact ? '60px' : '82px',
@@ -543,7 +543,7 @@ export const WordSearchMode = ({ frameRef, showSettings = false, onCloseSettings
                 }}
             />
 
-            {/* ONBOARDING — Kid-UI cream card, animated in/out via existing keyframes */}
+            {/* ONBOARDING, Kid-UI cream card, animated in/out via existing keyframes */}
             {showOnboarding && (
                 <div style={{
                     position: 'fixed',
@@ -582,7 +582,7 @@ export const WordSearchMode = ({ frameRef, showSettings = false, onCloseSettings
                 </div>
             )}
 
-            {/* BOTTOM INSTRUCTION — KidObjectiveCard with state-based icon */}
+            {/* BOTTOM INSTRUCTION, KidObjectiveCard with state-based icon */}
             <div style={{
                 position: 'fixed',
                 bottom: (isMobile || isTabletSmall) ? '150px' : '32px',
@@ -608,7 +608,7 @@ export const WordSearchMode = ({ frameRef, showSettings = false, onCloseSettings
                 </KidObjectiveCard>
             </div>
 
-            {/* LEVEL COMPLETE — Kid-UI overlay with badge + bright text */}
+            {/* LEVEL COMPLETE, Kid-UI overlay with badge + bright text */}
             {showLevelComplete && (
                 <div style={{
                     position: 'fixed', inset: 0,
@@ -928,7 +928,7 @@ const SettingsModal = ({ settings, onSettingsChange, onClose }: SettingsModalPro
 };
 
 /**
- * Settings row with a label + toggle switch — styled to bright Kid-UI.
+ * Settings row with a label + toggle switch, styled to bright Kid-UI.
  */
 const SettingsToggleRow = ({
     label, active, onToggle,

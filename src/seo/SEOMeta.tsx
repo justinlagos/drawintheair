@@ -46,7 +46,7 @@ export function SEOMeta({
       <meta property="og:image" content={resolvedOgImage} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
-      <meta property="og:image:alt" content={`${title} — Draw in the Air`} />
+      <meta property="og:image:alt" content={`${title}, Draw in the Air`} />
       <meta property="og:site_name" content={SITE.name} />
 
       <meta name="twitter:card" content="summary_large_image" />

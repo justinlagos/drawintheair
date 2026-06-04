@@ -1,5 +1,5 @@
 /**
- * Engagement tab — what kids actually play, how long, where they get stuck.
+ * Engagement tab, what kids actually play, how long, where they get stuck.
  *
  * Three sections:
  *   1. Mode performance cards (one per mode): started, completion,
@@ -55,7 +55,7 @@ export const EngagementTab: React.FC<{ filter: FilterState }> = ({ filter }) => 
 
     return (
         <>
-            {/* LIOS Trust v1 — inline strip. Sits at the top of the
+            {/* LIOS Trust v1, inline strip. Sits at the top of the
                 engagement tab so completion-rate and stuck-rate are
                 always read against their data-quality denominator. */}
             <div className="iv-col-12">
@@ -100,7 +100,7 @@ export const EngagementTab: React.FC<{ filter: FilterState }> = ({ filter }) => 
 
             {/* Time-on-task ranking */}
             <div className="iv-col-6">
-                <Card title="Time on task — longest sessions" meta="Median seconds per session, ranked">
+                <Card title="Time on task, longest sessions" meta="Median seconds per session, ranked">
                     {[...modes].sort((a, b) => b.median_seconds - a.median_seconds).slice(0, 8).map(m => {
                         const max = Math.max(...modes.map(x => x.median_seconds), 1);
                         const pct = (m.median_seconds / max) * 100;
@@ -122,7 +122,7 @@ export const EngagementTab: React.FC<{ filter: FilterState }> = ({ filter }) => 
 
             {/* Friction map */}
             <div className="iv-col-6">
-                <Card title="Friction map — where kids get stuck" meta="Higher % = more kids need help">
+                <Card title="Friction map, where kids get stuck" meta="Higher % = more kids need help">
                     <TableWrap>
                         <table className="iv-table">
                             <thead>
@@ -136,7 +136,7 @@ export const EngagementTab: React.FC<{ filter: FilterState }> = ({ filter }) => 
                             <tbody>
                                 {[...modes].sort((a, b) => b.stuck_rate_pct - a.stuck_rate_pct).slice(0, 8).map(m => {
                                     // Sandbox modes (Free Paint) have no goal, so "abandon" just means
-                                    // "the kid moved on" — that is not a difficulty signal and should
+                                    // "the kid moved on", that is not a difficulty signal and should
                                     // never trigger the "too hard" badge. Surface them as exploratory.
                                     const signal = m.is_open_ended
                                         ? { tone: 'gray' as const, text: 'exploratory' }
@@ -148,7 +148,7 @@ export const EngagementTab: React.FC<{ filter: FilterState }> = ({ filter }) => 
                                         <tr key={m.game_mode}>
                                             <td><Tag tone="aqua">{label(m.game_mode)}</Tag></td>
                                             <td>{fmtPct(m.stuck_rate_pct)}</td>
-                                            <td>{m.is_open_ended ? '—' : fmtPct(m.abandon_rate_pct)}</td>
+                                            <td>{m.is_open_ended ? '-' : fmtPct(m.abandon_rate_pct)}</td>
                                             <td><Tag tone={signal.tone}>{signal.text}</Tag></td>
                                         </tr>
                                     );
@@ -162,7 +162,7 @@ export const EngagementTab: React.FC<{ filter: FilterState }> = ({ filter }) => 
     );
 };
 
-// ── Mode card — packs a lot in a small footprint ─────────────────────
+// ── Mode card, packs a lot in a small footprint ─────────────────────
 const ModeCard: React.FC<{ m: EngagementModeRow }> = ({ m }) => (
     <div className="iv-mode-card">
         <div className="iv-mode-card-head">
@@ -184,7 +184,7 @@ const ModeCard: React.FC<{ m: EngagementModeRow }> = ({ m }) => (
             </div>
             <div>
                 <div className="iv-mode-stat-label">Completion</div>
-                <div className="iv-mode-stat-value">{m.is_open_ended ? '—' : fmtPct(m.completion_rate_pct)}</div>
+                <div className="iv-mode-stat-value">{m.is_open_ended ? '-' : fmtPct(m.completion_rate_pct)}</div>
             </div>
             <div>
                 <div className="iv-mode-stat-label">Median time</div>

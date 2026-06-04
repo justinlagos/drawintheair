@@ -1,10 +1,10 @@
 /**
- * Building Mode — snap engine.
+ * Building Mode, snap engine.
  *
  * The single most-tested system in this mode. Implements the visual-
  * promise-before-commit pattern, semantic eligibility filtering, and
  * silent assistance escalation described in the PRD (§8) and tech plan
- * (§5). Pure functions — no React, no DOM, no canvas — so the rules
+ * (§5). Pure functions, no React, no DOM, no canvas, so the rules
  * can be unit-tested without a browser.
  *
  * Coordinate space: every (x, y) is normalised [0..1] across the canvas.
@@ -73,14 +73,14 @@ export interface PullState {
     /** Where to render the piece this frame. */
     targetX: number;
     targetY: number;
-    /** Soft-thmm should fire once per entry — caller manages debounce. */
+    /** Soft-thmm should fire once per entry, caller manages debounce. */
     crossedAudioThreshold: boolean;
 }
 
 /**
  * Computes the eased position for a grabbed piece this frame, along
  * with the glow value to write back onto the zone. Does NOT mutate
- * piece state — caller decides whether to write the result.
+ * piece state, caller decides whether to write the result.
  *
  * The pull starts at `tolerance × 1.4` (gentle nudge), strengthens
  * linearly toward `tolerance × 0.5` where the audio cue fires, and
@@ -103,10 +103,10 @@ export function computePull(
     const dy = zone.cy - hand.y;
     const dist = Math.hypot(dx, dy);
 
-    // Glow halo — fades in across the outer 1.4× radius.
+    // Glow halo, fades in across the outer 1.4× radius.
     const glow = dist < tol * 1.4 ? Math.max(0, 1 - dist / (tol * 1.4)) : 0;
 
-    // Magnetic pull strength — 0 outside outer radius, eased up to 0.7
+    // Magnetic pull strength, 0 outside outer radius, eased up to 0.7
     // inside tolerance. Cap at 0.7 so the piece never feels like it's
     // been wrenched out of the child's hand.
     let pullStrength = 0;
@@ -163,7 +163,7 @@ export function resolveRelease(
         };
     }
 
-    // Check whether the release was near a wrong-role zone — useful
+    // Check whether the release was near a wrong-role zone, useful
     // telemetry + narrator hook (PRD §9, semantic intelligence).
     const anyZone = nearestZoneAnyRole(hand, zones);
     if (anyZone.zone && anyZone.distance < tol * 1.2) {

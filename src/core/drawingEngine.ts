@@ -70,7 +70,7 @@ export class DrawingEngine {
     private canvasHeight: number = 1080;
     private resampleSpacingPx: number = DEFAULT_RESAMPLE_SPACING_PX;
 
-    // Offscreen cache for committed strokes — avoids full redraw every frame
+    // Offscreen cache for committed strokes, avoids full redraw every frame
     private committedCanvas: HTMLCanvasElement | null = null;
     private committedCtx: CanvasRenderingContext2D | null = null;
     private committedDirty = true;
@@ -109,7 +109,7 @@ export class DrawingEngine {
         if (this.canvasWidth !== width || this.canvasHeight !== height) {
             this.canvasWidth = width;
             this.canvasHeight = height;
-            this.committedDirty = true; // Canvas resized — rebuild offscreen cache
+            this.committedDirty = true; // Canvas resized, rebuild offscreen cache
         }
     }
 
@@ -307,7 +307,7 @@ export class DrawingEngine {
         this.currentStroke = null;
         this.lastFilteredPoint = null;
         this.filter.reset();
-        this.committedDirty = true; // New committed stroke — rebuild offscreen cache
+        this.committedDirty = true; // New committed stroke, rebuild offscreen cache
     }
 
     clear(): void {
@@ -316,7 +316,7 @@ export class DrawingEngine {
         this.lastFilteredPoint = null;
         this.filter.reset();
         this.penManager.reset();
-        this.committedDirty = true; // Canvas cleared — rebuild offscreen cache
+        this.committedDirty = true; // Canvas cleared, rebuild offscreen cache
     }
 
     /**
@@ -351,7 +351,7 @@ export class DrawingEngine {
         if (this.committedCanvas.width !== width || this.committedCanvas.height !== height) {
             this.committedCanvas.width = width;
             this.committedCanvas.height = height;
-            this.committedDirty = true; // Resize clears the offscreen — must rebuild
+            this.committedDirty = true; // Resize clears the offscreen, must rebuild
         }
     }
 
@@ -415,7 +415,7 @@ export class DrawingEngine {
 
     /**
      * Phase 5: Render only committed strokes (for base layer).
-     * Performance: same offscreen cache as render() — O(1) drawImage per frame.
+     * Performance: same offscreen cache as render(), O(1) drawImage per frame.
      */
     renderCommittedStrokes(ctx: CanvasRenderingContext2D, width: number, height: number): void {
         if (this.canvasWidth !== width || this.canvasHeight !== height) {
@@ -577,7 +577,7 @@ export class DrawingEngine {
                 p2.x * width, p2.y * height
             );
 
-            // Variable width based on pressure — 1.75x thicker for visibility
+            // Variable width based on pressure, 1.75x thicker for visibility
             const pressure = (p1.pressure ?? 1) * 0.4 + (p2.pressure ?? 1) * 0.6;
             ctx.lineWidth = stroke.baseWidth * 1.75 * pressure;
             ctx.stroke();
@@ -683,7 +683,7 @@ export class DrawingEngine {
     setStrokes(strokes: Stroke[]): void {
         this.strokes = [...strokes];
         this.currentStroke = null;
-        this.committedDirty = true; // Strokes replaced — rebuild offscreen cache
+        this.committedDirty = true; // Strokes replaced, rebuild offscreen cache
     }
 }
 

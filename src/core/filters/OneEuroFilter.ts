@@ -71,7 +71,7 @@ export const FILTER_PROFILES: Record<FilterProfileMode, OneEuroFilterConfig> = {
         dCutoff: 1.2
     },
     'tracing': {
-        minCutoff: 2.8,  // Minimal smoothing — fast response
+        minCutoff: 2.8,  // Minimal smoothing, fast response
         beta: 0.025,     // Very responsive to fast movements
         dCutoff: 1.2
     },

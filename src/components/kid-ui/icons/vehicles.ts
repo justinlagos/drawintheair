@@ -1,8 +1,8 @@
 /**
- * Vehicle illustrations — red car, blue car, plane, boat.
+ * Vehicle illustrations, red car, blue car, plane, boat.
  * Used by Sort & Place "Animals vs Vehicles" stage.
  *
- * Side-view silhouettes — instantly recognisable as vehicles even
+ * Side-view silhouettes, instantly recognisable as vehicles even
  * without colour cues, so the sort task can rely on category-not-colour.
  */
 

@@ -1,7 +1,7 @@
 /*
  * Draw in the Air — SEO Page Theme System
  * Light premium mode — aligned with landing-v3 (cream/plum/aqua/sunshine).
- * Logo brand blue: #034eae · Logo sunshine: #f9e55e.
+ * Logo brand blue: #8A66F0 · Logo sunshine: #FFE08A.
  * Migrated May 2026 — every SEO surface inherits these tokens.
  */
 
@@ -11,19 +11,19 @@
 
 [data-seo-theme] {
   /* ── Brand primitives (synced with landing-v3 + new logo) ── */
-  --seo-brand-blue:     #034eae;       /* Logo navy-blue */
-  --seo-brand-blue-2:   #1d6fd1;
-  --seo-brand-yellow:   #f9e55e;       /* Logo sunshine */
-  --seo-plum:           #6C3FA4;
+  --seo-brand-blue:     #8A66F0;       /* Logo navy-blue */
+  --seo-brand-blue-2:   #9D7DFF;
+  --seo-brand-yellow:   #FFE08A;       /* Logo sunshine */
+  --seo-plum:           #7A55E0;
   --seo-plum-dark:      #5A2F8C;
-  --seo-aqua:           #55DDE0;
-  --seo-coral:          #FF6B6B;
-  --seo-sunshine:       #FFD84D;
-  --seo-green:          #7ED957;
-  --seo-cream:          #FFFAEB;
+  --seo-aqua:           #5A99F2;
+  --seo-coral:          #F07A5C;
+  --seo-sunshine:       #F0AC1F;
+  --seo-green:          #3FB87F;
+  --seo-cream:          #FFFDF7;
   --seo-cream-deep:     #FCEFC8;
   --seo-paper:          #FAFAFD;
-  --seo-ink:            #1A1B2E;
+  --seo-ink:            #1F1B2E;
   --seo-ink-soft:       #4A4D6B;
   --seo-ink-mute:       #6B6F84;
   --seo-line:           rgba(63, 64, 82, 0.10);
@@ -31,10 +31,10 @@
 
   /* ── Background layers ── */
   --seo-bg-page:
-    radial-gradient(ellipse at 12% 0%, rgba(85, 221, 224, 0.14), transparent 40%),
+    radial-gradient(ellipse at 12% 0%, rgba(90, 153, 242, 0.14), transparent 40%),
     radial-gradient(ellipse at 92% 6%, rgba(255, 216, 77, 0.18), transparent 38%),
-    radial-gradient(ellipse at 50% 100%, rgba(108, 63, 164, 0.08), transparent 55%),
-    linear-gradient(180deg, #F4F1FF 0%, #FFFAEB 55%, #FFF6E0 100%);
+    radial-gradient(ellipse at 50% 100%, rgba(122, 85, 224, 0.08), transparent 55%),
+    linear-gradient(180deg, #F4F1FF 0%, #FFFDF7 55%, #FFF6E0 100%);
   --seo-bg-surface:     #FFFFFF;
   --seo-bg-raised:      #FFFFFF;
   --seo-bg-elevated:    #FFFFFF;
@@ -42,89 +42,89 @@
 
   /* ── Hero gradient ── */
   --seo-hero-bg:
-    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(3, 78, 174, 0.10) 0%, transparent 70%),
-    linear-gradient(180deg, #F4F1FF 0%, #FFFAEB 60%, #FFF6E0 100%);
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(138, 102, 240, 0.10) 0%, transparent 70%),
+    linear-gradient(180deg, #F4F1FF 0%, #FFFDF7 60%, #FFF6E0 100%);
   --seo-hero-overlay:
-    radial-gradient(ellipse 60% 40% at 12% 12%, rgba(85, 221, 224, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 12% 12%, rgba(90, 153, 242, 0.18) 0%, transparent 60%),
     radial-gradient(ellipse 50% 40% at 88% 10%, rgba(255, 216, 77, 0.22) 0%, transparent 60%);
 
   /* ── Section tints ── */
   --seo-section-light:  #FFFFFF;
   --seo-section-dark:   transparent;
-  --seo-cta-band: linear-gradient(135deg, #034eae 0%, #1d6fd1 55%, #6C3FA4 100%);
+  --seo-cta-band: linear-gradient(135deg, #8A66F0 0%, #9D7DFF 55%, #7A55E0 100%);
 
   /* ── Nav ── */
   --seo-nav-bg:         rgba(255, 255, 255, 0.82);
-  --seo-nav-border:     rgba(3, 78, 174, 0.12);
+  --seo-nav-border:     rgba(138, 102, 240, 0.12);
 
   /* ── Text ── */
-  --seo-text-primary:   #1A1B2E;
+  --seo-text-primary:   #1F1B2E;
   --seo-text-secondary: #4A4D6B;
   --seo-text-muted:     #6B6F84;
   --seo-text-on-accent: #FFFFFF;
-  --seo-text-heading:   #1A1B2E;
+  --seo-text-heading:   #1F1B2E;
   --seo-text-nav:       #4A4D6B;
-  --seo-text-nav-hover: #034eae;
+  --seo-text-nav-hover: #8A66F0;
   --seo-text-footer:    #4A4D6B;
 
   /* ── Accent / brand ── */
-  --seo-accent:         #034eae;
-  --seo-accent-hover:   #1d6fd1;
-  --seo-accent-dim:     rgba(3, 78, 174, 0.08);
-  --seo-accent-border:  rgba(3, 78, 174, 0.22);
-  --seo-cyan:           #1c7e80;
-  --seo-cyan-dim:       rgba(85, 221, 224, 0.18);
-  --seo-cyan-border:    rgba(28, 126, 128, 0.30);
+  --seo-accent:         #8A66F0;
+  --seo-accent-hover:   #9D7DFF;
+  --seo-accent-dim:     rgba(138, 102, 240, 0.08);
+  --seo-accent-border:  rgba(138, 102, 240, 0.22);
+  --seo-cyan:           #2E9D68;
+  --seo-cyan-dim:       rgba(90, 153, 242, 0.18);
+  --seo-cyan-border:    rgba(46, 157, 104, 0.30);
 
   /* ── Badge / chip ── */
-  --seo-badge-bg:       rgba(3, 78, 174, 0.08);
-  --seo-badge-border:   rgba(3, 78, 174, 0.22);
-  --seo-badge-text:     #034eae;
-  --seo-badge-audience-bg: rgba(108, 63, 164, 0.10);
-  --seo-badge-audience-text: #6C3FA4;
+  --seo-badge-bg:       rgba(138, 102, 240, 0.08);
+  --seo-badge-border:   rgba(138, 102, 240, 0.22);
+  --seo-badge-text:     #8A66F0;
+  --seo-badge-audience-bg: rgba(122, 85, 224, 0.10);
+  --seo-badge-audience-text: #7A55E0;
 
   /* ── Cards ── */
   --seo-card-bg:        #FFFFFF;
   --seo-card-border:    rgba(63, 64, 82, 0.10);
-  --seo-card-border-hover: rgba(3, 78, 174, 0.40);
+  --seo-card-border-hover: rgba(138, 102, 240, 0.40);
   --seo-card-shadow-hover: 0 24px 60px rgba(63, 64, 82, 0.14);
   --seo-card-letter-bg: rgba(255, 216, 77, 0.18);
 
   /* ── Download accent ── */
-  --seo-download-text:  #1c7e80;
-  --seo-download-bg:    rgba(85, 221, 224, 0.14);
+  --seo-download-text:  #2E9D68;
+  --seo-download-bg:    rgba(90, 153, 242, 0.14);
 
   /* ── CTA button ── */
-  --seo-btn-primary-bg: linear-gradient(180deg, #1d6fd1 0%, #034eae 100%);
+  --seo-btn-primary-bg: linear-gradient(180deg, #9D7DFF 0%, #8A66F0 100%);
   --seo-btn-primary-text: #FFFFFF;
-  --seo-btn-primary-shadow: 0 10px 24px rgba(3, 78, 174, 0.28);
+  --seo-btn-primary-shadow: 0 10px 24px rgba(138, 102, 240, 0.28);
   --seo-btn-outline-bg: rgba(255, 255, 255, 0.85);
-  --seo-btn-outline-text: #034eae;
-  --seo-btn-outline-border: rgba(3, 78, 174, 0.28);
+  --seo-btn-outline-text: #8A66F0;
+  --seo-btn-outline-border: rgba(138, 102, 240, 0.28);
 
   /* ── FAQ ── */
   --seo-faq-border:     rgba(63, 64, 82, 0.10);
-  --seo-faq-q-text:     #1A1B2E;
+  --seo-faq-q-text:     #1F1B2E;
   --seo-faq-a-text:     #4A4D6B;
-  --seo-faq-toggle:     #034eae;
+  --seo-faq-toggle:     #8A66F0;
 
   /* ── Dividers ── */
   --seo-divider:        rgba(63, 64, 82, 0.10);
-  --seo-footer-border:  rgba(3, 78, 174, 0.14);
-  --seo-footer-bg:      linear-gradient(180deg, #FFFAEB 0%, #FCEFC8 100%);
+  --seo-footer-border:  rgba(138, 102, 240, 0.14);
+  --seo-footer-bg:      linear-gradient(180deg, #FFFDF7 0%, #FCEFC8 100%);
 
   /* ── Hero text tint ── */
   --seo-hero-subtitle:  #4A4D6B;
 
   /* ── Workbook CTA box ── */
-  --seo-workbook-bg:    linear-gradient(135deg, rgba(255, 216, 77, 0.18), rgba(85, 221, 224, 0.10));
-  --seo-workbook-border: rgba(3, 78, 174, 0.18);
+  --seo-workbook-bg:    linear-gradient(135deg, rgba(255, 216, 77, 0.18), rgba(90, 153, 242, 0.10));
+  --seo-workbook-border: rgba(138, 102, 240, 0.18);
 
   /* ── Internal link chips ── */
   --seo-chip-bg:        rgba(255, 255, 255, 0.85);
-  --seo-chip-border:    rgba(3, 78, 174, 0.22);
-  --seo-chip-text:      #034eae;
-  --seo-chip-bg-hover:  #034eae;
+  --seo-chip-border:    rgba(138, 102, 240, 0.22);
+  --seo-chip-text:      #8A66F0;
+  --seo-chip-bg-hover:  #8A66F0;
   --seo-chip-text-hover: #FFFFFF;
 
   /* ── Mobile menu ── */
@@ -237,7 +237,7 @@
 }
 
 .seo-btn-cta {
-  background: linear-gradient(180deg, #1d6fd1 0%, #034eae 100%);
+  background: linear-gradient(180deg, #9D7DFF 0%, #8A66F0 100%);
   color: white;
   border: none;
   border-radius: 999px;
@@ -247,12 +247,12 @@
   cursor: pointer;
   white-space: nowrap;
   transition: transform 0.18s, box-shadow 0.18s;
-  box-shadow: 0 8px 20px rgba(3, 78, 174, 0.28), inset 0 1px 0 rgba(255,255,255,0.3);
+  box-shadow: 0 8px 20px rgba(138, 102, 240, 0.28), inset 0 1px 0 rgba(255,255,255,0.3);
 }
 
 .seo-btn-cta:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 28px rgba(3, 78, 174, 0.36);
+  box-shadow: 0 14px 28px rgba(138, 102, 240, 0.36);
 }
 
 /* Mobile hamburger */
@@ -313,7 +313,7 @@
 
 .seo-mobile-cta {
   margin-top: 12px;
-  background: linear-gradient(180deg, #1d6fd1 0%, #034eae 100%);
+  background: linear-gradient(180deg, #9D7DFF 0%, #8A66F0 100%);
   color: white;
   border: none;
   border-radius: 999px;
@@ -322,7 +322,7 @@
   font-size: 0.95rem;
   cursor: pointer;
   text-align: center;
-  box-shadow: 0 8px 20px rgba(3, 78, 174, 0.30);
+  box-shadow: 0 8px 20px rgba(138, 102, 240, 0.30);
 }
 
 /* ── Hero ─────────────────────────────────────────────── */
@@ -392,7 +392,7 @@
 }
 
 .seo-hero-cta {
-  background: linear-gradient(180deg, #1d6fd1 0%, #034eae 100%);
+  background: linear-gradient(180deg, #9D7DFF 0%, #8A66F0 100%);
   color: white;
   border: none;
   border-radius: 999px;
@@ -400,13 +400,13 @@
   font-weight: 800;
   font-size: 1.05rem;
   cursor: pointer;
-  box-shadow: 0 12px 28px rgba(3, 78, 174, 0.30), inset 0 1px 0 rgba(255,255,255,0.3);
+  box-shadow: 0 12px 28px rgba(138, 102, 240, 0.30), inset 0 1px 0 rgba(255,255,255,0.3);
   transition: transform 0.18s, box-shadow 0.18s;
 }
 
 .seo-hero-cta:hover {
   transform: translateY(-2px);
-  box-shadow: 0 18px 36px rgba(3, 78, 174, 0.40);
+  box-shadow: 0 18px 36px rgba(138, 102, 240, 0.40);
 }
 
 /* ── Sections ─────────────────────────────────────────── */
@@ -674,8 +674,8 @@
 }
 
 .seo-cta-band-btn {
-  background: #FFD84D;
-  color: #1A1B2E;
+  background: #F0AC1F;
+  color: #1F1B2E;
   border: none;
   border-radius: 999px;
   padding: 16px 44px;

@@ -1,5 +1,5 @@
 // src/pages/seo/ShareLandingPage.tsx
-// Handles /share/:activitySlug — a teacher-friendly share landing page.
+// Handles /share/:activitySlug, a teacher-friendly share landing page.
 // When a teacher shares an activity link, this page explains the activity,
 // provides a "Try It" CTA, and tracks the share funnel.
 
@@ -24,17 +24,17 @@ interface ActivityMeta {
 
 const ACTIVITY_MAP: Record<string, ActivityMeta> = {
   'bubble-pop': {
-    title: 'Bubble Pop — Gesture Brain Break | Draw in the Air',
+    title: 'Bubble Pop, Gesture Brain Break | Draw in the Air',
     description: 'A fast-paced hand-eye coordination game where children point at bubbles to pop them using just a webcam. Free, browser-based, no download.',
     emoji: '🫧',
     badge: 'Brain Break Activity',
     playPath: '/play?screen=game&mode=calibration',
-    heroTitle: 'Bubble Pop — Your Colleague Shared This Activity',
+    heroTitle: 'Bubble Pop, Your Colleague Shared This Activity',
     heroSub: 'A 30-second hand-eye coordination game where children point at bubbles using their webcam. Perfect for movement breaks between lessons.',
-    whatItIs: 'Bubble Pop is a fast-paced reaction game that uses webcam hand tracking. Children point their index finger at floating bubbles to pop them — no mouse, no touchscreen. The activity runs for 30 seconds per round and works on any laptop or Chromebook with a built-in camera.',
+    whatItIs: 'Bubble Pop is a fast-paced reaction game that uses webcam hand tracking. Children point their index finger at floating bubbles to pop them, no mouse, no touchscreen. The activity runs for 30 seconds per round and works on any laptop or Chromebook with a built-in camera.',
     howToPlay: [
       'Open drawintheair.com on any device with a webcam',
-      'Allow camera access — no video is recorded or transmitted',
+      'Allow camera access, no video is recorded or transmitted',
       'Wave at the camera to activate hand tracking',
       'Point your index finger at the bubbles to pop them',
       'See how many you can pop in 30 seconds',
@@ -42,17 +42,17 @@ const ACTIVITY_MAP: Record<string, ActivityMeta> = {
     skills: ['Hand-eye coordination', 'Reaction speed', 'Visual tracking', 'Focus and attention'],
   },
   'letter-tracing': {
-    title: 'Letter Tracing A–Z — Air Writing Practice | Draw in the Air',
+    title: 'Letter Tracing A–Z, Air Writing Practice | Draw in the Air',
     description: 'Children trace letters A–Z in the air using their finger and webcam. Builds handwriting readiness through gross motor air tracing. Free, browser-based.',
     emoji: '✏️',
     badge: 'Literacy Activity',
     playPath: '/play?screen=game&mode=pre-writing',
-    heroTitle: 'Letter Tracing — Your Colleague Shared This Activity',
+    heroTitle: 'Letter Tracing, Your Colleague Shared This Activity',
     heroSub: 'Children trace letters A–Z in the air using hand gestures detected by webcam. Builds handwriting readiness through gross motor movement.',
     whatItIs: 'Letter Tracing uses AI hand tracking to guide children through the correct stroke sequence for every letter of the alphabet. Children trace the path in the air with their finger, receiving real-time visual feedback as they follow the guided route. Available for all 26 uppercase letters plus phonics sounds and example words.',
     howToPlay: [
       'Open drawintheair.com on any device with a webcam',
-      'Allow camera access — no video leaves the device',
+      'Allow camera access, no video leaves the device',
       'Wave to activate hand tracking',
       'Choose a letter from the alphabet selector',
       'Follow the path on screen by tracing with your index finger',
@@ -60,12 +60,12 @@ const ACTIVITY_MAP: Record<string, ActivityMeta> = {
     skills: ['Letter formation', 'Handwriting readiness', 'Fine motor planning', 'Phonics awareness'],
   },
   'sort-and-place': {
-    title: 'Sort and Place — Categorisation Game | Draw in the Air',
+    title: 'Sort and Place, Categorisation Game | Draw in the Air',
     description: 'Children sort and place objects into categories using pinch-and-drag hand gestures. Develops logical thinking and spatial reasoning. Free, browser-based.',
     emoji: '📦',
     badge: 'Cognitive Activity',
     playPath: '/play?screen=game&mode=sort-and-place',
-    heroTitle: 'Sort and Place — Your Colleague Shared This Activity',
+    heroTitle: 'Sort and Place, Your Colleague Shared This Activity',
     heroSub: 'Children pinch, drag, and drop objects into the correct categories using hand gestures detected by webcam. Develops logical thinking through physical play.',
     whatItIs: 'Sort and Place is a gesture-controlled categorisation game. Children use a pinch gesture to pick up objects and drag them to the correct sorting bin. Three rounds of increasing difficulty cover sorting by colour, category, and a mystery rule that children must discover themselves.',
     howToPlay: [
@@ -78,13 +78,13 @@ const ACTIVITY_MAP: Record<string, ActivityMeta> = {
     skills: ['Categorisation', 'Logical thinking', 'Spatial reasoning', 'Manipulative coordination'],
   },
   'free-paint': {
-    title: 'Free Paint — Creative Air Drawing | Draw in the Air',
+    title: 'Free Paint, Creative Air Drawing | Draw in the Air',
     description: 'Children draw anything they like in the air using hand gestures and webcam. Creative expression through gesture-based digital art. Free, browser-based.',
     emoji: '🎨',
     badge: 'Creative Activity',
     playPath: '/play?screen=game&mode=free',
-    heroTitle: 'Free Paint — Your Colleague Shared This Activity',
-    heroSub: 'An open-ended creative drawing mode where children paint in the air using hand gestures. No right or wrong — just movement and colour.',
+    heroTitle: 'Free Paint, Your Colleague Shared This Activity',
+    heroSub: 'An open-ended creative drawing mode where children paint in the air using hand gestures. No right or wrong, just movement and colour.',
     whatItIs: 'Free Paint gives children an open canvas to draw anything using hand gestures detected by webcam. Pinch thumb and index finger to draw, open the hand to lift. Multiple colours and brush sizes are available. Great for creative warm-ups, art sessions, or unstructured movement time.',
     howToPlay: [
       'Open drawintheair.com and allow camera access',
@@ -101,8 +101,8 @@ const ACTIVITY_MAP: Record<string, ActivityMeta> = {
     emoji: '✋',
     badge: 'Gesture Learning',
     playPath: SITE.appPath,
-    heroTitle: 'Gesture Learning — Your Colleague Shared This Platform',
-    heroSub: 'Nine gesture-controlled learning activities for children ages 3–8. Everything runs in the browser — no installation, no accounts, no cost.',
+    heroTitle: 'Gesture Learning, Your Colleague Shared This Platform',
+    heroSub: 'Nine gesture-controlled learning activities for children ages 3–8. Everything runs in the browser, no installation, no accounts, no cost.',
     whatItIs: 'Draw in the Air uses AI hand tracking to let children interact with learning activities through natural hand movements. Nine modes cover letters, numbers, shapes, sorting, colours, maths, and creative drawing. Works on any laptop or Chromebook with a webcam.',
     howToPlay: [
       'Open drawintheair.com on any device with a webcam',
@@ -115,19 +115,19 @@ const ACTIVITY_MAP: Record<string, ActivityMeta> = {
   },
 };
 
-// Fallback for unknown slugs — maps to the full app
+// Fallback for unknown slugs, maps to the full app
 const FALLBACK_META: ActivityMeta = {
-  title: 'Draw in the Air — Gesture Learning Activity',
-  description: 'Your colleague shared a gesture learning activity. Try it free in your browser — no download, no account, no cost.',
+  title: 'Draw in the Air, Gesture Learning Activity',
+  description: 'Your colleague shared a gesture learning activity. Try it free in your browser, no download, no account, no cost.',
   emoji: '🎮',
   badge: 'Shared Activity',
   playPath: SITE.appPath,
   heroTitle: 'A Colleague Shared This Learning Activity',
-  heroSub: 'Draw in the Air offers gesture-controlled educational activities for children ages 3–8. Everything runs in the browser — no installation needed.',
+  heroSub: 'Draw in the Air offers gesture-controlled educational activities for children ages 3–8. Everything runs in the browser, no installation needed.',
   whatItIs: 'Draw in the Air uses AI hand tracking to let children interact with learning activities through natural hand movements. Nine modes cover letters, numbers, shapes, sorting, and creative drawing. Works on any Chromebook or laptop with a webcam.',
   howToPlay: [
     'Open drawintheair.com on any device with a webcam',
-    'Allow camera access — no video is recorded or transmitted',
+    'Allow camera access, no video is recorded or transmitted',
     'Wave to activate hand tracking',
     'Choose an activity and start learning through movement',
   ],
@@ -146,7 +146,7 @@ function trackShareLanding(slug: string) {
     // Store in sessionStorage for conversion tracking
     sessionStorage.setItem('dita_share_landing', JSON.stringify({ slug, ref, ts: Date.now() }));
   } catch {
-    // Non-critical — tracking failure should not affect UX
+    // Non-critical, tracking failure should not affect UX
   }
 }
 
@@ -168,12 +168,12 @@ export default function ShareLandingPage({ slug }: { slug: string }) {
 
       {/* Shared-by notice */}
       <div style={{
-        background: 'linear-gradient(90deg, rgba(3,78,174,0.128), rgba(28,126,128,0.1))',
-        borderBottom: '1px solid rgba(3,78,174,0.212)',
+        background: 'linear-gradient(90deg, rgba(138,102,240,0.128), rgba(46,157,104,0.1))',
+        borderBottom: '1px solid rgba(138,102,240,0.212)',
         padding: '10px 24px',
         textAlign: 'center',
       }}>
-        <span style={{ color: '#6C3FA4', fontSize: '0.85rem', fontWeight: 600 }}>
+        <span style={{ color: '#7A55E0', fontSize: '0.85rem', fontWeight: 600 }}>
           👩‍🏫 A colleague shared this activity with you · Free to try · No account needed
         </span>
       </div>
@@ -183,21 +183,21 @@ export default function ShareLandingPage({ slug }: { slug: string }) {
         emoji={meta.emoji}
         title={meta.heroTitle}
         subtitle={meta.heroSub}
-        cta={{ label: 'Try This Activity — Free ✨', path: meta.playPath }}
+        cta={{ label: 'Try This Activity, Free ✨', path: meta.playPath }}
       />
 
       {/* What it is */}
       <Section>
-        <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 16 }}>What Is This Activity?</h2>
+        <h2 style={{ color: '#1F1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 16 }}>What Is This Activity?</h2>
         <p style={{ color: '#4A4D6B', fontSize: '1.05rem', lineHeight: 1.65, marginBottom: 32 }}>{meta.whatItIs}</p>
 
         {/* Skills grid */}
-        <h3 style={{ color: '#1A1B2E', fontSize: '1.1rem', fontWeight: 700, marginBottom: 14 }}>Skills Developed</h3>
+        <h3 style={{ color: '#1F1B2E', fontSize: '1.1rem', fontWeight: 700, marginBottom: 14 }}>Skills Developed</h3>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 32 }}>
           {meta.skills.map(skill => (
             <span
               key={skill}
-              style={{ background: 'rgba(3,78,174,0.16)', border: '1px solid rgba(3,78,174,0.297)', color: '#6C3FA4', borderRadius: 20, padding: '6px 16px', fontSize: '0.85rem', fontWeight: 600 }}
+              style={{ background: 'rgba(138,102,240,0.16)', border: '1px solid rgba(138,102,240,0.297)', color: '#7A55E0', borderRadius: 20, padding: '6px 16px', fontSize: '0.85rem', fontWeight: 600 }}
             >
               {skill}
             </span>
@@ -207,17 +207,17 @@ export default function ShareLandingPage({ slug }: { slug: string }) {
 
       {/* How to play */}
       <Section light>
-        <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>How to Get Started</h2>
+        <h2 style={{ color: '#1F1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>How to Get Started</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 32 }}>
           {meta.howToPlay.map((step, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
               <div style={{
-                width: 32, height: 32, borderRadius: '50%', background: 'rgba(3,78,174,0.18)',
-                border: '1px solid rgba(3,78,174,0.425)', color: '#6C3FA4',
+                width: 32, height: 32, borderRadius: '50%', background: 'rgba(138,102,240,0.18)',
+                border: '1px solid rgba(138,102,240,0.425)', color: '#7A55E0',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontWeight: 800, fontSize: '0.85rem', flexShrink: 0,
               }}>{i + 1}</div>
-              <p style={{ color: '#1A1B2E', fontSize: '0.95rem', lineHeight: 1.6, margin: 0, paddingTop: 4 }}>{step}</p>
+              <p style={{ color: '#1F1B2E', fontSize: '0.95rem', lineHeight: 1.6, margin: 0, paddingTop: 4 }}>{step}</p>
             </div>
           ))}
         </div>
@@ -225,9 +225,9 @@ export default function ShareLandingPage({ slug }: { slug: string }) {
         <div style={{ textAlign: 'center' }}>
           <button
             onClick={() => navigate(meta.playPath)}
-            style={{ background: 'linear-gradient(180deg, #1d6fd1 0%, #034eae 100%)', color: '#1A1B2E', border: 'none', borderRadius: 32, padding: '16px 40px', fontWeight: 800, fontSize: '1.05rem', cursor: 'pointer', boxShadow: '0 4px 24px rgba(3,78,174,0.255)' }}
+            style={{ background: 'linear-gradient(180deg, #9D7DFF 0%, #8A66F0 100%)', color: '#1F1B2E', border: 'none', borderRadius: 32, padding: '16px 40px', fontWeight: 800, fontSize: '1.05rem', cursor: 'pointer', boxShadow: '0 4px 24px rgba(138,102,240,0.255)' }}
           >
-            Try It Now — It's Free ✨
+            Try It Now, It's Free ✨
           </button>
           <div style={{ marginTop: 12, color: '#6B6F84', fontSize: '0.82rem' }}>
             No download · No login · Works on any laptop with a camera
@@ -237,7 +237,7 @@ export default function ShareLandingPage({ slug }: { slug: string }) {
 
       {/* Trust signals */}
       <Section>
-        <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>Why Teachers Use Draw in the Air</h2>
+        <h2 style={{ color: '#1F1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>Why Teachers Use Draw in the Air</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
           {[
             { icon: '🔒', title: 'Privacy First', detail: 'Camera processing happens on the device. No video is recorded, transmitted, or stored.' },
@@ -245,24 +245,24 @@ export default function ShareLandingPage({ slug }: { slug: string }) {
             { icon: '💻', title: 'Chromebook Ready', detail: 'Runs in the browser with no installation. Works immediately on any school device.' },
             { icon: '⚡', title: 'No Setup', detail: 'No accounts, no student logins, no IT requests. Open the browser and start.' },
           ].map(item => (
-            <div key={item.title} style={{ background: '#FFFFFF', border: '1px solid rgba(3,78,174,0.17)', borderRadius: 12, padding: '20px 24px' }}>
+            <div key={item.title} style={{ background: '#FFFFFF', border: '1px solid rgba(138,102,240,0.17)', borderRadius: 12, padding: '20px 24px' }}>
               <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>{item.icon}</div>
-              <div style={{ color: '#1A1B2E', fontWeight: 700, marginBottom: 6 }}>{item.title}</div>
+              <div style={{ color: '#1F1B2E', fontWeight: 700, marginBottom: 6 }}>{item.title}</div>
               <div style={{ color: '#4A4D6B', fontSize: '0.88rem', lineHeight: 1.55 }}>{item.detail}</div>
             </div>
           ))}
         </div>
 
         {/* Share this yourself */}
-        <div style={{ marginTop: 40, background: 'rgba(3,78,174,0.06)', border: '1px solid rgba(3,78,174,0.17)', borderRadius: 16, padding: '28px 32px', textAlign: 'center' }}>
+        <div style={{ marginTop: 40, background: 'rgba(138,102,240,0.06)', border: '1px solid rgba(138,102,240,0.17)', borderRadius: 16, padding: '28px 32px', textAlign: 'center' }}>
           <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>📤</div>
-          <h3 style={{ color: '#1A1B2E', fontWeight: 700, fontSize: '1.1rem', marginBottom: 8 }}>Found this useful? Share it with another teacher.</h3>
+          <h3 style={{ color: '#1F1B2E', fontWeight: 700, fontSize: '1.1rem', marginBottom: 8 }}>Found this useful? Share it with another teacher.</h3>
           <p style={{ color: '#4A4D6B', fontSize: '0.9rem', marginBottom: 16 }}>
             After you try an activity, use the share button in the app to send it to a colleague.
           </p>
           <button
             onClick={() => navigate(SITE.appPath)}
-            style={{ background: '#034eae', color: '#1A1B2E', border: 'none', borderRadius: 24, padding: '10px 28px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
+            style={{ background: '#8A66F0', color: '#1F1B2E', border: 'none', borderRadius: 24, padding: '10px 28px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
           >
             Explore All Activities
           </button>

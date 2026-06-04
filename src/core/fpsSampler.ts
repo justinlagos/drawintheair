@@ -1,5 +1,5 @@
 /**
- * FPS Sampler — Lightweight, zero-overhead when disabled
+ * FPS Sampler, Lightweight, zero-overhead when disabled
  *
  * Usage: import { fpsSampler } from './fpsSampler'; fpsSampler.start();
  *

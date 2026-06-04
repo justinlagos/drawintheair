@@ -1,12 +1,12 @@
 /**
- * /teachers/setup — Teacher Quick-Start guide.
+ * /teachers/setup, Teacher Quick-Start guide.
  *
  * Idiot-proof. Big-numbered steps. Prints to A4 cleanly via Cmd+P.
  *
  * Design intent (per the strategist memo):
  *   • Same flow works for in-person and remote.
  *   • Reading time under 90 seconds; doing time under 60.
- *   • Distribution loop at the bottom — every page is a recruiting
+ *   • Distribution loop at the bottom, every page is a recruiting
  *     surface for the colleague-down-the-hall.
  */
 
@@ -18,7 +18,7 @@ import './setup.css';
 
 const printGuide = () => window.print();
 
-const SHARE_BLURB = `Hi — I've started using Draw in the Air with my class. It's a free movement-learning tool that runs in the browser, no accounts, no install. Five-minute brain breaks that actually teach something. There's a teacher quick-start at https://drawintheair.com/teachers/setup if you want a look.`;
+const SHARE_BLURB = `Hi, I've started using Draw in the Air with my class. It's a free movement-learning tool that runs in the browser, no accounts, no install. Five-minute brain breaks that actually teach something. There's a teacher quick-start at https://drawintheair.com/teachers/setup if you want a look.`;
 
 export default function TeacherSetupGuide() {
     useEffect(() => {
@@ -46,7 +46,7 @@ export default function TeacherSetupGuide() {
                         <p className="sg-hero-eyebrow">Teacher quick-start</p>
                         <h1>Run your first class in 60 seconds.</h1>
                         <p>
-                            One join code for the whole lesson. You're in control the whole time —
+                            One join code for the whole lesson. You're in control the whole time,
                             students never click anything they shouldn't.
                         </p>
                         <div className="sg-hero-actions sg-no-print">
@@ -68,7 +68,7 @@ export default function TeacherSetupGuide() {
                                     <p className="sg-step-title">Sign in</p>
                                     <p className="sg-step-body">
                                         Open <code>drawintheair.com/class</code> on your laptop. Sign in with your
-                                        Google account (school or personal — same thing).
+                                        Google account (school or personal, same thing).
                                     </p>
                                 </div>
                             </li>
@@ -77,7 +77,7 @@ export default function TeacherSetupGuide() {
                                     <p className="sg-step-title">Click "Start Class"</p>
                                     <p className="sg-step-body">
                                         A <strong>4-digit code</strong> appears in the top-left of your screen.
-                                        That code is good for the whole lesson — no need to ever generate a new one.
+                                        That code is good for the whole lesson, no need to ever generate a new one.
                                     </p>
                                 </div>
                             </li>
@@ -95,7 +95,7 @@ export default function TeacherSetupGuide() {
                                     <p className="sg-step-title">Pick an activity</p>
                                     <p className="sg-step-body">
                                         On your console, tap any activity tile. Every joined student instantly
-                                        sees that activity start. They never pick — you do.
+                                        sees that activity start. They never pick, you do.
                                     </p>
                                 </div>
                             </li>
@@ -103,7 +103,7 @@ export default function TeacherSetupGuide() {
                                 <div>
                                     <p className="sg-step-title">Run the room</p>
                                     <p className="sg-step-body">
-                                        Pause / resume / end / switch — students follow whatever you do. When you're
+                                        Pause / resume / end / switch, students follow whatever you do. When you're
                                         done, hold "End class" for 2 seconds and you'll see a printable summary.
                                     </p>
                                 </div>
@@ -117,10 +117,10 @@ export default function TeacherSetupGuide() {
                         <ul className="sg-checklist">
                             <li>A laptop or Chromebook for you (with a webcam, but you don't need to use it)</li>
                             <li>A Chromebook or tablet per child (or pairs share a screen)</li>
-                            <li>A webcam on each child's device — almost all built-in webcams work</li>
-                            <li>Decent lighting — natural light from a window is best</li>
+                            <li>A webcam on each child's device, almost all built-in webcams work</li>
+                            <li>Decent lighting, natural light from a window is best</li>
                             <li>About 1 metre of clear space in front of each child</li>
-                            <li>Modern browser: Chrome, Edge, Safari, Firefox — all work</li>
+                            <li>Modern browser: Chrome, Edge, Safari, Firefox, all work</li>
                             <li>No software install. No accounts for students. Ever.</li>
                         </ul>
                     </section>
@@ -184,7 +184,7 @@ export default function TeacherSetupGuide() {
                         <h2><span className="sg-h-emoji">🔒</span>What you can tell parents (and SLT)</h2>
                         <p>
                             <strong>No video is recorded or transmitted, ever.</strong> The hand tracking happens
-                            entirely in each child's browser — no frames leave their device.
+                            entirely in each child's browser, no frames leave their device.
                         </p>
                         <p>
                             We collect anonymous gameplay analytics (which activity, how long, accuracy on the
@@ -207,13 +207,13 @@ export default function TeacherSetupGuide() {
 
                             <dt>"It says my hand isn't tracked."</dt>
                             <dd>
-                                Three usual causes — too dark, too close, or too far. Face a window. Stand back
+                                Three usual causes, too dark, too close, or too far. Face a window. Stand back
                                 about an arm's length. Make sure your full hand is in the camera frame.
                             </dd>
 
                             <dt>"A student lost connection."</dt>
                             <dd>
-                                Their tablet probably went to sleep. Tell them to refresh — they auto-rejoin with
+                                Their tablet probably went to sleep. Tell them to refresh, they auto-rejoin with
                                 the same code and name within 15 minutes; their progress is intact.
                             </dd>
 
@@ -236,7 +236,7 @@ export default function TeacherSetupGuide() {
                             <dt>"Can I run the same code tomorrow?"</dt>
                             <dd>
                                 Once a class is ended it's archived (you'll see it in "Recent classes"). Each new
-                                class gets a fresh code — but it takes one click to start.
+                                class gets a fresh code, but it takes one click to start.
                             </dd>
 
                             <dt>"Where do I see what each student did?"</dt>
@@ -272,7 +272,7 @@ export default function TeacherSetupGuide() {
                                 className="sg-btn sg-btn-secondary"
                                 onClick={() => {
                                     navigator.clipboard?.writeText('https://drawintheair.com/teachers/setup');
-                                    alert('Link copied — paste it anywhere.');
+                                    alert('Link copied, paste it anywhere.');
                                 }}
                             >
                                 🔗 Copy link

@@ -1,5 +1,5 @@
 /**
- * Colour swatch illustrations — 8 colours used by Sort & Place "Warm vs
+ * Colour swatch illustrations, 8 colours used by Sort & Place "Warm vs
  * Cool" stage. Each is a glossy 2.5D sphere with the palette colour
  * baked in (intrinsic) so the data colour drives the appearance.
  *

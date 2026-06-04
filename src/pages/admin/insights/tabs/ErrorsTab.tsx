@@ -1,5 +1,5 @@
 /**
- * Errors tab — grouped error stream with frequency.
+ * Errors tab, grouped error stream with frequency.
  */
 
 import React, { useMemo } from 'react';
@@ -15,7 +15,7 @@ export const ErrorsTab: React.FC = () => {
         if (!errors.data) return [];
         const map = new Map<string, { event: string; code: string; count: number; last: string; pages: Set<string> }>();
         for (const e of errors.data.errors) {
-            const code = (e.meta?.code as string | undefined) ?? '—';
+            const code = (e.meta?.code as string | undefined) ?? '-';
             const key = `${e.event_name}::${code}`;
             const cur = map.get(key) ?? { event: e.event_name, code, count: 0, last: e.occurred_at, pages: new Set<string>() };
             cur.count++;
@@ -30,7 +30,7 @@ export const ErrorsTab: React.FC = () => {
         <div className="iv-col-12">
             <Card
                 title="Error stream (grouped)"
-                meta={errors.data ? `${errors.data.errors.length} events · ${grouped.length} types` : '—'}
+                meta={errors.data ? `${errors.data.errors.length} events · ${grouped.length} types` : '-'}
                 actions={
                     <button className="iv-btn iv-btn-sm"
                         disabled={!errors.data || errors.data.errors.length === 0}

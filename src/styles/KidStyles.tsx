@@ -1,9 +1,9 @@
 /**
- * KidStyles — single-mount component that injects the kid-UI design system
+ * KidStyles, single-mount component that injects the kid-UI design system
  * (tokens as CSS custom properties + named keyframes) into the document.
  *
  * Mount once near the app root (above any consumer of `--kid-*` vars or
- * the kidAnimation strings). Idempotent — React renders one <style> tag.
+ * the kidAnimation strings). Idempotent, React renders one <style> tag.
  */
 
 import { kidTokensCss } from './tokens';

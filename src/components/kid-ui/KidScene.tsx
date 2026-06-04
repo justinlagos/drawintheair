@@ -1,5 +1,5 @@
 /**
- * KidScene — light sky background with rolling hills and clouds.
+ * KidScene, light sky background with rolling hills and clouds.
  *
  * Optional decorative wrapper for game canvases. Pure CSS/SVG, zero JS
  * per-frame work. Sits behind the gameplay layer.

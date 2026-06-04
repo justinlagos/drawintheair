@@ -2,25 +2,25 @@
  * Shared SVG fragments and helpers for the Kid-UI icon library.
  *
  * Re-usable bits that show up across multiple category files. Centralised
- * so the visual language stays consistent — touch a constant, every icon
+ * so the visual language stays consistent, touch a constant, every icon
  * picks it up.
  */
 
 import type { KidIconDef } from '../kidIcons';
 
-// Glossy highlight at top-left — sells the "lit-from-above 2.5D" feel.
+// Glossy highlight at top-left, sells the "lit-from-above 2.5D" feel.
 // Tuned for a 100x100 viewBox.
 export const HIGHLIGHT = `
   <ellipse cx="36" cy="32" rx="14" ry="9" fill="#FFFFFF" opacity="0.45"/>
   <ellipse cx="34" cy="30" rx="5" ry="3" fill="#FFFFFF" opacity="0.85"/>
 `;
 
-// Standard outline stroke — thin charcoal at low opacity so silhouettes
+// Standard outline stroke, thin charcoal at low opacity so silhouettes
 // stay clear without looking heavy.
 export const OUTLINE_STROKE = 'rgba(20, 15, 40, 0.22)';
 export const OUTLINE_WIDTH = '2';
 
-// Bright tile colour rotation — used by letter / number tiles so each
+// Bright tile colour rotation, used by letter / number tiles so each
 // instance reads as a distinct "card" while staying on-palette.
 export const TILE_COLOURS = [
     '#6C3FA4', // deep plum
@@ -51,7 +51,7 @@ export const tileIcon = (bg: string, fg: string, char: string): KidIconDef => ({
 });
 
 /**
- * Build a colour-swatch sphere — used for `color.*` items where the item
+ * Build a colour-swatch sphere, used for `color.*` items where the item
  * is literally just a coloured ball. Has intrinsic colour because the
  * stage data already specifies the colour.
  */

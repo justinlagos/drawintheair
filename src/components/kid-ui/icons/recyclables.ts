@@ -1,5 +1,5 @@
 /**
- * Recyclable illustrations — plastic bottle, can, paper, glass jar.
+ * Recyclable illustrations, plastic bottle, can, paper, glass jar.
  * Used by Sort & Place "Recycle vs Trash" stage.
  *
  * Clean clear silhouettes that read as "intact, useful container" so kids

@@ -1,5 +1,5 @@
 /**
- * Learning tab — mastery, curriculum, milestones.
+ * Learning tab, mastery, curriculum, milestones.
  *
  * Investor-grade restructure: top summary KPIs ("X kids have mastered
  * Y items"), strength buckets per item (Strong / Practising / New),
@@ -51,7 +51,7 @@ export const LearningTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
 
     return (
         <>
-            {/* LIOS Trust v1 — full panel. The Learning tab is the
+            {/* LIOS Trust v1, full panel. The Learning tab is the
                 natural home: it makes the data quality behind every
                 mastery claim visible at a glance, plus per-mode
                 composition (pre-writing's anomaly first surfaced here). */}
@@ -60,7 +60,7 @@ export const LearningTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                     title="Underneath every mastery claim on this tab" />
             </div>
 
-            {/* LIOS Mastery v2 four-state KPIs — the new vocabulary.
+            {/* LIOS Mastery v2 four-state KPIs, the new vocabulary.
                 Powered by the mastery state machine (Document A §4.4).
                 Falls back to the v1 numbers below if v2 hasn't yet
                 accumulated transitions. */}
@@ -79,7 +79,7 @@ export const LearningTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                     sub="Was mastered, recent accuracy dropped" />
             </div>
 
-            {/* Home vs Classroom split — driven by the ?join=CODE redemption
+            {/* Home vs Classroom split, driven by the ?join=CODE redemption
                 flow shipped Sprint 3. A school landing on the platform via
                 /?join=ABC123 will appear in the "classroom" row from the
                 first attempt onward. Until a school redeems a code, all
@@ -115,7 +115,7 @@ export const LearningTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                                             <td>{fmtNum(r.n_attempts)}</td>
                                             <td>{fmtNum(r.n_sessions)}</td>
                                             <td>{fmtPct(r.accuracy != null ? r.accuracy * 100 : null)}</td>
-                                            <td>{r.mean_credibility != null ? r.mean_credibility.toFixed(2) : '—'}</td>
+                                            <td>{r.mean_credibility != null ? r.mean_credibility.toFixed(2) : '-'}</td>
                                             <td>{fmtNum(r.tier_a)}</td>
                                             <td>{fmtNum(r.tier_b)}</td>
                                             <td>{fmtNum(r.tier_c)}</td>
@@ -149,7 +149,7 @@ export const LearningTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                 </div>
             )}
 
-            {/* Recent state transitions — the live "learning is happening"
+            {/* Recent state transitions, the live "learning is happening"
                 feed. Shows the most recent Exposed→Acquired and
                 Acquired→Mastered movements with the evidence that drove
                 them. This is the chart that says "right now". */}
@@ -157,7 +157,7 @@ export const LearningTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                 <Card title="Recent state transitions"
                       meta={masteryV2.data
                           ? `${masteryV2.data.recent_transitions.length} in last ${masteryV2.data.days}d`
-                          : '—'}>
+                          : '-'}>
                     {!masteryV2.data || masteryV2.data.recent_transitions.length === 0
                         ? <Empty message="No transitions yet. Once kids accumulate evidence across sessions, state changes will show up here." />
                         : (
@@ -185,13 +185,13 @@ export const LearningTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                                                         { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
                                                     <td><Tag tone={tr.to_state === 'Decayed' ? 'coral' : 'plum'}>{tr.item_key}</Tag></td>
                                                     <td><Tag tone="aqua">{modeLabel(tr.game_mode)}</Tag></td>
-                                                    <td>{tr.age_band ?? '—'}</td>
+                                                    <td>{tr.age_band ?? '-'}</td>
                                                     <td>
                                                         <Tag tone={
                                                             tr.from_state === 'Mastered' ? 'green' :
                                                             tr.from_state === 'Acquired' ? 'aqua' :
                                                             tr.from_state === 'Decayed'  ? 'coral' : 'gray'}
-                                                        >{tr.from_state ?? '—'}</Tag>
+                                                        >{tr.from_state ?? '-'}</Tag>
                                                     </td>
                                                     <td style={{ textAlign: 'center', color: '#6B6F84' }}>→</td>
                                                     <td>
@@ -216,11 +216,11 @@ export const LearningTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
             {/* Top mastered + Struggling with */}
             <div className="iv-row">
                 <div className="iv-col-6">
-                    <Card title="Top mastered — kids nailing this"
-                        meta={mastery.data ? `${mastery.data.top_strong.length} items` : '—'}
+                    <Card title="Top mastered, kids nailing this"
+                        meta={mastery.data ? `${mastery.data.top_strong.length} items` : '-'}
                     >
                         {!mastery.data || mastery.data.top_strong.length === 0
-                            ? <Empty message="No items mastered yet. Keep playing — first kids past the 80% bar will show here." />
+                            ? <Empty message="No items mastered yet. Keep playing, first kids past the 80% bar will show here." />
                             : (
                                 <TableWrap>
                                     <table className="iv-table">
@@ -244,8 +244,8 @@ export const LearningTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                 </div>
 
                 <div className="iv-col-6">
-                    <Card title="Struggling with — needs better scaffolding"
-                        meta={mastery.data ? `${mastery.data.struggling.length} items` : '—'}
+                    <Card title="Struggling with, needs better scaffolding"
+                        meta={mastery.data ? `${mastery.data.struggling.length} items` : '-'}
                     >
                         {!mastery.data || mastery.data.struggling.length === 0
                             ? <Empty message={<><strong>Nothing flagged.</strong> Either kids are doing well or we don't have enough attempts yet.</>} />
@@ -345,7 +345,7 @@ export const LearningTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                 </Card>
             </div>
 
-            {/* Curriculum coverage — kept from v1 but properly framed */}
+            {/* Curriculum coverage, kept from v1 but properly framed */}
             <div className="iv-col-12">
                 <Card
                     title="Curriculum coverage by mode"
@@ -381,8 +381,8 @@ export const LearningTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                                                 <tr key={c.game_mode}>
                                                     <td><Tag tone="aqua">{modeLabel(c.game_mode)}</Tag></td>
                                                     <td>{fmtNum(c.devices)}</td>
-                                                    <td>{c.avg_distinct_items?.toFixed(1) ?? '—'}</td>
-                                                    <td>{c.avg_attempts?.toFixed(1) ?? '—'}</td>
+                                                    <td>{c.avg_distinct_items?.toFixed(1) ?? '-'}</td>
+                                                    <td>{c.avg_attempts?.toFixed(1) ?? '-'}</td>
                                                     <td><InlineBar pct={pct} /></td>
                                                 </tr>
                                             );

@@ -10,7 +10,7 @@ export const Privacy: React.FC = () => {
       <p>Draw In The Air is designed with privacy as a core principle, not an afterthought. We do not collect personal data about children, require accounts, or store any video footage. This policy explains exactly what we do and do not do.</p>
 
       <h2>Camera and hand tracking</h2>
-      <p>The application uses your device's camera to detect and track hand positions in real time. This processing runs entirely inside your browser using on-device AI (MediaPipe). The camera feed is analysed locally — no video frames, images, or hand position data are ever transmitted to our servers or stored anywhere. The moment a frame has been processed, it is discarded from memory. We have no access to what the camera sees.</p>
+      <p>The application uses your device's camera to detect and track hand positions in real time. This processing runs entirely inside your browser using on-device AI (MediaPipe). The camera feed is analysed locally, no video frames, images, or hand position data are ever transmitted to our servers or stored anywhere. The moment a frame has been processed, it is discarded from memory. We have no access to what the camera sees.</p>
 
       <h2>No video storage</h2>
       <p>We do not record, save, store, or transmit any video footage under any circumstances. The camera is used exclusively for real-time gesture recognition inside your browser session.</p>
@@ -19,7 +19,7 @@ export const Privacy: React.FC = () => {
       <p>Draw In The Air does not require any user registration or login. Children do not create accounts and we do not ask for names, ages, email addresses, or any other personal information. There are no profiles, no saved progress tied to identities, and no data that could identify an individual child.</p>
 
       <h2>Analytics</h2>
-      <p>We collect anonymised, aggregated usage analytics to help us understand how the platform is used — for example, which game modes are most popular, how long typical sessions last, whether hand tracking starts successfully on the visitor's device, and which letters or items children practice most. These events are generated without any personally identifiable information (no names, no email addresses, no faces, no audio, no geolocation) and are transmitted to Draw in the Air's own analytics backend hosted on Supabase in the EU.</p>
+      <p>We collect anonymised, aggregated usage analytics to help us understand how the platform is used, for example, which game modes are most popular, how long typical sessions last, whether hand tracking starts successfully on the visitor's device, and which letters or items children practice most. These events are generated without any personally identifiable information (no names, no email addresses, no faces, no audio, no geolocation) and are transmitted to Draw in the Air's own analytics backend hosted on Supabase in the EU.</p>
       <p>The data we record per event is limited to: a randomly-generated session identifier (refreshed each browser tab), an anonymous device identifier (a UUID stored in your browser's local storage on first visit, which lets us see if the same browser comes back without identifying who is using it), a coarse age band the parent or teacher selected (4–5, 6–7, etc.), browser and device type, and the specific in-game event (mode started, item placed, letter completed, error encountered). Free-text fields are limited to non-identifying values such as colour names, letter labels, and error codes.</p>
       <p>We do not use Google Analytics, Meta Pixel, or any third-party advertising or tracking services. Analytics data cannot be tied to an individual user or child. The anonymous device identifier can be cleared at any time by clearing your browser's site data.</p>
 
@@ -28,7 +28,7 @@ export const Privacy: React.FC = () => {
       <p>We use your browser's local storage to keep an anonymous device identifier (described in Analytics above) and a queue of unsent analytics events that flushes when your network is available. You can clear both at any time through your browser's site-data settings; doing so will not affect the functionality of the platform.</p>
 
       <h2>Third-party services</h2>
-      <p>The hand-tracking model (MediaPipe) is loaded from Google's CDN on first use. No user data is sent to Google as part of this process — only the model weights are downloaded to your device. Beyond this, we do not integrate any third-party advertising, analytics, or social media services that would receive user data.</p>
+      <p>The hand-tracking model (MediaPipe) is loaded from Google's CDN on first use. No user data is sent to Google as part of this process, only the model weights are downloaded to your device. Beyond this, we do not integrate any third-party advertising, analytics, or social media services that would receive user data.</p>
 
       <h2>School and COPPA compliance</h2>
       <p>Because we do not collect, process, or store personally identifiable information from children, Draw In The Air is designed to be inherently compliant with COPPA (US), UK GDPR, and similar child data protection frameworks. Schools and parents can use the platform without parental consent workflows for data collection, as no personal data is collected.</p>
@@ -37,7 +37,7 @@ export const Privacy: React.FC = () => {
       <p>Since we do not collect personal data, there is nothing personal to retain. Anonymised analytics events and learning attempts are automatically deleted after 365 days by a scheduled job; we keep nothing older than that. We may retain anonymised, aggregated summaries (e.g. "X children completed letter B last month") for service improvement reporting, but never the underlying event-level rows.</p>
 
       <h2>User rights</h2>
-      <p>Under UK GDPR, you have the right to: know what data is processed about you (as described above); request access to any personal data we hold (we hold none); request deletion of personal data (not applicable — we store no personal data); and object to processing (you can simply stop using the platform, which has no ongoing effect on any data).</p>
+      <p>Under UK GDPR, you have the right to: know what data is processed about you (as described above); request access to any personal data we hold (we hold none); request deletion of personal data (not applicable, we store no personal data); and object to processing (you can simply stop using the platform, which has no ongoing effect on any data).</p>
 
       <h2>Contact</h2>
       <p>If you have questions about this privacy policy or how we handle data, please contact:</p>

@@ -1,15 +1,15 @@
 /**
- * GameTopBar — Per-game top bar in the bright Kid-UI design language.
+ * GameTopBar, Per-game top bar in the bright Kid-UI design language.
  *
  * Left   : ← Menu button  (KidButton secondary style: white fill + plum
- *          outline + plum text — pillowy, kid-target-sized)
+ *          outline + plum text, pillowy, kid-target-sized)
  * Center : optional stage chip in cream pill style
  * Right  : empty spacer (kept for symmetric layout)
  *
  * Rules:
  *  - transform + opacity animations only
  *  - pointerEvents: none on the container; auto only on interactive children
- *  - no React state — pure presentational
+ *  - no React state, pure presentational
  *
  * Modes that have their own bespoke panel showing the level (e.g. Sort &
  * Place) should pass `stage` undefined to avoid a duplicate indicator.
@@ -43,7 +43,7 @@ export const GameTopBar = ({ onBack, stage, compact = false }: GameTopBarProps) 
         pointerEvents: 'none',
       }}
     >
-      {/* Left: Back-to-Menu button — KidButton secondary style inlined here
+      {/* Left: Back-to-Menu button, KidButton secondary style inlined here
           to avoid an import cycle with the kid-ui barrel. Shape and tokens
           match KidButton variant="secondary". */}
       <button
@@ -81,7 +81,7 @@ export const GameTopBar = ({ onBack, stage, compact = false }: GameTopBarProps) 
 
       {/* Centre: optional stage chip (Kid-UI style cream pill).
           Modes with their own bespoke level panel should not pass a `stage`
-          prop — duplicate level indicators look broken. */}
+          prop, duplicate level indicators look broken. */}
       {stage ? (
         <div
           style={{

@@ -1,5 +1,5 @@
 /**
- * Lobby Screen — teacher waits here while students join.
+ * Lobby Screen, teacher waits here while students join.
  * Shows large session code, live student grid, and "Start Round" button.
  */
 
@@ -103,7 +103,7 @@ export default function LobbyScreen() {
     <div className="cm-page">
       <div className="cm-topbar">
         <div className="cm-topbar-left">
-          <span className="cm-topbar-title">Class Mode — Lobby</span>
+          <span className="cm-topbar-title">Class Mode, Lobby</span>
         </div>
         <div className="cm-topbar-right">
           <button className="cm-btn-danger" onClick={handleEndSession}>End Session</button>
@@ -118,7 +118,7 @@ export default function LobbyScreen() {
         </div>
 
         <div className="cm-lobby-activity">
-          {modeLabel?.icon} {modeLabel?.title || session.activity} — Round {session.round}
+          {modeLabel?.icon} {modeLabel?.title || session.activity}, Round {session.round}
         </div>
 
         {/* Student count */}

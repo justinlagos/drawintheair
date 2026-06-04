@@ -1,5 +1,5 @@
 /**
- * Building Mode — shared type definitions.
+ * Building Mode, shared type definitions.
  *
  * All coordinates that describe positions on the canvas are normalised to
  * [0..1] across both axes, matching the convention used by every other
@@ -23,13 +23,13 @@ export type BuildWorldId =
 export type BuildType = 'guided' | 'assisted' | 'discovery';
 
 /**
- * Semantic role — declared on a piece AND on a snap zone. A piece can
+ * Semantic role, declared on a piece AND on a snap zone. A piece can
  * only be placed in a zone whose `acceptsRole` matches. This is what
  * makes the snap engine "understand" that a wheel belongs to a car and
  * a petal belongs to a flower, separately from coordinate geometry.
  *
  * Phase 0 introduces just the 6 roles needed for the Flower Vase build.
- * Add new roles here as objects land — they're cheap (no per-role wiring
+ * Add new roles here as objects land, they're cheap (no per-role wiring
  * required) and a flat union keeps switch-statements exhaustive.
  */
 export type SemanticRole =
@@ -43,7 +43,7 @@ export interface SnapZone {
     /** Normalised centre coords [0..1]. */
     cx: number;
     cy: number;
-    /** Normalised size — informs tolerance and visual glow halo. */
+    /** Normalised size, informs tolerance and visual glow halo. */
     width: number;
     height: number;
     /** Only pieces declaring this role are eligible for this zone. */
@@ -56,7 +56,7 @@ export interface SnapZone {
     acceptsPieceIds?: string[];
     /** Whether the silhouette outline is currently rendered. */
     visible: boolean;
-    /** 0..1 — proximity-driven highlight intensity. Reset every frame. */
+    /** 0..1, proximity-driven highlight intensity. Reset every frame. */
     glow: number;
     filled: boolean;
     filledByPieceId?: string;
@@ -69,7 +69,7 @@ export interface BuildPiece {
      *  primitives; later phases swap in real sprites). */
     templateId: string;
     role: SemanticRole;
-    /** Hex colour — used both by primitive renderer and as sprite tint. */
+    /** Hex colour, used both by primitive renderer and as sprite tint. */
     color: string;
 
     cx: number;
@@ -85,7 +85,7 @@ export interface BuildPiece {
     placed: boolean;
     placedZoneId?: string;
 
-    /** Misplaced-release count — drives silent assistance escalation. */
+    /** Misplaced-release count, drives silent assistance escalation. */
     attempts: number;
     /** Snap-tolerance multiplier. Starts at 1.0; grows when stuck. */
     assistTolerance: number;
@@ -113,7 +113,7 @@ export interface BuildObject {
         width: number;
         height: number;
     };
-    /** Template — re-instantiated per build session so state doesn't leak. */
+    /** Template, re-instantiated per build session so state doesn't leak. */
     pieces: BuildPiece[];
     snapZones: SnapZone[];
     /** Key into the completion-animation registry. */
@@ -166,7 +166,7 @@ export type SnapEvent =
 /**
  * Base snap tolerance per build type. Measured in normalised units (so
  * 0.08 = 8% of the canvas height). Tuned to feel forgiving for Guided
- * and tight for Discovery — see PRD §6.
+ * and tight for Discovery, see PRD §6.
  */
 export const BASE_SNAP_TOLERANCE: Record<BuildType, number> = {
     guided: 0.08,
@@ -174,7 +174,7 @@ export const BASE_SNAP_TOLERANCE: Record<BuildType, number> = {
     discovery: 0.038,
 };
 
-/** Silent assistance — see snap-engine docs. */
+/** Silent assistance, see snap-engine docs. */
 export const ASSIST_ESCALATION = {
     triggerAfterAttempts: 3,
     multiplier: 1.25,

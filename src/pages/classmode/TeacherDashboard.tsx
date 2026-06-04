@@ -1,5 +1,5 @@
 /**
- * Teacher Dashboard — entry point for Class Mode.
+ * Teacher Dashboard, entry point for Class Mode.
  * Auth-gated: shows sign-in card if not authenticated.
  * Authenticated: shows activity picker + session history.
  */
@@ -90,7 +90,7 @@ export default function TeacherDashboard() {
     );
   }
 
-  // Not signed in — show sign-in card
+  // Not signed in, show sign-in card
   if (!user) {
     return (
       <div className="cm-page">

@@ -50,7 +50,7 @@ export interface KidIconDef {
     /** SVG body (no outer <svg>). Use literal `{color}` for places where
      *  the item.color should be substituted. */
     body: string;
-    /** When true, ignores the color argument — for items with intrinsic
+    /** When true, ignores the color argument, for items with intrinsic
      *  appearance (e.g. an apple is always red). Defaults to false. */
     intrinsicColor?: boolean;
 }
@@ -82,7 +82,7 @@ const spriteCache = new Map<string, HTMLImageElement>();
 /**
  * Returns an HTMLImageElement for the sprite. First call kicks off loading
  * (the browser parses the SVG asynchronously); subsequent calls return the
- * cached image. Returns `null` if the key isn't registered — caller falls
+ * cached image. Returns `null` if the key isn't registered, caller falls
  * back to a default render.
  */
 export const getKidIconSprite = (key: string, color: string): HTMLImageElement | null => {
@@ -90,7 +90,7 @@ export const getKidIconSprite = (key: string, color: string): HTMLImageElement |
     if (!def) return null;
 
     // Intrinsic-colour icons share a single cache entry regardless of the
-    // `color` argument — saves both memory and parse work.
+    // `color` argument, saves both memory and parse work.
     const cacheKey = def.intrinsicColor ? `${key}:_` : `${key}:${color}`;
     const cached = spriteCache.get(cacheKey);
     if (cached) return cached;
@@ -110,7 +110,7 @@ export const isKidIconReady = (img: HTMLImageElement | null): boolean => {
 export const hasKidIcon = (key: string): boolean => key in ICONS;
 
 /**
- * Eager preload — call once at mode startup with the keys + colours you'll
+ * Eager preload, call once at mode startup with the keys + colours you'll
  * render this stage. Avoids the one-frame fallback flicker.
  */
 export const preloadKidIcons = (

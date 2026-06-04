@@ -1,5 +1,5 @@
 /**
- * StudentGameScreen — renders the actual game during a Class Mode round.
+ * StudentGameScreen, renders the actual game during a Class Mode round.
  * Wraps the game component in TrackingLayer + ClassModeGameWrapper.
  * Reads session params from sessionStorage (set by StudentJoin).
  */

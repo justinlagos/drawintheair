@@ -31,7 +31,7 @@ import { ModeBackground } from './components/ModeBackground';
 import { PerfOverlay } from './components/PerfOverlay';
 import { MessageCardOverlay } from './components/MessageCardOverlay';
 import { CountdownOverlay } from './components/CountdownOverlay';
-// ShareButton intentionally not imported in-game — teacher CTA only.
+// ShareButton intentionally not imported in-game, teacher CTA only.
 import { drawingEngine, PenState } from './core/drawingEngine';
 import { perf } from './core/perf';
 import { initToyMode } from './core/toyMode';
@@ -125,7 +125,7 @@ function App() {
   const handleModeSelect = useCallback((mode: GameMode) => {
     // Detect mode-switching (kid bounced back to the menu and picked a
     // different mode without ever closing the session). This pattern is
-    // a strong "what's hooking them" signal — far more useful than just
+    // a strong "what's hooking them" signal, far more useful than just
     // counting independent mode_started events.
     // Read previous values from state via the functional updater forms
     // so this callback does not need appState/gameMode in its deps.
@@ -299,7 +299,7 @@ function App() {
         {(frameRef, diagnostics) => {
           return (
             <>
-              {/* Mode Background — unified toy world on every screen */}
+              {/* Mode Background, unified toy world on every screen */}
               {appState === 'game' && (
                 <ModeBackground
                   modeId={
@@ -346,7 +346,7 @@ function App() {
               {/* State: Menu */}
               {appState === 'menu' && (
                 <>
-                  {/* Child profile picker — renders nothing for anonymous
+                  {/* Child profile picker, renders nothing for anonymous
                        /play users (no account, no children). Signed-in
                        parents see it once per session so progress saves
                        to the right learner. */}

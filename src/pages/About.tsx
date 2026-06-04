@@ -51,10 +51,15 @@ function useReveal(rootRef: React.RefObject<HTMLElement | null>) {
     const t1 = window.setTimeout(pass, 140);
     const t2 = window.setTimeout(pass, 450);
     window.addEventListener('scroll', onScroll, { passive: true });
+    // Reveal content that mounts after initial load, never gate
+    // visibility of new DOM on a scroll event.
+    const mo = new MutationObserver(onScroll);
+    mo.observe(root, { childList: true, subtree: true });
     return () => {
       cancelAnimationFrame(raf); cancelAnimationFrame(r1);
       clearTimeout(t1); clearTimeout(t2);
       window.removeEventListener('scroll', onScroll);
+      mo.disconnect();
     };
   }, [rootRef]);
 }
@@ -180,7 +185,7 @@ const About: React.FC = () => {
             <div className="cta-banner reveal">
               <h2 className="h2">Come and move with us.</h2>
               <p className="lead">
-                Families start with a 14-day free trial. Schools start a free pilot. Either way, you are a minute from the first stroke.
+                Families start with a 7-day free trial. Schools start a free pilot. Either way, you are a minute from the first stroke.
               </p>
               <div className="cta-actions">
                 <Link to="/parent/signup" className="btn btn-secondary lg">Try free now</Link>

@@ -1,5 +1,5 @@
 /**
- * RainbowBridgeBackground — Bright sky with a prominent rainbow centrepiece.
+ * RainbowBridgeBackground, Bright sky with a prominent rainbow centrepiece.
  *
  * The big arc reinforces the "build the rainbow" theme without competing
  * with the gameplay-relevant rainbow stones drawn on the canvas.
@@ -26,7 +26,7 @@ export const RainbowBridgeBackground = () => (
                 <ellipse cx="1170" cy="625" rx="70" ry="24" fill="#FFFFFF" />
                 <ellipse cx="1280" cy="630" rx="60" ry="22" fill="#FFFFFF" />
             </g>
-            {/* Big rainbow centrepiece — softer than the colours-stage version */}
+            {/* Big rainbow centrepiece, softer than the colours-stage version */}
             <g opacity="0.4" transform="translate(720,640)">
                 <path d="M -480,0 A 480,480 0 0 1 480,0" fill="none" stroke="#FF6B6B" strokeWidth="28" />
                 <path d="M -448,0 A 448,448 0 0 1 448,0" fill="none" stroke="#FFB14D" strokeWidth="28" />

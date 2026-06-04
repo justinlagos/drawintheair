@@ -1,5 +1,5 @@
 /**
- * Insights v2 — formatting helpers + React hooks.
+ * Insights v2, formatting helpers + React hooks.
  *
  * Anything used by more than one tab lives here. Keeping format
  * helpers + hooks together because they're all small and tightly
@@ -11,13 +11,13 @@ import { RANGE_DAYS, type FilterState, type Range, type TabKey } from './types';
 
 // ── Format helpers ────────────────────────────────────────────────────
 export const fmtNum = (n: number | null | undefined): string =>
-    typeof n === 'number' ? n.toLocaleString() : '—';
+    typeof n === 'number' ? n.toLocaleString() : '-';
 
 export const fmtPct = (n: number | null | undefined): string =>
-    typeof n === 'number' ? `${n.toFixed(1)}%` : '—';
+    typeof n === 'number' ? `${n.toFixed(1)}%` : '-';
 
 export const fmtDuration = (s: number | null | undefined): string => {
-    if (s == null) return '—';
+    if (s == null) return '-';
     const r = Math.round(s);
     if (r < 60) return `${r}s`;
     const m = Math.floor(r / 60);
@@ -26,7 +26,7 @@ export const fmtDuration = (s: number | null | undefined): string => {
 };
 
 export const fmtDelta = (n: number | null | undefined, suffix = '%'): string => {
-    if (n == null) return '—';
+    if (n == null) return '-';
     const sign = n > 0 ? '+' : '';
     return `${sign}${n.toFixed(1)}${suffix}`;
 };
@@ -52,7 +52,7 @@ export const truncate = (s: string | undefined | null, n: number): string => {
     return s.length > n ? `${s.slice(0, n)}…` : s;
 };
 
-// Delta tone — green for up, coral for down, gray for flat / null
+// Delta tone, green for up, coral for down, gray for flat / null
 export const deltaTone = (n: number | null | undefined, goodIfUp = true):
     'good' | 'bad' | 'flat' => {
     if (n == null) return 'flat';
@@ -172,7 +172,7 @@ export function downloadCsv<T extends Record<string, unknown>>(
     columns?: Array<keyof T>,
 ): void {
     if (rows.length === 0) {
-        alert('Nothing to export — no rows.');
+        alert('Nothing to export, no rows.');
         return;
     }
     const cols = (columns ?? Object.keys(rows[0]) as Array<keyof T>);
@@ -194,8 +194,8 @@ export function copyShareLink(filter: FilterState): void {
     const p = new URLSearchParams();
     p.set('range', filter.range);
     p.set('tab', 'executive');
-    // 'share=1' tells the page to hide auth-only chrome — sign-out
-    // link, etc. — when present.
+    // 'share=1' tells the page to hide auth-only chrome, sign-out
+    // link, etc., when present.
     p.set('share', '1');
     const url = `${window.location.origin}/admin/insights?${p.toString()}`;
     navigator.clipboard?.writeText(url);

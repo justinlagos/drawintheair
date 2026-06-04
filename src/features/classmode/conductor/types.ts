@@ -19,7 +19,7 @@ export type ActivityState =
     | 'results'
     | 'ended';
 
-/** Row in public.sessions — matches the live schema after the
+/** Row in public.sessions, matches the live schema after the
  *  conductor_v1 migration. */
 export interface SessionRow {
     id: string;
@@ -132,6 +132,6 @@ export interface ClassSummary {
     } | null;
 }
 
-/** Engagement bucket — the only three states the teacher actually
+/** Engagement bucket, the only three states the teacher actually
  *  needs to see on a roster card. Anything more is cognitive load. */
 export type EngagementStatus = 'engaged' | 'stuck' | 'offline';

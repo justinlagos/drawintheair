@@ -1,8 +1,8 @@
 /**
- * BalloonMathBackground — Bright sky scene with floating balloons.
+ * BalloonMathBackground, Bright sky scene with floating balloons.
  *
  * Pure SVG, zero per-frame work. Sits behind the gameplay layer.
- * Floating balloons are decorative — the gameplay-relevant balloons
+ * Floating balloons are decorative, the gameplay-relevant balloons
  * (with numbers on them) are drawn on the canvas by balloonMathLogic.
  */
 

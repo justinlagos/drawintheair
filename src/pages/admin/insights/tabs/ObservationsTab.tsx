@@ -1,5 +1,5 @@
 /**
- * Observations tab — Document B §9 Human Observation Layer.
+ * Observations tab, Document B §9 Human Observation Layer.
  *
  * Renders the qualitative side of LIOS: tag distribution per family,
  * per-classroom rollup, engagement-vs-mastery scatter (the chart that
@@ -80,7 +80,7 @@ export const ObservationsTab: React.FC<{ filter: FilterState }> = ({ filter }) =
         return (
             <div className="iv-col-12">
                 <Card title="Human Observation Layer"
-                      meta="Document B §9 — qualitative companion to telemetry">
+                      meta="Document B §9, qualitative companion to telemetry">
                     <Empty message={<>
                         <strong>No teacher observations recorded yet.</strong><br />
                         Teachers tag classroom sessions via the tagging surface
@@ -149,10 +149,10 @@ export const ObservationsTab: React.FC<{ filter: FilterState }> = ({ filter }) =
                 </Card>
             </div>
 
-            {/* Engagement vs Mastery scatter — the anti-vanity chart */}
+            {/* Engagement vs Mastery scatter, the anti-vanity chart */}
             <div className="iv-col-12">
                 <Card title="Engagement vs Mastery"
-                      meta="Document B §7.2 — high engagement + low mastery is the intervention list">
+                      meta="Document B §7.2, high engagement + low mastery is the intervention list">
                     {o.engagement_vs_mastery.length === 0
                         ? <Empty message="No data yet." />
                         : <EngVsMastScatter data={o.engagement_vs_mastery} />}
@@ -205,7 +205,7 @@ export const ObservationsTab: React.FC<{ filter: FilterState }> = ({ filter }) =
                                                 <strong style={{ color: '#3F4052' }}>
                                                     {r.device_id.slice(0, 8)}
                                                 </strong>
-                                                {' · '}{r.age_band ?? '—'}
+                                                {' · '}{r.age_band ?? '-'}
                                                 {r.classroom_code && ` · ${r.classroom_code}`}
                                             </span>
                                             <span>{new Date(r.recorded_at).toLocaleString(undefined,
@@ -296,7 +296,7 @@ const EngVsMastScatter: React.FC<{
                         cx={xOf(d.n_attempts)} cy={yOf(d.n_mastered)} r={5}
                         fill={ofConcern(d) ? '#FF6B6B' : '#7ED957'}
                         opacity={0.75}>
-                    <title>{`${d.device_id.slice(0, 8)} — ${d.n_attempts} attempts, ${d.n_mastered} mastered`}</title>
+                    <title>{`${d.device_id.slice(0, 8)}, ${d.n_attempts} attempts, ${d.n_mastered} mastered`}</title>
                 </circle>
             ))}
         </svg>

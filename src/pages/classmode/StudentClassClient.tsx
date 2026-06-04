@@ -1,9 +1,9 @@
 /**
- * StudentClassClient — the locked-in student experience.
+ * StudentClassClient, the locked-in student experience.
  *
  * One persistent surface across the whole class. Student joins
  * once, stays in. NO buttons that let them exit, switch, or
- * progress — every transition is teacher-driven over Realtime.
+ * progress, every transition is teacher-driven over Realtime.
  *
  * State machine:
  *   code           → enter 4-digit class code
@@ -236,7 +236,7 @@ export default function StudentClassClient() {
                     setUi({ kind: 'kicked', reason: studs[0].kicked_reason });
                 }
             } catch {
-                /* network blip — next tick will retry */
+                /* network blip, next tick will retry */
             }
         };
         const id = window.setInterval(check, 10_000);
@@ -319,7 +319,7 @@ export default function StudentClassClient() {
     if (ui.kind === 'ended') {
         return <EndedScreen sessionId={ui.sessionId} />;
     }
-    // Classroom — composite of waiting / playing / paused / between
+    // Classroom, composite of waiting / playing / paused / between
     return <ClassroomShell ui={ui} />;
 }
 
@@ -498,7 +498,7 @@ function ClassroomGame({ student, avatar, session, activity }: {
     activity: SessionActivityRow;
 }) {
     const activeLogic = useMemo(() => LOGIC_MAP[activity.activity], [activity.activity]) as never;
-    // Stub onExit — we never let the kid exit; only the teacher does.
+    // Stub onExit, we never let the kid exit; only the teacher does.
     const noop = useCallback(() => { /* locked-in: teacher controls */ }, []);
 
     return (
@@ -512,7 +512,7 @@ function ClassroomGame({ student, avatar, session, activity }: {
                             getPenDown={() => activity.activity === 'free' ? drawingEngine.getPenState() === PenState.DOWN : false}
                             mode={activity.activity}
                         />
-                        {/* Persistent name + avatar pip — top-right so a teacher
+                        {/* Persistent name + avatar pip, top-right so a teacher
                             walking by can spot the kid on a projector. */}
                         <div className="cd-student-pip">
                             <span className="cd-avatar" style={{ background: avatar.color }}>{avatar.emoji}</span>
@@ -523,7 +523,7 @@ function ClassroomGame({ student, avatar, session, activity }: {
                          *  actually running. The Phase B camera explainer can
                          *  sit on screen for 10–30 s before they tap Allow,
                          *  and during that time we shouldn't be burning round
-                         *  time on them — surfaced by the 2026-05-11 test
+                         *  time on them, surfaced by the 2026-05-11 test
                          *  where Balloon Math read 0:21 on the explainer.   */}
                         <ClassModeGameWrapper
                             sessionId={session.id}

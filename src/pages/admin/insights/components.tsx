@@ -1,5 +1,5 @@
 /**
- * Insights v2 — reusable presentational components.
+ * Insights v2, reusable presentational components.
  *
  * Everything visual that is used by more than one tab. All charts are
  * inline SVG (no external chart library) so the bundle stays small.
@@ -43,24 +43,24 @@ export const Empty: React.FC<{ message: React.ReactNode }> = ({ message }) => (
     <div className="iv-empty">{message}</div>
 );
 
-// ── LIOS Trust v1 — composition strip ───────────────────────────────
+// ── LIOS Trust v1, composition strip ───────────────────────────────
 //
 // Renders the data-quality denominator under every chart. Three modes:
 //
-//   • <TrustStrip range="30d" />              — compact bar, one line
-//   • <TrustStrip range="30d" variant="full" />  — full panel with
+//   • <TrustStrip range="30d" />             , compact bar, one line
+//   • <TrustStrip range="30d" variant="full" /> , full panel with
 //                                                  per-mode breakdown
 //                                                  and top reason list
-//   • <TrustStrip range="30d" compact />        — micro inline pill
+//   • <TrustStrip range="30d" compact />       , micro inline pill
 //                                                  ("96.7% Tier A")
 //
 // All variants hit the same dashboard_trust_strip RPC and so share a
 // single network call when more than one is mounted on the same tab.
 
 const TIER_COLOURS = {
-    A: '#7ED957',   // meadow green — full credibility
-    B: '#FFB14D',   // warm orange — reduced weight
-    C: '#FF6B6B',   // coral — quarantined
+    A: '#7ED957',   // meadow green, full credibility
+    B: '#FFB14D',   // warm orange, reduced weight
+    C: '#FF6B6B',   // coral, quarantined
 } as const;
 
 const REASON_LABELS: Record<string, string> = {
@@ -242,7 +242,7 @@ export const Delta: React.FC<{
 }> = ({ value, goodIfUp = true, suffix = '%' }) => {
     const tone = deltaTone(value, goodIfUp);
     const cls = tone === 'good' ? 'iv-delta-good' : tone === 'bad' ? 'iv-delta-bad' : 'iv-delta-flat';
-    const arrow = value == null ? '—' : value > 0 ? '↑' : value < 0 ? '↓' : '→';
+    const arrow = value == null ? '-' : value > 0 ? '↑' : value < 0 ? '↓' : '→';
     return (
         <span className={`iv-delta ${cls}`}>
             <span aria-hidden>{arrow}</span>
@@ -436,7 +436,7 @@ export const Heatmap: React.FC<{
                         <div key={c.w} className="iv-heatmap-cell"
                              style={{ background: colorFor(c.pct), color: textColorFor(c.pct) }}
                              title={`W${c.w}: ${c.pct == null ? 'n/a' : `${c.pct}%`}`}>
-                            {c.pct == null ? '—' : `${c.pct.toFixed(0)}%`}
+                            {c.pct == null ? '-' : `${c.pct.toFixed(0)}%`}
                         </div>
                     ))}
                 </React.Fragment>

@@ -1,5 +1,5 @@
 /**
- * SortAndPlaceBackground — Per-stage themed scene.
+ * SortAndPlaceBackground, Per-stage themed scene.
  *
  * Each Sort & Place stage gets its own scene set, sharing the same
  * kid-bright design language but distinctly themed so kids feel they're
@@ -17,7 +17,7 @@ interface Props {
     stageId: string;
 }
 
-// Common scaffolding — sky gradient + sun glow shared by every scene
+// Common scaffolding, sky gradient + sun glow shared by every scene
 const SkyBase = ({ from, mid, to, sunX = '78%', sunColor = 'rgba(255, 216, 77, 0.45)' }: {
     from: string; mid: string; to: string; sunX?: string; sunColor?: string;
 }) => (
@@ -51,7 +51,7 @@ const ColoursScene = () => (
                     <line x1="-74" y1="-74" x2="-92" y2="-92" />
                 </g>
             </g>
-            {/* Big rainbow arc — celebrates the colour theme */}
+            {/* Big rainbow arc, celebrates the colour theme */}
             <g opacity="0.5" transform="translate(720,720)">
                 <path d="M -380,0 A 380,380 0 0 1 380,0" fill="none" stroke="#FF6B6B" strokeWidth="22" />
                 <path d="M -355,0 A 355,355 0 0 1 355,0" fill="none" stroke="#FFB14D" strokeWidth="22" />
@@ -86,7 +86,7 @@ const ShapesScene = () => (
                 <ellipse cx="1300" cy="340" rx="60" ry="40" fill="#FF6B9D" />
                 <path d="M 320 380 L 340 420 L 300 420 Z" fill="#6C3FA4" />
             </g>
-            {/* Pattern dots — subtle background fabric */}
+            {/* Pattern dots, subtle background fabric */}
             <g fill="#A8D8FF" opacity="0.25">
                 {Array.from({ length: 30 }).map((_, i) => {
                     const x = (i * 53) % 1440;
@@ -136,7 +136,7 @@ const FoodToysScene = () => (
             <rect x="1180" y="600" width="48" height="48" rx="10" fill="#A855F7" />
             <circle cx="1300" cy="618" r="24" fill="#FF6B9D" />
             <rect x="1370" y="610" width="40" height="40" rx="6" fill="#FFB14D" />
-            {/* Window in the upper sky — kitchen vibe */}
+            {/* Window in the upper sky, kitchen vibe */}
             <rect x="60" y="80" width="240" height="180" rx="12" fill="rgba(255,255,255,0.45)"
                   stroke="#A8B0C0" strokeWidth="3" />
             <line x1="180" y1="80" x2="180" y2="260" stroke="#A8B0C0" strokeWidth="3" />

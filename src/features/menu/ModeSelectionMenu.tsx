@@ -1,5 +1,5 @@
 /**
- * Mode Selection Menu — Clean Grid Layout
+ * Mode Selection Menu, Clean Grid Layout
  *
  * Strategy:
  * - Desktop/TV: 2-row layout with featured tile (top, wide) + 4 smaller tiles (bottom row)
@@ -138,7 +138,7 @@ interface ModeSelectionMenuProps {
 }
 
 /* ═══════════════════════════════════════════════════
-   GAME CARD — Single tile with toy-plastic material
+   GAME CARD, Single tile with toy-plastic material
    ═══════════════════════════════════════════════════ */
 
 interface GameCardProps {
@@ -202,7 +202,7 @@ const GameCard = ({ mode, featured, isHovered, isSelected, hoverProgress, onClic
                 isolation: 'isolate',
             }}
         >
-            {/* Specular highlight — plastic sheen */}
+            {/* Specular highlight, plastic sheen */}
             <div style={{
                 position: 'absolute',
                 inset: 0,
@@ -214,10 +214,10 @@ const GameCard = ({ mode, featured, isHovered, isSelected, hoverProgress, onClic
                 transition: 'opacity 100ms ease',
             }} />
 
-            {/* Premium lock badge — appears top-right when this game requires a subscription. */}
+            {/* Premium lock badge, appears top-right when this game requires a subscription. */}
             {locked && (
                 <div
-                    aria-label="Premium game — ask a grown-up to unlock"
+                    aria-label="Premium game, ask a grown-up to unlock"
                     style={{
                         position: 'absolute',
                         top: 10, right: 10,
@@ -344,7 +344,7 @@ const GameCard = ({ mode, featured, isHovered, isSelected, hoverProgress, onClic
                     </div>
                 </div>
 
-                {/* Category badge — featured only, desktop */}
+                {/* Category badge, featured only, desktop */}
                 {featured && !compact && (
                     <div style={{
                         marginLeft: 'auto',
@@ -420,7 +420,7 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
 
     // Hand tracking: dwell-to-select (1.5s hover)
     // This effect synchronizes external hand-tracking data (MediaPipe results)
-    // into React state — the legitimate "subscribe to external system" pattern
+    // into React state, the legitimate "subscribe to external system" pattern
     // for useEffect. The set-state calls are guarded by hover transitions so
     // they only fire on changes, not every frame.
     /* eslint-disable react-hooks/set-state-in-effect */
@@ -497,7 +497,7 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
             boxSizing: 'border-box',
             minHeight: '100vh',
         }}>
-            {/* Bright Kid-UI menu background — sky + soft sun glow */}
+            {/* Bright Kid-UI menu background, sky + soft sun glow */}
             <div style={{
                 position: 'fixed', inset: 0, zIndex: 0,
                 background: 'linear-gradient(180deg, #9FDFFF 0%, #BEEBFF 30%, #DEF5FF 65%, #FFF6E5 100%)',
@@ -528,7 +528,7 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
                 flexDirection: 'column',
                 gap: isMobilePortrait ? '12px' : isPhone ? '14px' : '20px',
             }}>
-                {/* Back to Home — Kid-UI secondary pill */}
+                {/* Back to Home, Kid-UI secondary pill */}
                 {onBack && (
                     <button
                         onClick={onBack}
@@ -593,7 +593,7 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
                 {/* ═══ LAYOUT ═══ */}
 
                 {isMobilePortrait ? (
-                    /* MOBILE PORTRAIT — simple vertical list */
+                    /* MOBILE PORTRAIT, simple vertical list */
                     <div style={{
                         display: 'flex',
                         flexDirection: 'column',
@@ -614,7 +614,7 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
                         ))}
                     </div>
                 ) : isMobileLandscape ? (
-                    /* MOBILE LANDSCAPE — compact 2+3 rows */
+                    /* MOBILE LANDSCAPE, compact 2+3 rows */
                     <div style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(3, 1fr)',
@@ -635,13 +635,13 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
                         ))}
                     </div>
                 ) : (
-                    /* TABLET + DESKTOP — Featured top card + 2×2 grid below */
+                    /* TABLET + DESKTOP, Featured top card + 2×2 grid below */
                     <div style={{
                         display: 'flex',
                         flexDirection: 'column',
                         gap: isTablet ? '14px' : '18px',
                     }}>
-                        {/* Featured card — full width, taller */}
+                        {/* Featured card, full width, taller */}
                         <div style={{ height: isTablet ? '130px' : '150px' }}>
                             <GameCard
                                 mode={featured}
@@ -676,7 +676,7 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
                     </div>
                 )}
 
-                {/* Footer instruction — Kid-UI cream pill */}
+                {/* Footer instruction, Kid-UI cream pill */}
                 <div className="kid-panel" style={{
                     padding: isPhone ? '12px 22px' : '14px 28px',
                     background: '#FFFFFF',
@@ -702,7 +702,7 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
                 </div>
             </div>
 
-            {/* Premium upgrade prompt — appears when an anonymous viewer taps
+            {/* Premium upgrade prompt, appears when an anonymous viewer taps
                 a paid-tier game. Kid-safe copy, adult call-to-action. */}
             {lockedPrompt && (
                 <PremiumLockModal

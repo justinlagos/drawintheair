@@ -1,5 +1,5 @@
 /**
- * KidButton — pill-shaped, oversized, tactile button.
+ * KidButton, pill-shaped, oversized, tactile button.
  *
  * Spec variants:
  *   - primary: Deep Plum gradient + white text. Play / Start / Next / Continue.

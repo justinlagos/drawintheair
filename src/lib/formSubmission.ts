@@ -5,8 +5,8 @@
  *
  * Submission flow (3-tier):
  *   1. Supabase Edge Function → emails partnership@drawintheair.com + auto-reply
- *   2. Google Sheets endpoint (VITE_SHEETS_ENDPOINT) — legacy fallback
- *   3. localStorage — always stored as backup
+ *   2. Google Sheets endpoint (VITE_SHEETS_ENDPOINT), legacy fallback
+ *   3. localStorage, always stored as backup
  */
 
 export type FormType =
@@ -94,7 +94,7 @@ export async function submitFormData(payload: FormPayload): Promise<{ success: b
     }
   }
 
-  // All remote endpoints failed — data is safe in localStorage
+  // All remote endpoints failed, data is safe in localStorage
   console.warn('[FormSubmission] All remote endpoints unavailable. Data stored locally.');
   return { success: true, method: 'local_only' };
 }

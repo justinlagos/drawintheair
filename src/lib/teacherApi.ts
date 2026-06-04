@@ -12,6 +12,8 @@ import {
   getUser,
   getSupabaseUrl,
   getAnonKey,
+  adoptExternalSession,
+  friendlyAuthError,
   type SupabaseUser,
 } from './supabase';
 
@@ -42,7 +44,7 @@ export async function getTeacherProfile(): Promise<TeacherProfile | null> {
 }
 
 export type TeacherSignupResult =
-  | { ok: true; user: SupabaseUser }
+  | { ok: true; user: SupabaseUser; needsEmailConfirm?: boolean }
   | { ok: false; error: string };
 
 /**
@@ -80,30 +82,36 @@ export async function signUpTeacher(
     if (!res.ok) {
       return {
         ok: false,
-        error: json?.error_description || json?.msg || res.statusText,
+        error: friendlyAuthError(res.status, json, res.statusText),
       };
     }
     // GoTrue returns either a populated session (auto-confirm on) or
-    // just the user (email confirm required). We persist the session
-    // when present by re-using the public sb-session storage that
-    // src/lib/supabase.ts owns. To avoid duplicating that, we just
-    // hand the session back via a tiny adopt step here.
+    // just the user (email confirm required). The session MUST be
+    // adopted through supabase.ts so the in-memory client session and
+    // every auth listener (AuthContext, /class console) update too,
+    // writing sb-session to localStorage alone left the app thinking
+    // the brand-new teacher was signed out until a full reload.
     if (json?.access_token && json?.user) {
-      const session = {
-        access_token: json.access_token,
-        refresh_token: json.refresh_token || '',
-        expires_at: Math.floor(Date.now() / 1000) + (json.expires_in || 3600),
-        user: json.user as SupabaseUser,
-      };
-      try {
-        localStorage.setItem('sb-session', JSON.stringify(session));
-      } catch {
-        /* private mode etc. */
-      }
-      return { ok: true, user: json.user as SupabaseUser };
+      const user = adoptExternalSession(json);
+      if (user) return { ok: true, user };
     }
-    if (json?.user) return { ok: true, user: json.user as SupabaseUser };
-    return { ok: false, error: 'No session returned by Supabase.' };
+    if (json?.user) {
+      // Email-confirmation flow. An obfuscated user with empty
+      // identities means the email is already registered (GoTrue's
+      // anti-enumeration response), surface that honestly.
+      const identities = (json.user as { identities?: unknown[] }).identities;
+      if (Array.isArray(identities) && identities.length === 0) {
+        return {
+          ok: false,
+          error: 'This email already has an account. Please sign in instead, or use “Forgot password” if you can’t remember it.',
+        };
+      }
+      return { ok: true, user: json.user as SupabaseUser, needsEmailConfirm: true };
+    }
+    return {
+      ok: false,
+      error: 'We couldn’t finish creating your account. Please try again in a moment, or sign in if you already have an account.',
+    };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }

@@ -7,13 +7,14 @@
 
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { BrandLogo } from '../../components/BrandLogo';
 import { I } from './_shared';
 import {
   signUpWithEmail,
   signInWithGoogle,
+  setRoleIntent,
 } from '../../lib/supabase';
 import { recordConsent } from '../../lib/parentApi';
 import { logEvent } from '../../lib/analytics';
@@ -23,6 +24,14 @@ const CONSENT_VERSION = 'v2026-05';
 
 export default function ParentSignup() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  // Honour ?next= (e.g. /subscribe sends users here mid-flow). Same-origin
+  // path allow-list, reject absolute and protocol-relative URLs.
+  const rawNext = params.get('next');
+  const next =
+    rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//')
+      ? rawNext
+      : '/parent/dashboard';
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,6 +41,7 @@ export default function ParentSignup() {
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmEmail, setConfirmEmail] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -53,6 +63,15 @@ export default function ParentSignup() {
       return;
     }
     logEvent('parent_signup_completed');
+    if (result.needsEmailConfirm) {
+      // Email confirmation is on: there is no session yet, so don't
+      // navigate to the dashboard (it would bounce to login) and don't
+      // try to write consent rows (no auth). Show the check-your-inbox
+      // panel instead; consents are confirmed on first sign-in.
+      setLoading(false);
+      setConfirmEmail(true);
+      return;
+    }
     await Promise.all([
       recordConsent('account_terms', CONSENT_VERSION, true),
       recordConsent('child_privacy', CONSENT_VERSION, true),
@@ -60,7 +79,7 @@ export default function ParentSignup() {
       recordConsent('marketing', CONSENT_VERSION, marketingOptIn),
     ]);
     setLoading(false);
-    navigate('/parent/dashboard');
+    navigate(next);
   }
 
   return (
@@ -80,7 +99,7 @@ export default function ParentSignup() {
             </div>
             <h1>Create your <span className="grad-name">parent account</span></h1>
             <p className="ah-lede">
-              14 days free. No card needed today. We'll only ask when your trial ends.
+              7 days free. No card needed today. We'll only ask when your trial ends.
             </p>
 
             <ul className="auth-bullets" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -152,6 +171,22 @@ export default function ParentSignup() {
 
           {/* ── Right form ─────────────────────────────────────────── */}
           <main className="auth-form-col">
+            {confirmEmail ? (
+              <section className="auth-card pop">
+                <h2>Check your inbox</h2>
+                <p style={{ marginTop: 8 }}>
+                  We've sent a confirmation link to <strong>{email}</strong>.
+                  Tap the link in that email to activate your account, then sign in
+                  to start your free trial.
+                </p>
+                <p className="auth-alt" style={{ marginTop: 16 }}>
+                  Didn't get it? Check your spam folder, or try again in a few minutes.
+                </p>
+                <Link to="/parent/login" className="btn btn-primary btn-lg btn-block" style={{ marginTop: 16 }}>
+                  Go to sign in
+                </Link>
+              </section>
+            ) : (
             <section className="auth-card pop">
               <h2>Start your free trial</h2>
               <form onSubmit={handleSubmit} className="stack">
@@ -254,7 +289,7 @@ export default function ParentSignup() {
 
                 <button
                   type="button"
-                  onClick={() => signInWithGoogle('/parent/dashboard')}
+                  onClick={() => { setRoleIntent('parent'); signInWithGoogle(next); }}
                   className="btn-google"
                 >
                   <I.Google size={18} /> Continue with Google
@@ -265,6 +300,7 @@ export default function ParentSignup() {
                 </p>
               </form>
             </section>
+            )}
           </main>
         </div>
       </div>

@@ -1,15 +1,15 @@
 /**
- * ParentContext — single source of truth for parent dashboard data.
+ * ParentContext, single source of truth for parent dashboard data.
  *
  * Responsibilities:
  *   • Load /rpc/get_parent_overview once per session + on refresh().
  *   • Expose derived subscription state (server-side trusted).
- *   • Track the "selected child" — which learner is about to play.
+ *   • Track the "selected child", which learner is about to play.
  *   • Persist selected child in sessionStorage so a tab refresh during
  *     gameplay keeps progress attached to the right child.
  *
  * Privacy: this provider only holds data we already store server-side.
- * It NEVER persists email or display_name to localStorage — the auth
+ * It NEVER persists email or display_name to localStorage, the auth
  * session already does that.
  */
 

@@ -339,7 +339,7 @@ export const STAGE_TEMPLATES: StageTemplate[] = [
     {
         id: 'colors-sort',
         title: 'Warm Colours vs Cool Colours',
-        instruction: 'Sort the colours — warm on the left, cool on the right!',
+        instruction: 'Sort the colours, warm on the left, cool on the right!',
         bins: {
             left: { id: 'warm', label: 'Warm', icon: '🔆', color: '#F97316' },
             right: { id: 'cool', label: 'Cool', icon: '❄️', color: '#3B82F6' }
@@ -359,7 +359,7 @@ export const STAGE_TEMPLATES: StageTemplate[] = [
     {
         id: 'shapes-sort',
         title: 'Curved vs Straight Shapes',
-        instruction: 'Sort shapes — curved on the left, straight edges on the right!',
+        instruction: 'Sort shapes, curved on the left, straight edges on the right!',
         bins: {
             left: { id: 'curved', label: 'Curved', icon: '⭕', color: '#6C47FF' },
             right: { id: 'straight', label: 'Straight', icon: '⬛', color: '#FF6B6B' }
@@ -399,7 +399,7 @@ export const STAGE_TEMPLATES: StageTemplate[] = [
     {
         id: 'numbers-sort',
         title: 'Odd vs Even Numbers',
-        instruction: 'Sort numbers — odd on the left, even on the right!',
+        instruction: 'Sort numbers, odd on the left, even on the right!',
         bins: {
             left: { id: 'odd', label: 'Odd', icon: '1️⃣', color: '#A855F7' },
             right: { id: 'even', label: 'Even', icon: '2️⃣', color: '#22C55E' }
@@ -420,13 +420,13 @@ export const STAGE_TEMPLATES: StageTemplate[] = [
 // ── Level Progression ────────────────────────────────────────────────────────
 // Ordered sequence of stages for the level progression UI.
 // Difficulty curve: visual → categorical → cognitive.
-//   1 Colours        — direct visual sort (warm vs cool)
-//   2 Shapes         — visual classification (curved vs straight)
-//   3 Foods & Toys   — first categorical sort (food vs toys)
-//   4 Animals & Vehicles — categorical sort with more variety
-//   5 Recycle & Trash — categorical sort with abstract concept
-//   6 Letters        — symbolic / cognitive (vowel vs consonant)
-//   7 Numbers        — symbolic / cognitive (odd vs even)
+//   1 Colours       , direct visual sort (warm vs cool)
+//   2 Shapes        , visual classification (curved vs straight)
+//   3 Foods & Toys  , first categorical sort (food vs toys)
+//   4 Animals & Vehicles, categorical sort with more variety
+//   5 Recycle & Trash, categorical sort with abstract concept
+//   6 Letters       , symbolic / cognitive (vowel vs consonant)
+//   7 Numbers       , symbolic / cognitive (odd vs even)
 export const LEVEL_ORDER: string[] = [
     'colors-sort',
     'shapes-sort',
@@ -438,13 +438,13 @@ export const LEVEL_ORDER: string[] = [
 ];
 
 export const LEVEL_LABELS: Record<string, string> = {
-    'colors-sort': 'Level 1 — Colours',
-    'shapes-sort': 'Level 2 — Shapes',
-    'food-vs-toys': 'Level 3 — Foods & Toys',
-    'animals-vs-vehicles': 'Level 4 — Animals & Vehicles',
-    'recycle-vs-trash': 'Level 5 — Recycle & Trash',
-    'letters-sort': 'Level 6 — Letters',
-    'numbers-sort': 'Level 7 — Numbers',
+    'colors-sort': 'Level 1, Colours',
+    'shapes-sort': 'Level 2, Shapes',
+    'food-vs-toys': 'Level 3, Foods & Toys',
+    'animals-vs-vehicles': 'Level 4, Animals & Vehicles',
+    'recycle-vs-trash': 'Level 5, Recycle & Trash',
+    'letters-sort': 'Level 6, Letters',
+    'numbers-sort': 'Level 7, Numbers',
 };
 
 let _currentLevelIndex = 0; // tracks which LEVEL_ORDER stage we're on
@@ -1074,7 +1074,7 @@ export const sortAndPlaceLogic = (
         ctx.fill();
         ctx.restore();
 
-        // Card-stock surface — cream-white with a subtle vertical gradient
+        // Card-stock surface, cream-white with a subtle vertical gradient
         // for soft 2.5D feel (top is brighter, bottom slightly tinted).
         const cardGrad = ctx.createLinearGradient(bx, by, bx, by + binH);
         cardGrad.addColorStop(0, '#FFFFFF');
@@ -1085,7 +1085,7 @@ export const sortAndPlaceLogic = (
         ctx.roundRect(bx, by, binW, binH, cornerR);
         ctx.fill();
 
-        // Top inner highlight — pillowy "lit from above" hint.
+        // Top inner highlight, pillowy "lit from above" hint.
         ctx.save();
         ctx.globalAlpha = 0.7;
         const topShine = ctx.createLinearGradient(bx, by, bx, by + binH * 0.4);
@@ -1097,7 +1097,7 @@ export const sortAndPlaceLogic = (
         ctx.fill();
         ctx.restore();
 
-        // Outer border — accent colour when glowing, deep plum at rest.
+        // Outer border, accent colour when glowing, deep plum at rest.
         ctx.strokeStyle = bin.glow ? bin.color : '#6C3FA4';
         ctx.globalAlpha = bin.glow ? 1 : 0.18;
         ctx.lineWidth = bin.glow ? 5 : 3;
@@ -1106,7 +1106,7 @@ export const sortAndPlaceLogic = (
         ctx.stroke();
         ctx.globalAlpha = 1;
 
-        // Bin label — Fredoka, charcoal, large and friendly. The legacy
+        // Bin label, Fredoka, charcoal, large and friendly. The legacy
         // emoji icon (bin.icon) is intentionally not rendered here; the
         // label alone reads cleanly. Phase 2 swaps icon emojis for SVG.
         ctx.save();
@@ -1129,7 +1129,7 @@ export const sortAndPlaceLogic = (
 
         ctx.save();
 
-        // Drop shadow underneath — sells the 2.5D depth regardless of sprite/ball.
+        // Drop shadow underneath, sells the 2.5D depth regardless of sprite/ball.
         ctx.save();
         ctx.globalAlpha = obj.grabbed ? 0.18 : 0.32;
         ctx.fillStyle = 'rgba(40, 30, 80, 0.55)';
@@ -1190,7 +1190,7 @@ export const sortAndPlaceLogic = (
             ctx.stroke();
         }
 
-        // Selection / placement highlight ring — drawn on top of either
+        // Selection / placement highlight ring, drawn on top of either
         // the sprite or the ball so it's always visible.
         if (obj.grabbed || obj.placed) {
             ctx.save();

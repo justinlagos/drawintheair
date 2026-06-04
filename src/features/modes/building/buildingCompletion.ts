@@ -1,9 +1,9 @@
 /**
- * Building Mode — completion animation registry.
+ * Building Mode, completion animation registry.
  *
  * Each animator is a pure render function that paints onto the canvas
  * given an elapsed time. Returns `true` while running, `false` once the
- * animation has finished — the caller drives the FSM out of `completion`
+ * animation has finished, the caller drives the FSM out of `completion`
  * on the first `false`.
  *
  * Phase 0 ships one animator: the flower-vase bloom. New animators slot
@@ -24,7 +24,7 @@ export type CompletionAnimator = (
 // ─── Animator: flower-vase bloom ──────────────────────────────────────
 // The vase + stem + leaf stay where they were placed; the two petals
 // pulse outward and a corona of additional petals fades in. Total
-// duration ~4500ms — within the 11ms-per-frame render budget at 60fps.
+// duration ~4500ms, within the 11ms-per-frame render budget at 60fps.
 
 const BLOOM_DURATION_MS = 4500;
 
@@ -42,7 +42,7 @@ const flowerVaseBloom: CompletionAnimator = (ctx, t, width, height, object) => {
     };
     const centre = normalizedToCanvas(centreNorm, width, height);
 
-    // Soft halo behind the bloom — fades up over first 30% then holds.
+    // Soft halo behind the bloom, fades up over first 30% then holds.
     const haloR = Math.min(width, height) * (0.18 + progress * 0.05);
     ctx.save();
     ctx.globalAlpha = easeOutQuad(Math.min(1, progress / 0.3)) * 0.45;
@@ -59,7 +59,7 @@ const flowerVaseBloom: CompletionAnimator = (ctx, t, width, height, object) => {
     ctx.fill();
     ctx.restore();
 
-    // Corona petals — 6 of them, fade and scale in staggered.
+    // Corona petals, 6 of them, fade and scale in staggered.
     const petalColors = ['#FF6B6B', '#FFD84D', '#FF8C42', '#FF6B6B', '#FFD84D', '#FF8C42'];
     const baseR = Math.min(width, height) * 0.055;
     const orbitR = Math.min(width, height) * 0.075 * progress;
@@ -96,7 +96,7 @@ const flowerVaseBloom: CompletionAnimator = (ctx, t, width, height, object) => {
         ctx.restore();
     }
 
-    // Sparkles — only after 60% progress so the bloom has settled first.
+    // Sparkles, only after 60% progress so the bloom has settled first.
     if (progress > 0.6) {
         const sparkleProgress = (progress - 0.6) / 0.4;
         const sparkleCount = Math.floor(sparkleProgress * 12);

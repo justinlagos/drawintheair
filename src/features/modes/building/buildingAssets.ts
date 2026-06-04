@@ -1,5 +1,5 @@
 /**
- * Building Mode — sprite + scene asset loader.
+ * Building Mode, sprite + scene asset loader.
  *
  * Preloads all PNG sprites for the active object so the first frame
  * after `reveal` enters never has to fall back to a placeholder. Same
@@ -67,7 +67,7 @@ async function loadInto(
         try {
             bucket[key] = await load(url);
         } catch (e) {
-            // Asset missing — render falls back to placeholder. We
+            // Asset missing, render falls back to placeholder. We
             // don't throw because a missing piece shouldn't crash the
             // whole mode.
             // eslint-disable-next-line no-console

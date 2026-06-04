@@ -107,12 +107,12 @@ function ShareModal({ gameMode, onClose }: ShareModalProps) {
 
   const handleEmail = useCallback(() => {
     trackShare('email', slug);
-    const subject = encodeURIComponent(`Try this gesture learning activity — ${meta.label}`);
+    const subject = encodeURIComponent(`Try this gesture learning activity, ${meta.label}`);
     const body = encodeURIComponent(
       `Hi,\n\nI've been using this free activity with my class and thought you might like it.\n\n` +
-      `It's called ${meta.label} — ${meta.description}. It works through the webcam using hand gestures — no installation or login needed.\n\n` +
+      `It's called ${meta.label}, ${meta.description}. It works through the webcam using hand gestures, no installation or login needed.\n\n` +
       `Try it here: ${shareUrl}\n\n` +
-      `No accounts or setup needed — just open the link and wave at the camera.`
+      `No accounts or setup needed, just open the link and wave at the camera.`
     );
     window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
   }, [meta, shareUrl, slug]);

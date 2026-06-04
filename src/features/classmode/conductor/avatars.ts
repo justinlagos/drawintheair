@@ -1,5 +1,5 @@
 /**
- * Avatar generator — deterministic emoji + bright color from a name.
+ * Avatar generator, deterministic emoji + bright color from a name.
  *
  * Goal: every kid joining the class instantly gets a memorable
  * little persona ("🦊 Lila") that the teacher can find on the
@@ -24,7 +24,7 @@ const COLORS = [
     '#FBBF24', '#60A5FA', '#FB7185', '#22D3EE',
 ];
 
-/** Cheap deterministic hash — good enough for a 24-bucket choice. */
+/** Cheap deterministic hash, good enough for a 24-bucket choice. */
 function hashCode(input: string): number {
     let h = 0;
     for (let i = 0; i < input.length; i++) {
@@ -58,7 +58,7 @@ export function avatarForStudent(sessionId: string, name: string): Avatar {
     };
 }
 
-/** Resolve an avatar from a stored seed — used when the row
+/** Resolve an avatar from a stored seed, used when the row
  *  already has avatar_seed and we just need to hydrate. */
 export function avatarFromSeed(seed: string | null | undefined): Avatar {
     if (!seed) {
@@ -73,7 +73,7 @@ export function avatarFromSeed(seed: string | null | undefined): Avatar {
 }
 
 /**
- * Names dedupe within a session — if Lila already exists, second
+ * Names dedupe within a session, if Lila already exists, second
  * Lila becomes "Lila B" (not "Lila2"). Feels human.
  *
  * @param desiredName  the name the kid typed

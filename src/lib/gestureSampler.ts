@@ -1,5 +1,5 @@
 /**
- * GestureSampler — on-device gesture-quality summariser.
+ * GestureSampler, on-device gesture-quality summariser.
  *
  * LIOS Sprint 3 / Document A §2.1.
  *
@@ -10,7 +10,7 @@
  * coordinate buffer is cleared immediately afterwards.
  *
  * If you ever feel tempted to expose the raw points outside this
- * file — for debugging, for an animation, for ML training — stop.
+ * file, for debugging, for an animation, for ML training, stop.
  * That is the line the privacy posture cannot cross. Compute the
  * scalar inside this file, return it, discard the points.
  *
@@ -28,7 +28,7 @@
  *     meta: { ..., gesture_quality: quality },
  *   });
  *
- * Sampler is reusable — `start()` resets internal buffers.
+ * Sampler is reusable, `start()` resets internal buffers.
  */
 
 export interface GestureQualityIdealPathSample {
@@ -56,7 +56,7 @@ export interface GestureQualityResult {
     /**
      * Fraction of stroke samples within the ideal path zone (0-100).
      * Only computed when `idealPath` is provided AND a tolerance is
-     * configurable upstream — for v1 we leave this NULL and let the
+     * configurable upstream, for v1 we leave this NULL and let the
      * existing per-mode logic (e.g. pre-writing's on_path_frames)
      * compute it more accurately with its own threshold. Game modes
      * with their own accuracy tracking should set this directly via
@@ -106,7 +106,7 @@ export class GestureSampler {
         this.startedAt = performance.now();
     }
 
-    /** Feed one MediaPipe sample. Cheap — just an array push. */
+    /** Feed one MediaPipe sample. Cheap, just an array push. */
     sample(x: number, y: number, t: number = performance.now()): void {
         if (this.startedAt == null) return;
         this.points.push({ x, y, t });
@@ -122,7 +122,7 @@ export class GestureSampler {
 
     /**
      * Compute the gesture-quality scalars. Clears the internal buffer
-     * before returning — the (x, y) sequence cannot be retrieved
+     * before returning, the (x, y) sequence cannot be retrieved
      * afterwards by design.
      */
     finalize(opts: GestureQualityOptions = {}): GestureQualityResult {
@@ -267,7 +267,7 @@ export class GestureSampler {
  * Convenience builder for game modes (like pre-writing) that already
  * compute their own gesture quality from per-mode signals and just
  * want to package the result. Use this instead of GestureSampler when
- * you already have the numbers — no point re-running computations.
+ * you already have the numbers, no point re-running computations.
  */
 export function buildGestureQuality(
     partial: Partial<GestureQualityResult>

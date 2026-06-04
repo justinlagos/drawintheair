@@ -1,5 +1,5 @@
 /**
- * KidModal — soft sky overlay + rounded white card for prompts.
+ * KidModal, soft sky overlay + rounded white card for prompts.
  *
  * Spec: rounded white cards, darkened sky overlay only if needed,
  * warm copy ("Ready to play?", "Great effort").

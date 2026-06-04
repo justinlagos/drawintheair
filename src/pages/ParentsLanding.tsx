@@ -1,5 +1,5 @@
 /**
- * ParentsLanding — Kid-UI bright sky version (For Families / Parent Resources)
+ * ParentsLanding, Kid-UI bright sky version (For Families / Parent Resources)
  */
 
 import React from 'react';
@@ -25,7 +25,7 @@ const FAQS = [
   { q: 'What ages is this for?', a: 'Activities are designed for children aged 3 to 7 (Nursery to Year 2). The gestures are accessible for younger kids, while the activity content scales with difficulty for older ones.' },
   { q: 'Do I need to install anything?', a: "No. Draw in the Air runs in any modern browser with a camera. Open the page, allow camera access, and you're playing in 10 seconds." },
   { q: 'Is the camera feed recorded?', a: "No. The camera is processed locally inside the browser using on-device AI. Frames are discarded the moment they're processed. Nothing is sent to any server." },
-  { q: 'Will it work on our family iPad / Chromebook / laptop?', a: 'Yes — any device with a camera and a modern browser. We test on Chrome, Safari, Edge, and Firefox; on Mac, Windows, iPadOS, Android, and ChromeOS.' },
+  { q: 'Will it work on our family iPad / Chromebook / laptop?', a: 'Yes, any device with a camera and a modern browser. We test on Chrome, Safari, Edge, and Firefox; on Mac, Windows, iPadOS, Android, and ChromeOS.' },
   { q: 'How much time should my child spend on it?', a: 'Like all screen time, balance is key. We recommend 5 to 15 minute sessions, paired with offline activities. The platform is designed for short, active bursts, not marathon sittings.' },
 ];
 

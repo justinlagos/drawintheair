@@ -1,5 +1,5 @@
 /**
- * RainbowBridgeMode — React UI wrapper for Rainbow Bridge.
+ * RainbowBridgeMode, React UI wrapper for Rainbow Bridge.
  *
  * Bright Kid-UI design language:
  *   - Sky-and-rainbow themed background

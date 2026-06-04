@@ -346,7 +346,7 @@ export const balloonMathLogic = (
     const cfg = LEVEL_CONFIGS[levelIndex];
     if (!cfg) return;
 
-    // ── Transparent canvas — HTML BalloonMathBackground provides the scene
+    // ── Transparent canvas, HTML BalloonMathBackground provides the scene
     // (sky + balloons + math symbols + hills). Clearing the previous frame
     // is essential because the canvas accumulates pixels otherwise.
     ctx.clearRect(0, 0, width, height);
@@ -441,7 +441,7 @@ export const balloonMathLogic = (
                             balloons.push(spawnBalloon(cfg, targetNumber));
                         }
                     } else {
-                        // ❌ Wrong — shake
+                        // ❌ Wrong, shake
                         b.shaking = true;
                         b.shakeTime = now;
                         b.dwellStart = null;

@@ -608,7 +608,7 @@ export const bubbleCalibrationLogic = (
             }
         } else {
             // ═══════════════════════════════════════════════
-            // 3D GLOSSY SPHERE RENDERING — Toy World Style
+            // 3D GLOSSY SPHERE RENDERING, Toy World Style
             // Specular highlight, rim light, translucency, soft shadow
             // ═══════════════════════════════════════════════
             const depthScale = bubble.z;
@@ -618,7 +618,7 @@ export const bubbleCalibrationLogic = (
             const cx = canvasPoint.x;
             const cy = canvasPoint.y + floatOffset;
 
-            // 1. SOFT GROUND SHADOW — elongated ellipse below sphere
+            // 1. SOFT GROUND SHADOW, elongated ellipse below sphere
             ctx.save();
             ctx.globalAlpha = 0.25 * depthScale;
             ctx.beginPath();
@@ -627,7 +627,7 @@ export const bubbleCalibrationLogic = (
             ctx.fill();
             ctx.restore();
 
-            // 2. OUTER GLOW — colored ambient light around sphere
+            // 2. OUTER GLOW, colored ambient light around sphere
             if (perfConfig.visualQuality !== 'low') {
                 ctx.save();
                 ctx.globalAlpha = 0.35;
@@ -641,7 +641,7 @@ export const bubbleCalibrationLogic = (
                 ctx.restore();
             }
 
-            // 3. MAIN SPHERE BODY — rich radial gradient from highlight to dark edge
+            // 3. MAIN SPHERE BODY, rich radial gradient from highlight to dark edge
             const mainGrad = ctx.createRadialGradient(
                 cx - r * 0.3, cy - r * 0.3, r * 0.05,
                 cx + r * 0.05, cy + r * 0.05, r
@@ -657,7 +657,7 @@ export const bubbleCalibrationLogic = (
             ctx.fillStyle = mainGrad;
             ctx.fill();
 
-            // 4. RIM LIGHT — bright edge on bottom-right (backlit effect)
+            // 4. RIM LIGHT, bright edge on bottom-right (backlit effect)
             const rimGrad = ctx.createRadialGradient(
                 cx + r * 0.4, cy + r * 0.4, r * 0.3,
                 cx + r * 0.2, cy + r * 0.2, r * 1.05
@@ -672,7 +672,7 @@ export const bubbleCalibrationLogic = (
             ctx.fillStyle = rimGrad;
             ctx.fill();
 
-            // 5. TRANSLUCENCY LAYER — subtle inner glow for glass/soap feel
+            // 5. TRANSLUCENCY LAYER, subtle inner glow for glass/soap feel
             const transGrad = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r * 0.85);
             transGrad.addColorStop(0, 'rgba(255,255,255,0.08)');
             transGrad.addColorStop(0.5, 'rgba(255,255,255,0.03)');
@@ -682,7 +682,7 @@ export const bubbleCalibrationLogic = (
             ctx.fillStyle = transGrad;
             ctx.fill();
 
-            // 6. SPECULAR HIGHLIGHT — main glossy hotspot (top-left)
+            // 6. SPECULAR HIGHLIGHT, main glossy hotspot (top-left)
             const specGrad = ctx.createRadialGradient(
                 cx - r * 0.32, cy - r * 0.32, 0,
                 cx - r * 0.32, cy - r * 0.32, r * 0.55
@@ -697,13 +697,13 @@ export const bubbleCalibrationLogic = (
             ctx.fillStyle = specGrad;
             ctx.fill();
 
-            // 7. SECONDARY SPECULAR DOT — crisp white pinpoint
+            // 7. SECONDARY SPECULAR DOT, crisp white pinpoint
             ctx.beginPath();
             ctx.arc(cx - r * 0.22, cy - r * 0.28, r * 0.1, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
             ctx.fill();
 
-            // 8. THIN EDGE STROKE — defines the sphere boundary crisply
+            // 8. THIN EDGE STROKE, defines the sphere boundary crisply
             ctx.beginPath();
             ctx.arc(cx, cy, r, 0, Math.PI * 2);
             ctx.strokeStyle = `${darkenColor(baseColor, 20)}66`;
@@ -758,7 +758,7 @@ export const bubbleCalibrationLogic = (
                 score++;
                 bubbleHits++;
 
-                // Calibration is the warm-up — no per-bubble mistake
+                // Calibration is the warm-up, no per-bubble mistake
                 // patterns to record (every pop is correct), but the
                 // bubblepop_round_complete + reach-target events are
                 // useful for "did the kid even hit the warm-up score".

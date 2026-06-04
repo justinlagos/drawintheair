@@ -1,5 +1,5 @@
 /**
- * CameraRecovery — shown when the camera state machine lands in an
+ * CameraRecovery, shown when the camera state machine lands in an
  * error. Picks copy + steps tailored to the specific cause
  * (denied / no_device / device_busy / not_supported / constraints /
  * unknown), with browser/OS-specific instructions via cameraHelp.

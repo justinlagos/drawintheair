@@ -177,7 +177,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
                     setShowResultsOverlay(true);
                 } else {
                     setShowEndModal(true);
-                    // Auto-advance on success for non-final levels — hands-free
+                    // Auto-advance on success for non-final levels, hands-free
                     // for kids; 2200ms gives time to read the star/text.
                     if (goalReached && level < MAX_LEVEL) {
                         setAutoAdvanceScheduled(true);
@@ -219,7 +219,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
         stageStartTimeRef.current = countdownEndsAt;
     };
 
-    // Play Again from results overlay — restart from level 1
+    // Play Again from results overlay, restart from level 1
     const handlePlayAgain = () => {
         setShowResultsOverlay(false);
         setAutoAdvanceScheduled(false);
@@ -256,10 +256,10 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
 
     return (
         <>
-            {/* Back to menu top bar — stage label omitted, KidChip below shows it */}
+            {/* Back to menu top bar, stage label omitted, KidChip below shows it */}
             <GameTopBar onBack={onExit} compact={isCompact} />
 
-            {/* Top HUD — bright Kid-UI chips arranged in a single bar */}
+            {/* Top HUD, bright Kid-UI chips arranged in a single bar */}
             <div style={{
                 position: 'absolute',
                 top: hudSpacing,
@@ -304,9 +304,9 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
                 </KidChip>
             </div>
 
-            {/* Motivation toasts handled by toastService — no in-component overlay */}
+            {/* Motivation toasts handled by toastService, no in-component overlay */}
 
-            {/* End-of-Round Modal — bright Kid-UI */}
+            {/* End-of-Round Modal, bright Kid-UI */}
             {showEndModal && (
                 <div style={{
                     position: 'fixed', inset: 0,
@@ -397,7 +397,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
                 </div>
             )}
 
-            {/* Results Overlay — all levels complete; bright Kid-UI */}
+            {/* Results Overlay, all levels complete; bright Kid-UI */}
             {showResultsOverlay && (
                 <div style={{
                     position: 'fixed', inset: 0,
@@ -440,7 +440,7 @@ export const BubbleCalibration = ({ onComplete: _onComplete, onExit }: BubbleCal
                             You completed all <strong style={{ color: tokens.colors.coral }}>{MAX_LEVEL}</strong> levels!
                         </p>
 
-                        {/* Stats — three soft tinted KidPanels */}
+                        {/* Stats, three soft tinted KidPanels */}
                         <div style={{
                             display: 'flex',
                             gap: tokens.spacing.md,

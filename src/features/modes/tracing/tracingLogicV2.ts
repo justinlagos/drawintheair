@@ -60,7 +60,7 @@ export interface TracingState {
     streakActive: boolean; // Whether currently building streak
     // ── Any-direction tracing ────────────────────────────────────────────
     // We let the kid start tracing from either end of the path. At first
-    // valid on-path contact we look at overallT — if it's in the back
+    // valid on-path contact we look at overallT, if it's in the back
     // half, we treat the kid's *starting* end as the end of the points
     // array. Once locked, the direction stays fixed for this attempt.
     reverseDirection: boolean;
@@ -99,7 +99,7 @@ let tracingState: TracingState = {
     streakStartTime: null,
     lastStreakUpdateTime: 0,
     streakActive: false,
-    // Any-direction tracing — see interface for rationale.
+    // Any-direction tracing, see interface for rationale.
     reverseDirection: false,
     directionLocked: false
 };
@@ -164,13 +164,13 @@ const loadCurrentPath = (): void => {
     tracingState.lastOffPathHintTime = 0;
     tracingState.sparkleParticles = [];
 
-    // Any-direction tracing — unlock so the next attempt can pick its
+    // Any-direction tracing, unlock so the next attempt can pick its
     // own starting end.
     tracingState.reverseDirection = false;
     tracingState.directionLocked = false;
 
     // Reset cross-mode stuck-recovery state so a new path starts the idle
-    // clock fresh — the shared service uses this both for in-product help
+    // clock fresh, the shared service uses this both for in-product help
     // and for the `stuck_moment` analytics event.
     resetStuckStage('tracing');
     lastSpokenRecoveryLevel = 'NONE';
@@ -489,7 +489,7 @@ export const tracingLogicV2 = (
         tracingState.directionLocked = true;
     }
 
-    // effectiveT is overallT in the *kid's start* frame of reference —
+    // effectiveT is overallT in the *kid's start* frame of reference,
     // always grows from 0 (kid's start) toward 1 (kid's end), regardless
     // of which end of the original path they began from.
     const effectiveT = tracingState.reverseDirection ? 1 - overallT : overallT;
@@ -620,7 +620,7 @@ export const tracingLogicV2 = (
     }
     tracingState.lastTimestamp = frameData.timestamp;
     
-    // Calculate forward movement along path — in *kid's-start* coords,
+    // Calculate forward movement along path, in *kid's-start* coords,
     // so that "forward" means the kid's chosen direction (forward or
     // reversed) regardless of the path's underlying point order.
     const forwardMovementOnPath = effectiveT - tracingState.lastPathPosition;
@@ -675,7 +675,7 @@ export const tracingLogicV2 = (
                 tracingState.progress = newProgress;
                 tracingState.lastPathPosition = effectiveT;
                 tracingState.lastProgressUpdateTime = now;
-                // Forward progress made — reset the cross-mode idle clock so the
+                // Forward progress made, reset the cross-mode idle clock so the
                 // recovery service doesn't escalate while the kid is actively
                 // tracing.
                 recordStuckProgress('tracing', now);
@@ -819,7 +819,7 @@ export const tracingLogicV2 = (
         tactileAudioManager.updateMovement(fingerPos, frameData.timestamp);
     }
 
-    // ── Draggable follow-ball — last to render so it sits on top of the
+    // ── Draggable follow-ball, last to render so it sits on top of the
     // path + scaffolding overlays. Reads as the physical object the kid
     // is moving through the tube. Hidden while the mode is paused so it
     // doesn't ghost when the kid lifts their hand.
@@ -831,7 +831,7 @@ export const tracingLogicV2 = (
 };
 
 // ═══════════════════════════════════════════════
-// FOLLOW BALL — a glowing orb the kid feels they're dragging.
+// FOLLOW BALL, a glowing orb the kid feels they're dragging.
 // Sits at the finger position, scales/glows brighter when on-path so the
 // child gets immediate tactile feedback that something is in their hand.
 // Rendered ABOVE the path so it always reads as "the thing I'm moving."
@@ -852,7 +852,7 @@ const drawFollowBall = (
     const pulse = 0.5 + 0.5 * Math.sin(now * 0.005);
     const r = baseR * (onPath ? 1 + 0.08 * pulse : 0.88);
 
-    // Outer glow halo — softer when off-path so the kid knows to return.
+    // Outer glow halo, softer when off-path so the kid knows to return.
     ctx.save();
     ctx.shadowBlur = onPath ? 28 : 14;
     ctx.shadowColor = onPath ? 'rgba(0, 245, 212, 0.9)' : 'rgba(255, 184, 48, 0.5)';
@@ -878,7 +878,7 @@ const drawFollowBall = (
     ctx.fillStyle = grad;
     ctx.fill();
 
-    // Specular highlight — sells the "glassy ball" reading.
+    // Specular highlight, sells the "glassy ball" reading.
     ctx.save();
     ctx.beginPath();
     ctx.arc(cx - r * 0.32, cy - r * 0.32, r * 0.32, 0, Math.PI * 2);
@@ -888,7 +888,7 @@ const drawFollowBall = (
 };
 
 // ═══════════════════════════════════════════════
-// GHOST AHEAD — Scaffolding overlay for stuck kids
+// GHOST AHEAD, Scaffolding overlay for stuck kids
 // Highlights the next 12–25% of the path with a pulsing warm trail.
 // Length and brightness scale with the recovery level (SOFT/MEDIUM/STRONG).
 // ═══════════════════════════════════════════════
@@ -928,7 +928,7 @@ const drawGhostAhead = (
         if (segEnd < targetStart) { acc = segEnd; continue; }
         if (segStart > targetEnd) break;
 
-        // First point — interpolate to targetStart inside this segment.
+        // First point, interpolate to targetStart inside this segment.
         if (aheadPts.length === 0) {
             const t = segLen === 0 ? 0 : Math.max(0, (targetStart - segStart) / segLen);
             aheadPts.push({
@@ -937,7 +937,7 @@ const drawGhostAhead = (
             });
         }
 
-        // End — interpolate to targetEnd if this segment crosses it, else
+        // End, interpolate to targetEnd if this segment crosses it, else
         // take the segment endpoint and continue.
         if (segEnd >= targetEnd) {
             const t = segLen === 0 ? 1 : (targetEnd - segStart) / segLen;
@@ -954,7 +954,7 @@ const drawGhostAhead = (
 
     if (aheadPts.length < 2) return;
 
-    // Pulse — gentle on SOFT, prominent on STRONG.
+    // Pulse, gentle on SOFT, prominent on STRONG.
     const baseAlpha = level === 'STRONG' ? 0.85 : level === 'MEDIUM' ? 0.62 : 0.40;
     const pulse = 0.5 + 0.5 * Math.sin(now * 0.005);
     const alpha = Math.min(1, baseAlpha * (0.7 + 0.3 * pulse));
@@ -976,7 +976,7 @@ const drawGhostAhead = (
 };
 
 // ═══════════════════════════════════════════════
-// NEON TUBULAR PATH — Magical cave style
+// NEON TUBULAR PATH, Magical cave style
 // Thick glowing tubes with gradient fill and outer glow
 // ═══════════════════════════════════════════════
 const drawPath = (
@@ -991,12 +991,12 @@ const drawPath = (
 ): void => {
     // When the kid traces from the back end of the path, render the same
     // polyline reversed so the progress fill grows from their starting
-    // hand position outward — matching the direction of their movement.
+    // hand position outward, matching the direction of their movement.
     const points = reverseDirection ? [...path.points].reverse() : path.points;
     if (points.length < 2) return;
     const tol = path.tolerancePx;
     // Bumped from 2.0 → 2.6 (2026-05-13). Kids reported the "path felt
-    // thin" — fatter tube is more tactile, easier for shaky hands to
+    // thin", fatter tube is more tactile, easier for shaky hands to
     // stay inside, and visually reads as something to drag through.
     const thicknessScale = 2.6;
     const blurScale = Math.min(0.6, perfConfig.shadowBlurScale);
@@ -1033,7 +1033,7 @@ const drawPath = (
         }
     };
 
-    // 1. GHOST PATH — thick, faint tubular lane
+    // 1. GHOST PATH, thick, faint tubular lane
     // Outer glow layer
     ctx.save();
     ctx.lineCap = 'round';
@@ -1048,7 +1048,7 @@ const drawPath = (
     ctx.stroke();
     ctx.restore();
 
-    // Inner ghost lane — slightly brighter center
+    // Inner ghost lane, slightly brighter center
     ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -1068,7 +1068,7 @@ const drawPath = (
     ctx.stroke();
     ctx.restore();
 
-    // 2. PROGRESS FILL — neon glow tube
+    // 2. PROGRESS FILL, neon glow tube
     if (progress > 0) {
         // Outer glow layer (wide, soft)
         ctx.save();
@@ -1118,7 +1118,7 @@ const drawPath = (
 
 
 // ═══════════════════════════════════════════════
-// GLOWING START ORB — pulsing green sphere
+// GLOWING START ORB, pulsing green sphere
 // ═══════════════════════════════════════════════
 const drawStartDot = (
     ctx: CanvasRenderingContext2D,
@@ -1169,7 +1169,7 @@ const drawStartDot = (
     ctx.fillStyle = 'rgba(255,255,255,0.85)';
     ctx.fill();
 
-    // "START" label — bright Kid-UI palette
+    // "START" label, bright Kid-UI palette
     ctx.shadowBlur = 3 * perfConfig.shadowBlurScale;
     ctx.shadowColor = 'rgba(85, 221, 224, 0.55)';
     ctx.fillStyle = '#55DDE0'; // aqua
@@ -1181,7 +1181,7 @@ const drawStartDot = (
 };
 
 // ═══════════════════════════════════════════════
-// GLOWING END ORB — golden target sphere
+// GLOWING END ORB, golden target sphere
 // ═══════════════════════════════════════════════
 const drawEndTarget = (
     ctx: CanvasRenderingContext2D,
@@ -1232,7 +1232,7 @@ const drawEndTarget = (
     ctx.fillStyle = 'rgba(255,255,255,0.7)';
     ctx.fill();
 
-    // "END" label — sunshine
+    // "END" label, sunshine
     ctx.globalAlpha = 0.5 + glow * 0.5;
     ctx.fillStyle = '#FFD84D';
     ctx.font = '700 11px Fredoka, "Baloo 2", system-ui, sans-serif';
@@ -1252,7 +1252,7 @@ const drawEndTarget = (
 // not a second canvas-drawn dot. See git history for the previous
 // implementation if needed.
 
-// Draw off-path hint (gentle, no punishment) — Fredoka + brand palette
+// Draw off-path hint (gentle, no punishment), Fredoka + brand palette
 const drawOffPathHint = (
     ctx: CanvasRenderingContext2D,
     width: number,
@@ -1338,8 +1338,8 @@ const drawSparkleTrail = (
     ctx.restore();
 };
 
-// Paused indicator removed — the React layer (TracingMode) renders a
-// KidChip "Paused — Pinch to continue" at zIndex.hud. Drawing it here too
+// Paused indicator removed, the React layer (TracingMode) renders a
+// KidChip "Paused, Pinch to continue" at zIndex.hud. Drawing it here too
 // caused a double-render overlap during Batch 3B verification.
 
 // Get current state (for UI polling)

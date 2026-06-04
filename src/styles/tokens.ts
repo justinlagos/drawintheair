@@ -1,5 +1,5 @@
 /**
- * Draw in the Air — Kid-UI Design Tokens
+ * Draw in the Air, Kid-UI Design Tokens
  *
  * Single source of truth for the bright-sky design system.
  * Consumers can either:
@@ -84,7 +84,7 @@ export const fontWeight = {
   extrabold: 800,
 } as const;
 
-// Type scale uses clamp() for responsive sizing — matches the per-screen
+// Type scale uses clamp() for responsive sizing, matches the per-screen
 // ranges in the design spec (display 56-72, heading 32-44, etc.).
 export const fontSize = {
   display: 'clamp(2.75rem, 6vw, 4.5rem)',     // 44–72px
@@ -143,7 +143,7 @@ export const shadow = {
   buttonPressed: '0 2px 4px rgba(108, 63, 164, 0.14)',
   // Floating elements (chips, badges)
   float: '0 4px 16px rgba(108, 63, 164, 0.12), 0 1px 2px rgba(108, 63, 164, 0.08)',
-  // Reward highlights — sunshine glow
+  // Reward highlights, sunshine glow
   glow: '0 0 24px rgba(255, 216, 77, 0.45), 0 4px 12px rgba(108, 63, 164, 0.10)',
   // Modal lift
   modal: '0 24px 60px rgba(63, 64, 82, 0.20), 0 8px 24px rgba(108, 63, 164, 0.12)',
@@ -165,7 +165,7 @@ export const motion = {
     standard: 'cubic-bezier(0.4, 0, 0.2, 1)',
     out: 'cubic-bezier(0.0, 0, 0.2, 1)',
     in: 'cubic-bezier(0.4, 0, 1, 1)',
-    // Slight overshoot — playful pop without being distracting
+    // Slight overshoot, playful pop without being distracting
     bounce: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
     // Stronger overshoot for celebration & badges
     spring: 'cubic-bezier(0.5, 1.8, 0.6, 1)',
@@ -174,13 +174,13 @@ export const motion = {
 
 // ─── Z-INDEX LAYERS ────────────────────────────────────────────────────
 // NOTE: TrackingLayer's gameplay canvas sits at zIndex 100. HUD elements
-// must therefore live ABOVE 100 to remain visible — empirically learned
+// must therefore live ABOVE 100 to remain visible, empirically learned
 // during the Batch 3A migration when HUDs went invisible behind balloons.
 export const zIndex = {
   base: 0,
   scene: 1,         // HTML/SVG decorative backgrounds
   game: 10,         // (reserved for in-canvas concepts; canvas itself = 100)
-  hud: 200,         // HUD chips, panels — must be above the canvas
+  hud: 200,         // HUD chips, panels, must be above the canvas
   floatingFx: 250,  // confetti, +1 floats, drop feedback
   modal: 1000,
   celebration: 10000,

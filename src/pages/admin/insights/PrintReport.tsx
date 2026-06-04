@@ -1,5 +1,5 @@
 /**
- * PrintReport — the /admin/insights?report=1 view.
+ * PrintReport, the /admin/insights?report=1 view.
  *
  * Renders a linear, paper-shaped report layout (designed FOR A4, not
  * retrofitted from the dashboard). Calls window.print() on mount so
@@ -128,7 +128,7 @@ export const PrintReport: React.FC<{ range: Range; email: string }> = ({ range, 
                 </div>
 
                 <div className="iv-report-section">
-                    <h3 className="iv-report-section-title">A/B test — camera explainer</h3>
+                    <h3 className="iv-report-section-title">A/B test, camera explainer</h3>
                     <table className="iv-report-table">
                         <thead>
                             <tr><th>Arm</th><th>Exposed</th><th>Grant rate</th></tr>
@@ -137,12 +137,12 @@ export const PrintReport: React.FC<{ range: Range; email: string }> = ({ range, 
                             <tr>
                                 <td>Control</td>
                                 <td>{fmtNum(ab.data?.control?.exposed_sessions)}</td>
-                                <td>{ab.data?.control?.grant_rate != null ? `${(ab.data.control.grant_rate * 100).toFixed(1)}%` : '—'}</td>
+                                <td>{ab.data?.control?.grant_rate != null ? `${(ab.data.control.grant_rate * 100).toFixed(1)}%` : '-'}</td>
                             </tr>
                             <tr>
                                 <td>Treatment</td>
                                 <td>{fmtNum(ab.data?.treatment?.exposed_sessions)}</td>
-                                <td>{ab.data?.treatment?.grant_rate != null ? `${(ab.data.treatment.grant_rate * 100).toFixed(1)}%` : '—'}</td>
+                                <td>{ab.data?.treatment?.grant_rate != null ? `${(ab.data.treatment.grant_rate * 100).toFixed(1)}%` : '-'}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -255,7 +255,7 @@ export const PrintReport: React.FC<{ range: Range; email: string }> = ({ range, 
                 </div>
 
                 <div className="iv-report-section">
-                    <h3 className="iv-report-section-title">Items kids struggle with — needs scaffolding</h3>
+                    <h3 className="iv-report-section-title">Items kids struggle with, needs scaffolding</h3>
                     <table className="iv-report-table">
                         <thead>
                             <tr><th>Item</th><th>Mode</th><th style={{ textAlign: 'right' }}>Kids</th><th style={{ textAlign: 'right' }}>Median acc.</th></tr>
@@ -319,7 +319,7 @@ export const PrintReport: React.FC<{ range: Range; email: string }> = ({ range, 
                                     <td style={{ textAlign: 'right' }}>{fmtNum(r.cohort_size)}</td>
                                     {r.cells.map(c => (
                                         <td key={c.w} style={{ textAlign: 'right' }}>
-                                            {c.pct == null ? '—' : `${c.pct.toFixed(0)}%`}
+                                            {c.pct == null ? '-' : `${c.pct.toFixed(0)}%`}
                                         </td>
                                     ))}
                                 </tr>
@@ -360,7 +360,7 @@ export const PrintReport: React.FC<{ range: Range; email: string }> = ({ range, 
                 <div className="iv-report-section">
                     <h3 className="iv-report-section-title">Recent errors</h3>
                     {errors.data?.errors.length === 0 ? (
-                        <p style={{ fontSize: 13, color: '#1f7a3a' }}>All clear — no errors in the last 30 events.</p>
+                        <p style={{ fontSize: 13, color: '#1f7a3a' }}>All clear, no errors in the last 30 events.</p>
                     ) : (
                         <table className="iv-report-table">
                             <thead>
@@ -371,8 +371,8 @@ export const PrintReport: React.FC<{ range: Range; email: string }> = ({ range, 
                                     <tr key={i}>
                                         <td>{new Date(e.occurred_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
                                         <td>{e.event_name}</td>
-                                        <td>{e.browser ?? '—'}</td>
-                                        <td>{e.page ?? '—'}</td>
+                                        <td>{e.browser ?? '-'}</td>
+                                        <td>{e.page ?? '-'}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -385,14 +385,14 @@ export const PrintReport: React.FC<{ range: Range; email: string }> = ({ range, 
                     <p style={{ fontSize: 11.5, color: '#6B6F84', lineHeight: 1.6 }}>
                         <strong style={{ color: '#1A1B2E' }}>Identity.</strong> Sessions are
                         de-duplicated by a stable browser-side session UUID. Devices are
-                        de-duplicated by a per-browser localStorage UUID — no PII is collected.
+                        de-duplicated by a per-browser localStorage UUID, no PII is collected.
                         Cohorts are bucketed by ISO week of first observation.
                     </p>
                     <p style={{ fontSize: 11.5, color: '#6B6F84', lineHeight: 1.6, marginTop: 8 }}>
                         <strong style={{ color: '#1A1B2E' }}>Time on task.</strong>{' '}
                         <em>Median session</em> (Executive tab) is the median of
                         <code> max(occurred_at) − min(occurred_at)</code> across <strong>every</strong>
-                        session — short bounces included (camera denials, age-band drops, instant
+                        session, short bounces included (camera denials, age-band drops, instant
                         back-clicks). <em> Avg time-on-task</em> (Engagement tab) is the median of
                         per-mode play duration, computed only over sessions that actually reached a
                         mode. The gap between them (e.g. 41 s vs 1 m 6 s) is the weight of the
@@ -406,7 +406,7 @@ export const PrintReport: React.FC<{ range: Range; email: string }> = ({ range, 
                         <code> stage_progressed</code>). <em>Abandon rate</em> is the share of
                         <em>mode_started</em> events not followed by <em>mode_completed</em>
                         within the same session. Sandbox modes (Free Paint) have no goal, so the
-                        abandon metric is not surfaced for them — kids leaving an open-ended canvas
+                        abandon metric is not surfaced for them, kids leaving an open-ended canvas
                         is not a difficulty signal.
                     </p>
                     <p style={{ fontSize: 11.5, color: '#6B6F84', lineHeight: 1.6, marginTop: 8 }}>
@@ -418,7 +418,7 @@ export const PrintReport: React.FC<{ range: Range; email: string }> = ({ range, 
                     </p>
                     <p style={{ fontSize: 11.5, color: '#6B6F84', lineHeight: 1.6, marginTop: 8 }}>
                         <strong style={{ color: '#1A1B2E' }}>Camera grant.</strong>{' '}
-                        Camera grant rate counts the first denial per session only — subsequent
+                        Camera grant rate counts the first denial per session only, subsequent
                         retries fire <code>camera_retry_failed</code> separately so the same
                         session doesn't get double-counted as a denial.
                     </p>

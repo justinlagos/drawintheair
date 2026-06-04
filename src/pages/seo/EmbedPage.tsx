@@ -1,5 +1,5 @@
 // src/pages/seo/EmbedPage.tsx
-// Embed page — provides iframe codes for full platform + scoped activity variants.
+// Embed page, provides iframe codes for full platform + scoped activity variants.
 // Each embed variant includes UTM attribution so we can track which websites
 // are driving users to Draw in the Air.
 
@@ -26,11 +26,11 @@ const EMBED_VARIANTS: EmbedVariant[] = [
     id: 'full',
     label: 'Full Platform',
     emoji: '🎮',
-    description: 'All nine activities — letters, numbers, shapes, sorting, colours, maths, and free drawing.',
+    description: 'All nine activities, letters, numbers, shapes, sorting, colours, maths, and free drawing.',
     height: 620,
-    borderColor: '#034eae',
+    borderColor: '#8A66F0',
     src: `${BASE_URL}/play?embed=true`,
-    title: 'Draw in the Air — Free Gesture Learning Activities',
+    title: 'Draw in the Air, Free Gesture Learning Activities',
   },
   {
     id: 'bubble-pop',
@@ -38,9 +38,9 @@ const EMBED_VARIANTS: EmbedVariant[] = [
     emoji: '🫧',
     description: 'The 30-second hand-eye coordination brain break. Great for embedding on a movement break page.',
     height: 540,
-    borderColor: '#1c7e80',
+    borderColor: '#2E9D68',
     src: `${BASE_URL}/play?embed=true&screen=game&mode=calibration`,
-    title: 'Bubble Pop — Gesture Brain Break',
+    title: 'Bubble Pop, Gesture Brain Break',
   },
   {
     id: 'letter-tracing',
@@ -48,9 +48,9 @@ const EMBED_VARIANTS: EmbedVariant[] = [
     emoji: '✏️',
     description: 'Air tracing for letters A–Z. Perfect for a phonics or handwriting blog post.',
     height: 620,
-    borderColor: '#034eae',
+    borderColor: '#8A66F0',
     src: `${BASE_URL}/play?embed=true&screen=game&mode=pre-writing`,
-    title: 'Letter Tracing A–Z — Gesture Handwriting Practice',
+    title: 'Letter Tracing A–Z, Gesture Handwriting Practice',
   },
   {
     id: 'sort-and-place',
@@ -60,7 +60,7 @@ const EMBED_VARIANTS: EmbedVariant[] = [
     height: 580,
     borderColor: '#a855f7',
     src: `${BASE_URL}/play?embed=true&screen=game&mode=sort-and-place`,
-    title: 'Sort and Place — Gesture Categorisation Game',
+    title: 'Sort and Place, Gesture Categorisation Game',
   },
   {
     id: 'free-paint',
@@ -70,7 +70,7 @@ const EMBED_VARIANTS: EmbedVariant[] = [
     height: 580,
     borderColor: '#f59e0b',
     src: `${BASE_URL}/play?embed=true&screen=game&mode=free`,
-    title: 'Free Paint — Air Drawing Canvas',
+    title: 'Free Paint, Air Drawing Canvas',
   },
 ];
 
@@ -84,7 +84,7 @@ function buildEmbedCode(variant: EmbedVariant): string {
   title="${variant.title}">
 </iframe>
 <p style="text-align: center; font-family: sans-serif; font-size: 13px; color: #666; margin-top: 8px;">
-  Powered by <a href="https://drawintheair.com?utm_source=embed&utm_medium=widget" target="_blank" rel="noopener noreferrer" style="color: #034eae; font-weight: 600;">Draw in the Air</a> — Free gesture learning for kids
+  Powered by <a href="https://drawintheair.com?utm_source=embed&utm_medium=widget" target="_blank" rel="noopener noreferrer" style="color: #8A66F0; font-weight: 600;">Draw in the Air</a>, Free gesture learning for kids
 </p>`;
 }
 
@@ -101,8 +101,8 @@ function CopyButton({ text, label = 'Copy Code' }: { text: string; label?: strin
     <button
       onClick={handleCopy}
       style={{
-        background: copied ? '#22c55e' : '#034eae',
-        color: '#1A1B2E', border: 'none', borderRadius: 8,
+        background: copied ? '#22c55e' : '#8A66F0',
+        color: '#1F1B2E', border: 'none', borderRadius: 8,
         padding: '10px 20px', fontWeight: 700, fontSize: '0.85rem',
         cursor: 'pointer', transition: 'background 0.2s',
       }}
@@ -122,7 +122,7 @@ export default function EmbedPage() {
     <SeoLayout>
       <SEOMeta
         title="Embed Draw in the Air on Your School Website | Free Classroom Widget"
-        description="Add Draw in the Air gesture learning activities to your classroom website, school blog, or student portal. Free to embed — copy the code and paste it anywhere. Works on Google Sites, Canvas, Seesaw, WordPress."
+        description="Add Draw in the Air gesture learning activities to your classroom website, school blog, or student portal. Free to embed, copy the code and paste it anywhere. Works on Google Sites, Canvas, Seesaw, WordPress."
         canonical="/embed"
         keywords={['embed educational app', 'classroom website widget', 'free educational widget', 'google sites classroom widget', 'canvas lms embed', 'seesaw embed activity']}
       />
@@ -131,14 +131,14 @@ export default function EmbedPage() {
         badge="For Teachers & Bloggers"
         emoji="🔗"
         title="Add Draw in the Air to Any Website"
-        subtitle="Embed gesture learning activities directly on your class page, school blog, or student portal. Free, one-click setup — no coding required."
+        subtitle="Embed gesture learning activities directly on your class page, school blog, or student portal. Free, one-click setup, no coding required."
       />
 
       {/* ── Why embed ── */}
       <Section>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 40, alignItems: 'start' }}>
           <div>
-            <h2 style={{ color: '#1A1B2E', fontSize: '1.6rem', fontWeight: 800, marginBottom: 16 }}>
+            <h2 style={{ color: '#1F1B2E', fontSize: '1.6rem', fontWeight: 800, marginBottom: 16 }}>
               Keep Students on Your Site
             </h2>
             <p style={{ color: '#4A4D6B', fontSize: '1.05rem', lineHeight: 1.65, marginBottom: 24 }}>
@@ -148,13 +148,13 @@ export default function EmbedPage() {
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
               {[
                 'Works on Google Sites, Canvas, Seesaw, WordPress, and any HTML editor',
-                'No student accounts or logins — just open and play',
-                'Camera feed stays on the device — never transmitted anywhere',
+                'No student accounts or logins, just open and play',
+                'Camera feed stays on the device, never transmitted anywhere',
                 'Responsive design works on any screen size',
-                'Five activity variants to embed — from brain breaks to letter tracing',
+                'Five activity variants to embed, from brain breaks to letter tracing',
               ].map((item, i) => (
-                <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14, color: '#1A1B2E' }}>
-                  <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(3,78,174,0.16)', color: '#6C3FA4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0, marginTop: 2 }}>✓</div>
+                <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14, color: '#1F1B2E' }}>
+                  <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(138,102,240,0.16)', color: '#7A55E0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0, marginTop: 2 }}>✓</div>
                   <span style={{ fontSize: '0.95rem', lineHeight: 1.55 }}>{item}</span>
                 </li>
               ))}
@@ -169,10 +169,10 @@ export default function EmbedPage() {
               { icon: '5', label: 'Activity variants', sub: 'full platform or single mode' },
               { icon: '🔒', label: 'Privacy first', sub: 'no data collection, no video storage' },
             ].map(stat => (
-              <div key={stat.label} style={{ background: '#FFFFFF', border: '1px solid rgba(3,78,174,0.17)', borderRadius: 12, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div key={stat.label} style={{ background: '#FFFFFF', border: '1px solid rgba(138,102,240,0.17)', borderRadius: 12, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
                 <span style={{ fontSize: '1.6rem' }}>{stat.icon}</span>
                 <div>
-                  <div style={{ color: '#1A1B2E', fontWeight: 800, fontSize: '1rem' }}>{stat.label}</div>
+                  <div style={{ color: '#1F1B2E', fontWeight: 800, fontSize: '1rem' }}>{stat.label}</div>
                   <div style={{ color: '#6B6F84', fontSize: '0.82rem' }}>{stat.sub}</div>
                 </div>
               </div>
@@ -183,7 +183,7 @@ export default function EmbedPage() {
 
       {/* ── Activity selector + embed code ── */}
       <Section light>
-        <h2 style={{ color: '#1A1B2E', fontSize: '1.6rem', fontWeight: 800, marginBottom: 8 }}>Choose an Activity to Embed</h2>
+        <h2 style={{ color: '#1F1B2E', fontSize: '1.6rem', fontWeight: 800, marginBottom: 8 }}>Choose an Activity to Embed</h2>
         <p style={{ color: '#4A4D6B', fontSize: '0.95rem', marginBottom: 24 }}>
           Select the activity below, then copy and paste the code into your site builder.
         </p>
@@ -195,9 +195,9 @@ export default function EmbedPage() {
               key={v.id}
               onClick={() => setActiveVariant(v)}
               style={{
-                background: activeVariant.id === v.id ? '#034eae' : 'rgba(3,78,174,0.08)',
-                border: `1px solid ${activeVariant.id === v.id ? '#034eae' : 'rgba(3,78,174,0.22)'}`,
-                color: activeVariant.id === v.id ? 'white' : '#6C3FA4',
+                background: activeVariant.id === v.id ? '#8A66F0' : 'rgba(138,102,240,0.08)',
+                border: `1px solid ${activeVariant.id === v.id ? '#8A66F0' : 'rgba(138,102,240,0.22)'}`,
+                color: activeVariant.id === v.id ? 'white' : '#7A55E0',
                 borderRadius: 24, padding: '8px 18px', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
                 transition: 'all 0.15s',
               }}
@@ -208,16 +208,16 @@ export default function EmbedPage() {
         </div>
 
         {/* Active variant info */}
-        <div style={{ background: 'rgba(3,78,174,0.06)', border: '1px solid rgba(3,78,174,0.17)', borderRadius: 12, padding: '16px 20px', marginBottom: 24 }}>
-          <div style={{ color: '#1A1B2E', fontWeight: 700, marginBottom: 4 }}>{activeVariant.emoji} {activeVariant.label}</div>
+        <div style={{ background: 'rgba(138,102,240,0.06)', border: '1px solid rgba(138,102,240,0.17)', borderRadius: 12, padding: '16px 20px', marginBottom: 24 }}>
+          <div style={{ color: '#1F1B2E', fontWeight: 700, marginBottom: 4 }}>{activeVariant.emoji} {activeVariant.label}</div>
           <div style={{ color: '#4A4D6B', fontSize: '0.9rem' }}>{activeVariant.description}</div>
         </div>
 
         {/* Code block */}
         <div style={{ position: 'relative' }}>
           <pre style={{
-            background: '#FFFAEB', padding: '20px 20px 20px 20px',
-            borderRadius: 10, color: '#1c7e80', fontSize: '0.82rem',
+            background: '#FFFDF7', padding: '20px 20px 20px 20px',
+            borderRadius: 10, color: '#2E9D68', fontSize: '0.82rem',
             overflowX: 'auto', border: '1px solid rgba(63,64,82,0.12)',
             lineHeight: 1.6, margin: 0,
           }}>
@@ -230,7 +230,7 @@ export default function EmbedPage() {
 
         {/* Platform guides */}
         <div style={{ marginTop: 28 }}>
-          <h3 style={{ color: '#1A1B2E', fontWeight: 700, fontSize: '1rem', marginBottom: 14 }}>Where to paste this code</h3>
+          <h3 style={{ color: '#1F1B2E', fontWeight: 700, fontSize: '1rem', marginBottom: 14 }}>Where to paste this code</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
             {[
               { platform: 'Google Sites', instruction: 'Insert → Embed → paste the code' },
@@ -239,7 +239,7 @@ export default function EmbedPage() {
               { platform: 'Seesaw', instruction: 'Add Activity → Embed Link → paste URL only' },
             ].map(guide => (
               <div key={guide.platform} style={{ background: '#FFFFFF', borderRadius: 10, padding: '14px 16px', border: '1px solid rgba(63,64,82,0.10)' }}>
-                <div style={{ color: '#6C3FA4', fontWeight: 700, fontSize: '0.88rem', marginBottom: 4 }}>{guide.platform}</div>
+                <div style={{ color: '#7A55E0', fontWeight: 700, fontSize: '0.88rem', marginBottom: 4 }}>{guide.platform}</div>
                 <div style={{ color: '#6B6F84', fontSize: '0.82rem', lineHeight: 1.5 }}>{guide.instruction}</div>
               </div>
             ))}
@@ -249,7 +249,7 @@ export default function EmbedPage() {
 
       {/* ── For creators / bloggers ── */}
       <Section>
-        <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 16 }}>For Education Bloggers & Creators</h2>
+        <h2 style={{ color: '#1F1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 16 }}>For Education Bloggers & Creators</h2>
         <p style={{ color: '#4A4D6B', fontSize: '1rem', lineHeight: 1.65, marginBottom: 20 }}>
           Writing a post about movement learning, Chromebook classroom tools, or handwriting warm-ups?
           Embed the relevant activity variant to give your readers an immediate, interactive experience.
@@ -262,10 +262,10 @@ export default function EmbedPage() {
             { title: 'Chromebook tools roundup', embed: '🎮 Full Platform', reason: 'Demonstrates the full experience without requiring a site visit' },
             { title: 'Fine motor activities post', embed: '📦 Sort & Place', reason: 'Interactive demonstration of pinch-and-place coordination' },
           ].map(use => (
-            <div key={use.title} style={{ background: '#FFFFFF', border: '1px solid rgba(3,78,174,0.17)', borderRadius: 12, padding: '18px 20px' }}>
-              <div style={{ color: '#1c7e80', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Article type</div>
-              <div style={{ color: '#1A1B2E', fontWeight: 700, fontSize: '0.95rem', marginBottom: 8 }}>{use.title}</div>
-              <div style={{ color: '#6C3FA4', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>Use: {use.embed}</div>
+            <div key={use.title} style={{ background: '#FFFFFF', border: '1px solid rgba(138,102,240,0.17)', borderRadius: 12, padding: '18px 20px' }}>
+              <div style={{ color: '#2E9D68', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Article type</div>
+              <div style={{ color: '#1F1B2E', fontWeight: 700, fontSize: '0.95rem', marginBottom: 8 }}>{use.title}</div>
+              <div style={{ color: '#7A55E0', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>Use: {use.embed}</div>
               <div style={{ color: '#6B6F84', fontSize: '0.82rem' }}>{use.reason}</div>
             </div>
           ))}
@@ -274,7 +274,7 @@ export default function EmbedPage() {
         <div style={{ textAlign: 'center' }}>
           <button
             onClick={() => navigate('/press')}
-            style={{ background: 'rgba(3,78,174,0.10)', border: '1px solid rgba(3,78,174,0.34)', color: '#6C3FA4', borderRadius: 24, padding: '10px 24px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
+            style={{ background: 'rgba(138,102,240,0.10)', border: '1px solid rgba(138,102,240,0.34)', color: '#7A55E0', borderRadius: 24, padding: '10px 24px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
           >
             Download the Creator Pack →
           </button>

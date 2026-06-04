@@ -1,5 +1,5 @@
 /**
- * Tracking Layer — camera + vision + render
+ * Tracking Layer, camera + vision + render
  *
  * Camera is started once. It is never restarted unless the user explicitly
  * triggers restartCamera(). The vision loop runs when the camera is active
@@ -29,7 +29,7 @@ import type { CameraCause } from '../../lib/cameraHelp';
 import { ParentTransparencyBanner } from './ParentTransparencyBanner';
 
 // ---------------------------------------------------------------------------
-// Mirror helpers (front-facing camera — natural left/right orientation)
+// Mirror helpers (front-facing camera, natural left/right orientation)
 // ---------------------------------------------------------------------------
 
 const mirrorX = (x: number): number => 1 - x;
@@ -123,7 +123,7 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
     const { videoRef, state: cameraState, startCamera, restartCamera, updateVisionMetrics } = useCameraController();
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
-    // Latest frame stored in a ref — avoids per-frame React re-renders
+    // Latest frame stored in a ref, avoids per-frame React re-renders
     const lastFrameDataRef = useRef<TrackingFrameData>(EMPTY_FRAME);
 
     // Throttled state for child components that need frameData reactively
@@ -428,7 +428,7 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
     });
 
     // ------------------------------------------------------------------
-    // Render loop — 60 fps, fully decoupled from vision loop
+    // Render loop, 60 fps, fully decoupled from vision loop
     // ------------------------------------------------------------------
     useEffect(() => {
         let animationFrameId: number;
@@ -543,9 +543,9 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
             overflow: 'hidden',
             boxSizing: 'border-box',
         }}>
-            {/* Camera video element — kept on-screen at 1×1 px / opacity 0.
+            {/* Camera video element, kept on-screen at 1×1 px / opacity 0.
                 Critical: do NOT use visibility:hidden, display:none, or
-                contain:strict — Safari, iOS Chrome, and several Android
+                contain:strict, Safari, iOS Chrome, and several Android
                 browsers pause the video decoder for elements that are
                 "fully" hidden, which starves MediaPipe of frames and
                 makes hand tracking silently fail. Keeping a 1×1 visible
@@ -596,7 +596,7 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                 retryTracker,
             }) : children}
 
-            {/* Parent-trust badge — visible whenever the camera is live.
+            {/* Parent-trust badge, visible whenever the camera is live.
                 Click expands a modal showing the live preview so anyone
                 can verify the no-upload claim. */}
             <ParentTransparencyBanner
@@ -678,7 +678,7 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
             {/* Camera debug badge (visible only with ?debug=camera) */}
             <CameraDebugBadge state={cameraState} />
 
-            {/* Camera permission flow — treatment arm pre-prompt + per-cause */}
+            {/* Camera permission flow, treatment arm pre-prompt + per-cause */}
             {/* recovery. Recovery takes precedence when an error is active.   */}
             {recoveryCause && (
                 <CameraRecovery

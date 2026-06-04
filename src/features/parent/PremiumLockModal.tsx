@@ -88,7 +88,7 @@ export function PremiumLockModal({
             {gameTitle}
           </h2>
           <p style={{ margin: 0, color: '#4A4D6B', fontSize: 15, lineHeight: 1.55 }}>
-            This game is part of the family plan. A grown-up can start a 14-day free trial. No card needed today.
+            This game is part of the family plan. A grown-up can start a 7-day free trial. No card needed today.
           </p>
 
           <div style={{ display: 'grid', gap: 8, marginTop: 22 }}>

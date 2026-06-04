@@ -80,7 +80,7 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
         }
     }, []);
 
-    // Completion callback — auto-advances to the next path
+    // Completion callback, auto-advances to the next path
     useEffect(() => {
         setCompleteCallback(() => {
             const now = Date.now();
@@ -154,7 +154,7 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
         <>
             <TracingBackground />
 
-            {/* Back to menu (no stage label — bespoke panel below shows it) */}
+            {/* Back to menu (no stage label, bespoke panel below shows it) */}
             {onExit && <GameTopBar onBack={onExit} compact={isCompact} />}
 
             {/* TOP-LEFT: Mode + path info card */}
@@ -321,7 +321,7 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
                     maxWidth: isCompact ? 'calc(100% - 32px)' : 'none',
                 }}>
                     <KidObjectiveCard icon="👆">
-                        {isCompact ? 'Pinch to draw!' : 'Pinch to draw — start at the green dot!'}
+                        {isCompact ? 'Pinch to draw!' : 'Pinch to draw, start at the green dot!'}
                     </KidObjectiveCard>
                 </div>
             )}

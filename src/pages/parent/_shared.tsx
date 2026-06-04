@@ -6,7 +6,7 @@
  * `.pa-shell` (see parent.css) so nothing leaks into Landing or Game CSS.
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
@@ -18,6 +18,11 @@ import {
   describeSubscriptionState,
   type SubscriptionState,
 } from '../../lib/parentApi';
+import {
+  getAccountRoles,
+  registerParentAccount,
+  consumeRoleIntent,
+} from '../../lib/supabase';
 import './parent.css';
 
 // ── Icons (Lucide-style, consistent 1.75 stroke, 20px box) ────────────────
@@ -216,8 +221,56 @@ function ParentNav() {
 export function RequireParentAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const location = useLocation();
+
+  // Role isolation (migration 0013): the family area requires an account
+  // that explicitly signed up as a parent. A teacher-only login with the
+  // same email does NOT get in automatically; they see an explicit opt-in.
+  const [roleStatus, setRoleStatus] = useState<'checking' | 'parent' | 'not-parent'>('checking');
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const roles = await getAccountRoles();
+      if (cancelled) return;
+      if (roles?.parent || roles?.admin) { setRoleStatus('parent'); return; }
+      // Arrived through the parent signup/login flow (e.g. Google): finish
+      // the explicit parent registration they started.
+      if (consumeRoleIntent('parent')) {
+        const ok = await registerParentAccount();
+        if (!cancelled) setRoleStatus(ok ? 'parent' : 'not-parent');
+        return;
+      }
+      setRoleStatus('not-parent');
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
   if (loading) return <LoadingShell />;
   if (!user) return <Navigate to={`/parent/login?next=${encodeURIComponent(location.pathname)}`} replace />;
+  if (roleStatus === 'checking') return <LoadingShell />;
+  if (roleStatus === 'not-parent') {
+    return (
+      <div className="pa-shell">
+        <div className="auth" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+          <main className="auth-form-col" style={{ margin: '0 auto' }}>
+            <section className="auth-card pop">
+              <h2>This area is for families</h2>
+              <p style={{ marginTop: 8 }}>
+                You're signed in with a teacher account, and the family area is kept
+                completely separate from classroom accounts. If you'd like a family
+                account, you can start a free trial from the parents page whenever
+                you're ready.
+              </p>
+              <div className="stack" style={{ marginTop: 16 }}>
+                <Link to="/class" className="btn btn-primary btn-lg btn-block">Back to my classroom</Link>
+                <Link to="/parents" className="btn btn-ghost btn-block">About Draw in the Air for families</Link>
+              </div>
+            </section>
+          </main>
+        </div>
+      </div>
+    );
+  }
   return <>{children}</>;
 }
 
@@ -249,10 +302,10 @@ function LoadingShell() {
 // ── Paywall ───────────────────────────────────────────────────────────────
 
 const PAYWALL_COPY: Record<string, { title: string; sub: string }> = {
-  save_progress: { title: "Save what they've built so far.", sub: "Keep your child's learning journey going. Start a 14-day free trial. No card required." },
+  save_progress: { title: "Save what they've built so far.", sub: "Keep your child's learning journey going. Start a 7-day free trial. No card required." },
   dashboard:     { title: 'Unlock the parent dashboard.', sub: 'See progress in plain English, set gentle limits, and get one clear next step.' },
   trial_ended:   { title: 'Your free trial wrapped up.', sub: "Pick up where you left off. Your child's progress is still safely saved." },
-  premium_mode:  { title: 'This activity is part of your family plan.', sub: 'Start the 14-day trial to unlock the full activity library.' },
+  premium_mode:  { title: 'This activity is part of your family plan.', sub: 'Start the 7-day trial to unlock the full activity library.' },
 };
 
 export function Paywall({ reason, state }: { reason: keyof typeof PAYWALL_COPY; state: SubscriptionState }) {
@@ -292,7 +345,7 @@ export function Paywall({ reason, state }: { reason: keyof typeof PAYWALL_COPY; 
         </div>
 
         <div className="row center gap-6" style={{ marginTop: 22, color: 'var(--fg-3)', fontSize: 13.5, flexWrap: 'wrap' }}>
-          <span className="row gap-2"><I.Shield size={16} /> 14-day free trial</span>
+          <span className="row gap-2"><I.Shield size={16} /> 7-day free trial</span>
           <span className="row gap-2"><I.Check size={16} /> Cancel anytime</span>
           <span className="row gap-2"><I.Users size={16} /> Up to 2 learners included</span>
         </div>
@@ -325,7 +378,7 @@ export function PlanCard({
   features?: string[];
 }) {
   const defaultFeatures = [
-    '14-day free trial',
+    '7-day free trial',
     'Up to 2 learners included',
     'Full activity library',
     'Plain-English progress reports',

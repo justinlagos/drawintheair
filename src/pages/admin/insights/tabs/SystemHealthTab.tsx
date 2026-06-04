@@ -1,5 +1,5 @@
 /**
- * System Health tab — the nervous-system view.
+ * System Health tab, the nervous-system view.
  *
  * Reads from the in-memory observability health registry
  * (src/lib/observability/health.ts) and surfaces the answers to the
@@ -10,11 +10,11 @@
  *   • Did the camera fail?             → cameraGrantRate
  *   • Did the tracker fail?            → trackerSuccessRate
  *   • Did a classroom session desync?  → classroomSyncFailures
- *   • Is the site currently up?        → see BetterStack — externally hosted
+ *   • Is the site currently up?        → see BetterStack, externally hosted
  *                                       (we surface the dashboard link)
  *
  * Notes:
- *   • This tab reads CLIENT-SIDE counters from THIS admin's tab —
+ *   • This tab reads CLIENT-SIDE counters from THIS admin's tab,
  *     it's a real-time-on-this-device view, not aggregated across
  *     users. Aggregated counts live in Sentry / PostHog and in
  *     the existing Errors / Engagement tabs which read from
@@ -22,7 +22,7 @@
  *
  *   • Site uptime + last deploy info come from env at build time
  *     (VITE_APP_VERSION / VITE_APP_ENV). The "uptime status"
- *     surface is a link out to BetterStack — true uptime cannot be
+ *     surface is a link out to BetterStack, true uptime cannot be
  *     reported from inside the same app.
  */
 
@@ -38,7 +38,7 @@ import {
 const REFRESH_MS = 4_000;
 
 function pctOrDash(v: number | null): string {
-    if (v === null || Number.isNaN(v)) return '—';
+    if (v === null || Number.isNaN(v)) return '-';
     return `${(v * 100).toFixed(1)}%`;
 }
 
@@ -153,7 +153,7 @@ export const SystemHealthTab: React.FC = () => {
             <div className="iv-col-12">
                 <Card
                     title="Last critical error"
-                    meta={snap.lastCriticalError ? fmtRelative(new Date(snap.lastCriticalError.at).toISOString()) : '—'}
+                    meta={snap.lastCriticalError ? fmtRelative(new Date(snap.lastCriticalError.at).toISOString()) : '-'}
                 >
                     {!snap.lastCriticalError ? (
                         <Empty message={<><strong>All clear.</strong> No critical errors this session.</>} />

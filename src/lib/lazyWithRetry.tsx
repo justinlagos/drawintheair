@@ -12,7 +12,7 @@ import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
  *     2. Races each attempt against a timeout so a stalled request can't
  *        hang the Suspense boundary forever.
  *     3. As a last resort, forces ONE full reload (guarded against loops
- *        via sessionStorage) — this also fixes the classic post-deploy
+ *        via sessionStorage), this also fixes the classic post-deploy
  *        "old hashed chunk no longer exists" error for returning users.
  *
  * Drop-in replacement for React.lazy: same signature, same return type.
@@ -40,7 +40,7 @@ export function lazyWithRetry<T extends ComponentType<any>>(
         factory().then(
           (mod) => {
             clearTimeout(timer);
-            // Loaded cleanly — clear any prior reload guard for this session.
+            // Loaded cleanly, clear any prior reload guard for this session.
             try {
               sessionStorage.removeItem(RELOAD_KEY);
             } catch {

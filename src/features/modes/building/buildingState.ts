@@ -1,5 +1,5 @@
 /**
- * Building Mode — pure FSM + session bookkeeping.
+ * Building Mode, pure FSM + session bookkeeping.
  *
  * Module-local singleton state, same pattern as sortAndPlaceLogic.ts so
  * the React shell can poll via setInterval and the onFrame callback can
@@ -58,7 +58,7 @@ export function startBuild(objectId?: string, buildType?: BuildType): void {
     const template = (objectId && findObjectById(objectId))
         ?? BUILDING_CATALOG[0];
     if (!template) {
-        // Defensive — should never hit unless catalogue is empty in dev.
+        // Defensive, should never hit unless catalogue is empty in dev.
         console.warn('[building] no objects in catalogue; cannot start build');
         return;
     }
@@ -146,7 +146,7 @@ export function abandon(reason: string): void {
     });
 }
 
-/** Reset state — called on mode unmount. */
+/** Reset state, called on mode unmount. */
 export function resetBuildingState(): void {
     phase = 'reveal';
     currentObject = null;

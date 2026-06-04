@@ -1,5 +1,5 @@
 /**
- * Building Mode — canvas rendering.
+ * Building Mode, canvas rendering.
  *
  * Composites AI-generated soft-3D PNG sprites onto the canvas, with
  * the home-world background scene as the base layer. Sprites are
@@ -12,7 +12,7 @@
  *   2. Silhouette glow (subtle ghost of completed object)
  *   3. Snap zone outlines + glow halos
  *   4. Pieces (drop shadow → sprite → selection ring)
- *   5. (Completion animator paints on top — see buildingCompletion.ts)
+ *   5. (Completion animator paints on top, see buildingCompletion.ts)
  */
 
 import { normalizedToCanvas } from '../../../core/coordinateUtils';
@@ -58,13 +58,13 @@ function drawBackground(
 ): void {
     const bg = getSceneSprite('home-background');
     if (bg && bg.complete && bg.naturalWidth > 0) {
-        // Cover fit — scale up the smaller side so the whole canvas is
+        // Cover fit, scale up the smaller side so the whole canvas is
         // filled, even if it crops some of the scene.
         const srcRatio = bg.naturalWidth / bg.naturalHeight;
         const dstRatio = width / height;
         let dw = width, dh = height, dx = 0, dy = 0;
         if (dstRatio > srcRatio) {
-            // canvas wider than image — scale to width, crop top/bottom
+            // canvas wider than image, scale to width, crop top/bottom
             dh = width / srcRatio;
             dy = (height - dh) / 2;
         } else {
@@ -114,7 +114,7 @@ function drawSnapZone(
 
     ctx.save();
 
-    // Glow halo — fades in with proximity.
+    // Glow halo, fades in with proximity.
     if (zone.glow > 0) {
         ctx.save();
         ctx.shadowColor = '#FFD84D';
@@ -126,7 +126,7 @@ function drawSnapZone(
         ctx.restore();
     }
 
-    // Dashed outline — soft purple, matches kid-UI primary accent.
+    // Dashed outline, soft purple, matches kid-UI primary accent.
     // Lighter weight than before so the outline reads as a "spot"
     // rather than a frame around a card.
     ctx.globalAlpha = 0.4;
@@ -170,7 +170,7 @@ function drawPiece(
     // adding a canvas ellipse beneath them double-shadowed and made the
     // pieces read as "cards on a surface" rather than objects in space.
 
-    // Sprite — aspect-fit into the piece bounding box so the sprite
+    // Sprite, aspect-fit into the piece bounding box so the sprite
     // never stretches if its natural aspect doesn't exactly match the
     // declared width/height. When a future master image gives us
     // master-aligned sizes, we'll switch back to exact-rect drawing.
@@ -181,7 +181,7 @@ function drawPiece(
         const drawH = aspect >= 1 ? rw / aspect : rh;
         ctx.drawImage(sprite, -drawW / 2, -drawH / 2, drawW, drawH);
     } else {
-        // Fallback — flat coloured ellipse so the piece is still
+        // Fallback, flat coloured ellipse so the piece is still
         // grabbable while assets are loading.
         ctx.fillStyle = piece.color;
         ctx.beginPath();

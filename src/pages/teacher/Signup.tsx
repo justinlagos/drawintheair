@@ -12,7 +12,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { BrandLogo } from '../../components/BrandLogo';
 import { I } from '../parent/_shared';
-import { signInWithGoogle } from '../../lib/supabase';
+import { signInWithGoogle, setRoleIntent } from '../../lib/supabase';
 import { signUpTeacher } from '../../lib/teacherApi';
 import { logEvent } from '../../lib/analytics';
 import '../parent/parent.css';
@@ -27,6 +27,7 @@ export default function TeacherSignup() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmEmail, setConfirmEmail] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -49,6 +50,12 @@ export default function TeacherSignup() {
     }
     logEvent('teacher_signup_completed');
     setLoading(false);
+    if (result.needsEmailConfirm) {
+      // No session yet (email confirmation enabled), landing in /class
+      // would show a signed-out console. Show check-your-inbox instead.
+      setConfirmEmail(true);
+      return;
+    }
     navigate('/class');
   }
 
@@ -106,6 +113,22 @@ export default function TeacherSignup() {
 
           {/* Right form */}
           <main className="auth-form-col">
+            {confirmEmail ? (
+              <section className="auth-card pop">
+                <h2>Check your inbox</h2>
+                <p style={{ marginTop: 8 }}>
+                  We've sent a confirmation link to <strong>{email}</strong>.
+                  Tap the link in that email to activate your account, then sign in
+                  to open your classroom.
+                </p>
+                <p className="auth-alt" style={{ marginTop: 16 }}>
+                  Didn't get it? Check your spam folder, or try again in a few minutes.
+                </p>
+                <Link to="/teacher/login" className="btn btn-primary btn-lg btn-block" style={{ marginTop: 16 }}>
+                  Go to sign in
+                </Link>
+              </section>
+            ) : (
             <section className="auth-card pop">
               <h2>Create your teacher account</h2>
               <form onSubmit={handleSubmit} className="stack">
@@ -199,7 +222,7 @@ export default function TeacherSignup() {
 
                 <button
                   type="button"
-                  onClick={() => signInWithGoogle('/class')}
+                  onClick={() => { setRoleIntent('teacher'); signInWithGoogle('/class'); }}
                   className="btn-google"
                 >
                   <I.Google size={18} /> Continue with Google
@@ -210,6 +233,7 @@ export default function TeacherSignup() {
                 </p>
               </form>
             </section>
+            )}
           </main>
         </div>
       </div>

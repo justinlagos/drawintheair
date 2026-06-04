@@ -1,5 +1,5 @@
 /**
- * LIOS Adaptive Engine — client hook.
+ * LIOS Adaptive Engine, client hook.
  *
  * Calls `lios_recommend_next` server-side after each item attempt and
  * returns the engine's recommendation (next item / scaffold / reward /
@@ -7,7 +7,7 @@
  * caller can correlate.
  *
  * Feature-flag gated by default. Initial deployment mode is
- * SHADOW — the hook calls the engine and logs the recommendation
+ * SHADOW, the hook calls the engine and logs the recommendation
  * but the game mode keeps using its own item-selection logic. Once
  * the audit log shows stable, sensible decisions, the flag is flipped
  * to LIVE and the recommendation actually drives the next item.
@@ -48,7 +48,7 @@ export interface UseAdaptiveEngineOptions {
      * 'shadow'  → call the engine, log + return, but the caller does
      *             NOT have to use the recommendation. Safe default.
      * 'live'    → caller is expected to use the recommendation
-     *             (UX choice — the hook itself behaves identically).
+     *             (UX choice, the hook itself behaves identically).
      */
     mode?: 'shadow' | 'live';
     /** Server-side RPC bind name (override only for testing). */
@@ -59,7 +59,7 @@ export interface AdaptiveEngineApi {
     /**
      * Call after each item attempt resolves. Returns the engine's
      * recommendation, or null if the call errored / the engine
-     * isn't reachable. Failures are silent — the caller's existing
+     * isn't reachable. Failures are silent, the caller's existing
      * item-selection logic continues regardless.
      */
     recommend: (
@@ -68,14 +68,14 @@ export interface AdaptiveEngineApi {
     ) => Promise<AdaptiveDecision | null>;
     /** Most recent decision, or null. */
     lastDecision: AdaptiveDecision | null;
-    /** Engine availability flag — driven by latest call. */
+    /** Engine availability flag, driven by latest call. */
     available: boolean;
     /** Currently pending? */
     pending: boolean;
 }
 
 /**
- * Imperative version of the hook — call from anywhere without
+ * Imperative version of the hook, call from anywhere without
  * React. Used by the analytics layer's auto-shadow trigger so every
  * `item_dropped` event invokes the engine when the feature flag is on.
  */
@@ -112,14 +112,14 @@ export async function requestAdaptiveRecommendation(
 }
 
 /**
- * Feature flag — resolved at call time. Sources, in order:
+ * Feature flag, resolved at call time. Sources, in order:
  *   1. URL param ?lios_adaptive=shadow|live|off
  *   2. localStorage key 'lios_adaptive_mode'
  *   3. default 'off'
  *
  * 'shadow' mode means: call the engine after every item_dropped and
  *  log the decision, but the game mode's own item selection is not
- *  overridden. This is the safe default for first rollout — the
+ *  overridden. This is the safe default for first rollout, the
  *  audit log fills with real decisions, engineering reviews them,
  *  and only then is the flag flipped to 'live'.
  */
@@ -152,10 +152,10 @@ export function useAdaptiveEngine(opts: UseAdaptiveEngineOptions): AdaptiveEngin
         const sessionId = analytics.getSessionId();
         const deviceId  = analytics.getDeviceId();
         if (!sessionId || !deviceId) {
-            // No session — the engine has nothing to reason about.
+            // No session, the engine has nothing to reason about.
             return null;
         }
-        // Prevent concurrent calls for the same hook instance —
+        // Prevent concurrent calls for the same hook instance,
         // a second `recommend` while one is in flight reuses it.
         if (inflight.current) return inflight.current;
 

@@ -35,7 +35,7 @@ const BADGE_STYLE: CSSProperties = {
 /**
  * Small non-intrusive badge displayed in the top-right corner.
  * Only renders when CAMERA_DEBUG is true.
- * Snaps a display state once per second — no per-frame rerenders.
+ * Snaps a display state once per second, no per-frame rerenders.
  */
 export function CameraDebugBadge({ state }: { state: CameraState }): ReactElement | null {
     // Hooks must be called in the same order on every render (rules-of-hooks).

@@ -1,3 +1,12 @@
+/**
+ * SchoolPilot, Calm design system version
+ *
+ * Presentational refresh June 2026: rides on the restyled
+ * LegalPageLayout (Calm shell). Form fields, validation and
+ * submission logic are unchanged; the old orange palette is replaced
+ * with Calm tokens (lavender, mint, cream, ink).
+ */
+
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { LegalPageLayout } from '../components/landing/LegalPageLayout';
@@ -12,15 +21,19 @@ interface FormData {
   message: string;
 }
 
-// Light-theme input styles that match the white LegalPageLayout card
+const LAVENDER = '#8A66F0';
+const LAVENDER_DEEP = '#7350D8';
+const INK = '#1F1B2E';
+
+// Calm-token input styles that match the white LegalPageLayout card
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  borderRadius: 12,
-  border: '2px solid #e2e8f0',
-  background: '#f8fafc',
+  borderRadius: 14,
+  border: '1px solid rgba(31,27,46,0.16)',
+  background: '#FFFDF7',
   padding: '14px 16px',
   fontSize: '0.95rem',
-  color: '#1e293b',
+  color: INK,
   fontFamily: 'inherit',
   transition: 'all 0.2s ease',
   outline: 'none',
@@ -29,13 +42,13 @@ const inputStyle: React.CSSProperties = {
 
 const inputFocusProps = {
   onFocus: (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    e.currentTarget.style.borderColor = '#f97316';
+    e.currentTarget.style.borderColor = LAVENDER;
     e.currentTarget.style.background = '#ffffff';
-    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.12)';
+    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(138,102,240,0.14)';
   },
   onBlur: (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    e.currentTarget.style.borderColor = '#e2e8f0';
-    e.currentTarget.style.background = '#f8fafc';
+    e.currentTarget.style.borderColor = 'rgba(31,27,46,0.16)';
+    e.currentTarget.style.background = '#FFFDF7';
     e.currentTarget.style.boxShadow = 'none';
   },
 };
@@ -43,8 +56,9 @@ const inputFocusProps = {
 const labelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: '0.85rem',
-  fontWeight: 600,
-  color: '#334155',
+  fontWeight: 700,
+  fontFamily: 'Outfit, system-ui, sans-serif',
+  color: '#3A3450',
   marginBottom: 8,
 };
 
@@ -95,18 +109,18 @@ export default function SchoolPilot() {
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
           {!submitted ? (
             <>
-              <p style={{ fontSize: '1.05rem', color: '#475569', marginBottom: 28, lineHeight: 1.75 }}>
+              <p style={{ fontSize: '1.05rem', color: '#3A3450', marginBottom: 28, lineHeight: 1.75 }}>
                 We're inviting a small number of schools to join our pilot programme. Pilot schools get full platform access free during the pilot period, plus dedicated onboarding support.
               </p>
 
               {/* Benefits strip */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
                 gap: 12,
                 borderRadius: 16,
-                background: 'linear-gradient(135deg, #fff7ed, #fef3c7)',
-                border: '1px solid #fed7aa',
+                background: 'linear-gradient(135deg, #F4EFFF, #EEF6FF)',
+                border: '1px solid rgba(138,102,240,0.22)',
                 padding: 20,
                 marginBottom: 32,
               }}>
@@ -117,8 +131,8 @@ export default function SchoolPilot() {
                 ].map(({ icon, title, desc }) => (
                   <div key={title} style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: '1.6rem', marginBottom: 6 }}>{icon}</div>
-                    <p style={{ fontSize: '0.8rem', fontWeight: 700, color: '#c2410c', marginBottom: 2 }}>{title}</p>
-                    <p style={{ fontSize: '0.72rem', color: '#92400e' }}>{desc}</p>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 700, color: LAVENDER_DEEP, marginBottom: 2 }}>{title}</p>
+                    <p style={{ fontSize: '0.72rem', color: '#6B6580', marginBottom: 0 }}>{desc}</p>
                   </div>
                 ))}
               </div>
@@ -127,11 +141,11 @@ export default function SchoolPilot() {
                 <div style={{
                   marginBottom: 20,
                   borderRadius: 12,
-                  border: '1px solid #fecaca',
-                  background: '#fef2f2',
+                  border: '1px solid rgba(240,122,92,0.4)',
+                  background: 'rgba(240,122,92,0.08)',
                   padding: '12px 16px',
                   fontSize: '0.9rem',
-                  color: '#dc2626',
+                  color: '#D85E40',
                 }}>
                   {error}
                 </div>
@@ -156,7 +170,7 @@ export default function SchoolPilot() {
                     <select
                       value={form.role}
                       onChange={update('role')}
-                      style={{ ...inputStyle, appearance: 'none' as const, cursor: 'pointer', color: form.role ? '#1e293b' : '#94a3b8' }}
+                      style={{ ...inputStyle, appearance: 'none' as const, cursor: 'pointer', color: form.role ? INK : '#908AA3' }}
                       {...inputFocusProps}
                     >
                       <option value="">Select role</option>
@@ -201,7 +215,7 @@ export default function SchoolPilot() {
                     <select
                       value={form.pupils}
                       onChange={update('pupils')}
-                      style={{ ...inputStyle, appearance: 'none' as const, cursor: 'pointer', color: form.pupils ? '#1e293b' : '#94a3b8' }}
+                      style={{ ...inputStyle, appearance: 'none' as const, cursor: 'pointer', color: form.pupils ? INK : '#908AA3' }}
                       {...inputFocusProps}
                     >
                       <option value="">Select range</option>
@@ -230,23 +244,24 @@ export default function SchoolPilot() {
                   disabled={loading}
                   style={{
                     width: '100%',
-                    borderRadius: 14,
+                    borderRadius: 16,
                     border: 'none',
-                    background: loading ? '#94a3b8' : '#f97316',
+                    background: loading ? '#908AA3' : LAVENDER,
                     padding: '16px 24px',
                     fontSize: '1rem',
                     fontWeight: 700,
+                    fontFamily: 'Outfit, system-ui, sans-serif',
                     color: 'white',
                     cursor: loading ? 'not-allowed' : 'pointer',
                     transition: 'all 0.2s',
-                    boxShadow: loading ? 'none' : '0 4px 16px rgba(249,115,22,0.3)',
+                    boxShadow: loading ? 'none' : '0 12px 32px rgba(138,102,240,0.28)',
                   }}
-                  onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = '#ea580c'; }}
-                  onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = '#f97316'; }}
+                  onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = LAVENDER_DEEP; }}
+                  onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = LAVENDER; }}
                 >
                   {loading ? 'Submitting...' : 'Apply for School Pilot'}
                 </button>
-                <p style={{ fontSize: '0.78rem', color: '#94a3b8', textAlign: 'center', marginTop: -8 }}>
+                <p style={{ fontSize: '0.78rem', color: '#908AA3', textAlign: 'center', marginTop: -8 }}>
                   We respond to all applications within 2 business days.
                 </p>
               </form>
@@ -255,31 +270,32 @@ export default function SchoolPilot() {
             <div style={{ textAlign: 'center', padding: '48px 0' }}>
               <div style={{
                 width: 80, height: 80, borderRadius: '50%',
-                background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)',
+                background: 'linear-gradient(135deg, #ECFBF3, #D2F4E0)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 margin: '0 auto 24px', fontSize: '2.5rem',
               }}>
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2E9D68" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
               </div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginBottom: 12 }}>Application received!</h2>
-              <p style={{ color: '#64748b', marginBottom: 8, maxWidth: 400, margin: '0 auto 8px', lineHeight: 1.7 }}>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: INK, marginBottom: 12 }}>Application received!</h2>
+              <p style={{ color: '#6B6580', marginBottom: 8, maxWidth: 400, margin: '0 auto 8px', lineHeight: 1.7 }}>
                 Thank you for applying. We'll review your application and be in touch within 2 business days.
               </p>
-              <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: 32 }}>
+              <p style={{ fontSize: '0.85rem', color: '#908AA3', marginBottom: 32 }}>
                 While you wait, feel free to explore Draw in the Air yourself.
               </p>
               <a
                 href="/play"
                 style={{
                   display: 'inline-block',
-                  borderRadius: 14,
-                  background: '#f97316',
+                  borderRadius: 16,
+                  background: LAVENDER,
                   padding: '14px 32px',
                   fontSize: '1rem',
                   fontWeight: 700,
+                  fontFamily: 'Outfit, system-ui, sans-serif',
                   color: 'white',
                   textDecoration: 'none',
-                  boxShadow: '0 4px 16px rgba(249,115,22,0.3)',
+                  boxShadow: '0 12px 32px rgba(138,102,240,0.28)',
                 }}
               >
                 Explore the Activities

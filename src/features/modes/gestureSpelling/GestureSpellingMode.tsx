@@ -1,5 +1,5 @@
 /**
- * GestureSpellingMode — React UI wrapper for the Spelling Stars mode.
+ * GestureSpellingMode, React UI wrapper for the Spelling Stars mode.
  *
  * Bright Kid-UI design language:
  *   - Sky + stars + drifting letters background
@@ -7,7 +7,7 @@
  *   - KidPanel housing the progress dots (one per letter, fills as typed)
  *   - Celebration 2.0 with stars
  *
- * Game logic untouched — visual migration only.
+ * Game logic untouched, visual migration only.
  */
 
 import { useState, useEffect, useRef } from 'react';

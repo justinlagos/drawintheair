@@ -1,5 +1,5 @@
 /**
- * BalloonMathMode — React UI wrapper for the Balloon Pop Math mode.
+ * BalloonMathMode, React UI wrapper for the Balloon Pop Math mode.
  *
  * Bright Kid-UI design language:
  *   - Sky-and-balloon themed background (BalloonMathBackground)
@@ -7,7 +7,7 @@
  *   - KidPanel + KidProgressBar + KidChip for level/score HUD
  *   - Celebration 2.0 with stars
  *
- * Game logic untouched — this is purely a visual migration.
+ * Game logic untouched, this is purely a visual migration.
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -87,10 +87,10 @@ export const BalloonMathMode = ({ onExit }: BalloonMathModeProps) => {
         }}>
             <BalloonMathBackground />
 
-            {/* Back-to-menu top bar (no stage label — bespoke panel below) */}
+            {/* Back-to-menu top bar (no stage label, bespoke panel below) */}
             <GameTopBar onBack={onExit ?? (() => { })} />
 
-            {/* TOP-CENTER: Objective card with the equation/target — big Fredoka */}
+            {/* TOP-CENTER: Objective card with the equation/target, big Fredoka */}
             <div style={{
                 position: 'absolute',
                 top: '92px',

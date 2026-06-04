@@ -1,5 +1,5 @@
 /**
- * Draw in the Air — Kid-UI Motion Library
+ * Draw in the Air, Kid-UI Motion Library
  *
  * Eight named motion behaviours from the design spec:
  *   float, pop, glow, bounce, trace, celebrate, wiggle, pulse.
@@ -115,7 +115,7 @@ const reducedMotion = `
 // The legacy :root sets color: var(--text-primary) which is white. Any
 // Kid-UI children that don't set their own colour inherit white and
 // disappear on cream cards. This rule scopes a charcoal default to all
-// .kid-panel descendants — wins via inline class on KidPanel without
+// .kid-panel descendants, wins via inline class on KidPanel without
 // affecting the legacy app surfaces.
 const kidPanelDefaults = `
 .kid-panel,

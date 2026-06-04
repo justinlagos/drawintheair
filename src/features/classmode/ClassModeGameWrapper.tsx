@@ -1,5 +1,5 @@
 /**
- * ClassModeGameWrapper — wraps any game mode for Class Mode.
+ * ClassModeGameWrapper, wraps any game mode for Class Mode.
  * Polls the game's score getter, and when the round ends (timer or teacher action),
  * captures final score, converts to stars, and submits to Supabase.
  */
@@ -17,7 +17,7 @@ interface ClassModeGameWrapperProps {
   timerSeconds: number;
   children: React.ReactNode;
   onRoundEnd: (stars: number) => void;
-  /** Pause the countdown — used while the camera explainer is on
+  /** Pause the countdown, used while the camera explainer is on
    *  screen or the camera is still being acquired so the kid doesn't
    *  burn 20 seconds of round time before they can even play.
    *  Surfaced by the live classroom test on 2026-05-11. */
@@ -47,7 +47,7 @@ export default function ClassModeGameWrapper({
     return () => clearInterval(poll);
   }, [activity]);
 
-  // Countdown timer — held while `freeze` is true so the timer doesn't
+  // Countdown timer, held while `freeze` is true so the timer doesn't
   // burn down while the camera explainer or recovery screen covers the
   // game.
   useEffect(() => {

@@ -31,7 +31,7 @@ const SPECIAL_DATA: Record<SpecialSlug, {
     // SEASONAL
     'christmas-drawing-for-kids': {
         meta: {
-            title: 'Christmas Drawing for Kids — Free Festive Air Drawing | Draw in the Air',
+            title: 'Christmas Drawing for Kids, Free Festive Air Drawing | Draw in the Air',
             description: 'Celebrate Christmas with fun air drawing activities! Draw stars, Christmas trees, and festive shapes in the air using just your finger and a webcam. Free, no download.',
             keywords: ['christmas drawing for kids', 'festive kids activities online', 'christmas learning game free', 'draw christmas shapes kids'],
             canonical: '/activities/christmas-drawing-for-kids'
@@ -44,7 +44,7 @@ const SPECIAL_DATA: Record<SpecialSlug, {
     },
     'halloween-drawing-kids': {
         meta: {
-            title: 'Halloween Drawing for Kids — Free Spooky Air Activities | Draw in the Air',
+            title: 'Halloween Drawing for Kids, Free Spooky Air Activities | Draw in the Air',
             description: 'Get spooky with Halloween air drawing! Draw ghosts, pumpkins, and spooky shapes in the air using your finger and webcam. Free, no download, perfect for Halloween.',
             keywords: ['halloween drawing for kids', 'halloween kids activities online', 'spooky drawing game children', 'halloween learning games free'],
             canonical: '/activities/halloween-drawing-kids'
@@ -57,7 +57,7 @@ const SPECIAL_DATA: Record<SpecialSlug, {
     },
     'back-to-school-activities': {
         meta: {
-            title: 'Back to School Activities — Free Digital Learning for Kids | Draw in the Air',
+            title: 'Back to School Activities, Free Digital Learning for Kids | Draw in the Air',
             description: 'Start the school year right with free, browser-based learning activities! Practice letters, numbers, and shapes in the air. No download, no login needed. Perfect for ages 3–8.',
             keywords: ['back to school activities kids', 'back to school learning games', 'school readiness activities', 'kindergarten readiness games online'],
             canonical: '/activities/back-to-school-activities'
@@ -70,7 +70,7 @@ const SPECIAL_DATA: Record<SpecialSlug, {
     },
     'valentines-drawing-kids': {
         meta: {
-            title: 'Valentines Drawing for Kids — Shape Tracing & Art | Draw in the Air',
+            title: 'Valentines Drawing for Kids, Shape Tracing & Art | Draw in the Air',
             description: 'Draw hearts in the air for Valentine\'s Day! A free, webcam-based interactive drawing game for kids. No login required.',
             keywords: ['valentines drawing kids', 'heart tracing game', 'kids valentine activity free'],
             canonical: '/activities/valentines-drawing-kids'
@@ -83,7 +83,7 @@ const SPECIAL_DATA: Record<SpecialSlug, {
     },
     'easter-drawing-kids': {
         meta: {
-            title: 'Easter Drawing for Kids — Oval Shapes & Tracing | Draw in the Air',
+            title: 'Easter Drawing for Kids, Oval Shapes & Tracing | Draw in the Air',
             description: 'Draw Easter eggs in the air! A free, browser-based shape tracing game using just your webcam and index finger.',
             keywords: ['easter activities for kids online', 'draw easter egg game', 'kids spring shapes app'],
             canonical: '/activities/easter-drawing-kids'
@@ -109,7 +109,7 @@ const SPECIAL_DATA: Record<SpecialSlug, {
     },
     'thanksgiving-kids-activities': {
         meta: {
-            title: 'Thanksgiving Activities for Kids — Interactive Learning | Draw in the Air',
+            title: 'Thanksgiving Activities for Kids, Interactive Learning | Draw in the Air',
             description: 'Free Thanksgiving and autumn drawing activities for children. Practice fine motor skills while drawing hand-turkeys in the air!',
             keywords: ['thanksgiving activities online kids', 'draw turkey shape game', 'autumn learning kids'],
             canonical: '/activities/thanksgiving-kids-activities'
@@ -138,7 +138,7 @@ const SPECIAL_DATA: Record<SpecialSlug, {
     'draw-number-in-air': {
         isViral: true,
         meta: {
-            title: 'The Air Drawing Challenge — Draw a Number in the Air | Draw in the Air',
+            title: 'The Air Drawing Challenge, Draw a Number in the Air | Draw in the Air',
             description: 'Try the challenge! Can you trace numbers 1-10 in the air flawlessly using your webcam? Play instantly, free.',
             keywords: ['draw number in air challenge', 'air drawing game online', 'webcam number challenge'],
             canonical: '/draw-number-in-air'
@@ -205,26 +205,26 @@ export default function SpecialActivityPage({ slug }: SpecialActivityPageProps) 
             />
 
             <Section light>
-                <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>How It Works</h2>
+                <h2 style={{ color: '#1F1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>How It Works</h2>
                 <div style={{ color: '#4A4D6B', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: 30 }}>
-                    <p style={{ marginBottom: 15 }}>Just open the app—no downloads required. When prompted, allow webcam access (processed 100% locally and privately).</p>
+                    <p style={{ marginBottom: 15 }}>Just open the app. No downloads required. When prompted, allow webcam access (processed 100% locally and privately).</p>
                     <p>Raise your index finger, pinch it with your thumb to grab your digital pen, and start drawing right in the air!</p>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginTop: 40 }}>
                     {data.tips.map(t => (
-                        <div key={t.title} style={{ background: 'rgba(3,78,174,0.08)', border: '1px solid rgba(3,78,174,0.17)', borderRadius: 12, padding: 20 }}>
+                        <div key={t.title} style={{ background: 'rgba(138,102,240,0.08)', border: '1px solid rgba(138,102,240,0.17)', borderRadius: 12, padding: 20 }}>
                             <div style={{ fontSize: '2rem', marginBottom: 8 }}>{t.icon}</div>
-                            <div style={{ color: '#1A1B2E', fontWeight: 700, marginBottom: 4 }}>{t.title}</div>
+                            <div style={{ color: '#1F1B2E', fontWeight: 700, marginBottom: 4 }}>{t.title}</div>
                             <div style={{ color: '#4A4D6B', fontSize: '0.84rem' }}>{t.desc}</div>
                         </div>
                     ))}
                 </div>
             </Section>
 
-            {/* Internal links — every special page links into the core activity network */}
+            {/* Internal links, every special page links into the core activity network */}
             <Section>
-                <h2 style={{ color: '#1A1B2E', fontSize: '1.3rem', fontWeight: 800, marginBottom: 20 }}>
+                <h2 style={{ color: '#1F1B2E', fontSize: '1.3rem', fontWeight: 800, marginBottom: 20 }}>
                     Explore More Activities
                 </h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
@@ -239,23 +239,23 @@ export default function SpecialActivityPage({ slug }: SpecialActivityPageProps) 
                         <button key={a.path} onClick={() => navigate(a.path)} style={{
                             background: '#FFFFFF', border: '1px solid rgba(63,64,82,0.14)',
                             borderRadius: 10, padding: '14px 12px', cursor: 'pointer',
-                            color: '#1A1B2E', fontWeight: 600, fontSize: '0.85rem',
+                            color: '#1F1B2E', fontWeight: 600, fontSize: '0.85rem',
                         }}>
                             {a.label}
                         </button>
                     ))}
                 </div>
                 <div style={{ marginTop: 24, display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                    <button onClick={() => navigate('/for-teachers')} style={{ background: 'rgba(3,78,174,0.08)', border: '1px solid rgba(3,78,174,0.212)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#6C3FA4', fontWeight: 600, fontSize: '0.82rem' }}>
+                    <button onClick={() => navigate('/for-teachers')} style={{ background: 'rgba(138,102,240,0.08)', border: '1px solid rgba(138,102,240,0.212)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#7A55E0', fontWeight: 600, fontSize: '0.82rem' }}>
                         👩‍🏫 For Teachers
                     </button>
-                    <button onClick={() => navigate('/for-parents')} style={{ background: 'rgba(3,78,174,0.08)', border: '1px solid rgba(3,78,174,0.212)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#6C3FA4', fontWeight: 600, fontSize: '0.82rem' }}>
+                    <button onClick={() => navigate('/for-parents')} style={{ background: 'rgba(138,102,240,0.08)', border: '1px solid rgba(138,102,240,0.212)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#7A55E0', fontWeight: 600, fontSize: '0.82rem' }}>
                         👨‍👩‍👧 For Parents
                     </button>
-                    <button onClick={() => navigate('/learn')} style={{ background: 'rgba(3,78,174,0.08)', border: '1px solid rgba(3,78,174,0.212)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#6C3FA4', fontWeight: 600, fontSize: '0.82rem' }}>
+                    <button onClick={() => navigate('/learn')} style={{ background: 'rgba(138,102,240,0.08)', border: '1px solid rgba(138,102,240,0.212)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#7A55E0', fontWeight: 600, fontSize: '0.82rem' }}>
                         📚 Learning Hub
                     </button>
-                    <button onClick={() => navigate('/free-resources')} style={{ background: 'rgba(3,78,174,0.08)', border: '1px solid rgba(3,78,174,0.212)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#6C3FA4', fontWeight: 600, fontSize: '0.82rem' }}>
+                    <button onClick={() => navigate('/free-resources')} style={{ background: 'rgba(138,102,240,0.08)', border: '1px solid rgba(138,102,240,0.212)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#7A55E0', fontWeight: 600, fontSize: '0.82rem' }}>
                         📥 Free Worksheets
                     </button>
                 </div>

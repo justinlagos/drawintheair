@@ -1,9 +1,9 @@
 /**
- * featureFlags — deterministic A/B assignment on device_id.
+ * featureFlags, deterministic A/B assignment on device_id.
  *
  * The device_id is a per-browser UUID stored in localStorage by analytics.ts
  * (key 'dita_device_id'). Hashing it modulo 100 gives a stable bucket between
- * 0–99 — so every reload routes the same browser to the same variant for the
+ * 0–99, so every reload routes the same browser to the same variant for the
  * life of that UUID.
  *
  * We expose:
@@ -48,7 +48,7 @@ function readDeviceId(): string | null {
 /**
  * Resolve a variant for a flag. `splits` values must sum to 100.
  * Variants are sorted alphabetically for deterministic bucket assignment.
- * If device_id isn't available yet (e.g. SSR), returns the first variant —
+ * If device_id isn't available yet (e.g. SSR), returns the first variant,
  * caller should re-read once analytics is initialised.
  */
 export function flag<T extends Record<string, number>>(name: string, splits: T): keyof T {
@@ -59,7 +59,7 @@ export function flag<T extends Record<string, number>>(name: string, splits: T):
 
     const sum = variants.reduce((acc, v) => acc + splits[v], 0);
     if (sum !== 100) {
-        // Misconfigured flag — fall back to first variant rather than crash.
+        // Misconfigured flag, fall back to first variant rather than crash.
         // The dev should notice in the analytics dashboard.
         if (typeof console !== 'undefined') {
             console.warn(`featureFlags: splits for "${name}" sum to ${sum} not 100`);

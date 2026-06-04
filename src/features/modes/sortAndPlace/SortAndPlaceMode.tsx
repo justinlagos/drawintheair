@@ -142,7 +142,7 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
             setLevelNumber(getCurrentLevel());
             setCurrentStageKey(prev => prev + 1);
         } else {
-            // All 4 levels complete — show banner, then loop back to level 1.
+            // All 4 levels complete, show banner, then loop back to level 1.
             setAllLevelsComplete(true);
             setTimeout(() => {
                 setAllLevelsComplete(false);
@@ -163,13 +163,13 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
 
     return (
         <>
-            {/* Per-stage themed background — sky+meadow for colours, geometric
+            {/* Per-stage themed background, sky+meadow for colours, geometric
                 world for shapes, kitchen+playroom for food/toys, savannah+road
                 for animals/vehicles, park for recycle/trash, library for
                 letters, math classroom for numbers. */}
             <SortAndPlaceBackground stageId={currentStageId} />
 
-            {/* Back-to-menu top bar. Stage label intentionally omitted —
+            {/* Back-to-menu top bar. Stage label intentionally omitted,
                 the bespoke stats panel below shows level + score + progress. */}
             {onExit && (
                 <GameTopBar
@@ -191,7 +191,7 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
                 </KidChip>
             </div>
 
-            {/* TOP-CENTER: Objective card — what to do, large and friendly */}
+            {/* TOP-CENTER: Objective card, what to do, large and friendly */}
             <div style={{
                 position: 'absolute',
                 top: hudSpacing,
@@ -249,7 +249,7 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
                 </KidPanel>
             </div>
 
-            {/* Drop feedback flash — gentle radial wash on correct/wrong */}
+            {/* Drop feedback flash, gentle radial wash on correct/wrong */}
             {dropFeedback && (
                 <div style={{
                     position: 'fixed', inset: 0, zIndex: tokens.zIndex.floatingFx, pointerEvents: 'none',
@@ -260,7 +260,7 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
                 }} />
             )}
 
-            {/* All-levels-complete banner — kid-bright KidPanel + trophy badge */}
+            {/* All-levels-complete banner, kid-bright KidPanel + trophy badge */}
             {allLevelsComplete && (
                 <div style={{
                     position: 'fixed', inset: 0, zIndex: tokens.zIndex.modal, pointerEvents: 'none',
@@ -303,7 +303,7 @@ export const SortAndPlaceMode = ({ onExit }: SortAndPlaceModeProps = {}) => {
                 onComplete={handleCelebrationDone}
             />
 
-            {/* Floating +1 — sunshine palette, soft glow */}
+            {/* Floating +1, sunshine palette, soft glow */}
             {floatingPoints.map(pt => (
                 <div key={pt.id} style={{
                     position: 'absolute', left: pt.x, top: pt.y,

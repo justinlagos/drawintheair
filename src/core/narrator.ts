@@ -75,27 +75,27 @@ let lastEventType: NarratorEvent | null = null;
 // order. Anything with "Natural", "Neural" or "Online" in the name is
 // usually a modern neural voice (Edge, Chrome OS, recent Safari).
 //
-// Cache the resolved voice so we don't search the list on every utterance —
+// Cache the resolved voice so we don't search the list on every utterance,
 // voices can take a few hundred ms to populate after page load.
 let cachedVoice: SpeechSynthesisVoice | null = null;
 let lastVoiceListSize = 0;
 
 const VOICE_PREFERENCES: ReadonlyArray<RegExp> = [
-    // Edge / Chromium neural voices — the highest-quality free option in 2026.
+    // Edge / Chromium neural voices, the highest-quality free option in 2026.
     /Microsoft (Aria|Jenny|Ava|Sonia|Libby) (Online|Natural)/i,
     /Natural .* (en[-_]?(US|GB|AU|IE))/i,
     /Neural .* (en[-_]?(US|GB|AU|IE))/i,
-    // Google Cloud voices on Chrome — friendly, fairly natural.
+    // Google Cloud voices on Chrome, friendly, fairly natural.
     /Google (UK|US) English Female/i,
     /Google English Female/i,
     /Google UK English/i,
     /Google US English/i,
-    // Apple system voices — warm and lively.
+    // Apple system voices, warm and lively.
     /^Samantha\b/i,        // US English, default macOS friendly
     /^Karen\b/i,           // AU English, kid-friendly accent
     /^Tessa\b/i,           // South African English, warm
     /^Moira\b/i,           // Irish English, lyrical
-    /^Daniel\b/i,          // UK English male — fallback if no female option
+    /^Daniel\b/i,          // UK English male, fallback if no female option
     /^Fiona\b/i,           // Scottish English
     // Generic female-coded English fallback.
     /female.*en/i,
@@ -157,7 +157,7 @@ const speak = (line: NarratorLine): void => {
         const voice = pickVoice();
         if (voice) {
             utterance.voice = voice;
-            // Match the lang to the selected voice — some browsers reset
+            // Match the lang to the selected voice, some browsers reset
             // pitch/rate if the lang on the utterance doesn't match the
             // voice's lang, producing the flat default voice instead.
             utterance.lang = voice.lang;
@@ -231,7 +231,7 @@ export const stopNarrator = (): void => {
 /**
  * Speak an arbitrary line of text. Subject to the same feature-flag gate
  * and cooldown as `narrate(event)`. Used by modes that need to speak
- * dynamic content the curated lists can't cover — e.g. "Find the purple
+ * dynamic content the curated lists can't cover, e.g. "Find the purple
  * stone" in Rainbow Bridge, "Spell the word BIRD" in Spelling Stars.
  *
  * Pass `urgent: true` to bypass the same-event cooldown when the prompt

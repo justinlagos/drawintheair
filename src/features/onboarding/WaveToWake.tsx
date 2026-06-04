@@ -1,5 +1,5 @@
 /**
- * WaveToWake — Bright Kid-UI onboarding screen
+ * WaveToWake, Bright Kid-UI onboarding screen
  *
  * Replaces the legacy dark navy "magical playroom at night" treatment with the
  * bright sky+meadow Kid-UI aesthetic. Decorative sun, drifting clouds, a
@@ -79,7 +79,7 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorC
     // mount, not every frame the hand stays in view.
     const hasLoggedFirstHand = useRef<boolean>(false);
     // Capture the moment trackerReady first flips true so we can split
-    // "slow tracker init" from "out-of-frame user" — surfaced by the
+    // "slow tracker init" from "out-of-frame user", surfaced by the
     // 2026-05-11 audit (8 sessions granted camera but never saw a
     // hand; without this we can't tell which side the latency lived).
     const trackerReadyAt = useRef<number>(0);
@@ -113,7 +113,7 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorC
     const { isMobile, isTabletSmall, isLandscapePhone } = layout;
     const isCompact = isMobile || isTabletSmall || isLandscapePhone;
 
-    // Wave detection — subscribes to external hand-tracking results from
+    // Wave detection, subscribes to external hand-tracking results from
     // MediaPipe and synchronises into React state (the legitimate effect use
     // case). Set-state is throttled by lastWaveTime so only fires on real waves.
     /* eslint-disable react-hooks/set-state-in-effect */
@@ -139,7 +139,7 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorC
                 // tracker_warmup_timing decomposes that latency: how
                 // much was tracker init vs how much was the user
                 // getting into frame. Sessions where trackerReadyAt
-                // never fires never log this event — which is itself
+                // never fires never log this event, which is itself
                 // a signal that tracker init never completed.
                 logEvent('tracker_warmup_timing', {
                     value_number: sinceTrackerReady ?? sinceMount,
@@ -408,7 +408,7 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorC
                             Show me your hand and wave it side to side
                         </p>
 
-                        {/* Real-status indicator — derived from camera + tracker + hand */}
+                        {/* Real-status indicator, derived from camera + tracker + hand */}
                         {(() => {
                             // Decide which message to show, in priority order
                             let statusKey: 'cam-error' | 'cam-loading' | 'tracker-loading' | 'hand-detected' | 'hand-lost' | 'hand-searching';
@@ -718,7 +718,7 @@ const WavingHand = ({ size }: { size: number }) => (
 
 // ─── Tracker error help screen ──────────────────────────────────────
 // Shown when handTracker.initialize() fails after CPU fallback + timeout.
-// Cannot bypass — every screen after this requires hand tracking. Instead
+// Cannot bypass, every screen after this requires hand tracking. Instead
 // we explain what's wrong, offer a retry, list common fixes, and provide
 // a way back to the landing page.
 
@@ -782,7 +782,7 @@ const TrackerErrorScreen: React.FC<TrackerErrorScreenProps> = ({ error, onRetry,
         const body = encodeURIComponent(
             `Hi Draw in the Air team,\n\n` +
             `Hand tracking didn't start on my device.\n\n` +
-            `Error: ${error.code} — ${error.message}\n` +
+            `Error: ${error.code}, ${error.message}\n` +
             `Tried delegates: ${error.triedDelegates.join(', ') || 'none'}\n` +
             `User-agent: ${typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'}\n` +
             `URL: ${typeof window !== 'undefined' ? window.location.href : 'unknown'}\n\n` +

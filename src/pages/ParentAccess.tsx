@@ -27,7 +27,7 @@ export default function ParentAccess() {
     <>
       <Helmet>
         <title>Free Home Trial | Draw in the Air</title>
-        <meta name="description" content="Try Draw in the Air free at home. Gesture-based learning for children aged 3–8 — no apps, no downloads needed." />
+        <meta name="description" content="Try Draw in the Air free at home. Gesture-based learning for children aged 3–8, no apps, no downloads needed." />
       </Helmet>
       <LegalPageLayout heroTitle="Free Home Trial for Parents">
         <div className="max-w-2xl">
@@ -56,7 +56,7 @@ export default function ParentAccess() {
               </div>
 
               <div className="rounded-2xl border border-teal-700 bg-teal-950/30 p-6 mb-8">
-                <h2 className="text-lg font-semibold text-slate-100 mb-2">Try it right now — no sign-up needed</h2>
+                <h2 className="text-lg font-semibold text-slate-100 mb-2">Try it right now, no sign-up needed</h2>
                 <p className="text-slate-400 text-sm mb-4">
                   You can start playing immediately. Leave your email below if you'd like activity ideas and updates sent to you.
                 </p>

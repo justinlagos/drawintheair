@@ -1,9 +1,9 @@
 /**
- * cameraHelp — generate recovery instructions tailored to the user's
+ * cameraHelp, generate recovery instructions tailored to the user's
  * browser, OS, and the specific permission failure mode.
  *
- * UA sniffing is fragile but the alternative — generic "check your
- * browser settings" — is what we're trying to fix. We keep the rules
+ * UA sniffing is fragile but the alternative, generic "check your
+ * browser settings", is what we're trying to fix. We keep the rules
  * shallow (Chrome / Safari / Firefox / Edge × macOS / Windows / iOS /
  * Android) so they're easy to update when a browser ships a UI change.
  *

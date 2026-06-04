@@ -1,9 +1,9 @@
 /**
- * Observability tab — Sprint 6 engineering surface.
+ * Observability tab, Sprint 6 engineering surface.
  *
  * Renders the four SLO status tiles, the ingestion + idempotency +
  * latency strip, the 24-hour event-rate sparkline, and the rolling
- * anomaly log. Engineering-only — admin allow-list gates the dashboard.
+ * anomaly log. Engineering-only, admin allow-list gates the dashboard.
  */
 
 import React from 'react';
@@ -109,7 +109,7 @@ export const ObservabilityTab: React.FC<{ filter: FilterState }> = ({ filter }) 
             <div className="iv-col-6">
                 <Card title="Client → server latency" meta="client_ts → occurred_at">
                     {o.latency.rows_with_client_ts === 0
-                        ? <Empty message="No client_ts data yet — deploy the LIOS-envelope client to populate this." />
+                        ? <Empty message="No client_ts data yet, deploy the LIOS-envelope client to populate this." />
                         : (
                             <table className="iv-table" style={{ fontSize: 12 }}>
                                 <tbody>
@@ -126,7 +126,7 @@ export const ObservabilityTab: React.FC<{ filter: FilterState }> = ({ filter }) 
 
             {/* 24h event-rate sparkline */}
             <div className="iv-col-12">
-                <Card title="Event rate — last 24 hours"
+                <Card title="Event rate, last 24 hours"
                       meta={`${o.by_hour_24h.length} hourly buckets · max ${fmtNum(max24h)} events`}>
                     {o.by_hour_24h.length === 0
                         ? <Empty message="No data yet." />
@@ -139,7 +139,7 @@ export const ObservabilityTab: React.FC<{ filter: FilterState }> = ({ filter }) 
                                     const h = (p.n / max24h) * 76;
                                     return (
                                         <div key={p.h}
-                                             title={`${new Date(p.h).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })} — ${fmtNum(p.n)} events`}
+                                             title={`${new Date(p.h).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}, ${fmtNum(p.n)} events`}
                                              style={{
                                                  flex: 1, height: `${h}px`,
                                                  background: 'linear-gradient(180deg, #7E4FB8, #6C3FA4)',
@@ -187,12 +187,12 @@ export const ObservabilityTab: React.FC<{ filter: FilterState }> = ({ filter }) 
                                                     }}>{a.severity}</span>
                                                 </td>
                                                 <td style={{ fontFamily: 'ui-monospace, monospace' }}>{a.metric}</td>
-                                                <td>{a.current_value != null ? Number(a.current_value).toFixed(2) : '—'}</td>
+                                                <td>{a.current_value != null ? Number(a.current_value).toFixed(2) : '-'}</td>
                                                 <td>
-                                                    {a.baseline_mean != null ? Number(a.baseline_mean).toFixed(2) : '—'}
+                                                    {a.baseline_mean != null ? Number(a.baseline_mean).toFixed(2) : '-'}
                                                     {a.baseline_sd != null && ` ± ${Number(a.baseline_sd).toFixed(2)}`}
                                                 </td>
-                                                <td>{a.z_score != null ? Number(a.z_score).toFixed(2) : '—'}</td>
+                                                <td>{a.z_score != null ? Number(a.z_score).toFixed(2) : '-'}</td>
                                                 <td style={{ maxWidth: 420, fontSize: 11 }}>{a.reason}</td>
                                             </tr>
                                         ))}
@@ -214,7 +214,7 @@ const SloTile: React.FC<{ sloKey: string; slo: SloBlock }> = ({ sloKey, slo }) =
         if (slo.current != null)     return `${Number(slo.current).toFixed(0)}${meta.unit}`;
         if (slo.current_failures_24h != null)
             return `${slo.current_failures_24h} failure${slo.current_failures_24h === 1 ? '' : 's'}`;
-        return '—';
+        return '-';
     })();
     const targetDisplay = (() => {
         if (slo.target_pct != null)       return `Target ≥ ${slo.target_pct}${meta.unit}`;

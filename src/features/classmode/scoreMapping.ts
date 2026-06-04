@@ -12,7 +12,7 @@ import { getProgress as getPreWritingProgress } from '../modes/preWriting/preWri
 import { getRainbowTotalCompleted } from '../modes/rainbowBridge/rainbowBridgeLogic';
 import { getSpellingWordsSpelled } from '../modes/gestureSpelling/gestureSpellingLogic';
 
-// Word Search uses a different state pattern — we'll handle it separately
+// Word Search uses a different state pattern, we'll handle it separately
 // Free Paint has no score (creative mode)
 
 export type GameModeId =
@@ -47,7 +47,7 @@ export function getRawScore(mode: GameModeId): number {
     case 'gesture-spelling':
       return getSpellingWordsSpelled();
     case 'free':
-      return 0; // Free Paint — no competitive score
+      return 0; // Free Paint, no competitive score
     case 'word-search':
       return 0; // Will be wired when word search exposes a getter
     default:

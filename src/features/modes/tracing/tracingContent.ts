@@ -157,7 +157,7 @@ const createWarmupPack = (): TracingPath[] => {
     return paths;
 };
 
-// Pack 2: Shapes (10 activities — includes SEO-targeted shapes)
+// Pack 2: Shapes (10 activities, includes SEO-targeted shapes)
 const createShapesPack = (): TracingPath[] => {
     const paths: TracingPath[] = [];
     let level = 1;

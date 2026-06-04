@@ -1,12 +1,12 @@
 /**
- * Retention tab — 10x'd.
+ * Retention tab, 10x'd.
  *
  * Five sections:
  *   1. Stickiness card: DAU / WAU / MAU + DAU÷MAU ratio
- *   2. Cohort retention heatmap (weeks × W0..W6) — the moneyshot
+ *   2. Cohort retention heatmap (weeks × W0..W6), the moneyshot
  *   3. New vs returning daily area chart (last 30 days)
  *   4. Cohort curves (kept from v1)
- *   5. "Returning hooks" — which mode brings kids back the most
+ *   5. "Returning hooks", which mode brings kids back the most
  */
 
 import React from 'react';
@@ -38,7 +38,7 @@ export const RetentionTab: React.FC = () => {
 
     return (
         <>
-            {/* LIOS Trust v1 — retention claims need a data-quality
+            {/* LIOS Trust v1, retention claims need a data-quality
                 anchor too. A retention curve drawn from contaminated
                 attempts is the most expensive kind of bad number. */}
             <div className="iv-col-12">
@@ -48,7 +48,7 @@ export const RetentionTab: React.FC = () => {
 
             {/* Stickiness + headline */}
             <div className="iv-col-6">
-                <Card title="Stickiness — how often kids come back"
+                <Card title="Stickiness, how often kids come back"
                     meta="DAU / WAU / MAU and the ratio between them"
                 >
                     {deep.data ? (
@@ -102,7 +102,7 @@ export const RetentionTab: React.FC = () => {
             <div className="iv-col-6">
                 <Card title="What brings kids back" meta="First mode in a returning session, last 30 days">
                     {!deep.data || deep.data.returning_hooks.length === 0
-                        ? <Empty message="No returning sessions yet — once kids come back, the mode they pick first will rank here." />
+                        ? <Empty message="No returning sessions yet, once kids come back, the mode they pick first will rank here." />
                         : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                 {deep.data.returning_hooks.slice(0, 8).map((h, i) => {
@@ -139,7 +139,7 @@ export const RetentionTab: React.FC = () => {
                 </Card>
             </div>
 
-            {/* Cohort heatmap — the moneyshot */}
+            {/* Cohort heatmap, the moneyshot */}
             <div className="iv-col-12">
                 <Card
                     title="Cohort retention heatmap"
@@ -164,7 +164,7 @@ export const RetentionTab: React.FC = () => {
 
             {/* New vs returning area chart */}
             <div className="iv-col-12">
-                <Card title="Daily devices — new vs returning"
+                <Card title="Daily devices, new vs returning"
                     meta="Last 30 days · stacked area"
                     actions={
                         <button className="iv-btn iv-btn-sm"
@@ -193,9 +193,9 @@ export const RetentionTab: React.FC = () => {
                 </Card>
             </div>
 
-            {/* Cohort retention table — D1/D3/D7 reference */}
+            {/* Cohort retention table, D1/D3/D7 reference */}
             <div className="iv-col-12">
-                <Card title="Cohort retention — D1 / D3 / D7"
+                <Card title="Cohort retention, D1 / D3 / D7"
                     actions={
                         <button className="iv-btn iv-btn-sm"
                             disabled={!cohorts.data}

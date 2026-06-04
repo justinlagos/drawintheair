@@ -1,5 +1,5 @@
 /**
- * CameraExplainer — warm pre-prompt shown before the browser's camera
+ * CameraExplainer, warm pre-prompt shown before the browser's camera
  * permission dialog.
  *
  * Industry pattern (Calendly, Whereby, Loom): a one-screen explainer
@@ -16,7 +16,7 @@
  *    we don't want this to be a hard gate.
  *
  * Visual: matches the bright Kid-UI sky+meadow aesthetic used by
- * WaveToWake — same plum/sunshine palette, Fredoka headings.
+ * WaveToWake, same plum/sunshine palette, Fredoka headings.
  */
 
 import React, { useEffect, useRef } from 'react';

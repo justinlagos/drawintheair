@@ -1,19 +1,19 @@
 import React, { StrictMode, useState, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-// App (the game engine — camera, hand-tracking, activities) is lazy-loaded
+// App (the game engine, camera, hand-tracking, activities) is lazy-loaded
 // via lazyWithRetry below so its weight stays off the landing critical path.
 // Only the /play and /app routes pull it in.
 import { Landing } from './pages/Landing.tsx'
 import { DemoLoader } from './pages/DemoLoader.tsx'
-// NOTE: Landing + DemoLoader stay eagerly imported on purpose — Landing is
+// NOTE: Landing + DemoLoader stay eagerly imported on purpose, Landing is
 // the most common entry point (no extra round-trip on the hot path) and
 // DemoLoader is the shared Suspense fallback (it can't be lazy itself).
 // Every other top-level page below is lazy-loaded via lazyWithRetry so it
 // no longer bloats the initial bundle; a single top-level <Suspense> in the
 // render tree covers them all.
 // Legacy PIN-gated /admin dashboard (src/pages/Admin.tsx) was removed
-// 2026-05-21 — see docs/SECURITY_AUDIT_2026-05-21.md (C3). All /admin
+// 2026-05-21, see docs/SECURITY_AUDIT_2026-05-21.md (C3). All /admin
 // traffic now resolves to /admin/insights, which is OAuth-gated and
 // (post-migration 20260521_security_lockdown.sql) backed by RPCs that
 // assert is_admin server-side.
@@ -34,7 +34,7 @@ import { BrowserRouter } from 'react-router-dom'
 
 // ── Observability bootstrap ────────────────────────────────────────────────
 // Initialise Sentry + PostHog BEFORE React mounts so even the very first
-// render error gets reported. Safe to call when env vars are missing —
+// render error gets reported. Safe to call when env vars are missing,
 // each subsystem silently no-ops in that case.
 initObservability();
 
@@ -50,11 +50,11 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// The game engine. Default export. Heaviest single route — kept out of the
+// The game engine. Default export. Heaviest single route, kept out of the
 // initial bundle so landing/marketing visitors never download it.
 const App = lazyWithRetry(() => import('./App.tsx'));
 
-// Top-level pages — lazy-loaded so they no longer ship in the initial
+// Top-level pages, lazy-loaded so they no longer ship in the initial
 // bundle. Named exports are unwrapped to { default } for React.lazy.
 const FAQ = lazyWithRetry(() => import('./pages/FAQ.tsx').then((m) => ({ default: m.FAQ })));
 const Schools = lazyWithRetry(() => import('./pages/Schools.tsx').then((m) => ({ default: m.Schools })));
@@ -86,26 +86,26 @@ const EducationPage = lazyWithRetry(() => import('./pages/seo/EducationPage.tsx'
 const ActivityPage = lazyWithRetry(() => import('./pages/seo/ActivityPage.tsx'));
 const SpecialActivityPage = lazyWithRetry(() => import('./pages/seo/SpecialActivityPage.tsx'));
 
-// Education audience pages (were missing from router — critical fix)
+// Education audience pages (were missing from router, critical fix)
 const ForTeachersPage = lazyWithRetry(() => import('./pages/seo/ForTeachersPage.tsx'));
 const ForParentsPage = lazyWithRetry(() => import('./pages/seo/ForParentsPage.tsx'));
 
-// Growth Engine — Phase 1 Use-Case Landing Pages
+// Growth Engine, Phase 1 Use-Case Landing Pages
 const UseCasePage = lazyWithRetry(() => import('./pages/seo/UseCasePage.tsx'));
 
-// Growth Engine — Share Landing Page
+// Growth Engine, Share Landing Page
 const ShareLandingPage = lazyWithRetry(() => import('./pages/seo/ShareLandingPage.tsx'));
 
-// Admin — internal analytics insights (auth-gated, allow-list)
+// Admin, internal analytics insights (auth-gated, allow-list)
 const InsightsDashboard = lazyWithRetry(() => import('./pages/admin/InsightsDashboard.tsx'));
 const TeachObservePage  = lazyWithRetry(() => import('./pages/teach/TeachObservePage.tsx'));
 const TransparencyPage  = lazyWithRetry(() => import('./pages/TransparencyPage.tsx'));
 
-// Setup guides — idiot-proof quick-start, print-optimised for A4.
+// Setup guides, idiot-proof quick-start, print-optimised for A4.
 const TeacherSetupGuide = lazyWithRetry(() => import('./pages/setup/TeacherSetupGuide.tsx'));
 const ParentSetupGuide  = lazyWithRetry(() => import('./pages/setup/ParentSetupGuide.tsx'));
 
-// Class Mode v2 — conductor model. One persistent surface per role.
+// Class Mode v2, conductor model. One persistent surface per role.
 //   /class            → TeacherClassConsole  (replaces TeacherDashboard +
 //                       LobbyScreen + LiveRoundScreen + ResultsScreen)
 //   /join             → StudentClassClient   (replaces StudentJoin +
@@ -144,7 +144,7 @@ function getRouteFromPath(path: string, hash: string): string {
     }
   }
 
-  // Class Mode routes — all collapse to the two new persistent screens.
+  // Class Mode routes, all collapse to the two new persistent screens.
   // Legacy paths still resolve so old bookmarks don't 404.
   if (path === '/class' || path === '/class/lobby' || path === '/class/round' || path === '/class/results') {
     return 'class-console';
@@ -154,7 +154,7 @@ function getRouteFromPath(path: string, hash: string): string {
   }
 
   if (path === '/admin/insights') return 'admin-insights';
-  // /admin is permanently retired — fold into /admin/insights, which is
+  // /admin is permanently retired, fold into /admin/insights, which is
   // OAuth-gated and (after migration 20260521) server-side admin-only.
   if (path === '/admin') return 'admin-insights';
   if (path === '/teach/observe') return 'teach-observe';
@@ -166,11 +166,11 @@ function getRouteFromPath(path: string, hash: string): string {
   if (path === '/schools/training') return 'training';
   if (path === '/schools') return 'schools';
   if (path === '/school') return 'school';
-  // Parent subscription layer — order matters; deeper paths first.
+  // Parent subscription layer, order matters; deeper paths first.
   // /parent/* = authenticated parent app. /parents = public marketing.
   if (path === '/parent/signup') return 'parent-signup';
   if (path === '/parent/login') return 'parent-login';
-  // Teacher auth — sits next to parent so the role split is obvious.
+  // Teacher auth, sits next to parent so the role split is obvious.
   if (path === '/teacher/signup') return 'teacher-signup';
   if (path === '/teacher/login') return 'teacher-login';
   if (path === '/parent/dashboard') return 'parent-dashboard';
@@ -180,7 +180,7 @@ function getRouteFromPath(path: string, hash: string): string {
   if (path === '/parent/privacy') return 'parent-privacy';
   if (path === '/subscribe' || path === '/trial') return 'parent-subscribe';
   if (path === '/parents') return 'parents-marketing';
-  // Bare /parent is a legacy entry — redirect to the dashboard.
+  // Bare /parent is a legacy entry, redirect to the dashboard.
   if (path === '/parent') return 'parent-redirect';
   if (path === '/teachers') return 'teachers';
   if (path === '/pricing') return 'pricing';
@@ -196,7 +196,7 @@ function getRouteFromPath(path: string, hash: string): string {
   if (path === '/press') return 'press';
   if (path === '/free-resources') return 'free-resources';
 
-  // Phase 1 — Use-Case SEO Landing Pages
+  // Phase 1, Use-Case SEO Landing Pages
   if (path === '/gesture-learning') return 'usecase';
   if (path === '/classroom-movement-activities') return 'usecase';
   if (path === '/chromebook-learning-tools') return 'usecase';
@@ -204,18 +204,18 @@ function getRouteFromPath(path: string, hash: string): string {
   if (path === '/hand-eye-coordination-activities') return 'usecase';
   if (path === '/ai-learning-tools-for-kids') return 'usecase';
 
-  // Phase 3 — Teacher Share Landing
+  // Phase 3, Teacher Share Landing
   if (path.startsWith('/share/')) return 'share-landing';
 
   // Education audience pages
   if (path === '/for-teachers') return 'for-teachers';
   if (path === '/for-parents') return 'for-parents';
 
-  // Setup guides — quick-start
+  // Setup guides, quick-start
   if (path === '/teachers/setup') return 'teacher-setup';
   if (path === '/parents/setup') return 'parent-setup';
 
-  // /stem-learning — redirect to ai-learning-tools-for-kids (same audience, avoids 404)
+  // /stem-learning, redirect to ai-learning-tools-for-kids (same audience, avoids 404)
   if (path === '/stem-learning') return 'usecase';
 
   // Education sub-pages
@@ -249,14 +249,26 @@ function Root() {
   });
 
   useEffect(() => {
+    let lastPath = window.location.pathname;
     const handleNavigation = () => {
       const path = window.location.pathname;
       const hash = window.location.hash;
       const newRoute = getRouteFromPath(path, hash);
       setRoute(newRoute);
 
+      // Scroll restoration. Without this, clicking a footer link kept the
+      // old scroll position, so the new page opened at its own footer and
+      // looked like the link did nothing. Hash links (#eyfs-mapping) keep
+      // their own scroll behaviour.
+      if (path !== lastPath && !hash) {
+        lastPath = path;
+        window.scrollTo(0, 0);
+      } else {
+        lastPath = path;
+      }
+
       // Tell observability about the new route so any subsequent
-      // error carries it as a tag — and emit a route_view funnel
+      // error carries it as a tag, and emit a route_view funnel
       // event for PostHog. LIOS already handles its own page events.
       try {
         setObservabilityContext({ route: path });
@@ -284,6 +296,30 @@ function Root() {
       window.removeEventListener('hashchange', handleNavigation);
     };
   }, []);
+
+  // ── OAuth callback guard ────────────────────────────────────────────────
+  // Supabase's redirect allow-list pins Google OAuth's redirect_to to
+  // /class, and signInWithGoogle stashes the caller's real destination in
+  // sessionStorage ('sb-return-to'). AuthContext processes the token hash
+  // and then location.replace()s to that destination, but that is async,
+  // so without this guard the user would see a flash of the /class teacher
+  // console (or whatever page the callback landed on) before being moved
+  // to e.g. /admin/insights. While a callback with a pending return-to for
+  // a DIFFERENT path is in flight, render the neutral loader instead.
+  // handleAuthCallback clears both the hash and the stash on every outcome
+  // (success or failure), so this can never wedge.
+  if (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) {
+    let pendingReturnTo: string | null = null;
+    try { pendingReturnTo = sessionStorage.getItem('sb-return-to'); } catch { /* ignore */ }
+    if (
+      pendingReturnTo &&
+      pendingReturnTo.startsWith('/') &&
+      !pendingReturnTo.startsWith('//') &&
+      pendingReturnTo !== window.location.pathname
+    ) {
+      return <DemoLoader />;
+    }
+  }
 
   if (route === 'demo') {
     return <DemoLoader />;
@@ -611,10 +647,10 @@ function Root() {
     );
   }
 
-  // Phase 1 — Use-Case SEO Landing Pages
+  // Phase 1, Use-Case SEO Landing Pages
   if (route === 'usecase') {
     const rawSlug = window.location.pathname.replace('/', '');
-    // /stem-learning is a legacy/linked path — serve ai-learning-tools-for-kids content
+    // /stem-learning is a legacy/linked path, serve ai-learning-tools-for-kids content
     const slug = rawSlug === 'stem-learning' ? 'ai-learning-tools-for-kids' : rawSlug;
     return (
       <React.Suspense fallback={<DemoLoader />}>
@@ -623,7 +659,7 @@ function Root() {
     );
   }
 
-  // Phase 3 — Teacher Share Landing
+  // Phase 3, Teacher Share Landing
   if (route === 'share-landing') {
     const slug = window.location.pathname.replace('/share/', '');
     return (
@@ -800,7 +836,7 @@ if ('serviceWorker' in navigator && location.hostname !== 'localhost') {
     navigator.serviceWorker
       .register('/service-worker.js', { scope: '/' })
       .catch(() => {
-        // Service worker registration failed — non-critical, app still works
+        // Service worker registration failed, non-critical, app still works
       });
   });
 }

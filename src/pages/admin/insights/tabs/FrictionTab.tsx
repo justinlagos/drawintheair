@@ -1,5 +1,5 @@
 /**
- * Friction tab — engineering observability for the 8 cognitive
+ * Friction tab, engineering observability for the 8 cognitive
  * friction detectors (Document B §4.1).
  *
  * Engineering-only surface for threshold calibration. The
@@ -11,7 +11,7 @@
  *   2. Per-detector count bars (8 detectors, sorted by frequency)
  *   3. Per-mode × detector heatmap (which game modes trigger which
  *      friction states)
- *   4. Threshold panel — the v1 rules in plain language, for
+ *   4. Threshold panel, the v1 rules in plain language, for
  *      engineering reference during calibration
  *   5. Recent firings list with full meta JSON
  */
@@ -31,7 +31,7 @@ const DETECTOR_LABELS: Record<string, { short: string; long: string; tone: strin
           long: 'Mid-accuracy (50–65%), recovering across attempts, completed.' },
     'friction_cognitive_overload_detected':
         { short: 'Cognitive overload',   tone: '#FFB14D',
-          long: 'Low accuracy AND repeated stuck — overwhelmed, not unable.' },
+          long: 'Low accuracy AND repeated stuck, overwhelmed, not unable.' },
     'friction_decision_fatigue_detected':
         { short: 'Decision fatigue',     tone: '#FFD84D',
           long: 'Long session with high stuck count, mid-accuracy. Probably tired.' },
@@ -130,7 +130,7 @@ export const FrictionTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                     font: '13px/1.4 Nunito, system-ui, sans-serif', color: '#C13A3A',
                 }}>
                     <strong>Engineering observability surface.</strong> Calibrating LIOS friction
-                    detectors v1 — thresholds in panel below. Teacher-facing version waits until
+                    detectors v1, thresholds in panel below. Teacher-facing version waits until
                     these firings are validated against ground-truth teacher tags.
                 </div>
             </div>
@@ -173,7 +173,7 @@ export const FrictionTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
 
             {/* Per-detector bars */}
             <div className="iv-col-6">
-                <Card title="Detector firings — last 30 days" meta={`${f.by_detector.length} of 8 active`}>
+                <Card title="Detector firings, last 30 days" meta={`${f.by_detector.length} of 8 active`}>
                     <div style={{ display: 'grid', gap: 8 }}>
                         {f.by_detector.map(row => {
                             const pct = (row.n / maxBar) * 100;
@@ -268,7 +268,7 @@ export const FrictionTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
 
             {/* Threshold reference */}
             <div className="iv-col-12">
-                <Card title="Detector thresholds — v1" meta="Engineering reference for calibration">
+                <Card title="Detector thresholds, v1" meta="Engineering reference for calibration">
                     <table className="iv-table" style={{ fontSize: 12 }}>
                         <thead>
                             <tr><th style={{ width: 200 }}>Detector</th><th>Rule (Document B §4.1)</th></tr>
@@ -322,12 +322,12 @@ export const FrictionTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                                                         fontWeight: 600, fontSize: 10,
                                                     }}>{detLabel(r.detector)}</span>
                                                 </td>
-                                                <td>{r.game_mode ? modeLabel(r.game_mode) : '—'}</td>
-                                                <td>{r.age_band ?? '—'}</td>
-                                                <td>{String(r.meta.accuracy ?? '—')}</td>
-                                                <td>{String(r.meta.n_attempts ?? '—')}</td>
-                                                <td>{String(r.meta.n_stuck ?? '—')}</td>
-                                                <td>{String(r.meta.mean_credibility ?? '—')}</td>
+                                                <td>{r.game_mode ? modeLabel(r.game_mode) : '-'}</td>
+                                                <td>{r.age_band ?? '-'}</td>
+                                                <td>{String(r.meta.accuracy ?? '-')}</td>
+                                                <td>{String(r.meta.n_attempts ?? '-')}</td>
+                                                <td>{String(r.meta.n_stuck ?? '-')}</td>
+                                                <td>{String(r.meta.mean_credibility ?? '-')}</td>
                                                 <td>{r.meta.reached_completion ? '✓' : '✗'}</td>
                                                 <td style={{ fontFamily: 'ui-monospace, monospace', color: '#6B6F84' }}>
                                                     {r.session_id.slice(0, 8)}

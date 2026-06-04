@@ -17,7 +17,7 @@ const faqSections: FAQSection[] = [
     items: [
       {
         question: 'Does it work on tablets?',
-        answer: 'Yes. Draw In The Air works on tablets with a front-facing camera. It runs in the browser — no app installation needed. Chrome and Edge work best.',
+        answer: 'Yes. Draw In The Air works on tablets with a front-facing camera. It runs in the browser, no app installation needed. Chrome and Edge work best.',
       },
       {
         question: 'Does it require a strong internet connection?',
@@ -25,7 +25,7 @@ const faqSections: FAQSection[] = [
       },
       {
         question: 'What if the camera does not work?',
-        answer: 'Check that your browser has permission to access the camera. Look for a camera icon in the address bar and ensure it is set to "Allow". Chrome and Edge work best — some browsers require HTTPS for camera access.',
+        answer: 'Check that your browser has permission to access the camera. Look for a camera icon in the address bar and ensure it is set to "Allow". Chrome and Edge work best, some browsers require HTTPS for camera access.',
       },
       {
         question: 'How long is a typical session?',
@@ -50,7 +50,7 @@ const faqSections: FAQSection[] = [
       },
       {
         question: 'What is Classroom Mode?',
-        answer: 'Classroom Mode lets a teacher run a whole-class session with a live leaderboard. Students join with a 4-digit code — no accounts needed. The teacher sees all students\' scores in real time. Available on the Teacher Pro plan.',
+        answer: 'Classroom Mode lets a teacher run a whole-class session with a live leaderboard. Students join with a 4-digit code, no accounts needed. The teacher sees all students\' scores in real time. Available on the Teacher Pro plan.',
       },
       {
         question: 'Can we use it on school Chromebooks?',
@@ -67,7 +67,7 @@ const faqSections: FAQSection[] = [
       },
       {
         question: 'Is the camera recording our children?',
-        answer: 'No. The camera is used only for real-time hand-tracking — it detects hand position and gesture locally on the device. No video stream is recorded, stored, or sent anywhere.',
+        answer: 'No. The camera is used only for real-time hand-tracking, it detects hand position and gesture locally on the device. No video stream is recorded, stored, or sent anywhere.',
       },
       {
         question: 'Is it GDPR compliant?',
@@ -198,7 +198,7 @@ export const FAQ: React.FC = () => {
 
       <div style={s.contactBox}>
         <div style={s.contactH}>Still have a question?</div>
-        <p style={s.contactP}>Our team is happy to help — especially if you're a school considering Draw in the Air.</p>
+        <p style={s.contactP}>Our team is happy to help, especially if you're a school considering Draw in the Air.</p>
         <a href="mailto:partnership@drawintheair.com" style={s.ctaBtn}>Contact Us</a>
       </div>
     </LegalPageLayout>

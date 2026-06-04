@@ -4,7 +4,7 @@
  * Body: { interval: 'month' | 'year' }
  *
  * Creates (or reuses) a Stripe customer for the calling parent, then opens a
- * Stripe Checkout session with a 14-day trial. Returns { url } the client
+ * Stripe Checkout session carrying over whatever remains of the signup trial. Returns { url } the client
  * redirects to.
  *
  * The session ALWAYS includes:
@@ -12,7 +12,7 @@
  *   • 1 × addon price (qty = max(0, active_children − included_slots)) IF
  *         the parent already has more children than the included slots.
  *
- * Trial is forced to 14 days regardless of plan, matching the product spec.
+ * The trial is whatever remains of the 7-day signup trial (0 if expired).
  * Quantity adjustments after checkout happen via `sync-subscription`.
  */
 
@@ -60,8 +60,23 @@ Deno.serve(async (req: Request) => {
       .single();
 
     const includedSlots = cfg?.base_included_slots ?? 2;
-    const trialDays = cfg?.trial_days ?? 14;
     const extraChildren = Math.max(0, (activeChildren ?? 0) - includedSlots);
+
+    // The free trial starts at signup (parent_subscriptions, status
+    // 'trialing'). Checkout only carries over whatever is LEFT of it, so
+    // subscribing mid-trial never restarts the clock, and subscribing
+    // after expiry charges immediately.
+    const { data: sub } = await supabase
+      .from('parent_subscriptions')
+      .select('status, trial_end')
+      .eq('parent_id', userId)
+      .maybeSingle();
+    let trialDays = 0;
+    if (sub?.status === 'trialing' && sub.trial_end) {
+      const msLeft = new Date(sub.trial_end).getTime() - Date.now();
+      const cap = cfg?.trial_days ?? 7;
+      trialDays = Math.min(cap, Math.max(0, Math.ceil(msLeft / 86_400_000)));
+    }
 
     // ── Resolve Stripe price IDs from stripe_price_map ────────────────────
     const { data: priceRows } = await supabase
@@ -105,7 +120,7 @@ Deno.serve(async (req: Request) => {
       customer: customerId,
       line_items: lineItems,
       subscription_data: {
-        trial_period_days: trialDays,
+        ...(trialDays > 0 ? { trial_period_days: trialDays } : {}),
         metadata: { parent_id: userId },
       },
       allow_promotion_codes: true,

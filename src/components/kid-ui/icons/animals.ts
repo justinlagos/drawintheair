@@ -1,5 +1,5 @@
 /**
- * Animal face illustrations — dog, cat, rabbit, bear.
+ * Animal face illustrations, dog, cat, rabbit, bear.
  * Used by Sort & Place "Animals vs Vehicles" stage.
  *
  * Front-facing kawaii heads. Each animal's silhouette is distinctive

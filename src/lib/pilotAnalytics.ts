@@ -1,5 +1,5 @@
 /**
- * pilotAnalytics — DEPRECATED, removed 2026-05-06.
+ * pilotAnalytics, DEPRECATED, removed 2026-05-06.
  *
  * Was a Google-Sheets-backed analytics layer. All call sites have been
  * migrated to `src/lib/analytics.ts` which writes directly to the

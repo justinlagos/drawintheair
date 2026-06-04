@@ -1,5 +1,5 @@
 /**
- * TeacherClassConsole — mission control for class mode.
+ * TeacherClassConsole, mission control for class mode.
  *
  * Replaces the previous TeacherDashboard / LobbyScreen /
  * LiveRoundScreen / ResultsScreen with one persistent screen the
@@ -10,14 +10,17 @@
  *   2. Active session     → mission control (roster + activity console)
  *   3. Ended session      → class summary card
  *
- * Sub-components are inlined deliberately — keeps the conductor
+ * Sub-components are inlined deliberately, keeps the conductor
  * flow in one file so the next person reading it can scan the
  * transitions without jumping across the tree.
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { dbSelect, dbInsert, subscribeToTable } from '../../lib/supabase';
+import {
+    dbSelect, dbInsert, subscribeToTable,
+    getAccountRoles, registerTeacherAccount, consumeRoleIntent,
+} from '../../lib/supabase';
 import { generateSessionCode } from '../../features/classmode/sessionCode';
 import { MODE_LABELS, SCOREABLE_MODES } from '../../features/classmode/scoreMapping';
 import type { GameModeId } from '../../features/classmode/scoreMapping';
@@ -38,7 +41,7 @@ const FREE_TIER_CLASSROOM_CAP = 1;
 
 // ── Helpers ─────────────────────────────────────────────────────────
 function formatElapsed(startedAt: string | null): string {
-    if (!startedAt) return '—';
+    if (!startedAt) return '-';
     const ms = Date.now() - new Date(startedAt).getTime();
     const m = Math.floor(ms / 60000);
     const s = Math.floor((ms / 1000) % 60);
@@ -47,7 +50,7 @@ function formatElapsed(startedAt: string | null): string {
 }
 
 /** Decide a student's engagement bucket from raw row data + timing.
- *  Calm intelligence — just three states the teacher acts on. */
+ *  Calm intelligence, just three states the teacher acts on. */
 function engagementOf(student: StudentRow): EngagementStatus {
     if (student.kicked_at) return 'offline';
     if (!student.is_active || !student.is_connected) return 'offline';
@@ -57,10 +60,42 @@ function engagementOf(student: StudentRow): EngagementStatus {
 // ── Top page ────────────────────────────────────────────────────────
 export default function TeacherClassConsole() {
     const { user, loading, signIn, signOut } = useAuth();
+
+    // Signing out of the classroom returns teachers to the teacher page,
+    // not a bare login screen.
+    const handleSignOut = useCallback(async () => {
+        await signOut();
+        window.location.href = '/teachers';
+    }, [signOut]);
     const [activeSession, setActiveSession] = useState<SessionRow | null>(null);
     const [recent, setRecent] = useState<SessionRow[]>([]);
     const [creating, setCreating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Role isolation (migration 0013): the classroom area requires an
+    // account that explicitly signed up as a teacher. Parent credentials
+    // alone no longer open /class.
+    const [roleStatus, setRoleStatus] = useState<'checking' | 'teacher' | 'not-teacher'>('checking');
+    useEffect(() => {
+        if (!user) return;
+        let cancelled = false;
+        (async () => {
+            const roles = await getAccountRoles();
+            if (cancelled) return;
+            if (roles?.teacher || roles?.admin) { setRoleStatus('teacher'); return; }
+            // Arrived via the teacher signup/login flow (e.g. Google): finish
+            // the explicit teacher registration they started.
+            if (consumeRoleIntent('teacher')) {
+                const ok = await registerTeacherAccount(
+                    user.user_metadata.full_name || user.user_metadata.name,
+                );
+                if (!cancelled) setRoleStatus(ok ? 'teacher' : 'not-teacher');
+                return;
+            }
+            setRoleStatus('not-teacher');
+        })();
+        return () => { cancelled = true; };
+    }, [user]);
 
     // Load recent sessions + check for an in-flight one for this teacher.
     useEffect(() => {
@@ -168,26 +203,65 @@ export default function TeacherClassConsole() {
         );
     }
 
-    // ── Active session — the conductor lives here ──────────────────
+    // ── Role gate: signed in, but not (yet) a teacher account ──────
+    if (roleStatus === 'checking') {
+        return <div className="cm-page"><div className="cm-student-page"><div className="cm-waiting-spinner" /></div></div>;
+    }
+    if (roleStatus === 'not-teacher') {
+        return (
+            <div className="cm-page">
+                <div className="cm-dashboard">
+                    <div className="cm-dashboard-hero">
+                        <h1>Class Mode</h1>
+                        <p>This area is for teacher accounts</p>
+                    </div>
+                    <div className="cm-sign-in-card">
+                        <h2>This area is for teachers</h2>
+                        <p>
+                            You're signed in with a family account, and the classroom area is
+                            kept completely separate from family accounts. If you teach, you
+                            can create a teacher account from the teachers page whenever
+                            you're ready.
+                        </p>
+                        <p style={{ marginTop: 12 }}>
+                            <a href="/parent/dashboard">Back to my family dashboard</a>
+                            {' · '}
+                            <a href="/teachers">About Draw in the Air for teachers</a>
+                            {' · '}
+                            <button
+                                type="button"
+                                onClick={() => handleSignOut()}
+                                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline', color: 'inherit', font: 'inherit' }}
+                            >
+                                Sign out
+                            </button>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // ── Active session, the conductor lives here ──────────────────
     if (activeSession && activeSession.class_state !== 'ended') {
         return (
             <ConductorScreen
                 session={activeSession}
                 onSessionUpdate={setActiveSession}
-                onSignOut={signOut}
+                onSignOut={handleSignOut}
                 userName={user.user_metadata.full_name || user.user_metadata.name || user.email}
                 userAvatarUrl={user.user_metadata.avatar_url || user.user_metadata.picture}
             />
         );
     }
 
-    // ── Pre-class — start a class + recent sessions ────────────────
+    // ── Pre-class, start a class + recent sessions ────────────────
     return (
         <div className="cm-page">
             <ConductorTopBar
                 userName={user.user_metadata.full_name || user.user_metadata.name || user.email}
                 userAvatarUrl={user.user_metadata.avatar_url || user.user_metadata.picture}
-                onSignOut={signOut}
+                onSignOut={handleSignOut}
             />
             <div className="cm-dashboard">
                 <div className="cm-dashboard-hero">
@@ -201,7 +275,7 @@ export default function TeacherClassConsole() {
                     </button>
                 </div>
 
-                {/* Recent sessions — quick-resume for ones still in lobby/in_activity */}
+                {/* Recent sessions, quick-resume for ones still in lobby/in_activity */}
                 {recent.length > 0 && (
                     <div className="cm-history">
                         <div className="cd-history-header">
@@ -256,7 +330,7 @@ export default function TeacherClassConsole() {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// ConductorScreen — the mission control surface itself
+// ConductorScreen, the mission control surface itself
 // ════════════════════════════════════════════════════════════════════
 interface ConductorScreenProps {
     session: SessionRow;
@@ -380,7 +454,7 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
     }, [session.id]);
 
     // If pause/resume errors with "no active activity" the server has
-    // already lost the active row — clear it client-side so the UI flips
+    // already lost the active row, clear it client-side so the UI flips
     // back to the launcher instead of leaving the user staring at a
     // broken panel.
     const clearStaleOnNoActive = useCallback((e: Error) => {
@@ -451,7 +525,7 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
 
     return (
         <div className="cm-page cd-page">
-            {/* Top bar — code, time, students, end class */}
+            {/* Top bar, code, time, students, end class */}
             <div className="cd-topbar">
                 <div className="cd-topbar-left">
                     <div className="cd-code-pill" title="Students join with this code">
@@ -516,7 +590,7 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
                  * session.class_state agree we're in an activity. This prevents
                  * the panel from getting stuck on a stale "playing" view when a
                  * realtime UPDATE event for session_activities is dropped but
-                 * the sessions row arrives correctly — surfaced by the live
+                 * the sessions row arrives correctly, surfaced by the live
                  * classroom test on 2026-05-11 (code 1823, see migration
                  * 20260511_conductor_pause_selfheal for the DB-side hotfix). */}
                 <section className="cd-stage">
@@ -856,7 +930,7 @@ function ClassSummaryView({ sessionId, onDone, userName, userAvatarUrl, onSignOu
                                                 <span className="cd-stats-list-icon">{label?.icon ?? '🎮'}</span>
                                                 <span className="cd-stats-list-name">{label?.title ?? a.activity}</span>
                                                 <span className="cd-stats-list-meta">
-                                                    {dur != null ? `${dur} min` : 'short'} · avg ⭐ {a.avg_stars ?? '—'}
+                                                    {dur != null ? `${dur} min` : 'short'} · avg ⭐ {a.avg_stars ?? '-'}
                                                 </span>
                                             </li>
                                         );

@@ -18,7 +18,7 @@ const EDUCATION_DATA: Record<EducationSlug, {
 }> = {
     'for-homeschool': {
         meta: {
-            title: 'Homeschool Activities — Gesture Learning for Kids at Home | Draw in the Air',
+            title: 'Homeschool Activities, Gesture Learning for Kids at Home | Draw in the Air',
             description: 'Perfect for homeschool families! Draw in the Air offers no-download gesture activities for letters, numbers, and creative drawing. Free, safe, and screen-smart for ages 3–8.',
             keywords: ['homeschool activities preschool', 'homeschool learning games free', 'home education activities kids', 'preschool homeschool curriculum', 'interactive homeschool app'],
             canonical: '/for-homeschool'
@@ -35,7 +35,7 @@ const EDUCATION_DATA: Record<EducationSlug, {
     },
     'for-preschool': {
         meta: {
-            title: 'Preschool Activities — Learn Shapes and Letters | Draw in the Air',
+            title: 'Preschool Activities, Learn Shapes and Letters | Draw in the Air',
             description: 'Free browser-based educational games specifically designed for preschoolers. Develop fine motor skills, trace letters, and learn shapes through active play.',
             keywords: ['preschool activities online free', 'pre-k learning games', 'toddler educational activities', 'preschool hand tracking game'],
             canonical: '/for-preschool'
@@ -46,13 +46,13 @@ const EDUCATION_DATA: Record<EducationSlug, {
         heroSub: 'Preschoolers learn best through full-body motion. Draw in the Air connects big arm movements to essential early childhood milestones like shape tracing, color sorting, and letter basics.',
         faq: [
             { q: 'Is the app too complex for a 3-year-old?', a: 'Not at all! The gesture recognition is highly forgiving. While they may need 5 minutes of parent guidance initially to learn the "pinch to draw" motion, they quickly adapt to it.' },
-            { q: 'What skills does this develop for a preschooler?', a: 'It heavily develops gross motor shoulder stability, fine motor pincer grasp (thumb and index finger), and basic spatial awareness—all crucial pre-writing skills.' },
+            { q: 'What skills does this develop for a preschooler?', a: 'It heavily develops gross motor shoulder stability, fine motor pincer grasp (thumb and index finger), and basic spatial awareness. These are all crucial pre-writing skills.' },
             { q: 'Do you offer phonics support?', a: 'Yes. The letter tracing mode includes phonetic sounds and example words for every single letter of the alphabet.' }
         ]
     },
     'for-kindergarten': {
         meta: {
-            title: 'Kindergarten Educational Games — Math and Reading | Draw in the Air',
+            title: 'Kindergarten Educational Games, Math and Reading | Draw in the Air',
             description: 'Engaging, gesture-controlled Kindergarten activities focusing on alphabet mastery, numerical tracking up to 10, and cognitive sorting.',
             keywords: ['kindergarten learning games free', 'kindergarten reading games', 'kindergarten math games free', 'gesture learning kindergarten'],
             canonical: '/for-kindergarten'
@@ -91,11 +91,11 @@ export default function EducationPage({ slug }: EducationPageProps) {
                 emoji={data.emoji}
                 title={data.heroTitle}
                 subtitle={data.heroSub}
-                cta={{ label: 'Start Learning — Free ✨', path: SITE.appPath }}
+                cta={{ label: 'Start Learning, Free ✨', path: SITE.appPath }}
             />
 
             <Section light>
-                <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>Why Use Gesture Learning?</h2>
+                <h2 style={{ color: '#1F1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 20 }}>Why Use Gesture Learning?</h2>
                 <div style={{ color: '#4A4D6B', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: 30 }}>
                     <p style={{ marginBottom: 15 }}>Movement is the anchor to memory. When children physically swing their arm to draw a shape or grab a sorting block, they engage multiple areas of the motor cortex at once.</p>
                     <p>This kinesthetic learning accelerates reading and math readiness up to 3x faster than passive screen tapping.</p>
@@ -103,7 +103,7 @@ export default function EducationPage({ slug }: EducationPageProps) {
             </Section>
 
             <Section>
-                <h2 style={{ color: '#1A1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 24 }}>Common Questions</h2>
+                <h2 style={{ color: '#1F1B2E', fontSize: '1.5rem', fontWeight: 800, marginBottom: 24 }}>Common Questions</h2>
                 {data.faq.map(item => <FAQItem key={item.q} q={item.q} a={item.a} />)}
             </Section>
         </SeoLayout>

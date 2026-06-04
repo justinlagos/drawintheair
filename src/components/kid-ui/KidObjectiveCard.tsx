@@ -1,5 +1,5 @@
 /**
- * KidObjectiveCard — large rounded white card that tells the child what to do.
+ * KidObjectiveCard, large rounded white card that tells the child what to do.
  *
  * Spec: "Trace the shape." / "Pop the right number." / "Find the word."
  *   - Near the top center of the screen.

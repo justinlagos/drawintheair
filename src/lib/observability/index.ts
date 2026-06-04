@@ -1,15 +1,15 @@
 /**
- * Observability — public surface.
+ * Observability, public surface.
  *
  * Three layers wired in this folder:
- *   • sentry.ts    — error tracking (frontend crashes)
- *   • posthog.ts   — product analytics (funnels, cohorts)
- *   • health.ts    — in-memory health registry (powers the
+ *   • sentry.ts   , error tracking (frontend crashes)
+ *   • posthog.ts  , product analytics (funnels, cohorts)
+ *   • health.ts   , in-memory health registry (powers the
  *                    System Health panel and surfaces last critical error)
  *
  * The existing LIOS pipeline (src/lib/analytics.ts → Supabase
  * analytics_events) is the canonical learning telemetry store. The
- * functions in this barrel do NOT replace it — they run alongside.
+ * functions in this barrel do NOT replace it, they run alongside.
  *
  * One-call bootstrap:
  *

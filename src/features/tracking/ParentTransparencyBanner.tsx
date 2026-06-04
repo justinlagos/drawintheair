@@ -5,7 +5,7 @@
  * click-to-expand modal that shows the actual live camera feed so a parent
  * can verify visually that nothing is being uploaded.
  *
- * The TrackingLayer keeps the <video> at 1×1 px (decoder-pinning trick) —
+ * The TrackingLayer keeps the <video> at 1×1 px (decoder-pinning trick),
  * we render a second <video> in the modal whose srcObject is borrowed
  * from the same MediaStream. Same stream, no extra getUserMedia call,
  * no extra permission prompt.
@@ -36,7 +36,7 @@ export const ParentTransparencyBanner: React.FC<ParentTransparencyBannerProps> =
         <>
             <button
                 onClick={() => setExpanded(true)}
-                aria-label="Privacy details — tap to see what the camera sees"
+                aria-label="Privacy details, tap to see what the camera sees"
                 title="Camera frames are processed on this device and never sent to a server. Tap to verify."
                 style={{
                     position: 'fixed',
@@ -90,7 +90,7 @@ const PreviewModal: React.FC<{
             local.play().catch(() => {/* user-gesture failure is fine */});
         }
         return () => {
-            // Don't stop the stream — TrackingLayer still owns it. Just
+            // Don't stop the stream, TrackingLayer still owns it. Just
             // detach so this preview element doesn't keep a reference.
             if (local) local.srcObject = null;
         };
@@ -165,7 +165,7 @@ const PreviewModal: React.FC<{
                             width: '100%',
                             height: '100%',
                             objectFit: 'cover',
-                            transform: 'scaleX(-1)', // mirror — what the kid expects
+                            transform: 'scaleX(-1)', // mirror, what the kid expects
                         }}
                     />
                 </div>

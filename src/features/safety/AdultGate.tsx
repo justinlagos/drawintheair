@@ -69,7 +69,7 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
         setIsHolding(true);
         holdStartTime.current = Date.now();
         // Adult gate analytics: every kid-friendly hold attempt is a
-        // tiny safety event — important for the privacy story and for
+        // tiny safety event, important for the privacy story and for
         // detecting accidental presses (gate_failed share will tell us).
         logEvent('adult_gate_attempt');
 
@@ -100,7 +100,7 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
         // duration so we can spot accidental presses vs deliberate.
         if (holdStartTime.current !== null) {
             const heldFor = Date.now() - holdStartTime.current;
-            // Don't log on the success path — startHold already fired
+            // Don't log on the success path, startHold already fired
             // adult_gate_passed and reset holdStartTime to null there.
             logEvent('adult_gate_failed', {
                 value_number: heldFor,
@@ -241,7 +241,7 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                     </span>
                 </button>
 
-                {/* Hold instruction tooltip — bright Kid-UI cream pill */}
+                {/* Hold instruction tooltip, bright Kid-UI cream pill */}
                 {isHolding && holdProgress > 0 && holdProgress < 1 && (
                     <div className="kid-panel" style={{
                         position: 'absolute',
@@ -264,7 +264,7 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                 )}
             </div>
 
-            {/* Parent Menu — Kid-UI bright modal */}
+            {/* Parent Menu, Kid-UI bright modal */}
             {showMenu && (
                 <div
                     style={{
@@ -329,7 +329,7 @@ export const AdultGate = ({ onExit, onSettings }: AdultGateProps) => {
                                 </KidButton>
                             )}
 
-                            {/* Performance toggle — bright cream sub-panel */}
+                            {/* Performance toggle, bright cream sub-panel */}
                             <div style={{
                                 padding: tokens.spacing.lg,
                                 background: tokens.semantic.bgPanelTinted,

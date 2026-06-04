@@ -101,7 +101,7 @@ const WORD_LIST_TIER_4: SpellingWord[] = [
     { word: 'PENCIL', emoji: '✏️', category: 'Objects' },
 ];
 
-// Combined list — kept for any callers that iterate everything.
+// Combined list, kept for any callers that iterate everything.
 const WORD_LIST: SpellingWord[] = [
     ...WORD_LIST_TIER_1,
     ...WORD_LIST_TIER_2,
@@ -238,7 +238,7 @@ function buildTiles(word: SpellingWord): LetterTile[] {
 // Tier B/C analytics: per-word timing.
 let wordStartedAt = 0;
 
-// Cross-mode stuck-recovery — tracks the previous-frame level so we can
+// Cross-mode stuck-recovery, tracks the previous-frame level so we can
 // fire the idle narration exactly once on the SOFT → MEDIUM transition.
 let lastSpokenRecoveryLevel: RecoveryLevel = 'NONE';
 
@@ -340,7 +340,7 @@ function drawTile(
     ctx.shadowBlur = tile.status === 'idle' ? 6 : 18;
     ctx.shadowOffsetY = tile.status === 'idle' ? 3 : 0;
 
-    // Card body — vertical gradient
+    // Card body, vertical gradient
     const tileGrad = ctx.createLinearGradient(x, y, x, y + th);
     tileGrad.addColorStop(0, fillTop[tile.status]);
     tileGrad.addColorStop(1, fillBot[tile.status]);
@@ -359,7 +359,7 @@ function drawTile(
     ctx.fill();
     ctx.restore();
 
-    // Top inner highlight — pillowy face
+    // Top inner highlight, pillowy face
     ctx.save();
     ctx.globalAlpha = 0.6;
     const sheen = ctx.createLinearGradient(x, y, x, y + th * 0.45);
@@ -378,7 +378,7 @@ function drawTile(
     ctx.roundRect(x, y, tw, th, r);
     ctx.stroke();
 
-    // Letter — Fredoka bold, charcoal
+    // Letter, Fredoka bold, charcoal
     ctx.save();
     ctx.font = `700 ${Math.round(th * 0.58)}px Fredoka, "Baloo 2", system-ui, -apple-system, sans-serif`;
     ctx.textAlign = 'center';
@@ -389,7 +389,7 @@ function drawTile(
 }
 
 // Halo around the tile holding the next expected letter. Renders only
-// when the kid has been idle past the SOFT threshold — the haloes get
+// when the kid has been idle past the SOFT threshold, the haloes get
 // brighter and pulse faster as recovery level escalates so a stuck child
 // gets an unmistakable visual anchor for where to point next.
 function drawTargetHalo(
@@ -431,7 +431,7 @@ function drawDwellRing(
     const r = (Math.max(tile.width * width, tile.height * height) / 2) + 8;
     ctx.beginPath();
     ctx.arc(tc.x, tc.y, r, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
-    ctx.strokeStyle = '#FFD84D'; // sunshine — design-system reward tone
+    ctx.strokeStyle = '#FFD84D'; // sunshine, design-system reward tone
     ctx.lineWidth = 5;
     ctx.lineCap = 'round';
     ctx.stroke();
@@ -453,7 +453,7 @@ export const gestureSpellingLogic = (
     const now = Date.now();
     const { filteredPoint } = frameData;
 
-    // ── Transparent canvas — HTML background layer (HTML/SVG) provides
+    // ── Transparent canvas, HTML background layer (HTML/SVG) provides
     // the scene. Clear previous frame so canvas pixels don't accumulate.
     ctx.clearRect(0, 0, width, height);
 
@@ -476,7 +476,7 @@ export const gestureSpellingLogic = (
         const bx = blankStartX + i * (blankSize + blankGap);
         const filled = i < typedSoFar.length;
 
-        // Underline — deep plum at low opacity (idle) / meadow green (filled)
+        // Underline, deep plum at low opacity (idle) / meadow green (filled)
         ctx.beginPath();
         ctx.moveTo(bx, blankY + blankSize);
         ctx.lineTo(bx + blankSize, blankY + blankSize);
@@ -490,7 +490,7 @@ export const gestureSpellingLogic = (
             ctx.font = `700 ${Math.round(blankSize * 0.85)}px Fredoka, "Baloo 2", system-ui, sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#3F4052'; // charcoal — readable on bright sky
+            ctx.fillStyle = '#3F4052'; // charcoal, readable on bright sky
             ctx.shadowBlur = 0;
             ctx.fillText(typedSoFar[i], bx + blankSize / 2, blankY + blankSize / 2);
             ctx.restore();
@@ -522,7 +522,7 @@ export const gestureSpellingLogic = (
                     if (tile.letter === nextExpected) {
                         tile.status = 'correct';
                         typedSoFar.push(tile.letter);
-                        // Forward progress — reset the stuck-recovery clock.
+                        // Forward progress, reset the stuck-recovery clock.
                         recordStuckProgress('gesture-spelling', now);
                         // Per-letter mastery row.
                         logEvent('item_dropped', {
@@ -609,7 +609,7 @@ export const gestureSpellingLogic = (
         }
     });
 
-    // ── Category badge — deep plum on the bright sky ──────────────────────────
+    // ── Category badge, deep plum on the bright sky ──────────────────────────
     ctx.save();
     ctx.font = `600 ${Math.round(Math.min(width, height) * 0.025)}px Fredoka, "Baloo 2", system-ui, sans-serif`;
     ctx.textAlign = 'center';
@@ -618,7 +618,7 @@ export const gestureSpellingLogic = (
     ctx.fillText(currentWord.category, width / 2, height * 0.4);
     ctx.restore();
 
-    // ── Instruction — charcoal on bright sky for readability ──────────────────
+    // ── Instruction, charcoal on bright sky for readability ──────────────────
     if (!wordComplete) {
         ctx.save();
         ctx.font = `700 ${Math.round(Math.min(width, height) * 0.028)}px Fredoka, "Baloo 2", system-ui, sans-serif`;
@@ -628,7 +628,7 @@ export const gestureSpellingLogic = (
         ctx.fillText(
             typedSoFar.length === 0
                 ? 'Hover over each letter to spell the word!'
-                : `Next letter: "${nextExpected}" — hover over it!`,
+                : `Next letter: "${nextExpected}", hover over it!`,
             width / 2,
             height * 0.56,
         );

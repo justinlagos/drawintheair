@@ -1,10 +1,10 @@
 /**
- * parentReport — produces a printable, parent-friendly summary of everything
+ * parentReport, produces a printable, parent-friendly summary of everything
  * Draw in the Air holds about a parent and their learners.
  *
  * Why not a PDF library? The brand surface is HTML + Nunito + the same
  * plum/aqua/sunshine palette as the rest of the parent area. We render a
- * dedicated print-styled page in a new tab and call window.print() — the
+ * dedicated print-styled page in a new tab and call window.print(), the
  * resulting "Save as PDF" output is indistinguishable from a hand-crafted
  * design PDF, with zero new dependencies and zero bundle weight.
  *
@@ -115,7 +115,7 @@ function buildHtml(root: ExportRoot, kids: ChildDashboard[], origin: string): st
   const sub = root.subscription;
   const sections = kids.map(childSection).join('\n');
   const logoUrl = `${origin}/logo.svg`;
-  const reportFileName = `Draw in the Air — Family report — ${new Date(root.exported_at).toLocaleDateString()}`;
+  const reportFileName = `Draw in the Air, Family report, ${new Date(root.exported_at).toLocaleDateString()}`;
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -303,7 +303,7 @@ export async function openParentReport(): Promise<ParentReportResult> {
   // the document.write path makes Chrome use the page <title> as the
   // default "Save as PDF" filename. The page's inline <script> auto-
   // triggers window.print() so the user sees the system PDF dialog
-  // immediately — they save a real .pdf, not raw HTML.
+  // immediately, they save a real .pdf, not raw HTML.
   const win = window.open('about:blank', '_blank', 'noopener,noreferrer');
   if (win) {
     win.document.open();
@@ -311,7 +311,7 @@ export async function openParentReport(): Promise<ParentReportResult> {
     win.document.close();
     return { ok: true };
   }
-  // Popups blocked — fall back to a Blob download. Most modern browsers
+  // Popups blocked, fall back to a Blob download. Most modern browsers
   // will still let the user open + print this HTML file as a PDF, just
   // with one extra step.
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });

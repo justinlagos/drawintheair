@@ -1,12 +1,12 @@
 /**
- * Landing — inline CSS string
+ * Landing, inline CSS string
  *
  * The Landing page CSS is shipped as a JS string and injected via a
  * <style> tag inside <Landing>. This guarantees the CSS is in the
  * component's JS chunk and cannot be missed by the bundler / lost to
  * a CSS code-split chunk failure on Vercel / overridden by load order.
  *
- * Source of truth — keep in sync with src/components/landing/landing-kid.css
+ * Source of truth, keep in sync with src/components/landing/landing-kid.css
  * (the external file is kept as a fallback so the dev experience stays
  * fast; production resilience comes from this string).
  */
@@ -177,7 +177,7 @@ export const LANDING_INLINE_CSS = `
     .dl-reveal { opacity: 1 !important; transform: none !important; }
 }
 
-/* ─── Logo sizing — bulletproof against global img rules ─── */
+/* ─── Logo sizing, bulletproof against global img rules ─── */
 .dl-nav-logo {
     height: 36px !important;
     width: auto !important;
@@ -197,7 +197,7 @@ export const LANDING_INLINE_CSS = `
     display: block !important;
 }
 
-/* ─── Mode tiles — desktop grid / mobile horizontal scroll ─── */
+/* ─── Mode tiles, desktop grid / mobile horizontal scroll ─── */
 .dl-mode-tiles {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));

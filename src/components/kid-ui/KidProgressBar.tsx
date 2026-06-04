@@ -1,5 +1,5 @@
 /**
- * KidProgressBar — rounded track with smooth aqua/lime fill.
+ * KidProgressBar, rounded track with smooth aqua/lime fill.
  *
  * Spec: rounded track, soft glow only when progressing, simple.
  */
@@ -10,7 +10,7 @@ import { tokens } from '../../styles/tokens';
 export type KidProgressTone = 'aqua' | 'lime' | 'sunshine' | 'plum';
 
 export interface KidProgressBarProps {
-  /** 0..1 — values outside the range are clamped */
+  /** 0..1, values outside the range are clamped */
   value: number;
   tone?: KidProgressTone;
   height?: number;

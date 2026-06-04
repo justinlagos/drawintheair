@@ -95,7 +95,7 @@ export const TracingMode = ({ onExit }: TracingModeProps = {}) => {
                     clearTimeout(advanceTimeoutRef.current);
                 }
                 // Celebration's internal timer (duration=1500ms) auto-dismisses
-                // and calls handleCelebrationDone() — see prop on the component.
+                // and calls handleCelebrationDone(), see prop on the component.
                 // The advance is scheduled there.
             });
         });
@@ -251,7 +251,7 @@ export const TracingMode = ({ onExit }: TracingModeProps = {}) => {
         <>
             <TracingBackground />
 
-            {/* Back to menu — stage label omitted, mode card below shows it */}
+            {/* Back to menu, stage label omitted, mode card below shows it */}
             {onExit && (
                 <GameTopBar onBack={onExit} compact={isCompact} />
             )}
@@ -379,7 +379,7 @@ export const TracingMode = ({ onExit }: TracingModeProps = {}) => {
                     </span>
                 </KidPanel>
 
-                {/* Streak meter — kept as a feature, restyled bright */}
+                {/* Streak meter, kept as a feature, restyled bright */}
                 {streakEnabled && streakMeter > 0 && (
                     <KidPanel size="sm" style={{
                         padding: `${tokens.spacing.xs} ${tokens.spacing.md}`,
@@ -429,7 +429,7 @@ export const TracingMode = ({ onExit }: TracingModeProps = {}) => {
                 )}
             </div>
 
-            {/* Restart button — bottom center */}
+            {/* Restart button, bottom center */}
             <div style={{
                 position: 'absolute',
                 bottom: isCompact ? '12px' : '24px',
@@ -443,7 +443,7 @@ export const TracingMode = ({ onExit }: TracingModeProps = {}) => {
                 </KidButton>
             </div>
 
-            {/* Bottom-center instructions — show at level start */}
+            {/* Bottom-center instructions, show at level start */}
             {((progress < 0.15 && !showCelebration) || (isPaused && progress < 0.15)) && (
                 <div style={{
                     position: 'absolute',
@@ -455,7 +455,7 @@ export const TracingMode = ({ onExit }: TracingModeProps = {}) => {
                     maxWidth: isCompact ? 'calc(100% - 32px)' : 'none',
                 }}>
                     <KidObjectiveCard icon="👆">
-                        {isCompact ? 'Pinch to trace' : 'Pinch to trace — start at the green dot!'}
+                        {isCompact ? 'Pinch to trace' : 'Pinch to trace, start at the green dot!'}
                     </KidObjectiveCard>
                 </div>
             )}
@@ -471,12 +471,12 @@ export const TracingMode = ({ onExit }: TracingModeProps = {}) => {
                     pointerEvents: 'none',
                 }}>
                     <KidChip variant="reward" size="md" icon={<span>⏸</span>}>
-                        Paused — Pinch to continue
+                        Paused, Pinch to continue
                     </KidChip>
                 </div>
             )}
 
-            {/* Celebration 2.0 with stars — same dismissal flow as before */}
+            {/* Celebration 2.0 with stars, same dismissal flow as before */}
             <Celebration
                 show={showCelebration}
                 message="Great Job!"

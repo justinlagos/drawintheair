@@ -5,14 +5,19 @@
  * family / privacy / data. Matches the zip account centre layout.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ParentShell, RequireParentAuth, I } from './_shared';
 import { useAuth } from '../../context/AuthContext';
 import { useParent } from '../../context/ParentContext';
 import { requestAccountDeletion } from '../../lib/parentApi';
+import { requestPasswordReset } from '../../lib/supabase';
 import { openParentReport, openJsonExport } from '../../lib/parent/parentReport';
 import { logEvent } from '../../lib/analytics';
+
+const ACCT_SECTIONS = ['profile', 'security', 'subscription', 'family', 'privacy', 'data'] as const;
+type AcctSection = typeof ACCT_SECTIONS[number];
 
 export default function ParentAccount() {
   return (
@@ -29,6 +34,40 @@ function AccountInner() {
   const [exportingJson, setExportingJson] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [activeSection, setActiveSection] = useState<AcctSection>('profile');
+
+  // Side menu → smooth-scroll to the section. Plain #hash anchors fought
+  // the SPA router, so we scroll explicitly and track the active item.
+  function goToSection(id: AcctSection) {
+    setActiveSection(id);
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Keep the highlighted menu item in sync while the user scrolls.
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]) setActiveSection(visible[0].target.id as AcctSection);
+      },
+      { rootMargin: '-20% 0px -65% 0px' },
+    );
+    ACCT_SECTIONS.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  async function handleSendReset() {
+    if (!user?.email) return;
+    await requestPasswordReset(user.email);
+    setResetSent(true);
+    logEvent('parent_password_reset_requested');
+  }
 
   async function handleReport() {
     setExporting(true);
@@ -80,12 +119,24 @@ function AccountInner() {
       <div className="acct">
         {/* Sidebar nav */}
         <nav className="acct-nav" aria-label="Account sections">
-          <a href="#profile" className="on"><I.User size={18} /> Profile</a>
-          <a href="#security"><I.Lock size={18} /> Security</a>
-          <a href="#subscription"><I.Card size={18} /> Subscription</a>
-          <a href="#family"><I.Users size={18} /> Family</a>
-          <a href="#privacy"><I.Shield size={18} /> Privacy</a>
-          <a href="#data"><I.Download size={18} /> Data</a>
+          {([
+            ['profile', 'Profile', <I.User key="i" size={18} />],
+            ['security', 'Security', <I.Lock key="i" size={18} />],
+            ['subscription', 'Subscription', <I.Card key="i" size={18} />],
+            ['family', 'Family', <I.Users key="i" size={18} />],
+            ['privacy', 'Privacy', <I.Shield key="i" size={18} />],
+            ['data', 'Data', <I.Download key="i" size={18} />],
+          ] as Array<[AcctSection, string, ReactNode]>).map(([id, label, icon]) => (
+            <a
+              key={id}
+              href={`#${id}`}
+              className={activeSection === id ? 'on' : undefined}
+              aria-current={activeSection === id ? 'true' : undefined}
+              onClick={(e) => { e.preventDefault(); goToSection(id); }}
+            >
+              {icon} {label}
+            </a>
+          ))}
         </nav>
 
         {/* Content */}
@@ -111,9 +162,20 @@ function AccountInner() {
                 <span className="itile itile-lav"><I.Lock size={20} /></span>
                 <div className="irow-body">
                   <h4>Change password</h4>
-                  <p>You'll get a reset link by email. Takes about a minute.</p>
+                  <p>
+                    {resetSent
+                      ? <>Reset link sent to <strong>{user?.email}</strong>. Open it to choose a new password.</>
+                      : "You'll get a reset link by email. Takes about a minute."}
+                  </p>
                 </div>
-                <Link to="/parent/login" className="btn btn-ghost btn-sm">Send reset link</Link>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={handleSendReset}
+                  disabled={resetSent}
+                >
+                  {resetSent ? 'Link sent' : 'Send reset link'}
+                </button>
               </div>
               <div className="irow">
                 <span className="itile itile-sky"><I.Shield size={20} /></span>

@@ -1,9 +1,9 @@
 /**
- * Trash illustrations — banana peel, candy wrapper, used tissue, paper cup.
+ * Trash illustrations, banana peel, candy wrapper, used tissue, paper cup.
  * Used by Sort & Place "Recycle vs Trash" stage.
  *
- * Each silhouette signals "used/discarded" — split peel, crinkled wrapper,
- * crumpled tissue, used cup with straw — to contrast with the clean,
+ * Each silhouette signals "used/discarded", split peel, crinkled wrapper,
+ * crumpled tissue, used cup with straw, to contrast with the clean,
  * intact recyclable items.
  */
 
@@ -17,7 +17,7 @@ export const TRASH_ICONS: Record<string, KidIconDef> = {
             <!-- Center exposed pulp (brown, oxidised) -->
             <ellipse cx="50" cy="62" rx="14" ry="11" fill="#9B6B3F"/>
             <ellipse cx="50" cy="60" rx="10" ry="7" fill="#C8956B"/>
-            <!-- Peel — three flopped-down sections -->
+            <!-- Peel, three flopped-down sections -->
             <path d="M 50 60 Q 30 50 18 28 Q 16 50 28 70 Q 38 78 50 60 Z" fill="#FFD13D"/>
             <path d="M 50 60 Q 70 50 82 28 Q 84 50 72 70 Q 62 78 50 60 Z" fill="#FFD13D"/>
             <path d="M 50 60 L 44 26 L 56 26 Z" fill="#FFE680"/>

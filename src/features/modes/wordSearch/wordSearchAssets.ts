@@ -111,7 +111,7 @@ export function selectWords(theme: Theme, count: number, minLength?: number, max
         .filter(matchesLength);
 
     if (themeMatchingWords.length === 0) {
-        // Last-ditch fallback — pull anything from the theme even if length
+        // Last-ditch fallback, pull anything from the theme even if length
         // doesn't match. Better to play with off-length words than render
         // an empty grid.
         const themeAnyWords = themeCategories.flatMap(c => c.words);

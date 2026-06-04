@@ -1,5 +1,5 @@
 /**
- * Building Mode — telemetry payload builders.
+ * Building Mode, telemetry payload builders.
  *
  * Wraps `logEvent` so call sites stay clean and per-event payload shape
  * is centralised. Some events are debounced (piece_hovered, at most

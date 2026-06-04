@@ -12,7 +12,7 @@ import './tryFreeModal.css';
 // Removed 12+ option: the landing pill says "Motion learning for ages
 // 3 to 10" and the activities are calibrated for that range. 12+ is
 // off-brand and surfaced as part of the 32% age-picker drop (audit
-// 2026-05-11) — keeping only the relevant 4 bands keeps the picker
+// 2026-05-11), keeping only the relevant 4 bands keeps the picker
 // faster and lets the layout fit in one tidy row.
 const AGE_BANDS: { value: PilotAgeBand; label: string }[] = [
     { value: '4-5', label: '4-5' },
@@ -21,7 +21,7 @@ const AGE_BANDS: { value: PilotAgeBand; label: string }[] = [
     { value: '10-11', label: '10-11' },
 ];
 
-// Default band — pre-selected on modal open so the user can hit Start
+// Default band, pre-selected on modal open so the user can hit Start
 // in one tap. They can always change. The median visitor on the site
 // has a 6-year-old in the funnel (educated guess from age-band data),
 // so 6-7 is the least-wrong default.
@@ -38,7 +38,7 @@ interface AnalyticsWindow {
     };
 }
 
-// Read ?admin=1 once at module load — pure, no setState-in-effect needed.
+// Read ?admin=1 once at module load, pure, no setState-in-effect needed.
 const initialAdmin =
     typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).get('admin') === '1';
@@ -48,7 +48,7 @@ export const TryFreeModal: React.FC<TryFreeModalProps> = ({ open, onClose }) => 
     // Reduces the picker to a one-tap interaction for the 95% case
     // (parent doesn't need to change it) and a two-tap for the 5% who
     // do. Was previously null, requiring an explicit pick before Start
-    // would enable — contributing to a 32% drop at this screen.
+    // would enable, contributing to a 32% drop at this screen.
     const [ageBand, setAgeBand] = useState<PilotAgeBand>(DEFAULT_BAND);
     const [schoolCode, setSchoolCode] = useState('');
     const [classCode, setClassCode] = useState('');
@@ -61,14 +61,14 @@ export const TryFreeModal: React.FC<TryFreeModalProps> = ({ open, onClose }) => 
 
         // Activation funnel: the kid has committed to a band. This event
         // fires _before_ startSession so it lands under the previous
-        // session_id (or none) — important so we can count age-band
+        // session_id (or none), important so we can count age-band
         // commits even when the session row doesn't materialise (e.g. if
         // the navigation aborts before the next page boots analytics).
         logEvent('age_band_selected', {
             meta: { age_band: ageBand, has_school_code: schoolCode.trim().length > 0 },
         });
 
-        // Start the analytics session — generates a fresh UUID and sets
+        // Start the analytics session, generates a fresh UUID and sets
         // the age_band context that all subsequent events inherit.
         startSession({ ageBand, schoolId: schoolCode.trim(), classId: classCode.trim() });
 

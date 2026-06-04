@@ -1,5 +1,5 @@
 /**
- * BuildingMode — React shell for Building.
+ * BuildingMode, React shell for Building.
  *
  * Owns lifecycle (init/teardown of state machine + asset preload),
  * narrator cues triggered by phase transitions, and the Celebration
@@ -85,7 +85,7 @@ export const BuildingMode = ({ onExit }: BuildingModeProps) => {
         };
     }, []);
 
-    // Poll FSM state at 10Hz — cheap, plenty for UI updates.
+    // Poll FSM state at 10Hz, cheap, plenty for UI updates.
     useEffect(() => {
         const interval = setInterval(() => {
             const p = getPhase();
@@ -142,7 +142,7 @@ export const BuildingMode = ({ onExit }: BuildingModeProps) => {
                 />
             )}
 
-            {/* Screen-reader live region — keeps screen-reader users in
+            {/* Screen-reader live region, keeps screen-reader users in
                 sync with phase + progress without visual clutter. */}
             <span style={srOnly} aria-live="polite">
                 {phase === 'completion' ? `${displayName} complete` : `${progress}% built`}

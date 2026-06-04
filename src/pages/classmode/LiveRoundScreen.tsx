@@ -1,5 +1,5 @@
 /**
- * Live Round Screen — teacher view during active gameplay.
+ * Live Round Screen, teacher view during active gameplay.
  * Shows countdown timer, live leaderboard, student status grid.
  */
 
@@ -100,7 +100,7 @@ export default function LiveRoundScreen() {
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
-          // Timer expired — end round
+          // Timer expired, end round
           if (timerRef.current) clearInterval(timerRef.current);
           handleEndRound();
           return 0;
@@ -162,7 +162,7 @@ export default function LiveRoundScreen() {
       <div className="cm-topbar">
         <div className="cm-topbar-left">
           <span className="cm-topbar-title">
-            {modeLabel?.icon} {modeLabel?.title} — Round {currentRound}
+            {modeLabel?.icon} {modeLabel?.title}, Round {currentRound}
           </span>
         </div>
         <div className="cm-topbar-right">

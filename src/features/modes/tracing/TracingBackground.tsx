@@ -1,5 +1,5 @@
 /**
- * TracingBackground — Bright sky with a paper-and-pencil practice theme.
+ * TracingBackground, Bright sky with a paper-and-pencil practice theme.
  *
  * Theme cues: dotted grid paper at the bottom, soft pencil silhouettes
  * floating in the sky, hills + sun. Reinforces "writing practice" without
@@ -19,7 +19,7 @@ export const TracingBackground = () => (
         <svg aria-hidden viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice"
              style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
             <defs>
-                {/* Paper-grid pattern at the bottom — the "writing surface" */}
+                {/* Paper-grid pattern at the bottom, the "writing surface" */}
                 <pattern id="tracingGrid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
                     <circle cx="20" cy="20" r="1.5" fill="#A8B8D0" opacity="0.5" />
                 </pattern>
@@ -35,7 +35,7 @@ export const TracingBackground = () => (
                 <ellipse cx="1240" cy="220" rx="70" ry="20" fill="#FFFFFF" />
             </g>
 
-            {/* Floating pencils — theme cue, not gameplay */}
+            {/* Floating pencils, theme cue, not gameplay */}
             <g opacity="0.55">
                 <g transform="translate(380,300) rotate(-18)">
                     {/* Pencil body */}
@@ -63,7 +63,7 @@ export const TracingBackground = () => (
                 <path d="M 800 540 Q 900 480 1020 540 T 1220 520" />
             </g>
 
-            {/* Paper grid at the bottom — "writing surface" */}
+            {/* Paper grid at the bottom, "writing surface" */}
             <rect x="0" y="640" width="1440" height="260" fill="url(#tracingGrid)" />
 
             {/* Hills under the paper grid */}

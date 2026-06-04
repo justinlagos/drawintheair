@@ -155,19 +155,19 @@ const TransparencyPage: React.FC = () => {
                         <TierBar data={report} />
                         <div className="tx-legend">
                             <LegendItem
-                                tone="#7ED957"
+                                tone="#3FB87F"
                                 label="Fully trusted"
                                 pct={report.composition.tier_a_pct}
                                 note="Clear signal quality. Counts toward every learning claim we publish."
                             />
                             <LegendItem
-                                tone="#FFB14D"
+                                tone="#F0AC1F"
                                 label="Partly trusted"
                                 pct={report.composition.tier_b_pct}
                                 note="Used for our internal product work. Held back from any public claim about learning outcomes."
                             />
                             <LegendItem
-                                tone="#FF6B6B"
+                                tone="#F07A5C"
                                 label="Set aside"
                                 pct={report.composition.tier_c_pct}
                                 note="Likely contaminated. Automatically quarantined and never used to score a learner."
@@ -416,9 +416,9 @@ const TierBar: React.FC<{ data: TransparencyReportData }> = ({ data }) => {
     const c = data.composition.tier_c_pct ?? 0;
     return (
         <div className="tx-bar">
-            <i style={{ width: `${a}%`, background: '#7ED957' }} />
-            <i style={{ width: `${b}%`, background: '#FFB14D' }} />
-            <i style={{ width: `${c}%`, background: '#FF6B6B' }} />
+            <i style={{ width: `${a}%`, background: '#3FB87F' }} />
+            <i style={{ width: `${b}%`, background: '#F0AC1F' }} />
+            <i style={{ width: `${c}%`, background: '#F07A5C' }} />
         </div>
     );
 };

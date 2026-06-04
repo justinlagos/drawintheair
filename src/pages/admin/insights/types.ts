@@ -1,5 +1,5 @@
 /**
- * Insights v2 — shared types.
+ * Insights v2, shared types.
  * One module so every tab speaks the same shape.
  */
 
@@ -178,7 +178,7 @@ export interface LiveData {
     sessions: LiveSessionRow[];
 }
 
-// ── LIOS Sprint 6 — Observability + SLOs ───────────────────────────────
+// ── LIOS Sprint 6, Observability + SLOs ───────────────────────────────
 export type SloStatus = 'green' | 'amber' | 'red' | 'no_data';
 export interface SloBlock {
     target_pct?:        number;
@@ -277,7 +277,7 @@ export interface TransparencyReportData {
     coverage_disclaimer: string;
 }
 
-// ── LIOS Sprint 4 — Human Observation Layer ────────────────────────────
+// ── LIOS Sprint 4, Human Observation Layer ────────────────────────────
 //
 // Document B §9. Teacher / parent / researcher tags joined to
 // pseudonymous learner sessions. The qualitative companion to the
@@ -328,7 +328,7 @@ export interface ObservationsData {
     recent:                     ObservationRecent[];
 }
 
-// LIOS Sprint 4 — Unified Export headline
+// LIOS Sprint 4, Unified Export headline
 export interface ExportHeadline {
     export_version: string;
     generated_at:   string;
@@ -347,10 +347,10 @@ export interface ExportHeadline {
     };
 }
 
-// ── LIOS Sprint 3 — Adaptive Engine v1 audit surface ───────────────────
+// ── LIOS Sprint 3, Adaptive Engine v1 audit surface ───────────────────
 //
 // Document B §5 + §6.2. Engineering observability for the rule-based
-// recommendation engine — regime distribution, recovery-step ladder,
+// recommendation engine, regime distribution, recovery-step ladder,
 // invariant fire counts, per-mode throughput, recent decisions with
 // the full audit row (inputs + reasoning).
 export type AdaptiveRegime = 'fresh' | 'flow' | 'productive' | 'boredom' | 'frustration';
@@ -397,7 +397,7 @@ export interface AdaptiveDecisionsData {
     recent:            AdaptiveRecentDecision[];
 }
 
-// ── LIOS Sprint 3 — Learner Progression Dashboard ──────────────────────
+// ── LIOS Sprint 3, Learner Progression Dashboard ──────────────────────
 //
 // Document A §7.1 Learner Progression Dashboard. v1 scope renders:
 // summary stats, four-state totals, top-practised items, θ-over-time
@@ -474,7 +474,7 @@ export interface ProgressionLearnerData {
     recent_attempts:  ProgressionRecentAttempt[];
 }
 
-// ── LIOS Sprint 3 — home / classroom context split ─────────────────────
+// ── LIOS Sprint 3, home / classroom context split ─────────────────────
 //
 // Surfaces the dimension unlocked by the ?join=CODE classroom-code
 // redemption flow. Renders as a small split panel on the Learning tab
@@ -502,9 +502,9 @@ export interface ContextSplitData {
     class_codes:    ContextSplitClassCode[];
 }
 
-// ── LIOS Mastery v2 — four-state vocabulary ────────────────────────────
+// ── LIOS Mastery v2, four-state vocabulary ────────────────────────────
 //
-// Document A §4.4 — Exposed / Acquired / Mastered / Decayed. Backed by
+// Document A §4.4, Exposed / Acquired / Mastered / Decayed. Backed by
 // the mastery_episode_fact state-transition log produced by the
 // lios_detect_mastery_episodes_v1 function.
 export interface MasteryV2Totals {
@@ -549,9 +549,9 @@ export interface MasteryV2Data {
     top_mastered:        MasteryV2TopMastered[];
 }
 
-// ── LIOS Cognitive Friction v1 — engineering surface ──────────────────
+// ── LIOS Cognitive Friction v1, engineering surface ──────────────────
 //
-// Document B §4.1 — eight detectors over each session's pattern.
+// Document B §4.1, eight detectors over each session's pattern.
 // This is an ENGINEERING-only view for threshold calibration; the
 // teacher-facing equivalent ships once the v1 detector firings are
 // validated against ground-truth teacher tags (Sprint 4+).
@@ -588,7 +588,7 @@ export interface FrictionEngineeringData {
     recent:      FrictionRecent[];
 }
 
-// ── LIOS Trust v1 — composition strip ──────────────────────────────────
+// ── LIOS Trust v1, composition strip ──────────────────────────────────
 // Renders above every dashboard chart so the audience can audit the
 // data-quality denominator (Tier A high credibility / Tier B reduced
 // weight / Tier C quarantined) underneath the headline metric.

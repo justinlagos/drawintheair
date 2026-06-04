@@ -1,5 +1,5 @@
 /**
- * Building Mode — onFrame entry point.
+ * Building Mode, onFrame entry point.
  *
  * Matches the signature every other mode uses:
  *   (ctx, frameData, width, height, drawingUtils) => void
@@ -62,7 +62,7 @@ let grabFilter: OneEuroFilter2D | null = null;
 let audioPlayedForGrab = false;
 let lastPinch = false;
 
-/** When the hand has been still without grabbing — for hesitation event. */
+/** When the hand has been still without grabbing, for hesitation event. */
 let dwellStartTs = 0;
 let lastHesitationTs = 0;
 const HESITATION_DWELL_MS = 2000;
@@ -120,14 +120,14 @@ export const buildingLogic = (
 
     // Always-on: drift parked pieces gently.
     driftParkedPieces(object.pieces, phase);
-    // Reset zone glow each frame — set again below if a piece is nearby.
+    // Reset zone glow each frame, set again below if a piece is nearby.
     for (const z of object.snapZones) z.glow = 0;
 
     const { filteredPoint, pinchActive, timestamp } = frameData;
     if (filteredPoint) {
         handlePinchTransitions(object.pieces, object.snapZones, filteredPoint, pinchActive, timestamp);
     } else if (lastPinch) {
-        // Hand vanished mid-grab — release without snapping (treated as
+        // Hand vanished mid-grab, release without snapping (treated as
         // returned). Avoid leaving `grabbed` non-null across frames.
         cancelGrab();
     }
@@ -149,7 +149,7 @@ function driftParkedPieces(pieces: BuildPiece[], phase: BuildingPhase): void {
         if (p.grabbed || p.placed) continue;
         p.cx += p.vx;
         p.cy += p.vy;
-        // Soft world bounds — bounce gently.
+        // Soft world bounds, bounce gently.
         if (p.cx < 0.06 || p.cx > 0.94) p.vx *= -1;
         if (p.cy < 0.10 || p.cy > 0.90) p.vy *= -1;
         p.cx = Math.max(0.06, Math.min(0.94, p.cx));
@@ -251,7 +251,7 @@ function handlePinchTransitions(
             return;
         }
 
-        // Returned or wrongRole — no commit. Piece bounces back into
+        // Returned or wrongRole, no commit. Piece bounces back into
         // play with gentle restitution (no shame surface).
         const target = nearestEligibleZone(piece, hand, zones);
         logPlacementAttempt(object, piece.id, target.zone?.id ?? null, target.distance);

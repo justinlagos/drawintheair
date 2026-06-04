@@ -1,5 +1,5 @@
 /**
- * BuildingPanels — presentational overlay panels for BuildingMode.
+ * BuildingPanels, presentational overlay panels for BuildingMode.
  *
  * Split out of BuildingMode.tsx to keep that file under the 500-line
  * cap. These components are stateless; all data they need is passed

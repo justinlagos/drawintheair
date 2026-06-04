@@ -1,8 +1,8 @@
 /**
- * HandTracker — wrapper around MediaPipe HandLandmarker with hardening.
+ * HandTracker, wrapper around MediaPipe HandLandmarker with hardening.
  *
  * Resilience guarantees:
- *   • Pinned WASM URL (no `@latest` resolution flakiness — locks to the
+ *   • Pinned WASM URL (no `@latest` resolution flakiness, locks to the
  *     exact version installed in package.json).
  *   • GPU delegate is preferred but falls back to CPU on failure, so the
  *     app works on devices without WebGL2 / hardware acceleration.
@@ -22,7 +22,7 @@ import { logEvent } from '../lib/analytics';
 
 // Pin to the version actually resolved in package-lock.json (the
 // installed JS). If we pin to the package.json range instead, the WASM
-// can drift to a different version than the JS — and the JS↔WASM API
+// can drift to a different version than the JS, and the JS↔WASM API
 // contract is version-locked, so a mismatch breaks createFromOptions.
 //
 // To verify after a `npm install`:

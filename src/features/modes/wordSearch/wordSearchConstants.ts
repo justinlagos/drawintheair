@@ -4,13 +4,13 @@
  * Tuning values for the Word Search game - Kid-first EYFS design
  */
 
-// Grid configuration — 6-chapter progression (used to be 3).
-//   1 4×4   horizontal only           — gentle warm-up
-//   2 5×5   horizontal + vertical     — both axes
-//   3 6×6   H + V                     — bigger grid
-//   4 7×7   H + V + diagonal          — diagonals introduced
-//   5 8×8   H + V + diagonal          — bigger grid
-//   6 9×9   H + V + diagonal + reverse — full challenge
+// Grid configuration, 6-chapter progression (used to be 3).
+//   1 4×4   horizontal only          , gentle warm-up
+//   2 5×5   horizontal + vertical    , both axes
+//   3 6×6   H + V                    , bigger grid
+//   4 7×7   H + V + diagonal         , diagonals introduced
+//   5 8×8   H + V + diagonal         , bigger grid
+//   6 9×9   H + V + diagonal + reverse, full challenge
 export const GRID_SIZES = {
     easy: 4,
     standard: 5,
@@ -24,7 +24,7 @@ export const GRID_SIZES = {
     6: 9,
 } as const;
 
-// Tile sizing (normalized 0-1) — bigger for early chapters, more density later.
+// Tile sizing (normalized 0-1), bigger for early chapters, more density later.
 export const TILE_SIZES = {
     easy: 0.120,
     standard: 0.100,
@@ -55,7 +55,7 @@ export const HOVER_GLOW_INTENSITY = 0.4; // Slightly more visible hover
 export const SELECTION_GLOW_INTENSITY = 0.7; // Clear selection feedback
 export const FOUND_GLOW_INTENSITY = 0.5;
 
-// Word count per chapter — progressive difficulty across 6 chapters.
+// Word count per chapter, progressive difficulty across 6 chapters.
 export const WORD_COUNTS = {
     easy: 3,
     standard: 5,

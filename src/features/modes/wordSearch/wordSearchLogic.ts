@@ -144,10 +144,10 @@ export function processWordSearchFrame(
     const pinchJustEnded = !pinchActive && state.lastPinchState;
     state.lastPinchState = pinchActive;
 
-    // Handle pinch start — this is the *actual* grab moment. We log
+    // Handle pinch start, this is the *actual* grab moment. We log
     // item_grabbed here (not on pinch-end like before) and seed the
     // grab-timer so the matching item_dropped on pinch-end can attach
-    // action_duration_ms — without this, the mastery dashboard shows
+    // action_duration_ms, without this, the mastery dashboard shows
     // avg_ms: null for every word-search row.
     if (pinchJustStarted && filteredPoint) {
         const tile = getTileAtPoint(state.grid, filteredPoint);
@@ -179,7 +179,7 @@ export function processWordSearchFrame(
         const result = checkWordMatch(state);
 
         // Log the drop. The mastery dashboard buckets attempts by
-        // item_key — so for an unsuccessful selection we leave
+        // item_key, so for an unsuccessful selection we leave
         // itemKey undefined (NOT 'unknown_word' as before). When
         // itemKey is missing the analytics layer skips mirroring
         // into the learning_attempts table, keeping the mastery

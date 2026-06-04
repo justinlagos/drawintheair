@@ -141,7 +141,7 @@ function BillingInner() {
           </p>
 
           <div className="row center gap-6" style={{ marginTop: 22, color: 'var(--fg-3)', fontSize: 13.5, flexWrap: 'wrap' }}>
-            <span className="row gap-2"><I.Shield size={16} /> 14-day free trial</span>
+            <span className="row gap-2"><I.Shield size={16} /> 7-day free trial</span>
             <span className="row gap-2"><I.Check size={16} /> Cancel anytime</span>
             <span className="row gap-2"><I.Users size={16} /> Up to 2 learners included</span>
           </div>
@@ -271,7 +271,7 @@ function BillingInner() {
               <div className="tl-emoji">💸</div>
               <div className="tl-main">
                 <h4>Trial started</h4>
-                <p>No charge during your 14-day trial.</p>
+                <p>No charge during your 7-day trial.</p>
               </div>
               <div className="tl-meta">
                 Recent
@@ -336,7 +336,7 @@ function PlanCardWithCheckout({
         {centsToDisplay(priceCents)}<small style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--fg-3)' }}>/ {interval}</small>
       </p>
       <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {['14-day free trial', 'Up to 2 learners included', 'Full activity library', 'Plain-English progress reports', 'Gentle parental controls', 'Cancel anytime'].map(f => (
+        {['7-day free trial', 'Up to 2 learners included', 'Full activity library', 'Plain-English progress reports', 'Gentle parental controls', 'Cancel anytime'].map(f => (
           <li key={f} className="row gap-3" style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--fg-2)' }}>
             <span className="itile itile-sm itile-mint" style={{ width: 24, height: 24, borderRadius: 8 }}>
               <I.Check size={14} />
@@ -401,7 +401,7 @@ function PlanSummary({
         )}
         <li className="row gap-3" style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--fg-2)' }}>
           <span className="itile itile-sm itile-mint" style={{ width: 24, height: 24, borderRadius: 8 }}><I.Check size={14} /></span>
-          <span>14-day free trial</span>
+          <span>7-day free trial</span>
         </li>
         <li className="row gap-3" style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--fg-2)' }}>
           <span className="itile itile-sm itile-mint" style={{ width: 24, height: 24, borderRadius: 8 }}><I.Check size={14} /></span>

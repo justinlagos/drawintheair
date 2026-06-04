@@ -1,7 +1,7 @@
 /**
- * SpellingStarsBackground — Bright sky with floating stars + letters.
+ * SpellingStarsBackground, Bright sky with floating stars + letters.
  *
- * Theme reflects the mode name "Spelling Stars" — sparkles + soft letter
+ * Theme reflects the mode name "Spelling Stars", sparkles + soft letter
  * silhouettes drifting in the background.
  */
 
@@ -24,7 +24,7 @@ export const SpellingStarsBackground = () => (
                 <ellipse cx="1180" cy="200" rx="80" ry="22" fill="#FFFFFF" />
             </g>
 
-            {/* Floating soft star silhouettes — distinct, magical */}
+            {/* Floating soft star silhouettes, distinct, magical */}
             <g opacity="0.32">
                 {[
                     { x: 180, y: 280, s: 1, c: '#FFD84D' },

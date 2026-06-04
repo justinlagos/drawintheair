@@ -1,8 +1,8 @@
 /**
- * Mode Background Component — Hyper-Casual 3D Toy World
+ * Mode Background Component, Hyper-Casual 3D Toy World
  *
  * Each mode has a DRAMATICALLY different background.
- * No more subtle overlays — bold, saturated, unmistakable.
+ * No more subtle overlays, bold, saturated, unmistakable.
  *
  * - Bubble Pop: Layered gradient sunrise (warm peach → coral → deep blue)
  * - Sort & Place: Warm playroom (peach → warm brown tones)
@@ -19,7 +19,7 @@ interface ModeBackgroundProps {
 }
 
 /**
- * Bubble Pop — Bright morning sky.
+ * Bubble Pop, Bright morning sky.
  *
  * The chapter-specific parallax backgrounds are drawn on the game canvas
  * by renderLandscape.ts; this is the fallback "sky" behind that canvas.
@@ -53,7 +53,7 @@ const BubblePopBG = () => (
 );
 
 /**
- * Free Paint — Bright art studio sky.
+ * Free Paint, Bright art studio sky.
  *
  * Soft cream paper background so kids' strokes show vividly. Gentle
  * lavender corner glows hint at "creative space" without competing with
@@ -98,7 +98,7 @@ const FreePaintBG = () => (
 );
 
 /**
- * Tracing — Bright sky-and-paper fallback.
+ * Tracing, Bright sky-and-paper fallback.
  *
  * The richer scene (with pencils, paper grid, hills) is rendered inside
  * the mode by TracingBackground.tsx. This fallback covers any gap during
@@ -116,7 +116,7 @@ const TracingBG = () => (
 );
 
 /**
- * Word Search — Bright classroom-sky fallback.
+ * Word Search, Bright classroom-sky fallback.
  *
  * The chapter-themed background gradient is set inside WordSearchMode
  * (per CHAPTER_ENVIRONMENTS). This fallback keeps the body bright if the
@@ -138,7 +138,7 @@ export const ModeBackground = ({ modeId }: ModeBackgroundProps) => {
         <>
             {modeId === 'calibration' && <BubblePopBG />}
             {/* Sort & Place renders its own per-stage themed background
-                inside SortAndPlaceMode — see SortAndPlaceBackground.tsx */}
+                inside SortAndPlaceMode, see SortAndPlaceBackground.tsx */}
             {modeId === 'free' && <FreePaintBG />}
             {modeId === 'pre-writing' && <TracingBG />}
             {modeId === 'word-search' && <WordSearchBG />}

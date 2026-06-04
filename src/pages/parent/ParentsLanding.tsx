@@ -49,10 +49,15 @@ function useReveal(rootRef: React.RefObject<HTMLElement | null>) {
     const t1 = window.setTimeout(pass, 140);
     const t2 = window.setTimeout(pass, 450);
     window.addEventListener('scroll', onScroll, { passive: true });
+    // Reveal content that mounts after initial load, never gate
+    // visibility of new DOM on a scroll event.
+    const mo = new MutationObserver(onScroll);
+    mo.observe(root, { childList: true, subtree: true });
     return () => {
       cancelAnimationFrame(raf); cancelAnimationFrame(r1);
       clearTimeout(t1); clearTimeout(t2);
       window.removeEventListener('scroll', onScroll);
+      mo.disconnect();
     };
   }, [rootRef]);
 }
@@ -66,7 +71,7 @@ const PARENT_VALUE = [
 const PARENT_FAQ = [
   { q: 'Will it work on our family laptop?', a: 'Almost certainly. Any laptop from the last five years with a webcam and Chrome, Edge, or Safari 15+ works. No phone or tablet app to install.' },
   { q: 'How long should a session be?',      a: 'Most children play for five to ten minutes at a time. It is active and physical, so it is naturally self-limiting. The average session is around seven minutes.' },
-  { q: 'How much does it cost?',             a: 'Every account starts with a 14-day free trial, up to 2 learners. After that the Family plan is $4.99 a month or $54.99 a year, with the full activity library and cancel anytime.' },
+  { q: 'How much does it cost?',             a: 'Every account starts with a 7-day free trial, up to 2 learners. After that the Family plan is $4.99 a month or $54.99 a year, with the full activity library and cancel anytime.' },
   { q: 'Do I need to sit with my child?',    a: 'For the first session, yes, to help with the camera and the wave-to-start. After that most children aged 5+ can open an activity and play independently.' },
 ];
 
@@ -88,7 +93,7 @@ export default function ParentsLandingV2() {
             <div className="hero-grid">
               <div>
                 <div className="eyebrow is-peach reveal">
-                  <span className="dot" />For parents, 14-day free trial
+                  <span className="dot" />For parents, 7-day free trial
                 </div>
                 <h1 className="h1 reveal d1">
                   Learning they{'’'}ll <span className="grad">ask to do again.</span>
@@ -108,7 +113,7 @@ export default function ParentsLandingV2() {
                 </div>
                 <div className="hero-trust reveal d4">
                   <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{1F512}'}</span> No data stored</span>
-                  <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{2728}'}</span> 14 days free</span>
+                  <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{2728}'}</span> 7 days free</span>
                   <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{1F476}'}</span> Ages 3 to 7</span>
                 </div>
               </div>
@@ -126,7 +131,7 @@ export default function ParentsLandingV2() {
                 <div className="hero-floater fl-2 float s3">
                   <span className="emoji" aria-hidden="true">{'\u{1F525}'}</span>
                   <div>
-                    <div className="ftitle">14-day streak</div>
+                    <div className="ftitle">7-day streak</div>
                     <div className="meta">5 minutes a day</div>
                   </div>
                 </div>

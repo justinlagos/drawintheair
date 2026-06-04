@@ -1,5 +1,5 @@
 /**
- * Insights v2 — typed RPC client.
+ * Insights v2, typed RPC client.
  *
  * The `apikey` header MUST be the project anon key. The user's JWT
  * goes on Authorization so RLS can see who's asking (our SECURITY
@@ -58,25 +58,25 @@ export const fetchMasterySummary = (days = 30) =>
 export const fetchRetentionDeep = () =>
     callRpc<RetentionDeepData>('dashboard_retention_deep', {});
 
-// LIOS Trust v1 — composition strip data for the dashboards.
+// LIOS Trust v1, composition strip data for the dashboards.
 // Wired onto every tab so the audience can audit data quality
 // underneath every chart they're looking at.
 export const fetchTrustStrip = (days: number) =>
     callRpc<TrustStripData>('dashboard_trust_strip', { in_days: days });
 
-// LIOS Mastery v2 — four-state vocabulary (Exposed/Acquired/Mastered/Decayed).
+// LIOS Mastery v2, four-state vocabulary (Exposed/Acquired/Mastered/Decayed).
 // Replaces the static three-tier (strong/practising/new) classification on
 // the Learning tab with the proper state-transition language.
 export const fetchMasteryV2 = (days: number) =>
     callRpc<MasteryV2Data>('dashboard_mastery_v2', { in_days: days });
 
-// LIOS Sprint 3 — home/classroom split (per-context counts + per-class_code
+// LIOS Sprint 3, home/classroom split (per-context counts + per-class_code
 // drilldown). Driven by the ?join=CODE redemption flow that flips
 // context='classroom' and stamps class_code into event meta.
 export const fetchContextSplit = (days: number) =>
     callRpc<ContextSplitData>('dashboard_context_split', { in_days: days });
 
-// LIOS Sprint 3 — Learner Progression Dashboard data (Document A §7.1).
+// LIOS Sprint 3, Learner Progression Dashboard data (Document A §7.1).
 // Two RPCs: the picker list (top N most-active pseudonymous learners) and
 // the per-learner profile with θ trajectories + mastery transitions.
 export const fetchProgressionTopLearners = (days: number, limit = 25) =>
@@ -85,13 +85,13 @@ export const fetchProgressionTopLearners = (days: number, limit = 25) =>
 export const fetchProgressionForLearner = (deviceId: string) =>
     callRpc<ProgressionLearnerData>('dashboard_progression_for_learner', { in_device_id: deviceId });
 
-// LIOS Sprint 3 — Adaptive Engine v1 audit surface. Powers the
+// LIOS Sprint 3, Adaptive Engine v1 audit surface. Powers the
 // Adaptive tab: regime distribution, recovery-step ladder, invariant
 // fire counts, recent decisions with full reasoning.
 export const fetchAdaptiveDecisions = (days: number) =>
     callRpc<AdaptiveDecisionsData>('dashboard_adaptive_decisions', { in_days: days });
 
-// LIOS Sprint 6 — Observability + SLOs (engineering tab) and the
+// LIOS Sprint 6, Observability + SLOs (engineering tab) and the
 // public transparency report (anon-readable, k-anonymised).
 export const fetchObservability = (days: number) =>
     callRpc<ObservabilityData>('dashboard_observability', { in_days: days });
@@ -99,7 +99,7 @@ export const fetchObservability = (days: number) =>
 export const fetchTransparencyReport = (days: number) =>
     callRpc<TransparencyReportData>('dashboard_transparency_report', { in_days: days });
 
-// LIOS Sprint 4 — Human Observation Layer.
+// LIOS Sprint 4, Human Observation Layer.
 export const fetchObservations = (days: number) =>
     callRpc<ObservationsData>('dashboard_observations', { in_days: days });
 
@@ -119,13 +119,13 @@ export const recordObservation = (args: {
     'lios_record_observation', args,
 );
 
-// LIOS Sprint 4 — Unified export. Client bundles the full payload by
+// LIOS Sprint 4, Unified export. Client bundles the full payload by
 // fetching each dashboard RPC in parallel; this endpoint returns the
 // lightweight headline preamble that every bundle starts with.
 export const fetchExportHeadline = (days: number) =>
     callRpc<ExportHeadline>('dashboard_export_headline', { in_days: days });
 
-// LIOS Cognitive Friction v1 — engineering observability.
+// LIOS Cognitive Friction v1, engineering observability.
 // Per-detector counts, per-mode + per-age breakdowns, recent firings
 // with full meta. Read by the Friction tab, which is engineering-only.
 export const fetchFrictionEngineering = (days: number) =>

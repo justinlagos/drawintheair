@@ -1,5 +1,5 @@
 /**
- * Executive tab — the one screen you show an investor.
+ * Executive tab, the one screen you show an investor.
  *
  * Top: six north-star KPIs with deltas vs the previous period and a
  * 14-day sparkline. Below: activation funnel, A/B test results card,
@@ -45,7 +45,7 @@ export const ExecutiveTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
 
     return (
         <>
-            {/* LIOS Trust v1 — investor-grade transparency strip.
+            {/* LIOS Trust v1, investor-grade transparency strip.
                 Surfaces the data-quality denominator at the very top of
                 the Executive tab so every headline metric is read in
                 context. This is the discipline that earns institutional
@@ -55,7 +55,7 @@ export const ExecutiveTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                     title="Beneath the headline KPIs on this page" />
             </div>
 
-            {/* KPI strip — 6 cards, snap-scroll on mobile */}
+            {/* KPI strip, 6 cards, snap-scroll on mobile */}
             <div className="iv-col-12 iv-kpi-grid">
                 <Kpi
                     label="Sessions started"
@@ -138,7 +138,7 @@ export const ExecutiveTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
 
                 {/* A/B test results */}
                 <div className="iv-col-4">
-                    <Card title="A/B · Camera explainer" meta={ab.data?.verdict ?? '—'}>
+                    <Card title="A/B · Camera explainer" meta={ab.data?.verdict ?? '-'}>
                         {ab.loading && !ab.data
                             ? <Skeleton count={2} />
                             : ab.data && (ab.data.control || ab.data.treatment)
@@ -244,7 +244,7 @@ const ArmBox: React.FC<{ title: string; arm: { grant_rate: number | null; grante
     <div className="iv-ab-arm">
         <div className="iv-ab-arm-title">{title}</div>
         <div className="iv-ab-arm-rate">
-            {arm && arm.grant_rate != null ? `${(arm.grant_rate * 100).toFixed(1)}%` : '—'}
+            {arm && arm.grant_rate != null ? `${(arm.grant_rate * 100).toFixed(1)}%` : '-'}
         </div>
         <div className="iv-ab-arm-sub">
             {arm ? `${fmtNum(arm.granted)} of ${fmtNum(arm.requested)} granted` : 'no data'}

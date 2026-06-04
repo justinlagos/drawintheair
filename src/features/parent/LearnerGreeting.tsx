@@ -1,5 +1,5 @@
 /**
- * LearnerGreeting — warm, time-of-day greeting shown briefly when a parent-
+ * LearnerGreeting, warm, time-of-day greeting shown briefly when a parent-
  * linked learner enters gameplay. Auto-dismisses, respects reduce-motion,
  * never appears for anonymous /play (no selected child = no overlay).
  *

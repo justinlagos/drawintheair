@@ -1,5 +1,5 @@
 /**
- * Health registry — the in-memory nervous system.
+ * Health registry, the in-memory nervous system.
  *
  * Holds rolling counters and a small ring buffer of recent critical
  * events so the System Health panel can render without hitting an
@@ -7,7 +7,7 @@
  *
  * Why client-side only:
  *   • Zero new infra to operate.
- *   • Fast — the panel just reads.
+ *   • Fast, the panel just reads.
  *   • Sentry / PostHog / Supabase remain the authoritative stores;
  *     this is a convenience surface.
  *
@@ -29,7 +29,7 @@ export interface HealthIncident {
 }
 
 export interface HealthSnapshot {
-    /** Number of unique error scopes seen this session — quick "is anything on fire" check. */
+    /** Number of unique error scopes seen this session, quick "is anything on fire" check. */
     openIssues: number;
     /** Total errors captured this session. */
     totalErrors: number;
@@ -101,7 +101,7 @@ const counters: Counters = {
 const incidents: HealthIncident[] = [];
 const seenScopes = new Set<string>();
 
-// PII pattern scrubber — runs on every recorded message as defence in depth.
+// PII pattern scrubber, runs on every recorded message as defence in depth.
 // We strip anything that looks like an email, a long token, or a path that
 // might leak a username.
 function sanitizeMessage(raw: string): string {
@@ -200,7 +200,7 @@ export function getHealthSnapshot(): HealthSnapshot {
     };
 }
 
-/** Test/dev helper — wipes the registry. Never call from production paths. */
+/** Test/dev helper, wipes the registry. Never call from production paths. */
 export function __resetHealthForTests(): void {
     counters.cameraRequested = 0;
     counters.cameraGranted = 0;

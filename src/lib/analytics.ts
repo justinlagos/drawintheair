@@ -1,5 +1,5 @@
 /**
- * Analytics — single source of truth for product telemetry.
+ * Analytics, single source of truth for product telemetry.
  *
  * Writes events to the Supabase analytics_events table via dbInsert.
  * Replaces the previous three-system mess:
@@ -44,13 +44,13 @@ import {
 /**
  * The full canonical list of events. Adding new events: add to this
  * union, document below, instrument at the call site. Do not introduce
- * new event-tracking systems — funnel everything through this.
+ * new event-tracking systems, funnel everything through this.
  */
 export type EventName =
     // ── Acquisition / landing ──
     | 'landing_view'                // Landing route mounted (top-of-funnel)
     | 'landing_engaged'             // First meaningful engagement: scroll past hero OR CTA hover
-    | 'landing_unload'              // meta.time_on_page_ms, .scroll_depth_pct — to see WHERE bouncers leave
+    | 'landing_unload'              // meta.time_on_page_ms, .scroll_depth_pct, to see WHERE bouncers leave
     | 'nav_click'
     | 'cta_click'                   // meta.source: 'hero' | 'nav' | 'final_banner' | 'mobile_menu' | 'activities' | 'mode_tile' | 'privacy_section'
 
@@ -61,7 +61,7 @@ export type EventName =
     | 'demo_loading_complete'
     | 'camera_requested'            // getUserMedia called
     | 'camera_granted'
-    | 'camera_denied'               // Fired at most once per session — first denial
+    | 'camera_denied'               // Fired at most once per session, first denial
     | 'camera_retry_failed'         // Subsequent denials in the same session (Retry button or auto-restart loop)
     | 'tracker_init_started'        // handTracker.initialize() invoked
     | 'tracker_init_succeeded'      // meta: { delegate, init_duration_ms }
@@ -130,7 +130,7 @@ export type EventName =
 
     // ── Motor / tracking quality (sampled) ──
     | 'tracker_quality_sample'      // 1Hz sample: fps, missing_frame_pct, viewport_quadrant
-    | 'tracker_warmup_timing'       // meta.camera_to_hand_ms — diagnoses slow-tracker vs out-of-frame
+    | 'tracker_warmup_timing'       // meta.camera_to_hand_ms, diagnoses slow-tracker vs out-of-frame
     | 'two_hands_detected'          // First time MediaPipe reports >1 landmark set in a session
 
     // ── Reliability / error stream ──
@@ -144,7 +144,7 @@ export type EventName =
     | 'session_ended'               // value_number = duration_ms; meta.fatigue_score
 
     // ── Experimentation ──
-    | 'feature_flag_exposed'        // meta.flag_name, .variant — fires once per session per flag
+    | 'feature_flag_exposed'        // meta.flag_name, .variant, fires once per session per flag
 
     // ── Conversion (B2B) ──
     | 'school_pack_form_view'
@@ -163,6 +163,9 @@ export type EventName =
     | 'parent_signup_completed'     // Account created (auth.users insert succeeded)
     | 'parent_login_success'
     | 'parent_login_failed'
+    | 'parent_password_reset_requested'
+    | 'parent_password_reset_completed'
+    | 'teacher_password_reset_completed'
     | 'parent_trial_started'        // Stripe Checkout session created in trial mode
     | 'parent_subscription_started' // Webhook: customer.subscription.created → active/trialing
     | 'parent_subscription_cancelled'
@@ -190,7 +193,7 @@ export type EventName =
 export type AgeBand = '4-5' | '6-7' | '8-9' | '10-11' | '12+';
 
 /**
- * Session context — first-class LIOS dimension. Set at session
+ * Session context, first-class LIOS dimension. Set at session
  * start via startSession() or upgraded later via setSessionContext()
  * when a classroom code is redeemed. Defaults to 'unknown' so we
  * never silently mis-attribute a home session as classroom.
@@ -239,7 +242,7 @@ interface EventRow {
     // ── LIOS Sprint 1 envelope ─────────────────────────────────
     // event_uid: client-generated UUID at event creation. UNIQUE
     //   constraint on the table (migration 20260519) makes inserts
-    //   idempotent — offline-queue retries don't double-write.
+    //   idempotent, offline-queue retries don't double-write.
     // client_seq: monotonic per-session integer for true event
     //   ordering, independent of flush / arrival order.
     // client_ts: client wall clock at event creation. occurred_at
@@ -254,7 +257,7 @@ interface EventRow {
 }
 
 /** One row in the learning_attempts table. The mode logic files don't
- *  insert directly — every item_dropped event with the right meta
+ *  insert directly, every item_dropped event with the right meta
  *  shape gets mirrored to learning_attempts inside logEvent so the
  *  call sites stay clean. */
 interface LearningRow {
@@ -282,15 +285,15 @@ interface LearningRow {
     context: SessionContextKind;
 
     // Parent subscription layer (migration 0004). NULL for school /
-    // anonymous learners — RLS policy `attempts_school_rows` covers
+    // anonymous learners, RLS policy `attempts_school_rows` covers
     // those. When a parent picks a child profile from the dashboard,
     // the selected id is mirrored here so progress saves to the right
     // learner. Reads from sessionStorage to stay decoupled from React.
     child_profile_id: string | null;
 
-    // LIOS Sprint 3 — gesture-quality scalars (Document A §2.1).
+    // LIOS Sprint 3, gesture-quality scalars (Document A §2.1).
     // Computed locally on-device by GestureSampler (or by the game
-    // mode's own logic). Raw coordinates NEVER leave the device —
+    // mode's own logic). Raw coordinates NEVER leave the device,
     // only these scalars transit. NULL for events without gesture
     // quality (most modes, until each is integrated).
     gq_path_accuracy_pct:          number | null;
@@ -327,7 +330,7 @@ function gqOrNull(v: unknown): number | null {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// Session state — UUID per tab, persisted in sessionStorage
+// Session state, UUID per tab, persisted in sessionStorage
 // ════════════════════════════════════════════════════════════════════
 
 interface SessionContext {
@@ -386,7 +389,7 @@ function nextClientSeq(): number {
 // buffer (per session, capped at 200 to bound memory) and compute a
 // fatigue score at session end: ratio of last-quartile mean action
 // time to first-quartile mean action time. >1 means the kid was
-// slowing down — usually fatigue or boredom.
+// slowing down, usually fatigue or boredom.
 const actionTimings: number[] = [];
 function recordActionTiming(ms: number): void {
     if (!Number.isFinite(ms) || ms <= 0) return;
@@ -475,7 +478,7 @@ function generateUUID(): string {
 /**
  * Per-device anonymous identifier. Stable in localStorage so we can
  * see returning kids across sessions and compute D1 / D7 retention
- * without identifying anyone. Not a fingerprint — explicitly
+ * without identifying anyone. Not a fingerprint, explicitly
  * generated, scoped to this origin, cleared by the user's browser
  * when they wipe site data.
  */
@@ -515,7 +518,7 @@ function getOrCreateSession(): SessionContext {
     const restored = loadSession();
     if (restored) {
         // Older restored sessions may not carry the LIOS context
-        // field — synthesise the default so the type stays narrow.
+        // field, synthesise the default so the type stays narrow.
         if (!restored.context) restored.context = resolveDefaultContext();
         session = restored;
         return session;
@@ -554,7 +557,7 @@ function resolveDefaultContext(): SessionContextKind {
     try {
         const params = new URLSearchParams(window.location.search);
 
-        // 1+2. Classroom code redemption — flips context AND captures code
+        // 1+2. Classroom code redemption, flips context AND captures code
         const joinCode = params.get('join') ?? params.get('classroom');
         if (joinCode && joinCode.trim().length > 0 && joinCode.trim().length <= 32) {
             const code = joinCode.trim().toUpperCase();
@@ -601,7 +604,7 @@ function getClassCode(): string | null {
 
 /**
  * Clear a redeemed classroom code (e.g. teacher ending the session
- * or a kid going home for the day on a shared device). Optional —
+ * or a kid going home for the day on a shared device). Optional,
  * the code is also auto-cleared when context flips to 'home'.
  */
 export function clearClassCode(): void {
@@ -612,7 +615,7 @@ export function clearClassCode(): void {
 /**
  * Flip the current session's context (e.g. after a classroom code
  * is redeemed). Persists to sessionStorage so subsequent events
- * carry the new context. Idempotent — calling with the current
+ * carry the new context. Idempotent, calling with the current
  * context is a no-op.
  */
 export function setSessionContext(kind: SessionContextKind): void {
@@ -689,8 +692,8 @@ function buildRow(name: EventName, opts: EventOptions = {}): EventRow {
     const ctx = getOrCreateSession();
     const { browser, version } = detectBrowser();
     const utm = getUTMParams();
-    // The LIOS envelope is computed at the moment of event creation —
-    // NEVER at flush time — so retries of the same event preserve
+    // The LIOS envelope is computed at the moment of event creation,
+    // NEVER at flush time, so retries of the same event preserve
     // identity and ordering even if the flush is delayed by hours.
     const now = new Date().toISOString();
 
@@ -729,7 +732,7 @@ function buildRow(name: EventName, opts: EventOptions = {}): EventRow {
         value_number: opts.value_number ?? null,
         meta: eventMeta,
 
-        // LIOS envelope. event_uid is the idempotency key —
+        // LIOS envelope. event_uid is the idempotency key,
         // generated at event creation so retried inserts collapse
         // on the unique index. client_seq orders events within the
         // session independent of flush order. client_ts is the
@@ -765,7 +768,7 @@ function persistQueue(): void {
         const capped = eventQueue.slice(-200);
         localStorage.setItem(QUEUE_KEY, JSON.stringify(capped));
     } catch {
-        // Storage full — drop oldest
+        // Storage full, drop oldest
         if (eventQueue.length > 50) {
             eventQueue = eventQueue.slice(-50);
             try { localStorage.setItem(QUEUE_KEY, JSON.stringify(eventQueue)); } catch { /* give up */ }
@@ -782,7 +785,7 @@ async function flush(): Promise<void> {
     // analytics_events to dodge the SELECT-after-INSERT RLS rollback.
     //
     // LIOS: ignoreDuplicates makes the bulk insert tolerant of
-    // event_uid collisions — when an offline-queue retry races a
+    // event_uid collisions, when an offline-queue retry races a
     // partial-success flush, the duplicate rows are silently
     // skipped instead of aborting the whole batch.
     if (learningQueue.length > 0) {
@@ -812,7 +815,7 @@ async function flush(): Promise<void> {
         return;
     }
 
-    // Take a snapshot — anything that arrives during the network call
+    // Take a snapshot, anything that arrives during the network call
     // remains in eventQueue and flushes on the next tick.
     const batch = eventQueue.splice(0, FLUSH_BATCH_SIZE);
     persistQueue();
@@ -827,7 +830,7 @@ async function flush(): Promise<void> {
         // the SELECT side runs under RLS. Our SELECT policy only allows
         // the `authenticated` role, so anon-role inserts get rolled back
         // with 42501 even though the INSERT policy is wide open. We
-        // don't need the inserted rows back — fire-and-forget telemetry.
+        // don't need the inserted rows back, fire-and-forget telemetry.
         const { error } = await dbInsert(
             'analytics_events',
             batch as unknown as Record<string, unknown>,
@@ -837,7 +840,7 @@ async function flush(): Promise<void> {
             // Put the batch back at the front of the queue and retry next tick
             eventQueue = [...batch, ...eventQueue];
             persistQueue();
-            // Surface the failure — analytics has been silently broken
+            // Surface the failure, analytics has been silently broken
             // for too long. We can quiet this back down once the pipeline
             // is stable.
             // eslint-disable-next-line no-console
@@ -847,7 +850,7 @@ async function flush(): Promise<void> {
             console.debug('[analytics] flushed', batch.length, 'events; remaining:', eventQueue.length);
         }
     } catch (e) {
-        // Network down or Supabase unreachable — keep events for retry
+        // Network down or Supabase unreachable, keep events for retry
         eventQueue = [...batch, ...eventQueue];
         persistQueue();
         // eslint-disable-next-line no-console
@@ -880,7 +883,7 @@ function setupBeforeUnload(): void {
         // LIOS: sendBeacon doesn't expose the Prefer header (the body
         // is a Blob and the browser sets Content-Type only). We append
         // the resolution preference as a URL hint that PostgREST also
-        // accepts on the query string — same effect, duplicate
+        // accepts on the query string, same effect, duplicate
         // event_uids are silently ignored instead of failing the batch.
         if (eventQueue.length === 0 || typeof navigator.sendBeacon !== 'function') return;
         const url = (import.meta.env.VITE_SUPABASE_URL as string) || '';
@@ -917,14 +920,14 @@ function setupCSPListener(): void {
 }
 
 // ── Page lifecycle + nav ─────────────────────────────────────────
-// tab_hidden / tab_visible from document.visibilitychange — huge
+// tab_hidden / tab_visible from document.visibilitychange, huge
 // signal for "did the kid get distracted vs actually finish".
 // nav_back catches popstate (browser back button on mobile / desktop).
 function setupPageListeners(): void {
     if (typeof document === 'undefined' || typeof window === 'undefined') return;
 
     document.addEventListener('visibilitychange', () => {
-        // Skip if no active session — no point logging tab events on the
+        // Skip if no active session, no point logging tab events on the
         // marketing landing page where we haven't started a session yet.
         if (!session && !loadSession()) return;
         logEvent(document.hidden ? 'tab_hidden' : 'tab_visible', {
@@ -944,7 +947,7 @@ function setupPageListeners(): void {
 // ════════════════════════════════════════════════════════════════════
 
 // Once-per-session event guard. Some events (camera_denied being the
-// first) only carry meaning the first time they fire in a session — a
+// first) only carry meaning the first time they fire in a session, a
 // browser with permission permanently set to "Block" can otherwise
 // generate dozens of identical denial events through the
 // CameraRecovery "Try again" loop or page-visibility re-fires. We rewrite
@@ -955,7 +958,7 @@ const ONCE_PER_SESSION: Readonly<Record<string, EventName>> = {
     camera_denied: 'camera_retry_failed',
 };
 
-/** Log an event. Fire-and-forget — flushes asynchronously. */
+/** Log an event. Fire-and-forget, flushes asynchronously. */
 export function logEvent(name: EventName, opts: EventOptions = {}): void {
     // Dedupe once-per-session events to avoid the alert-storm pattern
     // we saw 2026-05-12 (single device fired 46 camera_denied events
@@ -1004,13 +1007,13 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
     // Mirror funnel-relevant events to PostHog and bump the in-memory
     // health registry. PostHog drops anything not on its allow-list, so
     // safe to fan out indiscriminately. LIOS / analytics_events behaviour
-    // is unchanged — this is purely additive.
+    // is unchanged, this is purely additive.
     try {
         // Update health counters for the events the System Health
         // panel cares about.
         // String compare (not `case` against the EventName union)
         // because the fan-out is forward-compatible with new event
-        // names — e.g. `classroom_sync_failure` may be added to the
+        // names, e.g. `classroom_sync_failure` may be added to the
         // LIOS vocabulary later without breaking this switch today.
         const n: string = name;
         if (n === 'camera_requested')           recordCameraRequested();
@@ -1022,12 +1025,12 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
         else if (n === 'classroom_sync_failure') recordClassroomSyncFailure();
 
         // Mirror to PostHog with a small, privacy-vetted property set.
-        // PostHog itself enforces the property allow-list — we still
+        // PostHog itself enforces the property allow-list, we still
         // pass coarse fields only, never raw meta.
         obsTrackEvent(name as string, {
             game_mode: opts.game_mode,
             stage_id: opts.stage_id,
-            // Pseudonymous IDs only — never names.
+            // Pseudonymous IDs only, never names.
             session_id: getOrCreateSession().sessionId,
             // Surface a few well-known meta keys but nothing free-form.
             duration_ms: opts.meta?.duration_ms as number | undefined,
@@ -1122,7 +1125,7 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
                 // is non-null per row.
                 child_profile_id: childProfileId,
 
-                // Gesture-quality columns — null when the game mode
+                // Gesture-quality columns, null when the game mode
                 // didn't supply a gesture_quality block. NEVER store
                 // raw coordinates; the block is scalar-only.
                 gq_path_accuracy_pct:         gqOrNull(gq.path_accuracy_pct),
@@ -1141,14 +1144,14 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // EXTENDED MIRROR — many game modes don't fire `item_dropped`. To
+    // EXTENDED MIRROR, many game modes don't fire `item_dropped`. To
     // keep the parent dashboard's child_activity_summary populated for
     // EVERY mode, also mirror well-defined "win" events into
     // learning_attempts as a single was_correct=true row.
     //
     // Aggregation triggers (bump_child_activity_summary /
     // bump_child_learning_state) roll these rows up into the dashboard
-    // tables. Only fires when a child is selected — anonymous /play is
+    // tables. Only fires when a child is selected, anonymous /play is
     // unaffected.
     // ─────────────────────────────────────────────────────────────────
     const WIN_EVENTS = new Set<EventName>([
@@ -1172,7 +1175,7 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
             if (raw && /^[0-9a-f-]{36}$/i.test(raw)) childProfileId = raw;
         } catch { /* private mode etc. */ }
 
-        // Only mirror when a child is bound — otherwise the row would
+        // Only mirror when a child is bound, otherwise the row would
         // duplicate work the existing item_dropped mirror handles for
         // school/anonymous attribution.
         if (childProfileId) {
@@ -1238,7 +1241,7 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
 
     if (eventQueue.length >= FLUSH_BATCH_SIZE) flush();
 
-    // LIOS Sprint 4 — Adaptive Engine auto-shadow trigger.
+    // LIOS Sprint 4, Adaptive Engine auto-shadow trigger.
     // When the lios_adaptive_mode feature flag is on ('shadow' or
     // 'live'), every item_dropped resolution fires a background
     // call to the rule-based recommendation engine. The decision
@@ -1251,7 +1254,7 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
         const itemKey  = (m.itemKey ?? m.item_key) as unknown;
         const wasCorrect = m.isCorrect as unknown;
         if (typeof itemKey === 'string' && typeof wasCorrect === 'boolean') {
-            // Fire and forget — never block the analytics path.
+            // Fire and forget, never block the analytics path.
             void (async () => {
                 try {
                     const mod = await import('./useAdaptiveEngine');
@@ -1259,7 +1262,7 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
                     await mod.requestAdaptiveRecommendation(
                         opts.game_mode as string, itemKey, wasCorrect,
                     );
-                } catch { /* engine unavailable — silent */ }
+                } catch { /* engine unavailable, silent */ }
             })();
         }
     }
@@ -1432,7 +1435,7 @@ export function initAnalytics(): void {
     const deviceId = getOrCreateDeviceId();
 
     // Hand the pseudonymous IDs to the observability layer so Sentry
-    // events and PostHog identities carry them. No names, no PII —
+    // events and PostHog identities carry them. No names, no PII,
     // pseudonymous device id only.
     try {
         if (deviceId) identifyPseudonymous(deviceId);
@@ -1445,7 +1448,7 @@ export function initAnalytics(): void {
     }
 
     // Expose a lightweight global for one-off debugging from devtools.
-    // Not used by gtag — that lives in index.html and runs independently.
+    // Not used by gtag, that lives in index.html and runs independently.
     (window as { dita_analytics?: unknown }).dita_analytics = {
         logEvent, startSession, endSession, hasActiveSession, getSessionId,
         markGrab, elapsedSinceGrab, noteTwoHandsSeen, exposeFeatureFlag,

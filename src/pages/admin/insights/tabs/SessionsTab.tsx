@@ -1,5 +1,5 @@
 /**
- * Sessions tab — searchable, filterable, exportable.
+ * Sessions tab, searchable, filterable, exportable.
  */
 
 import React, { useMemo, useState } from 'react';
@@ -84,10 +84,10 @@ export const SessionsTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                                             return (
                                                 <tr key={s.session_id}>
                                                     <td>{fmtTime(s.started_at)}</td>
-                                                    <td>{s.age_band ?? '—'}</td>
+                                                    <td>{s.age_band ?? '-'}</td>
                                                     <td>
-                                                        <div style={{ font: '700 12px Nunito', color: '#1A1B2E' }}>{s.browser ?? '—'}</div>
-                                                        <div style={{ fontSize: 11, color: '#6B6F84' }}>{s.device_type ?? '—'}</div>
+                                                        <div style={{ font: '700 12px Nunito', color: '#1A1B2E' }}>{s.browser ?? '-'}</div>
+                                                        <div style={{ fontSize: 11, color: '#6B6F84' }}>{s.device_type ?? '-'}</div>
                                                     </td>
                                                     <td>{fmtNum(s.event_count)}</td>
                                                     <td>{fmtDuration(s.duration_seconds)}</td>

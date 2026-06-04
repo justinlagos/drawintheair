@@ -39,10 +39,16 @@ function useReveal(rootRef: React.RefObject<HTMLElement | null>) {
     const t1 = window.setTimeout(pass, 140);
     const t2 = window.setTimeout(pass, 450);
     window.addEventListener('scroll', onScroll, { passive: true });
+    // Reveal content that mounts AFTER initial load (e.g. switching the
+    // Parents/Teachers/Schools tabs). Without this, freshly-mounted
+    // .reveal elements stayed invisible until the user scrolled.
+    const mo = new MutationObserver(onScroll);
+    mo.observe(root, { childList: true, subtree: true });
     return () => {
       cancelAnimationFrame(raf); cancelAnimationFrame(r1);
       clearTimeout(t1); clearTimeout(t2);
       window.removeEventListener('scroll', onScroll);
+      mo.disconnect();
     };
   }, [rootRef]);
 }
@@ -55,7 +61,7 @@ const AUDIENCE_INTRO: Record<Audience, { eyebrow: string; h1: React.ReactNode; l
   parents: {
     eyebrow: 'For families',
     h1: <>Honest pricing. <span className="grad">Plain language.</span></>,
-    lead: 'Pick what suits your family. Either plan includes 14 days free, up to 2 learners, and full access.',
+    lead: 'Pick what suits your family. Either plan includes 7 days free, up to 2 learners, and full access.',
   },
   teachers: {
     eyebrow: 'For teachers',
@@ -71,7 +77,7 @@ const AUDIENCE_INTRO: Record<Audience, { eyebrow: string; h1: React.ReactNode; l
 
 // Parents (Family monthly + yearly)
 const FAMILY_FEATS = [
-  '14-day free trial',
+  '7-day free trial',
   'Up to 2 learners included',
   'Full activity library',
   'Plain-English progress reports',
@@ -126,8 +132,8 @@ const SCHOOL_PLANS = [
 // FAQ (audience-aware)
 const FAQ_BY_AUDIENCE: Record<Audience, { q: string; a: string }[]> = {
   parents: [
-    { q: 'What does the Family plan cost?',          a: 'Monthly is $4.99 a month and Yearly is $54.99 a year, which saves you $5. Both include a 14-day free trial, up to 2 learners, the full activity library, and you can cancel anytime.' },
-    { q: 'Do I need a card for the free trial?',     a: 'You start the 14-day trial when you create your account. We remind you before it ends, and you can cancel in one tap, no questions asked.' },
+    { q: 'What does the Family plan cost?',          a: 'Monthly is $4.99 a month and Yearly is $54.99 a year, which saves you $5. Both include a 7-day free trial, up to 2 learners, the full activity library, and you can cancel anytime.' },
+    { q: 'Do I need a card for the free trial?',     a: 'You start the 7-day trial when you create your account. We remind you before it ends, and you can cancel in one tap, no questions asked.' },
     { q: 'How many children can I add?',             a: 'Two are included on the Family plan. You can add more siblings any time for $2 per learner per month.' },
     { q: 'Can my child use it without an account?',  a: 'Yes. Anyone can play Free Paint without an account. Saving progress, controls, and reports require a parent account.' },
   ],
@@ -319,7 +325,7 @@ export const Pricing: React.FC = () => {
               <h2 className="h2">
                 {audience === 'schools' ? 'Bring active learning to every classroom.' :
                  audience === 'teachers' ? 'Set up your classroom in under five minutes.' :
-                 'Start your 14-day free trial.'}
+                 'Start your 7-day free trial.'}
               </h2>
               <p className="lead">
                 {audience === 'schools' ? 'Whole-school access, admin reporting, and onboarding support.' :

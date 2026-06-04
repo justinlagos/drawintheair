@@ -86,7 +86,7 @@ interface FloatingToolProps {
     compact?: boolean;
 }
 
-// Floating tool surface — bright Kid-UI cream card. Used as the wrapper
+// Floating tool surface, bright Kid-UI cream card. Used as the wrapper
 // for every Free Paint UI cluster (mode chip, colour palette, brush sizes,
 // toolbar). The `kid-panel` class participates in the global colour-
 // inheritance rules from styles/motion.ts so child text reads charcoal.

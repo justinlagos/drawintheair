@@ -283,11 +283,11 @@ class FeatureFlagsManager {
      * Show rollback toast notification
      */
     private showRollbackToast(_flag: keyof FeatureFlags): void {
-        // Use shared toast service — lazy dynamic import to avoid circular deps
+        // Use shared toast service, lazy dynamic import to avoid circular deps
         import('./toastService').then(({ showToast }) => {
             showToast('Performance mode enabled, stabilizing input', 'warning', 3000);
         }).catch(() => {
-            // Toast service not loaded yet — ignore
+            // Toast service not loaded yet, ignore
         });
     }
 

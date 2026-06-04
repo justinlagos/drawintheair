@@ -446,7 +446,7 @@ export class InteractionStateManager {
                 filteredPoint = { x: filtered.x, y: filtered.y };
             }
             
-            // Clamp filtered point to [0, 1] — prevents right-side/edge blind spots
+            // Clamp filtered point to [0, 1], prevents right-side/edge blind spots
             if (filteredPoint) {
                 filteredPoint = {
                     x: Math.max(0, Math.min(1, filteredPoint.x)),

@@ -1,5 +1,5 @@
 /**
- * Toast Service — Lightweight overlay, no React rerenders
+ * Toast Service, Lightweight overlay, no React rerenders
  *
  * - Single DOM node, positioned top-center with safe margins
  * - CSS transitions for enter/exit (transform + opacity only)
@@ -20,8 +20,8 @@ interface QueuedToast {
     durationMs: number;
 }
 
-/** Motivation copy bank — rotated randomly. Plain words (no emoji) per the
- *  bright Kid-UI design language — visual feedback comes from the toast
+/** Motivation copy bank, rotated randomly. Plain words (no emoji) per the
+ *  bright Kid-UI design language, visual feedback comes from the toast
  *  styling itself, not pictographic clutter inside the message. */
 const MOTIVATION_BANK = [
     'Nice one!',
@@ -119,7 +119,7 @@ class ToastService {
 
         this.isShowing = true;
 
-        // Set variant border colour — kid-bright tokens.
+        // Set variant border colour, kid-bright tokens.
         // success → meadow green, warning → sunshine, info → aqua
         const borderColor = variant === 'success' ? 'rgba(126, 217, 87, 0.65)'
             : variant === 'warning' ? 'rgba(255, 216, 77, 0.75)'

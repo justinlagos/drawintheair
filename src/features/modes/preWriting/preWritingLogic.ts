@@ -77,7 +77,7 @@ export const resetPath = () => {
     celebrationTime = 0;
     // Reset Tier B per-stage counters and re-arm stage_started for the
     // next time the kid actually starts tracing (we don't fire it on
-    // reset alone — fire on the first on-path frame).
+    // reset alone, fire on the first on-path frame).
     stageStartedAt = 0;
     onPathFrames = 0;
     offPathFrames = 0;
@@ -187,12 +187,12 @@ export const preWritingLogic = (
     // Calculate tolerance in pixels
     const tolerancePx = PATH_TOLERANCE_PX;
 
-    // ── Path guide — bright Kid-UI deep-plum dotted track ────────────────
+    // ── Path guide, bright Kid-UI deep-plum dotted track ────────────────
     // Soft drop shadow underneath (sells the depth) + pillowy lavender body
     // + thin deep-plum dots on top. Visible against bright sky.
     ctx.save();
 
-    // Layer 1 — soft shadow under the path (lavender, pillowy)
+    // Layer 1, soft shadow under the path (lavender, pillowy)
     ctx.strokeStyle = 'rgba(108, 63, 164, 0.10)';
     ctx.lineWidth = 56;
     ctx.lineCap = 'round';
@@ -206,7 +206,7 @@ export const preWritingLogic = (
     }
     ctx.stroke();
 
-    // Layer 2 — pillowy lavender body
+    // Layer 2, pillowy lavender body
     ctx.strokeStyle = 'rgba(168, 142, 220, 0.55)';
     ctx.lineWidth = 44;
     ctx.beginPath();
@@ -217,7 +217,7 @@ export const preWritingLogic = (
     }
     ctx.stroke();
 
-    // Layer 3 — top inner highlight (white wash)
+    // Layer 3, top inner highlight (white wash)
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
     ctx.lineWidth = 36;
     ctx.beginPath();
@@ -228,7 +228,7 @@ export const preWritingLogic = (
     }
     ctx.stroke();
 
-    // Layer 4 — deep plum direction dots (gives the path its readable rhythm)
+    // Layer 4, deep plum direction dots (gives the path its readable rhythm)
     ctx.setLineDash([4, 16]);
     ctx.strokeStyle = 'rgba(108, 63, 164, 0.65)';
     ctx.lineWidth = 6;
@@ -241,7 +241,7 @@ export const preWritingLogic = (
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // ── Progress trail — sunshine→aqua glossy ribbon over the guide ──────
+    // ── Progress trail, sunshine→aqua glossy ribbon over the guide ──────
     if (progress > 0) {
         const progressPoints: PathPoint[] = [];
         const steps = Math.ceil(progress * 100);
@@ -297,7 +297,7 @@ export const preWritingLogic = (
         }
     }
 
-    // ── Start marker — tactile 3D meadow-green orb with shadow + highlight
+    // ── Start marker, tactile 3D meadow-green orb with shadow + highlight
     {
         const pulse = Math.sin(Date.now() / 220) * 4 + 22; // 18..26
         const sx = startCanvasPoint.x;
@@ -321,7 +321,7 @@ export const preWritingLogic = (
             ctx.restore();
         }
 
-        // Orb body — radial gradient
+        // Orb body, radial gradient
         const orbGrad = ctx.createRadialGradient(sx - pulse * 0.3, sy - pulse * 0.3, pulse * 0.1, sx, sy, pulse);
         orbGrad.addColorStop(0, '#D7F8C4');
         orbGrad.addColorStop(0.55, progress < 0.05 ? '#7ED957' : '#9BE08A');
@@ -345,7 +345,7 @@ export const preWritingLogic = (
         ctx.stroke();
     }
 
-    // ── End marker — tactile 3D sunshine target ring → filled orb at completion
+    // ── End marker, tactile 3D sunshine target ring → filled orb at completion
     {
         const ex = endCanvasPoint.x;
         const ey = endCanvasPoint.y;
@@ -380,7 +380,7 @@ export const preWritingLogic = (
             ctx.arc(ex, ey, r, 0, Math.PI * 2);
             ctx.stroke();
         } else {
-            // Empty target ring — pillowy plum-bordered cream disc
+            // Empty target ring, pillowy plum-bordered cream disc
             const ringGrad = ctx.createRadialGradient(ex - r * 0.2, ey - r * 0.2, r * 0.1, ex, ey, r);
             ringGrad.addColorStop(0, '#FFFFFF');
             ringGrad.addColorStop(1, '#F4FAFF');
@@ -454,7 +454,7 @@ export const preWritingLogic = (
 
                 // Off-path nudge ring removed 2026-05-11: it sat at the
                 // raw fingertip while <MagicCursor> sat at the smoothed
-                // fingertip — visible offset between two cursors. The
+                // fingertip, visible offset between two cursors. The
                 // directional arrow below stays: it's not a cursor, it's
                 // a "where to go" hint, and it visually originates from
                 // the same approximate region so the user reads it as
@@ -528,7 +528,7 @@ export const preWritingLogic = (
             },
         });
         // Mirror into learning_attempts via item_dropped. Tracing
-        // doesn't have a strict "wrong" outcome — completing a letter
+        // doesn't have a strict "wrong" outcome, completing a letter
         // is always was_correct=true. expected_letter / actual_letter
         // are identical (mistake patterns aren't meaningful here),
         // but the row still feeds per-letter time + accuracy
@@ -556,7 +556,7 @@ export const preWritingLogic = (
                     path_accuracy_pct: accuracyPct,
                     time_to_completion_ms: totalDurationMs,
                     n_samples: totalFramesForGq,
-                    // Other scalars left null — filled when the
+                    // Other scalars left null, filled when the
                     // GestureSampler runtime integration ships.
                 },
             },

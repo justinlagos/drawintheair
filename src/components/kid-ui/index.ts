@@ -1,5 +1,5 @@
 /**
- * Kid-UI — barrel export for the bright-sky design system primitives.
+ * Kid-UI, barrel export for the bright-sky design system primitives.
  *
  * Import from a single path:
  *   import { KidPanel, KidButton, KidChip } from '@/components/kid-ui';

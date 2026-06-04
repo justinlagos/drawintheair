@@ -1,5 +1,5 @@
 /**
- * Sentry — frontend error tracking for Draw in the Air.
+ * Sentry, frontend error tracking for Draw in the Air.
  *
  * Owns: uncaught JS errors, React render errors (via ErrorBoundary),
  * route-level crashes, camera permission failures, MediaPipe / hand
@@ -8,7 +8,7 @@
  *
  * Does NOT own: product analytics (PostHog) or learning telemetry (LIOS).
  *
- * Privacy contract — enforced in this file, not by convention:
+ * Privacy contract, enforced in this file, not by convention:
  *   • Never sends child names, raw camera frames, or PII.
  *   • beforeSend strips any property whose key matches a denylist.
  *   • URLs are pruned to pathname (no query, no hash).
@@ -32,7 +32,7 @@ import { recordCriticalError } from './health';
  * Context that should accompany every error. Set once per session
  * (or whenever it changes) via setObservabilityContext.
  *
- * Strict whitelist — adding a field here is a privacy review.
+ * Strict whitelist, adding a field here is a privacy review.
  */
 export interface ObservabilityContext {
     /** Pseudonymous device UUID. Stable in localStorage. NEVER a child name. */
@@ -45,18 +45,18 @@ export interface ObservabilityContext {
     gameMode?: string;
     /** Coarse age bucket like '4-5'. Never an exact age, never a birthday. */
     ageBand?: string;
-    /** Current route pathname only — no query, no hash. */
+    /** Current route pathname only, no query, no hash. */
     route?: string;
     /** Coarse device class: 'mobile' | 'tablet' | 'desktop'. */
     deviceType?: string;
     /** Browser family: 'chrome' | 'safari' | 'firefox' | 'edge' | 'other'. */
     browser?: string;
-    /** 'home' | 'classroom' — surface context, not personal data. */
+    /** 'home' | 'classroom', surface context, not personal data. */
     surface?: string;
 }
 
 export interface CaptureErrorOptions {
-    /** Scope tag — which subsystem caught this. */
+    /** Scope tag, which subsystem caught this. */
     scope?:
         | 'boundary'
         | 'camera'
@@ -99,7 +99,7 @@ const PII_KEY_DENYLIST = [
     'landmark', 'landmarks', 'gestureSample', 'rawCoords', 'coords',
 ];
 
-// Properties we keep on URLs — strip everything else.
+// Properties we keep on URLs, strip everything else.
 function sanitizeUrl(raw?: string): string | undefined {
     if (!raw) return raw;
     try {
@@ -135,7 +135,7 @@ function scrubObject<T extends Record<string, unknown> | undefined | null>(obj: 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 /**
- * Initialize Sentry. Idempotent — safe to call more than once.
+ * Initialize Sentry. Idempotent, safe to call more than once.
  * No-op when VITE_SENTRY_DSN is empty (dev without a DSN, or any
  * environment where error tracking is deliberately disabled).
  */
@@ -145,14 +145,14 @@ export function initSentry(): void {
 
     const dsn = (import.meta.env.VITE_SENTRY_DSN as string | undefined)?.trim();
     if (!dsn) {
-        // Silent no-op — app continues to work.
+        // Silent no-op, app continues to work.
         return;
     }
 
     const release = (import.meta.env.VITE_APP_VERSION as string | undefined) || '0.0.0-dev';
     const environment = (import.meta.env.VITE_APP_ENV as string | undefined) || 'development';
 
-    // Performance tracing — gives us page-load timing, TTFB, and outgoing
+    // Performance tracing, gives us page-load timing, TTFB, and outgoing
     // request latency. This is exactly the signal we need to SEE that a
     // region (e.g. Nigeria) is slow rather than guessing. Default 0.1
     // (10% of sessions) keeps quota modest; override via VITE_SENTRY_TRACES_RATE.
@@ -160,7 +160,7 @@ export function initSentry(): void {
         (import.meta.env.VITE_SENTRY_TRACES_RATE as string | undefined)?.trim() || '0.1',
     );
 
-    // Session replay — OFF by default. This is a children's app with a live
+    // Session replay, OFF by default. This is a children's app with a live
     // webcam, so full session recording is a privacy non-starter. When a team
     // explicitly opts in via VITE_SENTRY_REPLAY=on, replay runs ONLY on errors
     // and with EVERYTHING masked/blocked: no webcam frames (blockAllMedia),
@@ -192,7 +192,7 @@ export function initSentry(): void {
         tracesSampleRate: Number.isFinite(tracesRate)
             ? Math.min(Math.max(tracesRate, 0), 1)
             : 0.1,
-        // Never record full sessions — only the lead-up to an error, and only
+        // Never record full sessions, only the lead-up to an error, and only
         // when replay is explicitly enabled.
         replaysSessionSampleRate: 0.0,
         replaysOnErrorSampleRate: enableReplay ? 1.0 : 0.0,
@@ -204,7 +204,7 @@ export function initSentry(): void {
             if (event.request?.url) {
                 event.request.url = sanitizeUrl(event.request.url) || '[invalid]';
             }
-            // Drop request body — could contain form input.
+            // Drop request body, could contain form input.
             if (event.request) {
                 delete event.request.data;
                 delete event.request.cookies;
@@ -240,7 +240,7 @@ export function initSentry(): void {
             return event;
         },
         beforeBreadcrumb(crumb) {
-            // Drop UI breadcrumbs that capture text content — kid drawings,
+            // Drop UI breadcrumbs that capture text content, kid drawings,
             // teacher form inputs, etc. We'd rather lose context than leak.
             if (crumb.category === 'ui.input' || crumb.category === 'ui.click') {
                 return null;
@@ -269,7 +269,7 @@ export function initSentry(): void {
 
 /**
  * Attach context that should accompany every subsequent error.
- * Safe to call repeatedly — the latest values win.
+ * Safe to call repeatedly, the latest values win.
  */
 export function setObservabilityContext(ctx: ObservabilityContext): void {
     if (!active) return;
@@ -302,7 +302,7 @@ export function clearObservabilityContext(): void {
  * the in-memory health registry so the System Health panel can show a
  * count and last-message without needing Sentry's API on the client.
  *
- * Safe to call before init / when Sentry is disabled — it still
+ * Safe to call before init / when Sentry is disabled, it still
  * records into the health registry.
  */
 export function captureError(err: unknown, opts: CaptureErrorOptions = {}): void {
@@ -336,7 +336,7 @@ export function captureError(err: unknown, opts: CaptureErrorOptions = {}): void
     }
 }
 
-/** Test helper — returns whether Sentry is currently active. */
+/** Test helper, returns whether Sentry is currently active. */
 export function isSentryActive(): boolean {
     return active;
 }

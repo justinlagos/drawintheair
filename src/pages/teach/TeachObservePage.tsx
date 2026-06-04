@@ -1,5 +1,5 @@
 /**
- * /teach/observe — teacher tagging surface.
+ * /teach/observe, teacher tagging surface.
  *
  * Document B §9.2. Sub-30-second-per-child tablet-web UX. The teacher
  * walks the room, taps a child card, picks tags across five families
@@ -20,7 +20,7 @@
  *   • One self-contained component; no router required.
  *   • Cards render in a tablet-optimised CSS grid with generous tap
  *     targets (≥48px). Mobile (phone) layout single-column.
- *   • The tag picker is a slide-up bottom sheet — a single screen,
+ *   • The tag picker is a slide-up bottom sheet, a single screen,
  *     no scrolling for the common case.
  */
 
@@ -112,7 +112,7 @@ const SignInPrompt: React.FC<{ onSignIn: (path?: string) => void }> = ({ onSignI
         <div className="to-gate-card">
             <h1>Teacher observations</h1>
             <p>Sign in with Google to start tagging classroom sessions.
-               Names stay on this device — only the position number
+               Names stay on this device, only the position number
                and your tags are transmitted.</p>
             <button className="to-btn to-btn-primary"
                     onClick={() => onSignIn('/teach/observe')}>
@@ -264,7 +264,7 @@ const ClassroomCodePrompt: React.FC<{
             <div className="to-gate-card">
                 <h1>Set up your classroom</h1>
                 <p>Enter your classroom code. Children's names stay on
-                   this device only — the platform only sees the
+                   this device only, the platform only sees the
                    position number and your tags.</p>
                 <label className="to-field">
                     <span>Classroom code</span>
@@ -356,7 +356,7 @@ const TagPickerSheet: React.FC<{
 
     const handleSave = useCallback(async () => {
         // Empty save is allowed (the teacher might want to record
-        // "child was here, nothing notable") — but require at least
+        // "child was here, nothing notable"), but require at least
         // ONE family populated OR a note, otherwise it's an accidental
         // tap.
         const anyTag = TAG_FAMILIES.some(f => (tagBag[f.key] ?? []).length > 0);

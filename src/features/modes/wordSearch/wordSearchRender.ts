@@ -58,7 +58,7 @@ export function renderGrid(
 }
 
 /**
- * Render the grid container — bright Kid-UI panel.
+ * Render the grid container, bright Kid-UI panel.
  * Cream card-stock surface with a deep-plum low-opacity border, soft
  * top highlight, and lavender drop-shadow tint underneath.
  */
@@ -101,7 +101,7 @@ function renderGridContainer(
     ctx.roundRect(x, y, w, h, radius);
     ctx.fill();
 
-    // Top inner highlight — pillowy "lit-from-above"
+    // Top inner highlight, pillowy "lit-from-above"
     ctx.save();
     ctx.globalAlpha = 0.7;
     const shine = ctx.createLinearGradient(x, y, x, y + h * 0.25);
@@ -113,7 +113,7 @@ function renderGridContainer(
     ctx.fill();
     ctx.restore();
 
-    // Outer border — deep plum, low opacity
+    // Outer border, deep plum, low opacity
     ctx.strokeStyle = 'rgba(108, 63, 164, 0.18)';
     ctx.lineWidth = 2.5;
     ctx.beginPath();
@@ -122,7 +122,7 @@ function renderGridContainer(
 }
 
 /**
- * Render a single tile — bright Kid-UI letter card.
+ * Render a single tile, bright Kid-UI letter card.
  *   idle:     cream card / charcoal letter / soft lavender border
  *   hovered:  warm cream + slight lift / deep plum letter
  *   selected: aqua tint / deep plum letter / aqua border + glow
@@ -154,7 +154,7 @@ function renderTile(
     const liftY = (isHovered || isSelected) ? -3 : 0;
     const drawY = ay + liftY;
 
-    // State-driven palette — every value from the Kid-UI design system.
+    // State-driven palette, every value from the Kid-UI design system.
     let topColor: string, botColor: string, borderCol: string;
     let letterCol: string, glowCol = '', glowBlur = 0;
 
@@ -225,7 +225,7 @@ function renderTile(
     ctx.roundRect(ax, drawY, aw, ah, radius);
     ctx.stroke();
 
-    // Letter — Fredoka if loaded, fallback otherwise
+    // Letter, Fredoka if loaded, fallback otherwise
     const fontSize = Math.min(aw, ah) * 0.50;
     ctx.font = `700 ${fontSize}px Fredoka, "Baloo 2", system-ui, -apple-system, sans-serif`;
     ctx.textAlign = 'center';
@@ -246,7 +246,7 @@ function renderSelectionPath(
 ): void {
     if (selectionState.selectionPath.length < 2) return;
     
-    // Draw thick rounded corridor connecting selected tiles — Kid-UI aqua
+    // Draw thick rounded corridor connecting selected tiles, Kid-UI aqua
     ctx.strokeStyle = '#55DDE0';
     ctx.lineWidth = width * 0.035;
     ctx.lineCap = 'round';

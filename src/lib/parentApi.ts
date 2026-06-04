@@ -8,7 +8,7 @@
  * a client-side flag (the security spec says so explicitly).
  */
 
-import { callRpc, dbInsert, dbUpdate, dbSelect, getAccessToken, getAnonKey, getSupabaseUrl } from './supabase';
+import { callRpc, dbInsert, dbUpdate, dbSelect, getAccessToken, getAnonKey, getSupabaseUrl, ensureFreshSession } from './supabase';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -253,6 +253,9 @@ export async function requestAccountDeletion() {
 
 async function callEdgeFunction<T>(fn: string, body: Record<string, unknown> = {}): Promise<T | null> {
   try {
+    // Refresh the JWT if it is about to expire — an expired token here was
+    // the cause of silent 401s on the Stripe checkout/portal functions.
+    await ensureFreshSession();
     const res = await fetch(`${getSupabaseUrl()}/functions/v1/${fn}`, {
       method: 'POST',
       headers: {

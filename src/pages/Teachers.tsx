@@ -44,10 +44,15 @@ function useReveal(rootRef: React.RefObject<HTMLElement | null>) {
     const t1 = window.setTimeout(pass, 140);
     const t2 = window.setTimeout(pass, 450);
     window.addEventListener('scroll', onScroll, { passive: true });
+    // Reveal content that mounts after initial load, never gate
+    // visibility of new DOM on a scroll event.
+    const mo = new MutationObserver(onScroll);
+    mo.observe(root, { childList: true, subtree: true });
     return () => {
       cancelAnimationFrame(raf); cancelAnimationFrame(r1);
       clearTimeout(t1); clearTimeout(t2);
       window.removeEventListener('scroll', onScroll);
+      mo.disconnect();
     };
   }, [rootRef]);
 }

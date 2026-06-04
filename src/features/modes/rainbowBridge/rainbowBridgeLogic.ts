@@ -123,7 +123,7 @@ function buildLevel(): void {
     levelComplete = false;
     celebrationTime = 0;
     stageStartedAt = Date.now();
-    // Reset scaffolding state — fresh level means we re-prompt for step 0.
+    // Reset scaffolding state, fresh level means we re-prompt for step 0.
     lastSpokenStep = -1;
     stepStartedAt = stageStartedAt;
     lastStuckPromptAt = 0;
@@ -311,7 +311,7 @@ function drawStone(
         ctx.stroke();
     }
 
-    // Target pulse ring — intensifies when the kid has been stuck on this
+    // Target pulse ring, intensifies when the kid has been stuck on this
     // step long enough that we've started re-prompting verbally. Bigger
     // amplitude, faster pulse, full alpha + a soft outer halo so the
     // target is unambiguous on a busy screen.
@@ -327,7 +327,7 @@ function drawStone(
         ctx.stroke();
 
         if (isStuckOnTarget) {
-            // Soft outer halo — visible "look here" anchor.
+            // Soft outer halo, visible "look here" anchor.
             ctx.beginPath();
             ctx.arc(sc.x, cy, r + offset + pulse * range + 14, 0, Math.PI * 2);
             ctx.strokeStyle = col.hex + '55';
@@ -375,7 +375,7 @@ export const rainbowBridgeLogic = (
     const now = Date.now();
     const { filteredPoint } = frameData;
 
-    // ── Transparent canvas — HTML RainbowBridgeBackground provides the
+    // ── Transparent canvas, HTML RainbowBridgeBackground provides the
     // sky, hills, rainbow centrepiece and clouds. Game-relevant elements
     // (rainbow arcs being built, pattern clouds, stones) still draw below.
     ctx.clearRect(0, 0, width, height);
@@ -487,7 +487,7 @@ export const rainbowBridgeLogic = (
                             });
                         }
                     } else {
-                        // ❌ Wrong — bounce
+                        // ❌ Wrong, bounce
                         stone.bouncing = true;
                         stone.bounceStart = now;
                         logEvent('item_dropped', {

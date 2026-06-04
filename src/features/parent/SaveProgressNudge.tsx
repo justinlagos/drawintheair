@@ -1,12 +1,12 @@
 /**
- * SaveProgressNudge — calm, never-aggressive conversion prompt.
+ * SaveProgressNudge, calm, never-aggressive conversion prompt.
  *
  * Trigger: anonymous /play visitor (no signed-in parent, no selected child)
  * completes their first successful in-game round. We listen for the same
  * "win" events the analytics mirror watches for, debounce to one shot per
  * session, and surface a single warm card: "Save this progress?"
  *
- * Honours the spec's "no account before the first value moment" rule — the
+ * Honours the spec's "no account before the first value moment" rule, the
  * prompt only appears AFTER the kid has succeeded at something, never before.
  *
  * Dismissible. Stays dismissed for the rest of the tab session.
@@ -113,7 +113,7 @@ export function SaveProgressNudge() {
                 Save this progress?
               </h3>
               <p style={{ margin: 0, color: '#4A4D6B', fontSize: 14, lineHeight: 1.5 }}>
-                Start a free 14-day trial to keep your child's learning journey, see plain-English progress, and unlock the full activity library.
+                Start a free 7-day trial to keep your child's learning journey, see plain-English progress, and unlock the full activity library.
               </p>
             </div>
             <button

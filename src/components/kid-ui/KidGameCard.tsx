@@ -1,5 +1,5 @@
 /**
- * KidGameCard — Home grid card for choosing a mode.
+ * KidGameCard, Home grid card for choosing a mode.
  *
  * Spec: illustration + bold title + short description, optional star/badge,
  * clear play affordance. Big, tactile, soft. Lifts on hover/press.
