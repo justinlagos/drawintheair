@@ -124,11 +124,14 @@ export default function TeacherSignup() {
           <main className="auth-form-col">
             {confirmEmail ? (
               <section className="auth-card pop">
-                <h2>Check your inbox</h2>
+                <h2>One more step: check your inbox</h2>
                 <p style={{ marginTop: 8 }}>
-                  We've sent a confirmation link to <strong>{email}</strong>.
-                  Tap the link in that email to activate your account, then sign in
-                  to open your classroom.
+                  Your teacher account is created. We've sent a confirmation link
+                  to <strong>{email}</strong>.
+                </p>
+                <p style={{ marginTop: 10 }}>
+                  Tap <strong>Confirm your mail</strong> in that email and you'll be signed
+                  in automatically and taken straight to your classroom. Nothing else to do.
                 </p>
                 <p className="auth-alt" style={{ marginTop: 16 }}>
                   Didn't get it? Check your spam folder first.

@@ -95,18 +95,23 @@ export async function signUpTeacher(
       const user = adoptExternalSession(json);
       if (user) return { ok: true, user };
     }
-    if (json?.user) {
-      // Email-confirmation flow. An obfuscated user with empty
-      // identities means the email is already registered (GoTrue's
-      // anti-enumeration response), surface that honestly.
-      const identities = (json.user as { identities?: unknown[] }).identities;
+    // Email-confirmation flow. GoTrue returns the BARE USER at the top
+    // level here (no `user` wrapper) — see signUpWithEmail for detail.
+    const bareUser: SupabaseUser | null =
+      (json?.user as SupabaseUser | undefined) ??
+      (json?.id && json?.email ? (json as unknown as SupabaseUser) : null);
+    if (bareUser) {
+      // An obfuscated user with empty identities means the email is
+      // already registered (GoTrue's anti-enumeration response),
+      // surface that honestly.
+      const identities = (bareUser as { identities?: unknown[] }).identities;
       if (Array.isArray(identities) && identities.length === 0) {
         return {
           ok: false,
           error: 'This email already has an account. Please sign in instead, or use “Forgot password” if you can’t remember it.',
         };
       }
-      return { ok: true, user: json.user as SupabaseUser, needsEmailConfirm: true };
+      return { ok: true, user: bareUser, needsEmailConfirm: true };
     }
     return {
       ok: false,

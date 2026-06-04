@@ -1,0 +1,35 @@
+<!-- Supabase Dashboard → Authentication → Email Templates → "Magic Link"
+     Subject suggestion: Your sign-in link · Draw in the Air -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFDF7;padding:32px 0;font-family:'Outfit','Nunito',Helvetica,Arial,sans-serif;color:#1F1B2E;">
+  <tr><td align="center">
+    <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+      <tr><td style="padding:0 24px 20px;" align="left">
+        <img src="https://drawintheair.com/logo.png" alt="Draw in the Air" width="140" style="display:block;height:auto;" />
+      </td></tr>
+      <tr><td style="padding:0 24px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border:1px solid rgba(138,102,240,0.18);border-radius:20px;">
+          <tr><td style="height:6px;background:#8A66F0;border-radius:20px 20px 0 0;font-size:0;line-height:0;">&nbsp;</td></tr>
+          <tr><td style="padding:32px 32px 8px;">
+            <h1 style="margin:0;font-size:24px;line-height:1.3;color:#1F1B2E;">Your sign-in link</h1>
+          </td></tr>
+          <tr><td style="padding:8px 32px 8px;font-size:15px;line-height:1.65;color:#3E3A4E;">
+            <p style="margin:0 0 4px;">Tap the button below to sign in to Draw in the Air. No password needed. The link works once and expires soon.</p>
+          </td></tr>
+          <tr><td style="padding:16px 32px 28px;">
+            <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#8A66F0;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:15px;padding:13px 28px;border-radius:999px;">Sign me in</a>
+          </td></tr>
+          <tr><td style="padding:0 32px 30px;font-size:12.5px;line-height:1.6;color:#8B8798;">
+            If the button doesn't work, copy and paste this link into your browser:<br/>
+            <a href="{{ .ConfirmationURL }}" style="color:#8A66F0;word-break:break-all;">{{ .ConfirmationURL }}</a><br/><br/>
+            Didn't request this? You can safely ignore this email.
+          </td></tr>
+        </table>
+      </td></tr>
+      <tr><td style="padding:22px 28px;font-size:12px;line-height:1.6;color:#8B8798;" align="center">
+        Draw in the Air, movement-first learning for ages 3 to 7.<br/>
+        <a href="https://drawintheair.com" style="color:#8A66F0;text-decoration:none;">drawintheair.com</a> ·
+        <a href="https://drawintheair.com/privacy" style="color:#8A66F0;text-decoration:none;">Privacy</a>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>

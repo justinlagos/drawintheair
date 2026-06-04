@@ -365,12 +365,23 @@ export async function signUpWithEmail(
     const user = adoptSession(json);
     if (user) return { ok: true, user };
     // No session in the response ⇒ email confirmation is enabled.
-    // GoTrue also returns an OBFUSCATED user (identities: []) here when
-    // the email already belongs to an account, to prevent enumeration.
-    // Treat that as a duplicate so we don't strand the user on a
-    // "check your email" screen for a mail that will never arrive.
-    if (json?.user) {
-      const identities = (json.user as { identities?: unknown[] }).identities;
+    // IMPORTANT response shape: with auto-confirm ON, GoTrue returns a
+    // session ({ access_token, user: {...} }). With email confirmation
+    // ON, it returns the BARE USER at the TOP LEVEL ({ id, email,
+    // confirmation_sent_at, identities, ... }), with no `user` wrapper.
+    // Missing that second shape made successful signups look like
+    // failures ("We couldn't finish creating your account").
+    const bareUser: SupabaseUser | null =
+      (json?.user as SupabaseUser | undefined) ??
+      ((json as { id?: string; email?: string })?.id && (json as { email?: string })?.email
+        ? (json as unknown as SupabaseUser)
+        : null);
+    if (bareUser) {
+      // GoTrue returns an OBFUSCATED user (identities: []) when the email
+      // already belongs to an account, to prevent enumeration. Treat that
+      // as a duplicate so we don't strand the user on a "check your
+      // email" screen for a mail that will never arrive.
+      const identities = (bareUser as { identities?: unknown[] }).identities;
       if (Array.isArray(identities) && identities.length === 0) {
         return {
           ok: false,
@@ -378,7 +389,7 @@ export async function signUpWithEmail(
         };
       }
       // Genuine new account awaiting email confirmation.
-      return { ok: true, user: json.user, needsEmailConfirm: true };
+      return { ok: true, user: bareUser, needsEmailConfirm: true };
     }
     // Truly empty 2xx response, extremely rare; tell the user what to do
     // rather than dead-ending with an internal-sounding message.
