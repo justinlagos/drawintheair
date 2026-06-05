@@ -58,11 +58,20 @@ function DashboardInner() {
   const activeChildren = overview?.children.filter(c => c.status === 'active') ?? [];
 
   // 7-day trial countdown. trial_end comes from parent_subscriptions and is
-  // the single source of truth (server-side).
+  // the single source of truth (server-side). Shown as days + hours so the
+  // counter visibly moves between visits (whole-day ceil looked stuck for
+  // the first 24 hours).
   const trialEnd = overview?.subscription?.trial_end ? new Date(overview.subscription.trial_end) : null;
-  const trialDaysLeft = trialEnd
-    ? Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / 86_400_000))
-    : null;
+  const trialMsLeft = trialEnd ? Math.max(0, trialEnd.getTime() - Date.now()) : null;
+  const trialCountdown = (() => {
+    if (trialMsLeft === null) return null;
+    const days = Math.floor(trialMsLeft / 86_400_000);
+    const hours = Math.floor((trialMsLeft % 86_400_000) / 3_600_000);
+    if (trialMsLeft === 0) return 'Your free trial has ended';
+    if (days === 0 && hours === 0) return 'Your free trial ends within the hour';
+    if (days === 0) return `${hours} hour${hours === 1 ? '' : 's'} left in your free trial`;
+    return `${days} day${days === 1 ? '' : 's'}, ${hours} hour${hours === 1 ? '' : 's'} left in your free trial`;
+  })();
 
   return (
     <ParentShell>
@@ -84,7 +93,7 @@ function DashboardInner() {
         </motion.header>
 
         {/* ── Trial countdown ────────────────────────────────────── */}
-        {subscriptionState === 'trial_active' && trialDaysLeft !== null && (
+        {subscriptionState === 'trial_active' && trialCountdown && (
           <motion.div variants={stagger.item}>
             <Card>
               <div className="row between" style={{ flexWrap: 'wrap', gap: 16 }}>
@@ -92,12 +101,11 @@ function DashboardInner() {
                   <span className="itile itile-sun"><I.Hourglass size={20} /></span>
                   <div>
                     <strong style={{ fontFamily: 'var(--font-display)' }}>
-                      {trialDaysLeft === 0
-                        ? 'Your free trial ends today'
-                        : `${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} left in your free trial`}
+                      {trialCountdown}
                     </strong>
                     <p className="muted" style={{ margin: '2px 0 0', fontSize: 'var(--text-sm)' }}>
-                      Everything stays unlocked while your trial runs. Add a plan any time to keep going.
+                      Everything stays unlocked while your trial runs. Add a plan any time and
+                      billing only starts when your trial ends.
                     </p>
                   </div>
                 </div>

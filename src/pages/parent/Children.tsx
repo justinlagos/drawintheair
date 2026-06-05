@@ -311,10 +311,16 @@ function AddChildModal({ onClose, onDone }: { onClose: () => void; onDone: () =>
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<BillingPreview | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Upfront paywall acknowledgement: when both included learner spots are
+  // used, the parent must explicitly accept the extra-learner price BEFORE
+  // the wizard starts (the cost note at the final step alone was too easy
+  // to miss).
+  const [ackExtra, setAckExtra] = useState(false);
   const addBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const newActive = planUsage.active + 1;
   const interval = overview?.subscription?.plan_interval ?? 'month';
+  const onTrial = overview?.subscription?.state === 'trial_active';
 
   useEffect(() => {
     let cancelled = false;
@@ -363,6 +369,14 @@ function AddChildModal({ onClose, onDone }: { onClose: () => void; onDone: () =>
       tone="plum"
       size="lg"
       footer={
+        willCostExtra && !ackExtra ? (
+          <>
+            <button type="button" onClick={onClose} className="btn btn-secondary">Not now</button>
+            <button type="button" onClick={() => setAckExtra(true)} className="btn btn-primary">
+              Add an extra learner <I.ArrowRight size={16} />
+            </button>
+          </>
+        ) : (
         <>
           {step > 0 && (
             <button type="button" onClick={back} className="btn btn-ghost foot-left">
@@ -391,8 +405,45 @@ function AddChildModal({ onClose, onDone }: { onClose: () => void; onDone: () =>
             </button>
           )}
         </>
+        )
       }
     >
+      {/* Extra-learner paywall gate: both included spots are used, so the
+          parent must see and accept the price BEFORE the wizard starts. */}
+      {willCostExtra && !ackExtra ? (
+        <div>
+          <div className="card card-pad card-tint-sun" style={{ marginBottom: 'var(--space-4)' }}>
+            <div className="row gap-4">
+              <span className="itile itile-sun"><I.Users size={20} /></span>
+              <div>
+                <h4 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, margin: '0 0 6px', fontSize: 'var(--text-lg)' }}>
+                  Both included learner spots are used
+                </h4>
+                <p style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--fg-2)' }}>
+                  Your plan includes <strong>{planUsage.included} learners</strong>, and{' '}
+                  <strong>{planUsage.active}</strong> {planUsage.active === 1 ? 'is' : 'are'} active.
+                  Each additional learner costs{' '}
+                  <strong>{preview ? `${centsToDisplay(preview.addon_cents_per_child, preview.currency)}/${preview.interval}` : '$2/month'}</strong>,
+                  added to your plan.
+                </p>
+              </div>
+            </div>
+          </div>
+          {preview && (
+            <p style={{ margin: '0 0 4px', fontSize: 'var(--text-sm)', color: 'var(--fg-2)' }}>
+              With this learner your plan becomes{' '}
+              <strong>{centsToDisplay(preview.total_cents, preview.currency)}/{preview.interval}</strong>. No surprise billing, remove a learner anytime to drop the charge.
+            </p>
+          )}
+          {onTrial && (
+            <p style={{ margin: '8px 0 0', fontSize: 'var(--text-sm)', color: 'var(--fg-3)' }}>
+              You're on your free trial, so nothing is charged today. The extra learner
+              joins your plan price when billing starts after the trial.
+            </p>
+          )}
+        </div>
+      ) : (
+      <>
       {/* Stepper */}
       <div className="stepper">
         {STEP_LABELS.map((label, i) => {
@@ -518,6 +569,8 @@ function AddChildModal({ onClose, onDone }: { onClose: () => void; onDone: () =>
           )}
         </motion.div>
       </AnimatePresence>
+      </>
+      )}
 
       {error && <p className="form-error" role="alert" style={{ marginTop: 16 }}>{error}</p>}
     </ModalShell>
