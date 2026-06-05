@@ -176,13 +176,33 @@ function BillingInner() {
             <div className="row between" style={{ marginBottom: 18, flexWrap: 'wrap', gap: 16 }}>
               <div>
                 <span className="eyebrow">Current plan</span>
-                <h2 style={{ margin: '6px 0 0', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'var(--text-2xl)', letterSpacing: 'var(--track-snug)' }}>
-                  {sub?.plan_interval === 'year' ? 'Yearly family plan' : 'Monthly family plan'}
-                </h2>
-                <p style={{ margin: '6px 0 0', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'var(--text-3xl)', letterSpacing: 'var(--track-tight)' }}>
-                  {centsToDisplay((interval === 'year' ? previewYear?.total_cents : previewMonth?.total_cents) ?? (sub?.plan_interval === 'year' ? 5499 : 499))}
-                  <small style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--fg-3)' }}>/ {sub?.plan_interval ?? 'month'}</small>
-                </p>
+                {/* The current-plan card is driven ONLY by the actual
+                    subscription, never by the comparison toggle below.
+                    Mixing the two showed the yearly amount with a
+                    "/month" label. During a trial with no plan chosen
+                    yet, say so instead of implying a price is active. */}
+                {sub?.plan_interval ? (
+                  <>
+                    <h2 style={{ margin: '6px 0 0', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'var(--text-2xl)', letterSpacing: 'var(--track-snug)' }}>
+                      {sub.plan_interval === 'year' ? 'Yearly family plan' : 'Monthly family plan'}
+                    </h2>
+                    <p style={{ margin: '6px 0 0', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'var(--text-3xl)', letterSpacing: 'var(--track-tight)' }}>
+                      {centsToDisplay((sub.plan_interval === 'year' ? previewYear?.total_cents : previewMonth?.total_cents) ?? (sub.plan_interval === 'year' ? 5499 : 499))}
+                      <small style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--fg-3)' }}>/ {sub.plan_interval}</small>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h2 style={{ margin: '6px 0 0', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'var(--text-2xl)', letterSpacing: 'var(--track-snug)' }}>
+                      Free trial
+                    </h2>
+                    <p style={{ margin: '6px 0 0', fontSize: 'var(--text-base)', color: 'var(--fg-3)' }}>
+                      No plan chosen yet. Everything stays unlocked during your trial.
+                      Pick monthly ({centsToDisplay(previewMonth?.total_cents ?? 499)}/month) or
+                      yearly ({centsToDisplay(previewYear?.total_cents ?? 5499)}/year) below.
+                    </p>
+                  </>
+                )}
               </div>
               <StateChip state={subscriptionState} />
             </div>

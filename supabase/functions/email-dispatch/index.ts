@@ -74,7 +74,7 @@ function brandEmail(opts: {
           <tr><td style="padding:22px 28px;font-size:12px;line-height:1.6;color:#8B8798;" align="center">
             Draw in the Air, movement-first learning for ages 3 to 7.<br/>
             <a href="${SITE}" style="color:#8A66F0;text-decoration:none;">drawintheair.com</a> ·
-            <a href="${SITE}/parent/account" style="color:#8A66F0;text-decoration:none;">Manage account</a> ·
+            <a href="${SITE}/parent/login?next=%2Fparent%2Faccount" style="color:#8A66F0;text-decoration:none;">Manage account</a> ·
             <a href="${SITE}/privacy" style="color:#8A66F0;text-decoration:none;">Privacy</a><br/>
             You're receiving this because you created a Draw in the Air family account.
           </td></tr>

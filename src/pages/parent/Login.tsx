@@ -35,7 +35,7 @@ export default function ParentLogin() {
       ? rawNext
       : '/parent/dashboard';
 
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -235,6 +235,28 @@ export default function ParentLogin() {
             ) : (
             <section className="auth-card pop">
               <h2>Sign in to your account</h2>
+              {/* Already signed in on this device? Say WHO, so a link from
+                  an email can never silently open someone else's
+                  dashboard on a shared computer. */}
+              {user && (
+                <div className="card" style={{ padding: '14px 16px', margin: '14px 0', background: 'var(--lavender-50, #F4EFFF)', border: '1px solid var(--border-1, rgba(31,27,46,0.08))', borderRadius: 14 }}>
+                  <p style={{ margin: 0, fontSize: '0.92rem' }}>
+                    This device is already signed in as <strong>{user.email}</strong>.
+                  </p>
+                  <div className="row gap-2" style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button type="button" className="btn btn-primary btn-sm" onClick={() => navigate(next)}>
+                      Continue as {user.email?.split('@')[0]}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      onClick={async () => { await signOut(); }}
+                    >
+                      Use a different account
+                    </button>
+                  </div>
+                </div>
+              )}
               <form onSubmit={handleSubmit} className="stack">
                 <div>
                   <label className="flabel" htmlFor="pa-login-email">Email address</label>

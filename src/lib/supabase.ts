@@ -209,7 +209,14 @@ export function signInWithGoogle(returnTo?: string) {
       sessionStorage.setItem('sb-return-to', returnTo);
     } catch { /* private mode etc. */ }
   }
-  const redirectTo = `${window.location.origin}/class`;
+  // Pass the real destination as redirect_to. The Supabase allow-list now
+  // includes https://drawintheair.com/** (configured 2026-06-04), so
+  // Google returns the user directly to where they started. The
+  // sessionStorage stash above stays as a belt-and-braces fallback: if a
+  // redirect_to is ever NOT allow-listed, Supabase falls back to the Site
+  // URL and handleAuthCallback still honours the stashed path.
+  const safePath = returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/class';
+  const redirectTo = `${window.location.origin}${safePath}`;
   const url = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}&flow_type=implicit`;
   window.location.href = url;
 }
@@ -593,9 +600,18 @@ export async function handleAuthCallback(): Promise<SupabaseUser | null> {
 
         // Password recovery: remember that this session came from a reset
         // link so the login pages show the "set a new password" form
-        // instead of a confusing signed-out screen.
+        // instead of a confusing signed-out screen. Safety net: if the
+        // recovery link landed anywhere else (e.g. Supabase fell back to
+        // the Site URL because the redirect wasn't allow-listed), take
+        // the user to the right login page so the form actually appears.
         if (linkType === 'recovery') {
           try { sessionStorage.setItem('dia-recovery', '1'); } catch { /* ignore */ }
+          const path = window.location.pathname;
+          if (path !== '/parent/login' && path !== '/teacher/login') {
+            const role = (user.user_metadata as { role?: string } | undefined)?.role;
+            window.location.replace(role === 'teacher' ? '/teacher/login' : '/parent/login');
+            return user;
+          }
         }
 
         // Email-confirmation links redirect to the site root. Don't strand
