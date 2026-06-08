@@ -251,3 +251,63 @@
 .tdash-act-row .nm { flex: 1; font-family: var(--t-font-display); font-weight: 700; font-size: 15px; }
 .tdash-act-row .stars { color: var(--t-sun-400); letter-spacing: 1px; font-size: 15px; }
 .tdash-act-row .meta { font-family: var(--t-font-mono); font-size: 12px; color: var(--t-ink-400); }
+
+/* ── Fixed mobile burger ─────────────────────────── */
+.tdash-burger-fixed { position: fixed; top: 14px; left: 14px; z-index: 45; }
+
+/* ── Children roster ─────────────────────────────── */
+.tdash-roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.tdash-roster-card { display: flex; align-items: center; gap: 14px; background: #fff; border: 1px solid var(--t-border); border-radius: 18px; padding: 16px 18px; box-shadow: var(--t-shadow-card); cursor: pointer; text-align: left; transition: transform .18s, box-shadow .18s; font-family: var(--t-font-body); }
+.tdash-roster-card:hover { transform: translateY(-3px); box-shadow: var(--t-shadow-lift); }
+.tdash-roster-meta { flex: 1; min-width: 0; }
+.tdash-roster-meta b { display: block; font-family: var(--t-font-display); font-weight: 700; font-size: 17px; }
+.tdash-roster-meta span { font-size: 13px; color: var(--t-ink-400); }
+.tdash-roster-go { color: var(--t-ink-300); font-size: 18px; }
+
+/* ── Modal + form fields ─────────────────────────── */
+.tdash-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 61; width: min(460px, 94vw); max-height: 90vh; overflow-y: auto; background: var(--t-cream-50); border-radius: 24px; box-shadow: var(--t-shadow-lift); padding: 28px; animation: tdashpop .22s var(--t-ease-spring, cubic-bezier(0.34,1.56,0.64,1)); }
+@keyframes tdashpop { from { transform: translate(-50%, -48%) scale(0.96); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+.tdash-modal h2 { font-family: var(--t-font-display); font-weight: 800; font-size: 24px; margin: 0 0 4px; }
+.tdash-modal-sub { color: var(--t-ink-500); font-size: 14px; margin: 0 0 18px; }
+.tdash-field { display: block; margin-bottom: 16px; }
+.tdash-field > span { display: block; font-family: var(--t-font-display); font-weight: 700; font-size: 13px; color: var(--t-ink-700); margin-bottom: 7px; }
+.tdash-field > span em { color: var(--t-ink-400); font-style: normal; font-weight: 600; }
+.tdash-field input, .tdash-field textarea { width: 100%; border: 1px solid var(--t-border); border-radius: 12px; padding: 12px 14px; font-family: var(--t-font-body); font-size: 15px; color: var(--t-ink-900); background: #fff; resize: vertical; }
+.tdash-field input:focus, .tdash-field textarea:focus { outline: none; border-color: var(--t-lav-400); box-shadow: 0 0 0 3px var(--t-lav-100); }
+.tdash-chips { display: flex; gap: 8px; }
+.tdash-chips button { border: 1px solid var(--t-border); background: #fff; border-radius: 999px; padding: 9px 16px; font-family: var(--t-font-display); font-weight: 700; font-size: 14px; color: var(--t-ink-500); cursor: pointer; }
+.tdash-chips button.on { background: var(--t-lav-100); color: var(--t-lav-600); border-color: transparent; }
+.tdash-err { background: var(--t-peach-100); color: var(--t-peach-600); border-radius: 12px; padding: 10px 14px; font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+.tdash-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+.tdash-btn[disabled] { opacity: 0.6; cursor: default; transform: none; }
+
+/* ── Insights (plain-English) ────────────────────── */
+.tdash-insights { display: flex; flex-direction: column; gap: 10px; }
+.tdash-insight { margin: 0; background: #fff; border: 1px solid var(--t-border); border-left: 3px solid var(--t-lav-400); border-radius: 12px; padding: 12px 16px; font-size: 15px; line-height: 1.5; color: var(--t-ink-700); }
+.tdash-drawer-foot { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--t-border); }
+
+/* ── Activities catalog ──────────────────────────── */
+.tdash-catalog { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+.tdash-cat-card { background: #fff; border: 1px solid var(--t-border); border-radius: 20px; padding: 22px; box-shadow: var(--t-shadow-card); }
+.tdash-cat-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.tdash-cat-badge { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; font-size: 28px; }
+.tdash-cat-pill { font-family: var(--t-font-display); font-weight: 700; font-size: 12px; padding: 5px 12px; border-radius: 999px; }
+.tdash-cat-card h3 { font-family: var(--t-font-display); font-weight: 800; font-size: 20px; margin: 0 0 6px; }
+.tdash-cat-desc { color: var(--t-ink-500); font-size: 14px; line-height: 1.5; margin: 0 0 14px; }
+.tdash-cat-tags { display: flex; flex-direction: column; gap: 6px; }
+.tdash-cat-tags span { font-size: 13px; color: var(--t-ink-700); font-weight: 600; }
+
+/* ── Lesson plans ────────────────────────────────── */
+.tdash-lessons { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+.tdash-lesson { display: flex; background: #fff; border: 1px solid var(--t-border); border-radius: 20px; overflow: hidden; box-shadow: var(--t-shadow-card); }
+.tdash-lesson-bar { width: 8px; flex: 0 0 8px; }
+.tdash-lesson-body { padding: 20px 22px; flex: 1; }
+.tdash-lesson-head { display: flex; align-items: baseline; justify-content: space-between; }
+.tdash-lesson-head h3 { font-family: var(--t-font-display); font-weight: 800; font-size: 19px; margin: 0; }
+.tdash-lesson-mins { font-family: var(--t-font-mono); font-size: 13px; color: var(--t-ink-400); }
+.tdash-lesson-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; }
+.tdash-lesson-steps span { font-family: var(--t-font-display); font-weight: 700; font-size: 13px; color: var(--t-ink-700); background: var(--t-cream-200); padding: 6px 12px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; }
+.tdash-lesson-steps i { color: var(--t-ink-300); font-style: normal; }
+
+/* ── EYFS tags ───────────────────────────────────── */
+.tdash-eyfs-tag { display: inline-block; font-family: var(--t-font-display); font-weight: 700; font-size: 13px; padding: 5px 11px; border-radius: 999px; margin: 0 6px 6px 0; }

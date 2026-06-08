@@ -174,7 +174,9 @@ function getRouteFromPath(path: string, hash: string): string {
   // Teacher auth, sits next to parent so the role split is obvious.
   if (path === '/teacher/signup') return 'teacher-signup';
   if (path === '/teacher/login') return 'teacher-login';
-  if (path === '/teacher' || path === '/teacher/dashboard') return 'teacher-dashboard';
+  if (path === '/teacher' || path === '/teacher/dashboard' || path === '/teacher/children'
+      || path === '/teacher/activities' || path === '/teacher/lessons' || path === '/teacher/eyfs'
+      || path === '/teacher/team' || path === '/teacher/settings') return 'teacher-dashboard';
   if (path === '/parent/dashboard') return 'parent-dashboard';
   if (path === '/parent/children') return 'parent-children';
   if (path === '/parent/billing') return 'parent-billing';

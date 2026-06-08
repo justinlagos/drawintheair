@@ -18,7 +18,19 @@ import { getTeacherProfile } from '../../lib/teacherApi';
 import { dbSelect } from '../../lib/supabase';
 import { conductorApi } from '../../features/classmode/conductor/api';
 import { useAuth } from '../../context/AuthContext';
+import { ChildrenView, ActivitiesView, LessonsView, EyfsView, TeamView, SettingsView } from './TeacherViews';
 import './teacher-dashboard.css';
+
+// nav id ⇄ URL path (deep-linkable)
+const NAV_PATH: Record<string, string> = {
+  dashboard: '/teacher/dashboard', children: '/teacher/children', activities: '/teacher/activities',
+  lessons: '/teacher/lessons', eyfs: '/teacher/eyfs', team: '/teacher/team', settings: '/teacher/settings',
+};
+const viewFromPath = (): string => {
+  const p = typeof window !== 'undefined' ? window.location.pathname : '';
+  const hit = Object.entries(NAV_PATH).find(([, path]) => p === path);
+  return hit ? hit[0] : 'dashboard';
+};
 
 const C = { lavender: '#9D7DFF', mint: '#5BCE9A', sky: '#7BB6FF', sun: '#FFC83D', peach: '#FF9B7E' };
 const AV = [C.lavender, C.mint, C.peach, C.sky, C.sun];
@@ -81,7 +93,7 @@ export default function TeacherDashboard() {
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [acts, setActs] = useState<ActivityRow[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
-  const [active, setActive] = useState('dashboard');
+  const [active, setActive] = useState<string>(viewFromPath);
   const [navOpen, setNavOpen] = useState(false);
   const [classFilter, setClassFilter] = useState<string>('all'); // session id or 'all'
   const [menuOpen, setMenuOpen] = useState(false);
@@ -163,7 +175,19 @@ export default function TeacherDashboard() {
   }, [name]);
 
   const startSession = () => { window.location.href = '/class'; };
-  const onNav = (id: string) => { setActive(id); setNavOpen(false); if (id === 'classroom') startSession(); };
+  const onNav = (id: string) => {
+    setNavOpen(false);
+    if (id === 'classroom') { startSession(); return; }
+    setActive(id);
+    if (NAV_PATH[id] && typeof window !== 'undefined') window.history.pushState(null, '', NAV_PATH[id]);
+    window.scrollTo?.(0, 0);
+  };
+  // keep view in sync with browser back/forward
+  useEffect(() => {
+    const onPop = () => setActive(viewFromPath());
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
   const selectedClassLabel = classFilter === 'all' ? `All classes · ${sessions.length}` : `Class ${sessionById[classFilter]?.code ?? ''}`;
 
   return (
@@ -187,11 +211,21 @@ export default function TeacherDashboard() {
         </div>
       </aside>
 
+      <button className="tdash-burger tdash-burger-fixed" aria-label="Menu" onClick={() => setNavOpen((v) => !v)}>☰</button>
       <main className="tdash-main">
+        {active !== 'dashboard' ? (
+          active === 'children' ? <ChildrenView />
+            : active === 'activities' ? <ActivitiesView />
+              : active === 'lessons' ? <LessonsView />
+                : active === 'eyfs' ? <EyfsView />
+                  : active === 'team' ? <TeamView />
+                    : active === 'settings' ? <SettingsView />
+                      : null
+        ) : (
+        <>
         <div className="tdash-head">
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <button className="tdash-burger" aria-label="Menu" onClick={() => setNavOpen((v) => !v)}>☰</button>
               <h1 className="tdash-greet">{greeting()}{name ? `, ${lastName}` : ''}.</h1>
             </div>
             <p className="tdash-sub">
@@ -306,6 +340,8 @@ export default function TeacherDashboard() {
           <div><h2>Run classroom mode</h2><p>Project to the smartboard. Children take turns using their hand on the front of the room · whole-class movement in 60 seconds.</p></div>
           <button className="tdash-btn" onClick={startSession}>▶ Start session</button>
         </div>
+        </>
+        )}
       </main>
 
       {/* Per-student deep stats drawer */}
