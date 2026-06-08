@@ -33,7 +33,7 @@ export default function TeacherLogin() {
   const next =
     rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//')
       ? rawNext
-      : '/class';
+      : '/teacher/dashboard';
 
   const { user, signOut } = useAuth();
   const [email, setEmail] = useState('');

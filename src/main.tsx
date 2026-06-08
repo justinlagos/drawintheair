@@ -133,6 +133,7 @@ const ParentSubscribe   = lazyWithRetry(() => import('./pages/parent/Subscribe.t
 // and lands the user in TeacherClassConsole (/class).
 const TeacherSignup = lazyWithRetry(() => import('./pages/teacher/Signup.tsx'));
 const TeacherLogin  = lazyWithRetry(() => import('./pages/teacher/Login.tsx'));
+const TeacherDashboard = lazyWithRetry(() => import('./pages/teacher/TeacherDashboard.tsx'));
 
 // Helper function to determine route from pathname
 function getRouteFromPath(path: string, hash: string): string {
@@ -173,6 +174,7 @@ function getRouteFromPath(path: string, hash: string): string {
   // Teacher auth, sits next to parent so the role split is obvious.
   if (path === '/teacher/signup') return 'teacher-signup';
   if (path === '/teacher/login') return 'teacher-login';
+  if (path === '/teacher' || path === '/teacher/dashboard') return 'teacher-dashboard';
   if (path === '/parent/dashboard') return 'parent-dashboard';
   if (path === '/parent/children') return 'parent-children';
   if (path === '/parent/billing') return 'parent-billing';
@@ -404,6 +406,15 @@ function Root() {
       <ScopedErrorBoundary scope="classmode">
         <React.Suspense fallback={<DemoLoader />}>
           <TeacherLogin />
+        </React.Suspense>
+      </ScopedErrorBoundary>
+    );
+  }
+  if (route === 'teacher-dashboard') {
+    return (
+      <ScopedErrorBoundary scope="classmode">
+        <React.Suspense fallback={<DemoLoader />}>
+          <TeacherDashboard />
         </React.Suspense>
       </ScopedErrorBoundary>
     );
