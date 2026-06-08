@@ -22,6 +22,7 @@ import { BuildingMode } from './features/modes/building/BuildingMode';
 import { buildingLogic } from './features/modes/building/buildingLogic';
 import { WaveToWake } from './features/onboarding/WaveToWake';
 import { ModeSelectionMenu, type GameMode } from './features/menu/ModeSelectionMenu';
+import { GameCompanion } from './features/kid2/GameCompanion';
 import { ChildProfileSelector } from './features/parent/ChildProfileSelector';
 import { LearnerGreeting } from './features/parent/LearnerGreeting';
 import { SaveProgressNudge } from './features/parent/SaveProgressNudge';
@@ -426,6 +427,11 @@ function App() {
                   {/* Share with a Colleague intentionally not rendered in-game.
                       That CTA is for teachers/parents discovering modes; mid-play
                       it's clutter for kids. Lives on landing/marketing routes. */}
+
+                  {/* 2.0 Spark companion — decorative coaching presence.
+                      pointer-events:none, so it cannot intercept gestures or
+                      clicks and touches no game/tracking/analytics logic. */}
+                  <GameCompanion modeId={gameMode} companion="spark" />
 
                 </>
               )}

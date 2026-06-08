@@ -15,27 +15,30 @@
 
 // ─── PALETTE ───────────────────────────────────────────────────────────
 // Core palette per spec. Names are camelCase in TS, kebab-case in CSS vars.
+// Draw in the Air 2.0 palette — cream warmth, lavender primary, mint/sky
+// accents, warm sun rewards, peach for emotional moments. Keys are
+// unchanged so every consumer keeps working; only the values shifted.
 export const colors = {
   // Backgrounds
-  skyBlue: '#BEEBFF',         // soft panels, sky scenes, calm spaces
-  meadowGreen: '#7ED957',     // hills, success surfaces, nature elements
-  limeGlow: '#B5F15C',        // highlights, active states, friendly energy
+  skyBlue: '#EAF7FF',         // soft panels, sky scenes, calm spaces
+  meadowGreen: '#5BCE9A',     // hills, success surfaces, nature elements
+  limeGlow: '#7BD9A8',        // highlights, active states, friendly energy
 
   // Primary accents
-  deepPlum: '#6C3FA4',        // headings, primary buttons, key accents
-  sunshine: '#FFD84D',        // rewards, stars, achievement, warm highlights
-  coral: '#FF6B6B',           // playful alerts, wrong answers, balloons
-  aqua: '#55DDE0',            // progress, tracing paths, timers
+  deepPlum: '#8A66F0',        // headings, primary buttons, key accents (lavender)
+  sunshine: '#FFC83D',        // rewards, stars, achievement, warm highlights
+  coral: '#F07A5C',           // playful alerts, wrong answers, balloons (peach)
+  aqua: '#7BB6FF',            // progress, tracing paths, timers (sky)
 
   // Neutrals
   cloudWhite: '#FFFFFF',      // cards, panels, task surfaces
-  charcoal: '#3F4052',        // primary text, readable labels
+  charcoal: '#1F1B2E',        // primary text, readable labels (warm ink)
 
   // Support
-  softLavender: '#E8DEFB',    // secondary cards, gentle accents
-  bubbleBlue: '#A8D8FF',      // decorative objects
-  warmOrange: '#FFB14D',      // coins, warm secondary actions
-  softGrey: '#D6D9E0',        // disabled states, inactive outlines
+  softLavender: '#E5DBFF',    // secondary cards, gentle accents
+  bubbleBlue: '#B8DBFF',      // decorative objects
+  warmOrange: '#FF9B7E',      // coins, warm secondary actions (peach)
+  softGrey: '#C5C0D1',        // disabled states, inactive outlines
 } as const;
 
 // ─── SEMANTIC ALIASES ──────────────────────────────────────────────────
@@ -44,21 +47,21 @@ export const colors = {
 export const semantic = {
   bgScene: colors.skyBlue,
   bgPanel: colors.cloudWhite,
-  bgPanelTinted: '#F4FAFF',     // very soft sky tint for cards
-  borderPanel: 'rgba(108, 63, 164, 0.12)', // deep plum at 12% opacity
+  bgPanelTinted: '#F4EFFF',     // very soft lavender tint for cards
+  borderPanel: 'rgba(31, 27, 46, 0.10)', // warm ink at 10% opacity
 
   textPrimary: colors.charcoal,
-  textSecondary: '#6B6E80',
-  textMuted: '#9CA0B0',
+  textSecondary: '#6B6580',
+  textMuted: '#908AA3',
   textOnDark: colors.cloudWhite,
   textOnPlum: colors.cloudWhite,
 
   primary: colors.deepPlum,
-  primaryHover: '#7E4FB8',
-  primaryActive: '#5A3290',
+  primaryHover: '#9D7DFF',
+  primaryActive: '#5C3FB0',
 
   success: colors.meadowGreen,
-  successHover: '#92E36C',
+  successHover: '#7BD9A8',
 
   warning: colors.warmOrange,
   danger: colors.coral,
@@ -69,9 +72,11 @@ export const semantic = {
 } as const;
 
 // ─── TYPOGRAPHY ────────────────────────────────────────────────────────
+// 2.0 type: Outfit for display/headings, Nunito for body. Old families kept
+// as fallbacks so nothing breaks if a 2.0 webfont is briefly unavailable.
 export const fontFamily = {
-  display: "'Fredoka', 'Baloo 2', system-ui, -apple-system, sans-serif",
-  heading: "'Fredoka', 'Baloo 2', system-ui, -apple-system, sans-serif",
+  display: "'Outfit', 'Fredoka', system-ui, -apple-system, sans-serif",
+  heading: "'Outfit', 'Fredoka', system-ui, -apple-system, sans-serif",
   body: "'Nunito', 'Quicksand', system-ui, -apple-system, sans-serif",
   caption: "'Nunito', 'Quicksand', system-ui, -apple-system, sans-serif",
 } as const;
@@ -135,20 +140,22 @@ export const radius = {
 // ─── SHADOWS ───────────────────────────────────────────────────────────
 // Soft 2.5D depth. No hard edges. Layered for tactile feel.
 // Drop shadows tinted with deep plum at low opacity for warmth.
+// 2.0 shadows: warm, ambient, tinted with the warm-ink colour (64,50,90)
+// instead of plum. Primary buttons carry a soft lavender glow.
 export const shadow = {
   // Resting state of cards
-  panel: '0 4px 12px rgba(108, 63, 164, 0.08), 0 2px 4px rgba(108, 63, 164, 0.06)',
+  panel: '0 6px 16px rgba(64, 50, 90, 0.08), 0 2px 4px rgba(64, 50, 90, 0.05)',
   // Buttons / interactive
-  button: '0 6px 14px rgba(108, 63, 164, 0.18), 0 2px 4px rgba(108, 63, 164, 0.10)',
-  buttonPressed: '0 2px 4px rgba(108, 63, 164, 0.14)',
+  button: '0 12px 28px rgba(138, 102, 240, 0.22), 0 2px 4px rgba(64, 50, 90, 0.10)',
+  buttonPressed: '0 2px 4px rgba(64, 50, 90, 0.14)',
   // Floating elements (chips, badges)
-  float: '0 4px 16px rgba(108, 63, 164, 0.12), 0 1px 2px rgba(108, 63, 164, 0.08)',
+  float: '0 4px 16px rgba(64, 50, 90, 0.12), 0 1px 2px rgba(64, 50, 90, 0.08)',
   // Reward highlights, sunshine glow
-  glow: '0 0 24px rgba(255, 216, 77, 0.45), 0 4px 12px rgba(108, 63, 164, 0.10)',
+  glow: '0 0 24px rgba(255, 200, 61, 0.45), 0 4px 12px rgba(64, 50, 90, 0.10)',
   // Modal lift
-  modal: '0 24px 60px rgba(63, 64, 82, 0.20), 0 8px 24px rgba(108, 63, 164, 0.12)',
+  modal: '0 24px 60px rgba(64, 50, 90, 0.20), 0 8px 24px rgba(64, 50, 90, 0.12)',
   // Inner highlight for pillowy buttons
-  inset: 'inset 0 1px 0 rgba(255, 255, 255, 0.55)',
+  inset: 'inset 0 1px 0 rgba(255, 255, 255, 0.70)',
 } as const;
 
 // ─── MOTION ────────────────────────────────────────────────────────────

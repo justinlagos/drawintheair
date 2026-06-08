@@ -1068,7 +1068,7 @@ export const sortAndPlaceLogic = (
         // Tactile drop shadow underneath.
         ctx.save();
         ctx.globalAlpha = 0.18;
-        ctx.fillStyle = '#6C3FA4';
+        ctx.fillStyle = '#8A66F0';
         ctx.beginPath();
         ctx.ellipse(binCanvas.x, by + binH + 10, binW * 0.42, 12, 0, 0, Math.PI * 2);
         ctx.fill();
@@ -1078,8 +1078,8 @@ export const sortAndPlaceLogic = (
         // for soft 2.5D feel (top is brighter, bottom slightly tinted).
         const cardGrad = ctx.createLinearGradient(bx, by, bx, by + binH);
         cardGrad.addColorStop(0, '#FFFFFF');
-        cardGrad.addColorStop(0.6, '#FBFCFF');
-        cardGrad.addColorStop(1, '#EFF4FA');
+        cardGrad.addColorStop(0.6, '#FFFDF7');
+        cardGrad.addColorStop(1, '#F4EFFF');
         ctx.fillStyle = cardGrad;
         ctx.beginPath();
         ctx.roundRect(bx, by, binW, binH, cornerR);
@@ -1098,7 +1098,7 @@ export const sortAndPlaceLogic = (
         ctx.restore();
 
         // Outer border, accent colour when glowing, deep plum at rest.
-        ctx.strokeStyle = bin.glow ? bin.color : '#6C3FA4';
+        ctx.strokeStyle = bin.glow ? bin.color : '#8A66F0';
         ctx.globalAlpha = bin.glow ? 1 : 0.18;
         ctx.lineWidth = bin.glow ? 5 : 3;
         ctx.beginPath();
@@ -1110,10 +1110,10 @@ export const sortAndPlaceLogic = (
         // emoji icon (bin.icon) is intentionally not rendered here; the
         // label alone reads cleanly. Phase 2 swaps icon emojis for SVG.
         ctx.save();
-        ctx.font = `700 ${Math.max(22, Math.round(binH * 0.32))}px Fredoka, "Baloo 2", system-ui, sans-serif`;
+        ctx.font = `700 ${Math.max(22, Math.round(binH * 0.32))}px Outfit, system-ui, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#3F4052';
+        ctx.fillStyle = '#1F1B2E';
         ctx.fillText(bin.label, binCanvas.x, binCanvas.y);
         ctx.restore();
     });

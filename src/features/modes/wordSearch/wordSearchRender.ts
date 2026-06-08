@@ -82,7 +82,7 @@ function renderGridContainer(
 
     // Soft drop shadow underneath
     ctx.save();
-    ctx.shadowColor = 'rgba(108, 63, 164, 0.18)';
+    ctx.shadowColor = 'rgba(31, 27, 46, 0.14)';
     ctx.shadowBlur = 24;
     ctx.shadowOffsetY = 8;
     ctx.fillStyle = '#FFFFFF';
@@ -114,7 +114,7 @@ function renderGridContainer(
     ctx.restore();
 
     // Outer border, deep plum, low opacity
-    ctx.strokeStyle = 'rgba(108, 63, 164, 0.18)';
+    ctx.strokeStyle = 'rgba(31, 27, 46, 0.14)';
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     ctx.roundRect(x, y, w, h, radius);
@@ -166,23 +166,23 @@ function renderTile(
         glowCol = colors.primary;
         glowBlur = 14;
     } else if (isSelected) {
-        topColor = 'rgba(85, 221, 224, 0.45)';   // aqua
-        botColor = 'rgba(85, 221, 224, 0.25)';
-        borderCol = '#55DDE0';
-        letterCol = '#3F4052';                   // charcoal
-        glowCol = '#55DDE0';
+        topColor = 'rgba(123, 182, 255, 0.45)';   // aqua
+        botColor = 'rgba(123, 182, 255, 0.25)';
+        borderCol = '#7BB6FF';
+        letterCol = '#1F1B2E';                   // charcoal
+        glowCol = '#7BB6FF';
         glowBlur = 16;
     } else if (isHovered) {
         topColor = '#FFFFFF';
         botColor = '#F1E8FF';                    // soft lavender wash
-        borderCol = 'rgba(108, 63, 164, 0.45)';  // deeper plum
-        letterCol = '#6C3FA4';                   // deep plum
+        borderCol = 'rgba(138, 102, 240, 0.5)';  // deeper plum
+        letterCol = '#8A66F0';                   // deep plum
     } else {
         // Default: cream card stock
         topColor = '#FFFFFF';
-        botColor = '#F4FAFF';
-        borderCol = 'rgba(108, 63, 164, 0.18)';
-        letterCol = '#3F4052';                   // charcoal
+        botColor = '#F4EFFF';
+        borderCol = 'rgba(31, 27, 46, 0.14)';
+        letterCol = '#1F1B2E';                   // charcoal
     }
 
     // Drop shadow + optional glow
@@ -191,7 +191,7 @@ function renderTile(
         ctx.shadowColor = glowCol;
         ctx.shadowBlur = glowBlur;
     } else {
-        ctx.shadowColor = 'rgba(108, 63, 164, 0.18)';
+        ctx.shadowColor = 'rgba(31, 27, 46, 0.14)';
         ctx.shadowBlur = 6;
         ctx.shadowOffsetY = 3;
     }
@@ -218,6 +218,18 @@ function renderTile(
     ctx.fill();
     ctx.restore();
 
+    // Bottom inner shade for a pressed 3D thickness
+    ctx.save();
+    ctx.globalAlpha = 0.45;
+    const sole = ctx.createLinearGradient(ax, drawY + ah * 0.6, ax, drawY + ah);
+    sole.addColorStop(0, 'rgba(31,27,46,0)');
+    sole.addColorStop(1, 'rgba(31,27,46,0.10)');
+    ctx.fillStyle = sole;
+    ctx.beginPath();
+    ctx.roundRect(ax + 2, drawY + ah * 0.55, aw - 4, ah * 0.43, radius - 2);
+    ctx.fill();
+    ctx.restore();
+
     // Border
     ctx.strokeStyle = borderCol;
     ctx.lineWidth = 2.5;
@@ -227,7 +239,7 @@ function renderTile(
 
     // Letter, Fredoka if loaded, fallback otherwise
     const fontSize = Math.min(aw, ah) * 0.50;
-    ctx.font = `700 ${fontSize}px Fredoka, "Baloo 2", system-ui, -apple-system, sans-serif`;
+    ctx.font = `700 ${fontSize}px Outfit, system-ui, -apple-system, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = letterCol;
@@ -247,11 +259,11 @@ function renderSelectionPath(
     if (selectionState.selectionPath.length < 2) return;
     
     // Draw thick rounded corridor connecting selected tiles, Kid-UI aqua
-    ctx.strokeStyle = '#55DDE0';
+    ctx.strokeStyle = '#7BB6FF';
     ctx.lineWidth = width * 0.035;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.shadowColor = 'rgba(85, 221, 224, 0.7)';
+    ctx.shadowColor = 'rgba(123, 182, 255, 0.7)';
     ctx.shadowBlur = width * 0.022;
     
     ctx.beginPath();

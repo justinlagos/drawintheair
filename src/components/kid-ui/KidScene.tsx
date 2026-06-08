@@ -25,10 +25,10 @@ export interface KidSceneProps {
 }
 
 const skyByMood: Record<KidSceneMood, string> = {
-  sky: `linear-gradient(180deg, #BEEBFF 0%, #E5F5FF 70%, #F4FAFF 100%)`,
-  meadow: `linear-gradient(180deg, #BEEBFF 0%, #DFFAD9 80%)`,
-  lavender: `linear-gradient(180deg, #E8DEFB 0%, #F4FAFF 100%)`,
-  sunset: `linear-gradient(180deg, #FFD08A 0%, #FFF6D6 50%, #BEEBFF 100%)`,
+  sky: `linear-gradient(180deg, #EAF7FF 0%, #EAF7FF 70%, #F4EFFF 100%)`,
+  meadow: `linear-gradient(180deg, #EAF7FF 0%, #D2F4E0 80%)`,
+  lavender: `linear-gradient(180deg, #E8DEFB 0%, #F4EFFF 100%)`,
+  sunset: `linear-gradient(180deg, #FFD972 0%, #FFF8E0 50%, #EAF7FF 100%)`,
 } as const;
 
 export const KidScene = ({

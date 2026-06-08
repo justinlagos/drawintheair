@@ -28,13 +28,13 @@ export interface RainbowColour {
 }
 
 const COLOURS: RainbowColour[] = [
-    { id: 'red', hex: '#FF4444', name: 'Red', glow: 'rgba(255,68,68,0.6)' },
-    { id: 'orange', hex: '#FF8C00', name: 'Orange', glow: 'rgba(255,140,0,0.6)' },
-    { id: 'yellow', hex: '#FFD700', name: 'Yellow', glow: 'rgba(255,215,0,0.6)' },
-    { id: 'green', hex: '#00CC66', name: 'Green', glow: 'rgba(0,204,102,0.6)' },
-    { id: 'blue', hex: '#3399FF', name: 'Blue', glow: 'rgba(51,153,255,0.6)' },
-    { id: 'purple', hex: '#9B59B6', name: 'Purple', glow: 'rgba(155,89,182,0.6)' },
-    { id: 'pink', hex: '#FF69B4', name: 'Pink', glow: 'rgba(255,105,180,0.6)' },
+    { id: 'red', hex: '#FF6B6B', name: 'Red', glow: 'rgba(255,107,107,0.6)' },
+    { id: 'orange', hex: '#FF9B4D', name: 'Orange', glow: 'rgba(255,155,77,0.6)' },
+    { id: 'yellow', hex: '#FFC83D', name: 'Yellow', glow: 'rgba(255,200,61,0.6)' },
+    { id: 'green', hex: '#5BCE9A', name: 'Green', glow: 'rgba(91,206,154,0.6)' },
+    { id: 'blue', hex: '#7BB6FF', name: 'Blue', glow: 'rgba(123,182,255,0.6)' },
+    { id: 'purple', hex: '#9D7DFF', name: 'Purple', glow: 'rgba(157,125,255,0.6)' },
+    { id: 'pink', hex: '#FF7AB6', name: 'Pink', glow: 'rgba(255,122,182,0.6)' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -343,19 +343,40 @@ function drawRainbowArcs(ctx: CanvasRenderingContext2D, w: number, h: number): v
     const groundY = h * 0.78;
     const startR = Math.min(w, h) * 0.07;
 
+    const band = Math.min(w, h) * 0.026;
     arcs.forEach((arc, i) => {
         const col = getColour(arc.colourId);
         const r = startR + i * Math.min(w, h) * 0.055;
+
+        // 1. Wide soft glow underlay (luminous halo)
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, groundY, r, Math.PI, 0, false);
+        ctx.strokeStyle = col.glow;
+        ctx.lineWidth = band * 1.7;
+        ctx.lineCap = 'round';
+        ctx.shadowBlur = 24;
+        ctx.shadowColor = col.glow;
+        ctx.stroke();
+        ctx.restore();
+
+        // 2. Main coloured band
         ctx.beginPath();
         ctx.arc(cx, groundY, r, Math.PI, 0, false);
         ctx.strokeStyle = col.hex;
-        ctx.lineWidth = Math.min(w, h) * 0.025;
+        ctx.lineWidth = band;
         ctx.lineCap = 'round';
-        ctx.shadowBlur = 12;
-        ctx.shadowColor = col.glow;
         ctx.stroke();
-        ctx.shadowBlur = 0;
-        ctx.shadowColor = 'transparent';
+
+        // 3. Glossy white highlight running along the top of the band
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, groundY, r + band * 0.22, Math.PI, 0, false);
+        ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+        ctx.lineWidth = band * 0.32;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+        ctx.restore();
     });
 }
 
@@ -398,7 +419,7 @@ export const rainbowBridgeLogic = (
         ctx.font = `bold ${Math.round(cloudScale * 0.6)}px Outfit, system-ui, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillStyle = isDone ? '#00FF88' : 'rgba(255,255,255,0.7)';
+        ctx.fillStyle = isDone ? '#5BCE9A' : 'rgba(255,255,255,0.7)';
         ctx.fillText(isDone ? '✓' : String(i + 1), cx, cloudY - cloudScale * 0.9);
         ctx.restore();
     });

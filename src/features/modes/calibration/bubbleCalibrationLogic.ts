@@ -74,7 +74,7 @@ const LEVEL_CONFIGS: Record<BubbleLevel, LevelConfig> = {
         bubbleMaxSize: 0.085,
         specialBehavior: 'float-gentle',
         background: LANDSCAPE_BACKGROUNDS.sunnyMeadow,
-        bubbleColors: ['#FF5252', '#FF4081', '#7C4DFF', '#448AFF', '#FFAB40', '#69F0AE', '#FF6E40', '#E040FB'],
+        bubbleColors: ['#FF9B7E', '#FF7AB6', '#9D7DFF', '#7BB6FF', '#FFC83D', '#5BCE9A', '#F07A5C', '#B69BFF'],
         particleCount: 12
     },
     2: {
@@ -91,7 +91,7 @@ const LEVEL_CONFIGS: Record<BubbleLevel, LevelConfig> = {
         bubbleMaxSize: 0.08,
         specialBehavior: 'drift-wind',
         background: LANDSCAPE_BACKGROUNDS.mistyMountains,
-        bubbleColors: ['#FF5722', '#E91E63', '#9C27B0', '#FFEB3B', '#00E676', '#FF1744'],
+        bubbleColors: ['#F07A5C', '#FF7AB6', '#9D7DFF', '#FFC83D', '#5BCE9A', '#F0508A'],
         particleCount: 16
     },
     3: {
@@ -108,7 +108,7 @@ const LEVEL_CONFIGS: Record<BubbleLevel, LevelConfig> = {
         bubbleMaxSize: 0.075,
         specialBehavior: 'zigzag-rise',
         background: LANDSCAPE_BACKGROUNDS.sunsetPeaks,
-        bubbleColors: ['#00E5FF', '#00BCD4', '#4DD0E1', '#FFEB3B', '#FFC107', '#FFFFFF'],
+        bubbleColors: ['#7BB6FF', '#5A99F2', '#93C5FF', '#FFC83D', '#FFC83D', '#FFFFFF'],
         particleCount: 20
     },
     4: {
@@ -125,7 +125,7 @@ const LEVEL_CONFIGS: Record<BubbleLevel, LevelConfig> = {
         bubbleMaxSize: 0.07,
         specialBehavior: 'float-gentle',
         background: LANDSCAPE_BACKGROUNDS.sunnyMeadow,
-        bubbleColors: ['#FF5252', '#FF4081', '#7C4DFF', '#448AFF', '#FFAB40', '#69F0AE', '#FF6E40', '#E040FB'],
+        bubbleColors: ['#FF9B7E', '#FF7AB6', '#9D7DFF', '#7BB6FF', '#FFC83D', '#5BCE9A', '#F07A5C', '#B69BFF'],
         particleCount: 18
     },
     5: {
@@ -142,7 +142,7 @@ const LEVEL_CONFIGS: Record<BubbleLevel, LevelConfig> = {
         bubbleMaxSize: 0.065,
         specialBehavior: 'drift-wind',
         background: LANDSCAPE_BACKGROUNDS.mistyMountains,
-        bubbleColors: ['#FF5722', '#E91E63', '#9C27B0', '#FFEB3B', '#00E676', '#FF1744'],
+        bubbleColors: ['#F07A5C', '#FF7AB6', '#9D7DFF', '#FFC83D', '#5BCE9A', '#F0508A'],
         particleCount: 20
     },
     6: {
@@ -159,7 +159,7 @@ const LEVEL_CONFIGS: Record<BubbleLevel, LevelConfig> = {
         bubbleMaxSize: 0.06,
         specialBehavior: 'zigzag-rise',
         background: LANDSCAPE_BACKGROUNDS.sunsetPeaks,
-        bubbleColors: ['#00E5FF', '#00BCD4', '#4DD0E1', '#FFEB3B', '#FFC107', '#FFFFFF'],
+        bubbleColors: ['#7BB6FF', '#5A99F2', '#93C5FF', '#FFC83D', '#FFC83D', '#FFFFFF'],
         particleCount: 22
     }
 };
@@ -709,6 +709,29 @@ export const bubbleCalibrationLogic = (
             ctx.strokeStyle = `${darkenColor(baseColor, 20)}66`;
             ctx.lineWidth = Math.max(1, r * 0.03);
             ctx.stroke();
+
+            // 9. IRIDESCENT THIN-FILM SHIMMER, 2.0 soap-bubble rainbow rim.
+            // Four short coloured arcs along the rim give the tell-tale
+            // soap-film shimmer that elevates the sphere into a real bubble.
+            if (perfConfig.visualQuality !== 'low') {
+                ctx.save();
+                ctx.globalAlpha = 0.5;
+                ctx.lineCap = 'round';
+                ctx.lineWidth = Math.max(1.5, r * 0.06);
+                const shimmer: Array<[string, number, number]> = [
+                    ['rgba(123,182,255,0.75)', -0.9, -0.2],  // sky, upper-right
+                    ['rgba(157,125,255,0.65)', 0.5, 1.25],   // lavender, lower-right
+                    ['rgba(255,155,126,0.6)', 2.1, 2.8],     // peach, lower-left
+                    ['rgba(91,206,154,0.55)', 3.25, 3.9],    // mint, upper-left
+                ];
+                for (const [stroke, a0, a1] of shimmer) {
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r * 0.93, a0, a1);
+                    ctx.strokeStyle = stroke;
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
         }
     });
 

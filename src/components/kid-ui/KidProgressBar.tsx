@@ -58,7 +58,7 @@ export const KidProgressBar = ({
       style={{
         width: '100%',
         height: `${height}px`,
-        background: 'rgba(108, 63, 164, 0.12)',
+        background: 'rgba(31, 27, 46, 0.10)',
         borderRadius: tokens.radius.pill,
         overflow: 'hidden',
         position: 'relative',

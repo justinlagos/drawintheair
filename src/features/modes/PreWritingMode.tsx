@@ -238,7 +238,7 @@ export const PreWritingMode = ({ onExit }: PreWritingModeProps = {}) => {
                 }}>
                     <span aria-hidden style={{
                         fontSize: isCompact ? '1.2rem' : '1.6rem',
-                        filter: progress >= 0.95 ? 'drop-shadow(0 0 10px #FFD84D)' : 'none',
+                        filter: progress >= 0.95 ? 'drop-shadow(0 0 10px #FFC83D)' : 'none',
                     }}>
                         {progress >= 0.95 ? '⭐' : progress > 0.5 ? '🌟' : '✨'}
                     </span>

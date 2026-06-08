@@ -58,38 +58,38 @@ const CHAPTER_ENVIRONMENTS: Record<Chapter, {
     icon: string;
 }> = {
     1: {
-        backgroundGradient: 'linear-gradient(180deg, #BEEBFF 0%, #DEF5FF 55%, #FFFAEB 100%)',
-        accentColor: '#55DDE0',
+        backgroundGradient: 'linear-gradient(180deg, #EAF7FF 0%, #F3FBF4 55%, #FBF7EE 100%)',
+        accentColor: '#7BB6FF',
         name: 'Animal Friends',
         icon: '🐾',
     },
     2: {
-        backgroundGradient: 'linear-gradient(180deg, #C5F0BC 0%, #E5F8E0 60%, #FFF6E5 100%)',
-        accentColor: '#7ED957',
+        backgroundGradient: 'linear-gradient(180deg, #C5F0BC 0%, #E5F8E0 60%, #FBF7EE 100%)',
+        accentColor: '#5BCE9A',
         name: 'Nature Garden',
         icon: '🌿',
     },
     3: {
-        backgroundGradient: 'linear-gradient(180deg, #FFE4D4 0%, #FFF4E0 55%, #FFFAEB 100%)',
-        accentColor: '#FFB14D',
+        backgroundGradient: 'linear-gradient(180deg, #FFE4D4 0%, #FFF4E0 55%, #FBF7EE 100%)',
+        accentColor: '#FF9B7E',
         name: 'Yummy Food',
         icon: '🍎',
     },
     4: {
-        backgroundGradient: 'linear-gradient(180deg, #FFE0F0 0%, #FFF0FA 55%, #FFFAEB 100%)',
+        backgroundGradient: 'linear-gradient(180deg, #FFE0F0 0%, #FFF0FA 55%, #FBF7EE 100%)',
         accentColor: '#FF6B9D',
         name: 'Rainbow Colours',
         icon: '🌈',
     },
     5: {
-        backgroundGradient: 'linear-gradient(180deg, #FFF6E5 0%, #FFFAF0 55%, #FFE8C0 100%)',
-        accentColor: '#FFD84D',
+        backgroundGradient: 'linear-gradient(180deg, #FBF7EE 0%, #FFFAF0 55%, #FFE8C0 100%)',
+        accentColor: '#FFC83D',
         name: 'Family Time',
         icon: '👪',
     },
     6: {
-        backgroundGradient: 'linear-gradient(180deg, #E8DEFB 0%, #F4EAFF 55%, #FFF6E5 100%)',
-        accentColor: '#A855F7',
+        backgroundGradient: 'linear-gradient(180deg, #E8DEFB 0%, #F4EAFF 55%, #FBF7EE 100%)',
+        accentColor: '#9D7DFF',
         name: 'Toy Chest',
         icon: '🧸',
     },
@@ -784,7 +784,7 @@ const WordPanel = ({ words, justFoundWord, hintWordIndex, hintPhase, isMobile, a
                                     ? `linear-gradient(135deg, ${accentColor}26, ${accentColor}40)`
                                     : isHinted
                                         ? 'rgba(255, 216, 77, 0.22)'
-                                        : '#F4FAFF',
+                                        : '#F4EFFF',
                                 border: isFound
                                     ? `2px solid ${accentColor}`
                                     : isHinted

@@ -140,39 +140,39 @@ export const THEME_COLORS: Record<Theme, {
     background: string;
 }> = {
     animals: {
-        primary: '#4ECDC4',     // Teal
-        secondary: '#95E1D3',   // Light teal
-        accent: '#FFE66D',      // Warm yellow
+        primary: '#5BCE9A',     // Teal
+        secondary: '#A7E8C7',   // Light teal
+        accent: '#FFC83D',      // Warm yellow
         background: 'rgba(78, 205, 196, 0.15)'
     },
     colours: {
-        primary: '#FF6B6B',     // Coral
-        secondary: '#FFE66D',   // Yellow
-        accent: '#4ECDC4',      // Teal
+        primary: '#FF9B7E',     // Coral
+        secondary: '#FFC83D',   // Yellow
+        accent: '#5BCE9A',      // Teal
         background: 'rgba(255, 107, 107, 0.15)'
     },
     family: {
-        primary: '#A855F7',     // Purple
-        secondary: '#FF6B9D',   // Pink
-        accent: '#FFD700',      // Gold
+        primary: '#9D7DFF',     // Purple
+        secondary: '#FF7AB6',   // Pink
+        accent: '#FFC83D',      // Gold
         background: 'rgba(168, 85, 247, 0.15)'
     },
     food: {
-        primary: '#FF9500',     // Orange
-        secondary: '#FFB84D',   // Light orange
-        accent: '#FF6B6B',      // Coral
+        primary: '#FF9B7E',     // Orange
+        secondary: '#FFAE92',   // Light orange
+        accent: '#FF9B7E',      // Coral
         background: 'rgba(255, 149, 0, 0.15)'
     },
     toys: {
-        primary: '#9B59B6',     // Purple
-        secondary: '#BB8FCE',   // Light purple
-        accent: '#FF6B9D',      // Pink
+        primary: '#8A66F0',     // Purple
+        secondary: '#B69BFF',   // Light purple
+        accent: '#FF7AB6',      // Pink
         background: 'rgba(155, 89, 182, 0.15)'
     },
     nature: {
-        primary: '#27AE60',     // Green
-        secondary: '#58D68D',   // Light green
-        accent: '#F4D03F',      // Yellow
+        primary: '#3FB87F',     // Green
+        secondary: '#7BD9A8',   // Light green
+        accent: '#FFC83D',      // Yellow
         background: 'rgba(39, 174, 96, 0.15)'
     }
 };

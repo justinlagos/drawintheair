@@ -114,8 +114,8 @@ export const ColourBuilderMode = ({ onExit }: ColourBuilderModeProps = {}) => {
                 const windows = skylineRef.current.children;
                 if (windows.length > 0) {
                     const toLight = Math.min(Math.floor(Math.random() * windows.length), windows.length - 1);
-                    (windows[toLight] as HTMLElement).style.background = "#FACC15";
-                    (windows[toLight] as HTMLElement).style.boxShadow = "0 0 10px #FACC15";
+                    (windows[toLight] as HTMLElement).style.background = "#FFC83D";
+                    (windows[toLight] as HTMLElement).style.boxShadow = "0 0 10px #FFC83D";
                 }
             }
 
@@ -137,7 +137,7 @@ export const ColourBuilderMode = ({ onExit }: ColourBuilderModeProps = {}) => {
                 star.innerHTML = '★';
                 star.style.position = 'absolute';
                 star.style.fontSize = '24px';
-                star.style.color = '#FACC15';
+                star.style.color = '#FFC83D';
 
                 const angle = (Math.PI * 2 / 12) * i;
                 const distance = 50 + Math.random() * 50;
@@ -198,7 +198,7 @@ export const ColourBuilderMode = ({ onExit }: ColourBuilderModeProps = {}) => {
             {/* Bright Kid-UI sky background, sits behind the game canvas */}
             <div style={{
                 position: 'absolute', inset: 0,
-                background: 'linear-gradient(180deg, #BEEBFF 0%, #DEF5FF 55%, #FFF6E5 100%)',
+                background: 'linear-gradient(180deg, #EAF7FF 0%, #F3FBF4 55%, #FBF7EE 100%)',
                 zIndex: -2,
             }} />
 

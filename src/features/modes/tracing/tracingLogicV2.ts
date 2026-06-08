@@ -1089,7 +1089,7 @@ const drawPath = (
         ctx.lineJoin = 'round';
         ctx.shadowBlur = 6 * blurScale;
         ctx.shadowColor = onPath ? 'rgba(0, 245, 212, 0.8)' : 'rgba(255, 200, 80, 0.7)';
-        ctx.strokeStyle = onPath ? '#00F5D4' : '#FFB830';
+        ctx.strokeStyle = onPath ? '#5BCE9A' : '#FF9B7E';
         ctx.lineWidth = tol * 1.3 * thicknessScale;
         traceLine(points, progress);
         ctx.stroke();
@@ -1152,9 +1152,9 @@ const drawStartDot = (
         px - size * 0.2, py - size * 0.2, size * 0.1,
         px, py, size
     );
-    orbGrad.addColorStop(0, '#AFFFEC');
-    orbGrad.addColorStop(0.4, '#00F5D4');
-    orbGrad.addColorStop(1, '#008B76');
+    orbGrad.addColorStop(0, '#D2F4E0');
+    orbGrad.addColorStop(0.4, '#5BCE9A');
+    orbGrad.addColorStop(1, '#2E9D68');
 
     ctx.shadowBlur = 6 * perfConfig.shadowBlurScale;
     ctx.shadowColor = 'rgba(0, 245, 212, 0.8)';
@@ -1172,7 +1172,7 @@ const drawStartDot = (
     // "START" label, bright Kid-UI palette
     ctx.shadowBlur = 3 * perfConfig.shadowBlurScale;
     ctx.shadowColor = 'rgba(85, 221, 224, 0.55)';
-    ctx.fillStyle = '#55DDE0'; // aqua
+    ctx.fillStyle = '#7BB6FF'; // aqua
     ctx.font = `700 ${prominent ? 13 : 11}px Fredoka, "Baloo 2", system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
@@ -1214,9 +1214,9 @@ const drawEndTarget = (
         px - size * 0.2, py - size * 0.2, size * 0.1,
         px, py, size
     );
-    orbGrad.addColorStop(0, '#FFF8DC');
-    orbGrad.addColorStop(0.4, '#FFD700');
-    orbGrad.addColorStop(1, '#B8860B');
+    orbGrad.addColorStop(0, '#FFF8E0');
+    orbGrad.addColorStop(0.4, '#FFC83D');
+    orbGrad.addColorStop(1, '#C88A0F');
 
     ctx.shadowBlur = 6 * perfConfig.shadowBlurScale;
     ctx.shadowColor = `rgba(255, 215, 0, ${0.4 + glow * 0.5})`;

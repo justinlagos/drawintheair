@@ -90,7 +90,7 @@ export const BalloonMathMode = ({ onExit }: BalloonMathModeProps) => {
             {/* Back-to-menu top bar (no stage label, bespoke panel below) */}
             <GameTopBar onBack={onExit ?? (() => { })} />
 
-            {/* TOP-CENTER: Objective card with the equation/target, big Fredoka */}
+            {/* TOP-CENTER: Objective card with the equation/target, big display font */}
             <div style={{
                 position: 'absolute',
                 top: '92px',

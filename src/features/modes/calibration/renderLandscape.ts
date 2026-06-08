@@ -16,7 +16,7 @@ export const renderLandscapeBackground = (
     // Fill entire canvas with base color first to prevent gaps
     // Use the last color of the ground layer (or last layer) as the base
     const groundLayer = landscape.layers.find(l => l.type === 'ground') || landscape.layers[landscape.layers.length - 1];
-    const baseColor = groundLayer?.colors[groundLayer.colors.length - 1] || '#4CAF50';
+    const baseColor = groundLayer?.colors[groundLayer.colors.length - 1] || '#5BCE9A';
     ctx.fillStyle = baseColor;
     ctx.fillRect(0, 0, width, height);
     
@@ -462,7 +462,7 @@ const renderFlower = (ctx: CanvasRenderingContext2D, x: number, y: number, size:
     
     // Random flower type (white or yellow)
     const isYellow = (seed % 2) === 0;
-    const color = isYellow ? '#FFD700' : '#FFFFFF';
+    const color = isYellow ? '#FFC83D' : '#FFFFFF';
     
     // Flower center
     ctx.fillStyle = color;

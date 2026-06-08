@@ -28,16 +28,16 @@ export interface KidChipProps {
 
 const variantBg: Record<KidChipVariant, string> = {
   score: tokens.semantic.bgPanel,
-  timer: '#E5FAFB',     // soft aqua tint
+  timer: '#EEF6FF',     // soft 2.0 sky tint
   neutral: tokens.semantic.bgPanel,
-  reward: '#FFF6D6',    // soft sunshine tint
+  reward: '#FFF8E0',    // soft 2.0 sun tint
 };
 
 const variantBorder: Record<KidChipVariant, string> = {
   score: tokens.semantic.borderPanel,
-  timer: 'rgba(85, 221, 224, 0.35)',
+  timer: 'rgba(123, 182, 255, 0.35)',
   neutral: tokens.semantic.borderPanel,
-  reward: 'rgba(255, 216, 77, 0.55)',
+  reward: 'rgba(255, 200, 61, 0.55)',
 };
 
 const variantTextColor: Record<KidChipVariant, string> = {

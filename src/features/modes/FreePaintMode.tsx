@@ -63,14 +63,15 @@ const useResponsiveLayout = () => {
     return layout;
 };
 
+// Draw in the Air 2.0 paint palette — lavender / sky / mint / sun / peach + ink.
 const COLORS = [
-    { value: '#ff006e', name: 'Hot Pink' },
-    { value: '#3a86ff', name: 'Electric Blue' },
-    { value: '#8338ec', name: 'Purple' },
-    { value: '#ffbe0b', name: 'Sunshine' },
-    { value: '#00f5d4', name: 'Teal' },
-    { value: '#ff5400', name: 'Orange' },
-    { value: '#ffffff', name: 'White' },
+    { value: '#9D7DFF', name: 'Purple' },
+    { value: '#7BB6FF', name: 'Blue' },
+    { value: '#5BCE9A', name: 'Green' },
+    { value: '#FFC83D', name: 'Sunshine' },
+    { value: '#FF9B7E', name: 'Peach' },
+    { value: '#F07A5C', name: 'Coral' },
+    { value: '#1F1B2E', name: 'Ink' },
 ];
 
 const BRUSH_SIZES = [
@@ -94,9 +95,15 @@ const FloatingTool = ({ children, style = {}, compact = false }: FloatingToolPro
     <div
         className="kid-panel"
         style={{
-            background: tokens.semantic.bgPanel,
-            borderRadius: compact ? tokens.radius.xl : tokens.radius.xxl,
-            border: `1.5px solid ${tokens.semantic.borderPanel}`,
+            // 2.0 frosted-glass rail: translucent warm cream + blur, so the
+            // canvas art glows softly behind the tools (matches the prototype
+            // colour/brush rails). Falls back to the solid panel where blur
+            // is unsupported because the bg is already near-opaque cream.
+            background: 'rgba(255, 253, 247, 0.74)',
+            backdropFilter: 'blur(18px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(18px) saturate(140%)',
+            borderRadius: compact ? tokens.radius.xl : tokens.radius.pill,
+            border: '1px solid rgba(31, 27, 46, 0.06)',
             boxShadow: tokens.shadow.float,
             padding: compact ? tokens.spacing.sm : tokens.spacing.lg,
             color: tokens.semantic.textPrimary,
@@ -837,10 +844,10 @@ export const FreePaintMode = ({ frameRef, onExit }: FreePaintModeProps) => {
                 }}>
                     <div style={{
                         background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-                        border: '1.5px solid rgba(0, 245, 212, 0.3)',
+                        border: '1.5px solid rgba(91, 206, 154, 0.35)',
                         borderRadius: '9999px',
                         padding: isCompact ? '10px 20px' : '14px 28px',
-                        color: '#00f5d4',
+                        color: '#5BCE9A',
                         fontSize: isCompact ? '0.9rem' : '1.1rem',
                         fontWeight: 600,
                         

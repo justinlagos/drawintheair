@@ -312,31 +312,31 @@ function drawTile(
     // Bright Kid-UI palette per status
     const fillTop: Record<string, string> = {
         idle: '#FFFFFF',
-        correct: 'rgba(126, 217, 87, 0.55)',  // meadow green
-        wrong: 'rgba(255, 107, 107, 0.55)',   // coral
+        correct: 'rgba(91, 206, 154, 0.55)',  // meadow green
+        wrong: 'rgba(240, 122, 92, 0.55)',   // coral
     };
     const fillBot: Record<string, string> = {
-        idle: '#F4FAFF',
-        correct: 'rgba(126, 217, 87, 0.30)',
-        wrong: 'rgba(255, 107, 107, 0.30)',
+        idle: '#F4EFFF',
+        correct: 'rgba(91, 206, 154, 0.30)',
+        wrong: 'rgba(240, 122, 92, 0.30)',
     };
     const borderColors: Record<string, string> = {
-        idle: 'rgba(108, 63, 164, 0.20)',
-        correct: '#7ED957',
-        wrong: '#FF6B6B',
+        idle: 'rgba(138, 102, 240, 0.22)',
+        correct: '#5BCE9A',
+        wrong: '#F07A5C',
     };
     const letterColors: Record<string, string> = {
-        idle: '#3F4052',     // charcoal
-        correct: '#3F4052',  // stays charcoal on green for contrast
-        wrong: '#3F4052',
+        idle: '#1F1B2E',     // charcoal
+        correct: '#1F1B2E',  // stays charcoal on green for contrast
+        wrong: '#1F1B2E',
     };
 
     // Drop shadow / soft glow
     ctx.save();
     ctx.shadowColor =
-        tile.status === 'correct' ? 'rgba(126, 217, 87, 0.55)'
-        : tile.status === 'wrong' ? 'rgba(255, 107, 107, 0.50)'
-        : 'rgba(108, 63, 164, 0.18)';
+        tile.status === 'correct' ? 'rgba(91, 206, 154, 0.55)'
+        : tile.status === 'wrong' ? 'rgba(240, 122, 92, 0.50)'
+        : 'rgba(31, 27, 46, 0.16)';
     ctx.shadowBlur = tile.status === 'idle' ? 6 : 18;
     ctx.shadowOffsetY = tile.status === 'idle' ? 3 : 0;
 
@@ -371,6 +371,18 @@ function drawTile(
     ctx.fill();
     ctx.restore();
 
+    // Bottom inner shade, gives the tile a pressed 3D thickness
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    const baseShade = ctx.createLinearGradient(x, y + th * 0.6, x, y + th);
+    baseShade.addColorStop(0, 'rgba(31,27,46,0)');
+    baseShade.addColorStop(1, 'rgba(31,27,46,0.12)');
+    ctx.fillStyle = baseShade;
+    ctx.beginPath();
+    ctx.roundRect(x + 2, y + th * 0.55, tw - 4, th * 0.43, r - 2);
+    ctx.fill();
+    ctx.restore();
+
     // Border
     ctx.strokeStyle = borderColors[tile.status];
     ctx.lineWidth = 2.5;
@@ -378,9 +390,9 @@ function drawTile(
     ctx.roundRect(x, y, tw, th, r);
     ctx.stroke();
 
-    // Letter, Fredoka bold, charcoal
+    // Letter, Outfit bold
     ctx.save();
-    ctx.font = `700 ${Math.round(th * 0.58)}px Fredoka, "Baloo 2", system-ui, -apple-system, sans-serif`;
+    ctx.font = `700 ${Math.round(th * 0.58)}px Outfit, system-ui, -apple-system, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = letterColors[tile.status];
@@ -431,7 +443,7 @@ function drawDwellRing(
     const r = (Math.max(tile.width * width, tile.height * height) / 2) + 8;
     ctx.beginPath();
     ctx.arc(tc.x, tc.y, r, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
-    ctx.strokeStyle = '#FFD84D'; // sunshine, design-system reward tone
+    ctx.strokeStyle = '#FFC83D'; // sunshine, design-system reward tone
     ctx.lineWidth = 5;
     ctx.lineCap = 'round';
     ctx.stroke();
@@ -480,17 +492,17 @@ export const gestureSpellingLogic = (
         ctx.beginPath();
         ctx.moveTo(bx, blankY + blankSize);
         ctx.lineTo(bx + blankSize, blankY + blankSize);
-        ctx.strokeStyle = filled ? '#7ED957' : 'rgba(108, 63, 164, 0.35)';
+        ctx.strokeStyle = filled ? '#5BCE9A' : 'rgba(138, 102, 240, 0.38)';
         ctx.lineWidth = 4;
         ctx.lineCap = 'round';
         ctx.stroke();
 
         if (filled) {
             ctx.save();
-            ctx.font = `700 ${Math.round(blankSize * 0.85)}px Fredoka, "Baloo 2", system-ui, sans-serif`;
+            ctx.font = `700 ${Math.round(blankSize * 0.85)}px Outfit, system-ui, sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#3F4052'; // charcoal, readable on bright sky
+            ctx.fillStyle = '#1F1B2E'; // charcoal, readable on bright sky
             ctx.shadowBlur = 0;
             ctx.fillText(typedSoFar[i], bx + blankSize / 2, blankY + blankSize / 2);
             ctx.restore();
@@ -611,20 +623,20 @@ export const gestureSpellingLogic = (
 
     // ── Category badge, deep plum on the bright sky ──────────────────────────
     ctx.save();
-    ctx.font = `600 ${Math.round(Math.min(width, height) * 0.025)}px Fredoka, "Baloo 2", system-ui, sans-serif`;
+    ctx.font = `600 ${Math.round(Math.min(width, height) * 0.025)}px Outfit, system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
-    ctx.fillStyle = 'rgba(108, 63, 164, 0.55)';
+    ctx.fillStyle = 'rgba(138, 102, 240, 0.55)';
     ctx.fillText(currentWord.category, width / 2, height * 0.4);
     ctx.restore();
 
     // ── Instruction, charcoal on bright sky for readability ──────────────────
     if (!wordComplete) {
         ctx.save();
-        ctx.font = `700 ${Math.round(Math.min(width, height) * 0.028)}px Fredoka, "Baloo 2", system-ui, sans-serif`;
+        ctx.font = `700 ${Math.round(Math.min(width, height) * 0.028)}px Outfit, system-ui, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.fillStyle = '#3F4052';
+        ctx.fillStyle = '#1F1B2E';
         ctx.fillText(
             typedSoFar.length === 0
                 ? 'Hover over each letter to spell the word!'

@@ -193,7 +193,7 @@ export const preWritingLogic = (
     ctx.save();
 
     // Layer 1, soft shadow under the path (lavender, pillowy)
-    ctx.strokeStyle = 'rgba(108, 63, 164, 0.10)';
+    ctx.strokeStyle = 'rgba(138, 102, 240, 0.10)';
     ctx.lineWidth = 56;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -230,7 +230,7 @@ export const preWritingLogic = (
 
     // Layer 4, deep plum direction dots (gives the path its readable rhythm)
     ctx.setLineDash([4, 16]);
-    ctx.strokeStyle = 'rgba(108, 63, 164, 0.65)';
+    ctx.strokeStyle = 'rgba(138, 102, 240, 0.65)';
     ctx.lineWidth = 6;
     ctx.beginPath();
     ctx.moveTo(startCanvas.x, startCanvas.y);
@@ -251,49 +251,69 @@ export const preWritingLogic = (
         }
 
         if (progressPoints.length >= 2) {
-            // Glow halo
-            ctx.save();
-            ctx.shadowColor = 'rgba(85, 221, 224, 0.65)';
-            ctx.shadowBlur = 22;
-            ctx.strokeStyle = 'rgba(85, 221, 224, 0.55)';
-            ctx.lineWidth = 50;
+            // Helper to stroke the whole progress polyline at a given style.
+            const tracePoly = () => {
+                ctx.beginPath();
+                const f = normalizedToCanvas(progressPoints[0], width, height);
+                ctx.moveTo(f.x, f.y);
+                for (let i = 1; i < progressPoints.length; i++) {
+                    const cp = normalizedToCanvas(progressPoints[i], width, height);
+                    ctx.lineTo(cp.x, cp.y);
+                }
+                ctx.stroke();
+            };
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            ctx.beginPath();
-            const fc = normalizedToCanvas(progressPoints[0], width, height);
-            ctx.moveTo(fc.x, fc.y);
-            for (let i = 1; i < progressPoints.length; i++) {
-                const cp = normalizedToCanvas(progressPoints[i], width, height);
-                ctx.lineTo(cp.x, cp.y);
-            }
-            ctx.stroke();
+
+            // Layered 2.0 glow — wide soft halo + tight bright halo (sky)
+            ctx.save();
+            ctx.shadowColor = 'rgba(123, 182, 255, 0.75)';
+            ctx.shadowBlur = 34;
+            ctx.strokeStyle = 'rgba(123, 182, 255, 0.35)';
+            ctx.lineWidth = 56;
+            tracePoly();
+            ctx.shadowBlur = 16;
+            ctx.strokeStyle = 'rgba(147, 197, 255, 0.55)';
+            ctx.lineWidth = 40;
+            tracePoly();
             ctx.restore();
 
-            // Solid ribbon body
-            ctx.strokeStyle = '#55DDE0';
+            // Solid sky ribbon body
+            ctx.strokeStyle = '#7BB6FF';
             ctx.lineWidth = 32;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.beginPath();
-            const fc2 = normalizedToCanvas(progressPoints[0], width, height);
-            ctx.moveTo(fc2.x, fc2.y);
-            for (let i = 1; i < progressPoints.length; i++) {
-                const cp = normalizedToCanvas(progressPoints[i], width, height);
-                ctx.lineTo(cp.x, cp.y);
-            }
-            ctx.stroke();
+            tracePoly();
+
+            // Mint leading edge tint for "fresh ink" feel near the tip
+            ctx.strokeStyle = 'rgba(91, 206, 154, 0.22)';
+            ctx.lineWidth = 24;
+            tracePoly();
 
             // Top inner highlight (glossy 2.5D feel)
-            ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-            ctx.lineWidth = 14;
+            ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+            ctx.lineWidth = 13;
+            tracePoly();
+
+            // ── Glowing comet head at the leading tip ──────────────────
+            const tip = normalizedToCanvas(progressPoints[progressPoints.length - 1], width, height);
+            const headPulse = Math.sin(Date.now() / 180) * 2 + 18;
+            ctx.save();
+            ctx.shadowColor = 'rgba(123, 182, 255, 0.9)';
+            ctx.shadowBlur = 22;
+            const headGrad = ctx.createRadialGradient(tip.x, tip.y, 0, tip.x, tip.y, headPulse);
+            headGrad.addColorStop(0, '#FFFFFF');
+            headGrad.addColorStop(0.5, '#BFE0FF');
+            headGrad.addColorStop(1, 'rgba(123,182,255,0)');
+            ctx.fillStyle = headGrad;
             ctx.beginPath();
-            const fc3 = normalizedToCanvas(progressPoints[0], width, height);
-            ctx.moveTo(fc3.x, fc3.y);
-            for (let i = 1; i < progressPoints.length; i++) {
-                const cp = normalizedToCanvas(progressPoints[i], width, height);
-                ctx.lineTo(cp.x, cp.y);
-            }
-            ctx.stroke();
+            ctx.arc(tip.x, tip.y, headPulse, 0, Math.PI * 2);
+            ctx.fill();
+            // crisp white core + sparkle
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(255,255,255,0.95)';
+            ctx.beginPath();
+            ctx.arc(tip.x, tip.y, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
         }
     }
 
@@ -304,7 +324,7 @@ export const preWritingLogic = (
         const sy = startCanvasPoint.y;
 
         // Drop shadow
-        ctx.fillStyle = 'rgba(108, 63, 164, 0.30)';
+        ctx.fillStyle = 'rgba(138, 102, 240, 0.30)';
         ctx.beginPath();
         ctx.ellipse(sx + 2, sy + pulse * 0.85, pulse * 0.95, pulse * 0.28, 0, 0, Math.PI * 2);
         ctx.fill();
@@ -323,9 +343,9 @@ export const preWritingLogic = (
 
         // Orb body, radial gradient
         const orbGrad = ctx.createRadialGradient(sx - pulse * 0.3, sy - pulse * 0.3, pulse * 0.1, sx, sy, pulse);
-        orbGrad.addColorStop(0, '#D7F8C4');
-        orbGrad.addColorStop(0.55, progress < 0.05 ? '#7ED957' : '#9BE08A');
-        orbGrad.addColorStop(1, '#5BB04A');
+        orbGrad.addColorStop(0, '#D2F4E0');
+        orbGrad.addColorStop(0.55, progress < 0.05 ? '#5BCE9A' : '#7BD9A8');
+        orbGrad.addColorStop(1, '#3FB87F');
         ctx.fillStyle = orbGrad;
         ctx.beginPath();
         ctx.arc(sx, sy, pulse, 0, Math.PI * 2);
@@ -352,7 +372,7 @@ export const preWritingLogic = (
         const r = 22;
 
         // Drop shadow
-        ctx.fillStyle = 'rgba(108, 63, 164, 0.22)';
+        ctx.fillStyle = 'rgba(138, 102, 240, 0.22)';
         ctx.beginPath();
         ctx.ellipse(ex + 2, ey + r * 0.85, r * 0.95, r * 0.25, 0, 0, Math.PI * 2);
         ctx.fill();
@@ -360,9 +380,9 @@ export const preWritingLogic = (
         if (progress > 0.95) {
             // Filled sunshine orb (success)
             const targetGrad = ctx.createRadialGradient(ex - r * 0.3, ey - r * 0.3, r * 0.1, ex, ey, r);
-            targetGrad.addColorStop(0, '#FFF6D6');
-            targetGrad.addColorStop(0.55, '#FFD84D');
-            targetGrad.addColorStop(1, '#FFB14D');
+            targetGrad.addColorStop(0, '#FFF8E0');
+            targetGrad.addColorStop(0.55, '#FFC83D');
+            targetGrad.addColorStop(1, '#FF9B7E');
             ctx.fillStyle = targetGrad;
             ctx.beginPath();
             ctx.arc(ex, ey, r, 0, Math.PI * 2);
@@ -383,17 +403,17 @@ export const preWritingLogic = (
             // Empty target ring, pillowy plum-bordered cream disc
             const ringGrad = ctx.createRadialGradient(ex - r * 0.2, ey - r * 0.2, r * 0.1, ex, ey, r);
             ringGrad.addColorStop(0, '#FFFFFF');
-            ringGrad.addColorStop(1, '#F4FAFF');
+            ringGrad.addColorStop(1, '#F4EFFF');
             ctx.fillStyle = ringGrad;
             ctx.beginPath();
             ctx.arc(ex, ey, r, 0, Math.PI * 2);
             ctx.fill();
-            ctx.strokeStyle = 'rgba(108, 63, 164, 0.55)';
+            ctx.strokeStyle = 'rgba(138, 102, 240, 0.55)';
             ctx.lineWidth = 4;
             ctx.beginPath();
             ctx.arc(ex, ey, r, 0, Math.PI * 2);
             ctx.stroke();
-            ctx.strokeStyle = 'rgba(108, 63, 164, 0.30)';
+            ctx.strokeStyle = 'rgba(138, 102, 240, 0.30)';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.arc(ex, ey, r * 0.55, 0, Math.PI * 2);
@@ -445,7 +465,7 @@ export const preWritingLogic = (
 
                 if (onPathStreak > 20) {
                     ctx.font = '700 22px Fredoka, "Baloo 2", system-ui, sans-serif';
-                    ctx.fillStyle = '#FFB14D';
+                    ctx.fillStyle = '#FF9B7E';
                     ctx.fillText('🔥', fingerCanvas.x + 24, fingerCanvas.y - 12);
                 }
             } else {

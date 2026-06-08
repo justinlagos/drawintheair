@@ -62,9 +62,10 @@ const LEVEL_CONFIGS: BalloonMathLevel[] = [
     { level: 4, name: '🧠 Harder Sums', minNum: 1, maxNum: 10, balloonCount: 8, useAddition: true },
 ];
 
+// Draw in the Air 2.0 balloon palette — lavender / sky / mint / sun / peach.
 const BALLOON_COLORS = [
-    '#FF5252', '#FF4081', '#E040FB', '#7C4DFF',
-    '#448AFF', '#00BCD4', '#69F0AE', '#FFAB40', '#FF6E40',
+    '#9D7DFF', '#7BB6FF', '#5BCE9A', '#FFC83D',
+    '#FF9B7E', '#F07A5C', '#B69BFF', '#93C5FF', '#7BD9A8',
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -218,6 +219,11 @@ function darken(hex: string, pct: number): string {
     return `#${(0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1)}`;
 }
 
+// Draw in the Air 2.0 — elevated glossy balloon.
+// True teardrop body, floating contact shadow, layered specular + rim
+// shine, a real knot and a gently curling string. Hit-testing is still
+// the circle (cx,cy,r) the caller owns; only the rendering is richer.
+const BURST_GLYPHS = ['✦', '✧', '★', '●'];
 function drawBalloon(
     ctx: CanvasRenderingContext2D,
     cx: number, cy: number, r: number,
@@ -227,74 +233,114 @@ function drawBalloon(
     shakeOffset: number,
 ): void {
     const x = cx + shakeOffset;
+    const ry = r * 1.14;            // balloons are a touch taller than wide
+    const tipY = cy + ry + r * 0.16; // where the neck/knot meets
 
-    // Outer glow (stronger while dwelling)
-    const glowR = r * (1.5 + dwellProgress * 0.5);
+    // Soft outer glow (stronger while dwelling)
+    const glowR = r * (1.55 + dwellProgress * 0.55);
     const glow = ctx.createRadialGradient(x, cy, r * 0.6, x, cy, glowR);
-    glow.addColorStop(0, color + '55');
+    glow.addColorStop(0, color + (dwellProgress > 0 ? '66' : '40'));
     glow.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.beginPath();
     ctx.arc(x, cy, glowR, 0, Math.PI * 2);
     ctx.fillStyle = glow;
     ctx.fill();
 
-    // Main body gradient
-    const body = ctx.createRadialGradient(x - r * 0.28, cy - r * 0.28, r * 0.05, x, cy, r);
-    body.addColorStop(0, lighten(color, 45));
-    body.addColorStop(0.4, lighten(color, 15));
-    body.addColorStop(0.75, color);
-    body.addColorStop(1, darken(color, 35));
+    // Floating contact shadow on the meadow below
+    const shY = cy + ry + 96;
+    const sh = ctx.createRadialGradient(x, shY, 0, x, shY, r * 0.9);
+    sh.addColorStop(0, 'rgba(31,27,46,0.18)');
+    sh.addColorStop(1, 'rgba(31,27,46,0)');
     ctx.beginPath();
-    ctx.arc(x, cy, r, 0, Math.PI * 2);
+    ctx.ellipse(x, shY, r * 0.78, r * 0.2, 0, 0, Math.PI * 2);
+    ctx.fillStyle = sh;
+    ctx.fill();
+
+    // Knot + curling string (drawn behind the body)
+    ctx.beginPath();
+    ctx.moveTo(x, tipY);
+    ctx.bezierCurveTo(x - r * 0.18, tipY + r * 0.5, x + r * 0.16, tipY + r * 0.95, x - r * 0.1, tipY + r * 1.5);
+    ctx.strokeStyle = 'rgba(31,27,46,0.28)';
+    ctx.lineWidth = Math.max(1.5, r * 0.05);
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // Balloon body — teardrop: rounded ellipse that tapers to the neck
+    ctx.beginPath();
+    ctx.moveTo(x, cy - ry);
+    ctx.bezierCurveTo(x + r * 1.25, cy - ry, x + r * 1.05, cy + ry * 0.72, x + r * 0.18, tipY - r * 0.06);
+    ctx.quadraticCurveTo(x, tipY + r * 0.06, x - r * 0.18, tipY - r * 0.06);
+    ctx.bezierCurveTo(x - r * 1.05, cy + ry * 0.72, x - r * 1.25, cy - ry, x, cy - ry);
+    ctx.closePath();
+    const body = ctx.createRadialGradient(x - r * 0.32, cy - r * 0.42, r * 0.05, x + r * 0.12, cy + r * 0.18, ry * 1.15);
+    body.addColorStop(0, lighten(color, 52));
+    body.addColorStop(0.38, lighten(color, 18));
+    body.addColorStop(0.74, color);
+    body.addColorStop(1, darken(color, 30));
     ctx.fillStyle = body;
     ctx.fill();
 
-    // Specular highlight
-    const spec = ctx.createRadialGradient(x - r * 0.3, cy - r * 0.3, 0, x - r * 0.3, cy - r * 0.3, r * 0.5);
+    // Rim light along the lower-right edge
+    ctx.save();
+    ctx.clip();
+    const rim = ctx.createLinearGradient(x + r * 0.2, cy - ry * 0.5, x + r, cy + ry);
+    rim.addColorStop(0, 'rgba(255,255,255,0)');
+    rim.addColorStop(1, lighten(color, 30) + 'cc');
+    ctx.fillStyle = rim;
+    ctx.fillRect(x - r * 1.3, cy - ry * 1.2, r * 2.6, ry * 2.6);
+    ctx.restore();
+
+    // Primary specular highlight (soft oval)
+    ctx.save();
+    ctx.globalAlpha = 0.95;
+    const spec = ctx.createRadialGradient(x - r * 0.34, cy - r * 0.42, 0, x - r * 0.34, cy - r * 0.42, r * 0.58);
     spec.addColorStop(0, 'rgba(255,255,255,0.95)');
-    spec.addColorStop(0.5, 'rgba(255,255,255,0.3)');
+    spec.addColorStop(0.55, 'rgba(255,255,255,0.28)');
     spec.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.beginPath();
-    ctx.arc(x - r * 0.3, cy - r * 0.3, r * 0.5, 0, Math.PI * 2);
+    ctx.ellipse(x - r * 0.34, cy - r * 0.42, r * 0.42, r * 0.58, -0.5, 0, Math.PI * 2);
     ctx.fillStyle = spec;
     ctx.fill();
+    ctx.restore();
 
-    // Knot (small triangle at bottom)
+    // Tiny crisp sparkle dot on the highlight
     ctx.beginPath();
-    ctx.moveTo(x, cy + r);
-    ctx.lineTo(x - 4, cy + r + 8);
-    ctx.lineTo(x + 4, cy + r + 8);
-    ctx.closePath();
-    ctx.fillStyle = darken(color, 20);
+    ctx.arc(x - r * 0.5, cy - r * 0.58, r * 0.08, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
     ctx.fill();
 
-    // String
+    // Knot
     ctx.beginPath();
-    ctx.moveTo(x, cy + r + 8);
-    ctx.bezierCurveTo(x - 10, cy + r + 28, x + 8, cy + r + 48, x - 4, cy + r + 68);
-    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    ctx.moveTo(x - r * 0.16, tipY - r * 0.04);
+    ctx.quadraticCurveTo(x, tipY + r * 0.22, x + r * 0.16, tipY - r * 0.04);
+    ctx.quadraticCurveTo(x, tipY + r * 0.06, x - r * 0.16, tipY - r * 0.04);
+    ctx.closePath();
+    ctx.fillStyle = darken(color, 18);
+    ctx.fill();
 
     // Number label
     ctx.save();
-    ctx.font = `bold ${Math.round(r * 0.85)}px Outfit, system-ui, sans-serif`;
+    ctx.font = `800 ${Math.round(r * 0.92)}px Outfit, system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.shadowBlur = 6;
-    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = 'rgba(31,27,46,0.45)';
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(String(num), x, cy + 2);
+    ctx.fillText(String(num), x, cy);
     ctx.restore();
 
-    // Dwell ring
+    // Dwell ring (sky-blue, glowing)
     if (dwellProgress > 0) {
+        ctx.save();
         ctx.beginPath();
-        ctx.arc(x, cy, r + 6, -Math.PI / 2, -Math.PI / 2 + dwellProgress * Math.PI * 2);
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 4;
+        ctx.arc(x, cy, r + 9, -Math.PI / 2, -Math.PI / 2 + dwellProgress * Math.PI * 2);
+        ctx.strokeStyle = '#7BB6FF';
+        ctx.lineWidth = 5;
         ctx.lineCap = 'round';
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = 'rgba(123,182,255,0.8)';
         ctx.stroke();
+        ctx.restore();
     }
 }
 
@@ -306,27 +352,67 @@ function drawPopBurst(
 ): void {
     const t = age / POP_DURATION_MS; // 0→1
     const alpha = Math.max(0, 1 - t);
-    const scale = 1 + t * 1.5;
-    const particleCount = 12;
+    const ease = 1 - Math.pow(1 - t, 2);
+    const scale = 1 + ease * 1.8;
+
+    // White flash core
+    const flash = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * scale * 0.9);
+    flash.addColorStop(0, `rgba(255,255,255,${alpha * 0.9})`);
+    flash.addColorStop(0.5, `rgba(255,236,179,${alpha * 0.5})`);
+    flash.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * scale * 0.9, 0, Math.PI * 2);
+    ctx.fillStyle = flash;
+    ctx.fill();
+
+    // Confetti shards + sparkle glyphs spraying outward
+    const particleCount = 14;
     for (let i = 0; i < particleCount; i++) {
-        const angle = (i / particleCount) * Math.PI * 2;
-        const dist = r * scale * 1.4;
+        const angle = (i / particleCount) * Math.PI * 2 + i;
+        const dist = r * scale * 1.5;
         const px = cx + Math.cos(angle) * dist;
         const py = cy + Math.sin(angle) * dist;
-        const pr = (8 + Math.random() * 6) * alpha;
-        ctx.beginPath();
-        ctx.arc(px, py, Math.max(0, pr), 0, Math.PI * 2);
-        ctx.fillStyle = color;
+        ctx.save();
         ctx.globalAlpha = alpha;
-        ctx.fill();
-        ctx.globalAlpha = 1;
+        if (i % 3 === 0) {
+            ctx.fillStyle = '#fff';
+            ctx.font = `${Math.round((10 + r * 0.3))}px Outfit, system-ui, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(BURST_GLYPHS[i % BURST_GLYPHS.length], px, py);
+        } else {
+            const pr = (7 + (i % 4) * 2) * alpha;
+            ctx.beginPath();
+            ctx.arc(px, py, Math.max(0, pr), 0, Math.PI * 2);
+            ctx.fillStyle = i % 2 ? color : '#FFC83D';
+            ctx.fill();
+        }
+        ctx.restore();
     }
-    // Flash ring
+
+    // Twin expanding rings (sun + lavender)
     ctx.beginPath();
     ctx.arc(cx, cy, r * scale, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.8})`;
+    ctx.strokeStyle = `rgba(255,200,61,${alpha * 0.9})`;
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * scale * 1.25, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(157,125,255,${alpha * 0.6})`;
     ctx.lineWidth = 3;
     ctx.stroke();
+
+    // Rising "+1"
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = '900 28px Outfit, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#C88A0F';
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = 'rgba(31,27,46,0.2)';
+    ctx.fillText('+1', cx, cy - 30 - ease * 46);
+    ctx.restore();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

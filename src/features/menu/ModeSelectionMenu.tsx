@@ -1,20 +1,26 @@
 /**
- * Mode Selection Menu, Clean Grid Layout
+ * Mode Selection Menu — "Choose your adventure" (Draw in the Air 2.0)
  *
- * Strategy:
- * - Desktop/TV: 2-row layout with featured tile (top, wide) + 4 smaller tiles (bottom row)
- * - Tablet: 2×2 grid + 1 featured top tile
- * - Mobile portrait: Vertical scrollable list with large tap targets
- * - Mobile landscape: Compact horizontal grid
+ * VISUAL REDESIGN ONLY. This file was re-skinned to the 2.0 adventure
+ * gallery (premium toy-console look). Every piece of PRODUCT LOGIC from
+ * the previous implementation is preserved verbatim:
+ *   - `GameMode` ids and the behavioural MODES order
+ *   - `#mode-card-${id}` element ids (hand-tracking hit-test targets)
+ *   - 1.5s dwell-to-select via index-fingertip hover
+ *   - Premium gating (useParentAccess + PremiumLockModal)
+ *   - Responsive breakpoints (phone / tablet / desktop, portrait/landscape)
+ *   - The onSelect / onBack / trackingResults public API
  *
- * No 3D carousel. No perspective transforms. Clean, immediate, obvious.
- * Every tile is always visible. Tap or dwell to select.
+ * No-scroll: tablet/desktop/landscape render a fixed 4×2 gallery that
+ * fits the viewport. Phone portrait keeps a compact list (the only
+ * surface that may scroll, matching prior behaviour).
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { type HandLandmarkerResult } from '@mediapipe/tasks-vision';
 import { useParentAccess } from '../parent/useParentAccess';
 import { PremiumLockModal } from '../parent/PremiumLockModal';
+import { Dita2Root, type Tone } from '../kid2/Kid2';
 
 export type GameMode = 'calibration' | 'free' | 'pre-writing' | 'sort-and-place' | 'word-search' | 'colour-builder' | 'balloon-math' | 'rainbow-bridge' | 'gesture-spelling' | 'building';
 
@@ -23,9 +29,11 @@ interface ModeOption {
     title: string;
     subtitle: string;
     icon: string;
-    accentColor: string;
-    accentGlow: string;
+    /** 2.0 tonal family driving the badge gradient + glow. */
+    tone: Tone;
     category: string;
+    /** Age band shown on the tile tag (product fact, not progress). */
+    age: string;
     /** 'free' = always playable; 'premium' = requires parent subscription/trial. */
     tier: 'free' | 'premium';
 }
@@ -49,86 +57,14 @@ interface ModeOption {
  * last 90 days. Phase 2 of the activation refactor.
  */
 const MODES: ModeOption[] = [
-    {
-        id: 'free',
-        title: 'Free Paint',
-        subtitle: 'Create anything',
-        icon: '🎨',
-        accentColor: '#9B59B6',
-        accentGlow: 'rgba(155, 89, 182, 0.35)',
-        category: 'Creative',
-        tier: 'free',
-    },
-    {
-        id: 'calibration',
-        title: 'Bubble Pop',
-        subtitle: 'Warm up your hands',
-        icon: '🫧',
-        accentColor: '#FF8C42',
-        accentGlow: 'rgba(255, 140, 66, 0.35)',
-        category: 'Warm-up',
-        tier: 'free',
-    },
-    {
-        id: 'pre-writing',
-        title: 'Tracing',
-        subtitle: 'Follow the path',
-        icon: '✏️',
-        accentColor: '#2ECC71',
-        accentGlow: 'rgba(46, 204, 113, 0.35)',
-        category: 'Learning',
-        tier: 'free',
-    },
-    {
-        id: 'gesture-spelling',
-        title: 'Spelling Stars',
-        subtitle: 'Spell the word!',
-        icon: '✍️',
-        accentColor: '#A855F7',
-        accentGlow: 'rgba(168, 85, 247, 0.35)',
-        category: 'Learning',
-        tier: 'premium',
-    },
-    {
-        id: 'sort-and-place',
-        title: 'Sort & Place',
-        subtitle: 'Think and sort',
-        icon: '🗂️',
-        accentColor: '#3498DB',
-        accentGlow: 'rgba(52, 152, 219, 0.35)',
-        category: 'Puzzle',
-        tier: 'premium',
-    },
-    {
-        id: 'word-search',
-        title: 'Word Search',
-        subtitle: 'Find the words',
-        icon: '🔍',
-        accentColor: '#F1C40F',
-        accentGlow: 'rgba(241, 196, 15, 0.35)',
-        category: 'Puzzle',
-        tier: 'premium',
-    },
-    {
-        id: 'balloon-math',
-        title: 'Balloon Math',
-        subtitle: 'Pop the right number!',
-        icon: '🎈',
-        accentColor: '#FF6B6B',
-        accentGlow: 'rgba(255, 107, 107, 0.35)',
-        category: 'Learning',
-        tier: 'premium',
-    },
-    {
-        id: 'rainbow-bridge',
-        title: 'Rainbow Bridge',
-        subtitle: 'Match the colours',
-        icon: '🌈',
-        accentColor: '#00BCD4',
-        accentGlow: 'rgba(0, 188, 212, 0.35)',
-        category: 'Learning',
-        tier: 'premium',
-    }
+    { id: 'free',             title: 'Free Paint',     subtitle: 'Create anything',        icon: '🎨', tone: 'lavender', category: 'Creative', age: '3–7', tier: 'free' },
+    { id: 'calibration',      title: 'Bubble Pop',     subtitle: 'Warm up your hands',     icon: '🫧', tone: 'peach',    category: 'Warm-up',  age: '3–7', tier: 'free' },
+    { id: 'pre-writing',      title: 'Tracing',        subtitle: 'Follow the path',        icon: '✏️', tone: 'mint',     category: 'Learning', age: '3–7', tier: 'free' },
+    { id: 'gesture-spelling', title: 'Spelling Stars', subtitle: 'Spell the word!',        icon: '✍️', tone: 'lavender', category: 'Learning', age: '5–7', tier: 'premium' },
+    { id: 'sort-and-place',   title: 'Sort & Place',   subtitle: 'Think and sort',         icon: '🗂️', tone: 'sky',      category: 'Puzzle',   age: '3–6', tier: 'premium' },
+    { id: 'word-search',      title: 'Word Search',    subtitle: 'Find the words',         icon: '🔍', tone: 'sun',      category: 'Puzzle',   age: '5–7', tier: 'premium' },
+    { id: 'balloon-math',     title: 'Balloon Math',   subtitle: 'Pop the right number!',  icon: '🎈', tone: 'peach',    category: 'Learning', age: '4–7', tier: 'premium' },
+    { id: 'rainbow-bridge',   title: 'Rainbow Bridge', subtitle: 'Match the colours',      icon: '🌈', tone: 'sky',      category: 'Learning', age: '3–6', tier: 'premium' },
 ];
 
 interface ModeSelectionMenuProps {
@@ -138,241 +74,76 @@ interface ModeSelectionMenuProps {
 }
 
 /* ═══════════════════════════════════════════════════
-   GAME CARD, Single tile with toy-plastic material
+   ADVENTURE CARD — 2.0 tonal tile with 3D icon badge.
+   Visuals only; selection/dwell are driven by the parent.
    ═══════════════════════════════════════════════════ */
-
-interface GameCardProps {
+interface AdventureCardProps {
     mode: ModeOption;
     featured?: boolean;
-    isHovered: boolean;
-    isSelected: boolean;
-    hoverProgress: number;
-    onClick: () => void;
     compact?: boolean;
     locked?: boolean;
+    isHovered: boolean;
+    isSelected: boolean;
+    hoverProgress: number; // 0..1, hand-tracking dwell
+    onClick: () => void;
 }
 
-const GameCard = ({ mode, featured, isHovered, isSelected, hoverProgress, onClick, compact, locked }: GameCardProps) => {
-    const [pressed, setPressed] = useState(false);
+const DWELL_R = 15;
+const DWELL_C = 2 * Math.PI * DWELL_R;
 
+const AdventureCard = ({ mode, featured, compact, locked, isHovered, isSelected, hoverProgress, onClick }: AdventureCardProps) => {
     return (
         <button
             id={`mode-card-${mode.id}`}
-            className="mode-card"
+            className={`d2-adv t-${mode.tone}${featured ? ' feature' : ''}${compact ? ' compact' : ''}${locked ? ' locked' : ''}${isSelected ? ' selected' : ''}`}
             onClick={onClick}
-            onPointerDown={() => setPressed(true)}
-            onPointerUp={() => setPressed(false)}
-            onPointerLeave={() => setPressed(false)}
-            style={{
-                /* Reset button */
-                appearance: 'none',
-                border: 'none',
-                padding: 0,
-                fontFamily: 'inherit',
-                textAlign: 'left',
-                cursor: 'pointer',
-                position: 'relative',
-                width: '100%',
-                height: '100%',
-                borderRadius: '24px',
-                overflow: 'hidden',
-                background: `
-                    linear-gradient(
-                        165deg,
-                        #FFFFFF 0%,
-                        #FBFCFF 60%,
-                        #F4FAFF 100%
-                    )
-                `,
-                boxShadow: isSelected
-                    ? `inset 0 2px 6px rgba(108,63,164,0.18), 0 2px 4px rgba(108,63,164,0.10)`
-                    : isHovered
-                        ? `0 12px 30px ${mode.accentGlow}, 0 4px 8px rgba(108,63,164,0.10)`
-                        : `0 6px 18px rgba(108,63,164,0.14), 0 1px 2px rgba(108,63,164,0.06)`,
-                outline: isHovered
-                    ? `3px solid ${mode.accentColor}`
-                    : `2px solid rgba(108, 63, 164, 0.18)`,
-                outlineOffset: '-2px',
-                transform: pressed || isSelected
-                    ? 'scale(0.97)'
-                    : isHovered
-                        ? 'scale(1.03) translateY(-4px)'
-                        : 'scale(1)',
-                transition: 'transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 200ms ease, outline 150ms ease',
-                isolation: 'isolate',
-            }}
         >
-            {/* Specular highlight, plastic sheen */}
-            <div style={{
-                position: 'absolute',
-                inset: 0,
-                borderRadius: 'inherit',
-                pointerEvents: 'none',
-                zIndex: 1,
-                background: `radial-gradient(ellipse 120% 80% at 25% 0%, rgba(255,255,255,${isHovered ? 0.28 : 0.18}), transparent 55%)`,
-                opacity: pressed ? 0.6 : 1,
-                transition: 'opacity 100ms ease',
-            }} />
+            <div className="d2-adv-bg" />
 
-            {/* Premium lock badge, appears top-right when this game requires a subscription. */}
             {locked && (
-                <div
-                    aria-label="Premium game, ask a grown-up to unlock"
-                    style={{
-                        position: 'absolute',
-                        top: 10, right: 10,
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        padding: '6px 11px',
-                        borderRadius: 999,
-                        background: 'linear-gradient(135deg, #6C3FA4, #5A2F8C)',
-                        color: '#fff',
-                        font: '800 11px/1 Nunito, system-ui, sans-serif',
-                        letterSpacing: '0.06em', textTransform: 'uppercase',
-                        boxShadow: '0 6px 14px rgba(108, 63, 164, 0.40)',
-                        zIndex: 4,
-                    }}
-                >
+                <span className="d2-adv-lockbadge" aria-label="Premium game, ask a grown-up to unlock">
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                        <rect x="3" y="11" width="18" height="11" rx="2"/>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        <rect x="3" y="11" width="18" height="11" rx="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     </svg>
                     Family
-                </div>
+                </span>
             )}
 
-            {/* Soft dim wash over locked games so they read as "preview". */}
-            {locked && (
-                <div
-                    aria-hidden
-                    style={{
-                        position: 'absolute', inset: 0,
-                        background: 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(108, 63, 164, 0.10) 100%)',
-                        pointerEvents: 'none',
-                        zIndex: 3,
-                        borderRadius: 'inherit',
-                    }}
-                />
-            )}
-
-            {/* Dwell progress bar at bottom */}
+            {/* Hand-tracking dwell ring (visual feedback for the 1.5s hold). */}
             {isHovered && hoverProgress > 0 && (
-                <div style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    height: '4px',
-                    width: `${hoverProgress * 100}%`,
-                    background: `linear-gradient(90deg, ${mode.accentColor}, ${mode.accentColor}cc)`,
-                    borderRadius: '0 2px 0 0',
-                    zIndex: 5,
-                    transition: 'width 80ms linear',
-                    boxShadow: `0 0 12px ${mode.accentColor}80`,
-                }} />
+                <div className="d2-dwell-ring" aria-hidden="true">
+                    <svg viewBox="0 0 32 32">
+                        <circle cx="16" cy="16" r={DWELL_R} className="trk" />
+                        <circle cx="16" cy="16" r={DWELL_R} className="fil" strokeDasharray={DWELL_C} strokeDashoffset={DWELL_C * (1 - hoverProgress)} />
+                    </svg>
+                </div>
             )}
 
-            {/* Content layout */}
-            <div style={{
-                position: 'relative',
-                zIndex: 2,
-                height: '100%',
-                padding: compact ? '14px 16px' : featured ? '24px 28px' : '20px 22px',
-                display: 'flex',
-                flexDirection: featured && !compact ? 'row' : compact ? 'row' : 'column',
-                alignItems: 'center',
-                justifyContent: featured && !compact ? 'center' : compact ? 'flex-start' : 'center',
-                gap: compact ? '14px' : featured ? '24px' : '12px',
-                boxSizing: 'border-box',
-            }}>
-                {/* Icon with glow */}
-                <div style={{
-                    position: 'relative',
-                    flexShrink: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                }}>
-                    {/* Glow behind icon */}
-                    <div style={{
-                        position: 'absolute',
-                        width: compact ? '48px' : featured ? '80px' : '64px',
-                        height: compact ? '48px' : featured ? '80px' : '64px',
-                        borderRadius: '50%',
-                        background: `radial-gradient(circle, ${mode.accentGlow} 0%, transparent 70%)`,
-                        opacity: isHovered ? 1 : 0.6,
-                        transition: 'opacity 200ms ease',
-                    }} />
-                    <span style={{
-                        position: 'relative',
-                        fontSize: compact ? '2rem' : featured ? '3.5rem' : '2.8rem',
-                        lineHeight: 1,
-                        filter: isHovered
-                            ? `drop-shadow(0 4px 12px rgba(0,0,0,0.5)) drop-shadow(0 0 20px ${mode.accentGlow})`
-                            : 'drop-shadow(0 3px 8px rgba(0,0,0,0.4))',
-                        transform: isHovered ? 'scale(1.1)' : 'scale(1)',
-                        transition: 'transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1), filter 200ms ease',
-                    }}>
-                        {mode.icon}
-                    </span>
+            <div className="d2-adv-head">
+                <div className="d2-adv-icon-badge">
+                    <span className="d2-adv-icon-sheen" />
+                    <span className="d2-adv-icon">{mode.icon}</span>
                 </div>
-
-                {/* Text */}
-                <div style={{
-                    textAlign: compact ? 'left' : featured ? 'left' : 'center',
-                    minWidth: 0,
-                }}>
-                    <div style={{
-                        fontFamily: "'Fredoka', 'Baloo 2', system-ui, sans-serif",
-                        fontSize: compact ? '1.05rem' : featured ? '1.5rem' : '1.15rem',
-                        fontWeight: 800,
-                        color: '#3F4052',
-                        lineHeight: 1.2,
-                        letterSpacing: '-0.02em',
-                        whiteSpace: 'normal',
-                        wordBreak: 'break-word',
-                    }}>
-                        {mode.title}
-                    </div>
-                    <div style={{
-                        fontFamily: "'Nunito', 'Quicksand', system-ui, sans-serif",
-                        fontSize: compact ? '0.82rem' : featured ? '0.98rem' : '0.85rem',
-                        fontWeight: 600,
-                        color: '#6B6E80',
-                        marginTop: '4px',
-                        lineHeight: 1.3,
-                    }}>
-                        {mode.subtitle}
-                    </div>
-                </div>
-
-                {/* Category badge, featured only, desktop */}
-                {featured && !compact && (
-                    <div style={{
-                        marginLeft: 'auto',
-                        padding: '6px 14px',
-                        borderRadius: '999px',
-                        background: `${mode.accentColor}22`,
-                        border: `1px solid ${mode.accentColor}44`,
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        color: mode.accentColor,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.08em',
-                        whiteSpace: 'nowrap',
-                        flexShrink: 0,
-                    }}>
-                        {mode.category}
-                    </div>
+                {!compact && (
+                    <div className="d2-adv-play" style={{ background: `var(--d2-${mode.tone}-400)` }}>▶</div>
                 )}
+            </div>
+
+            <div className="d2-adv-body">
+                <div className="d2-adv-tag" style={{ color: `var(--d2-${mode.tone}-700, var(--d2-${mode.tone}-600))` }}>
+                    {mode.category} · Ages {mode.age}
+                </div>
+                <h3 className="d2-adv-title">{mode.title}</h3>
+                <p className="d2-adv-sub">{mode.subtitle}</p>
             </div>
         </button>
     );
 };
 
-
 /* ═══════════════════════════════════════════════════
    MAIN MENU COMPONENT
    ═══════════════════════════════════════════════════ */
-
 export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSelectionMenuProps) => {
     const [hoveredMode, setHoveredMode] = useState<GameMode | null>(null);
     const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
@@ -381,6 +152,7 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
     const { hasAccess } = useParentAccess();
     const hoverStartTime = useRef<number | null>(null);
     const cardRefs = useRef<Map<GameMode, DOMRect>>(new Map());
+
     const getScreenInfo = useCallback(() => {
         const w = window.innerWidth;
         const h = window.innerHeight;
@@ -401,9 +173,8 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
         return () => window.removeEventListener('resize', handleResize);
     }, [getScreenInfo]);
 
-    const { isPhone, isTablet, isDesktop, isLandscape } = screenInfo;
+    const { isPhone, isLandscape } = screenInfo;
     const isMobilePortrait = isPhone && !isLandscape;
-    const isMobileLandscape = isPhone && isLandscape;
 
     // Update card hit areas for hand tracking
     useEffect(() => {
@@ -476,229 +247,96 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
         setTimeout(() => onSelect(mode.id), 200);
     }, [selectedMode, onSelect, hasAccess]);
 
-    // Featured mode = first (Bubble Pop, the warm-up)
-    const featured = MODES[0];
-    const rest = MODES.slice(1);
-
-    // Safe margin
-    const margin = isPhone ? 18 : isTablet ? 28 : 40;
+    const galleryLayout = !isMobilePortrait;
 
     return (
-        <div style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 50,
-            overflow: isMobilePortrait ? 'auto' : 'hidden',
-            padding: margin,
-            boxSizing: 'border-box',
-            minHeight: '100vh',
-        }}>
-            {/* Bright Kid-UI menu background, sky + soft sun glow */}
-            <div style={{
-                position: 'fixed', inset: 0, zIndex: 0,
-                background: 'linear-gradient(180deg, #9FDFFF 0%, #BEEBFF 30%, #DEF5FF 65%, #FFF6E5 100%)',
-            }} />
-            <div style={{
-                position: 'fixed', inset: 0, zIndex: 0,
-                background: 'radial-gradient(circle 700px at 78% 18%, rgba(255, 216, 77, 0.40) 0%, rgba(255, 216, 77, 0.18) 35%, transparent 70%)',
-            }} />
-            {/* Soft cloud silhouettes + meadow at bottom */}
-            <svg aria-hidden viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice"
-                 style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
-                <g opacity="0.85">
-                    <ellipse cx="220" cy="160" rx="85" ry="24" fill="#FFFFFF" />
-                    <ellipse cx="780" cy="120" rx="100" ry="28" fill="#FFFFFF" />
-                    <ellipse cx="1180" cy="200" rx="80" ry="22" fill="#FFFFFF" />
-                </g>
-                <path d="M0,720 Q300,680 720,710 T1440,700 L1440,900 L0,900 Z" fill="#A6E89A" />
-                <path d="M0,800 Q300,760 720,790 T1440,780 L1440,900 L0,900 Z" fill="#7ED957" />
-            </svg>
+        <Dita2Root ambient motionLevel={7} style={{ position: 'absolute', inset: 0, zIndex: 50 }}>
+            {/* Soft sky background sits behind the design-system ambient layers. */}
+            <div
+                aria-hidden
+                style={{
+                    position: 'absolute', inset: 0, zIndex: 0,
+                    background: 'linear-gradient(180deg, #F4EFFF 0%, #EEF6FF 38%, #FBF7EE 78%, #FFFDF7 100%)',
+                }}
+            />
 
-            {/* Content */}
-            <div style={{
-                position: 'relative',
-                zIndex: 1,
-                width: '100%',
-                maxWidth: isDesktop ? '960px' : '720px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: isMobilePortrait ? '12px' : isPhone ? '14px' : '20px',
-            }}>
-                {/* Back to Home, Kid-UI secondary pill */}
-                {onBack && (
-                    <button
-                        onClick={onBack}
-                        className="kid-panel"
-                        style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            background: '#FFFFFF',
-                            border: '2.5px solid #6C3FA4',
-                            borderRadius: '9999px',
-                            padding: '10px 22px',
-                            minHeight: '44px',
-                            color: '#6C3FA4',
-                            fontFamily: "'Fredoka', 'Baloo 2', system-ui, sans-serif",
-                            fontSize: '0.95rem',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            zIndex: 10,
-                            boxShadow: '0 4px 16px rgba(108, 63, 164, 0.12), 0 1px 2px rgba(108, 63, 164, 0.08)',
-                            touchAction: 'manipulation',
-                        }}
-                    >
-                        ← Back
+            {/* Back chip (top-left) — preserves onBack contract. */}
+            {onBack && (
+                <div className="d2-hud-tl">
+                    <button className="d2-chip" onClick={onBack}>
+                        <span className="d2-ic">←</span> Back
                     </button>
-                )}
+                </div>
+            )}
 
+            <div className={isMobilePortrait ? 'd2-menu-portrait' : 'd2-menu-stage'}
+                style={isMobilePortrait
+                    ? { position: 'absolute', inset: 0, zIndex: 1, display: 'flex', flexDirection: 'column', gap: 12, padding: '64px 16px 16px', overflowY: 'auto' }
+                    : undefined}
+            >
                 {/* Header */}
-                <div style={{
-                    textAlign: 'center',
-                    marginBottom: isMobilePortrait ? '4px' : isPhone ? '4px' : '8px',
-                    flexShrink: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                }}>
-                    <img
-                        src="/logo.png"
-                        alt="Draw in the Air"
-                        style={{
-                            height: isPhone ? '40px' : '60px',
-                            width: 'auto',
-                            filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.5))'
-                        }}
-                    />
-                    <p style={{
-                        margin: 0,
-                        marginTop: '12px',
-                        fontFamily: "'Fredoka', 'Baloo 2', system-ui, sans-serif",
-                        fontSize: isPhone ? '1.1rem' : '1.4rem',
-                        color: '#3F4052',
-                        fontWeight: 700,
-                        letterSpacing: '-0.3px',
-                    }}>
-                        Choose your adventure
-                    </p>
+                <div className="d2-menu-head">
+                    <div className="d2-spark-wrap">
+                        <img
+                            src="/logo.png"
+                            alt="Draw in the Air"
+                            style={{ height: isPhone ? 40 : 56, width: 'auto', filter: 'drop-shadow(0 2px 8px rgba(64,50,90,0.18))' }}
+                        />
+                        <div className="d2-say" style={{ fontSize: 'var(--d2-text-base)' }}>
+                            Pick a world to explore. Point and hold, or tap.
+                        </div>
+                    </div>
+                    <h1>Choose your <span style={{ color: 'var(--d2-lavender-600)' }}>adventure</span></h1>
                 </div>
 
-                {/* ═══ LAYOUT ═══ */}
-
-                {isMobilePortrait ? (
-                    /* MOBILE PORTRAIT, simple vertical list */
-                    <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '10px',
-                    }}>
+                {/* ═══ TILES ═══ */}
+                {galleryLayout ? (
+                    <div className="d2-menu-gallery">
                         {MODES.map(mode => (
-                            <div key={mode.id} style={{ height: '76px' }}>
-                                <GameCard
-                                    mode={mode}
-                                    compact
-                                    locked={mode.tier === 'premium' && !hasAccess}
-                                    isHovered={hoveredMode === mode.id}
-                                    isSelected={selectedMode === mode.id}
-                                    hoverProgress={hoveredMode === mode.id ? hoverProgress : 0}
-                                    onClick={() => handleSelect(mode)}
-                                />
-                            </div>
-                        ))}
-                    </div>
-                ) : isMobileLandscape ? (
-                    /* MOBILE LANDSCAPE, compact 2+3 rows */
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(3, 1fr)',
-                        gap: '10px',
-                    }}>
-                        {MODES.map(mode => (
-                            <div key={mode.id} style={{ height: '80px' }}>
-                                <GameCard
-                                    mode={mode}
-                                    compact
-                                    locked={mode.tier === 'premium' && !hasAccess}
-                                    isHovered={hoveredMode === mode.id}
-                                    isSelected={selectedMode === mode.id}
-                                    hoverProgress={hoveredMode === mode.id ? hoverProgress : 0}
-                                    onClick={() => handleSelect(mode)}
-                                />
-                            </div>
+                            <AdventureCard
+                                key={mode.id}
+                                mode={mode}
+                                locked={mode.tier === 'premium' && !hasAccess}
+                                isHovered={hoveredMode === mode.id}
+                                isSelected={selectedMode === mode.id}
+                                hoverProgress={hoveredMode === mode.id ? hoverProgress : 0}
+                                onClick={() => handleSelect(mode)}
+                            />
                         ))}
                     </div>
                 ) : (
-                    /* TABLET + DESKTOP, Featured top card + 2×2 grid below */
-                    <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: isTablet ? '14px' : '18px',
-                    }}>
-                        {/* Featured card, full width, taller */}
-                        <div style={{ height: isTablet ? '130px' : '150px' }}>
-                            <GameCard
-                                mode={featured}
-                                featured
-                                locked={featured.tier === 'premium' && !hasAccess}
-                                isHovered={hoveredMode === featured.id}
-                                isSelected={selectedMode === featured.id}
-                                hoverProgress={hoveredMode === featured.id ? hoverProgress : 0}
-                                onClick={() => handleSelect(featured)}
-                            />
-                        </div>
-
-                        {/* 2×2 grid of remaining modes */}
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(4, 1fr)',
-                            gap: isTablet ? '12px' : '16px',
-                        }}>
-                            {rest.map(mode => (
-                                <div key={mode.id} style={{ height: isTablet ? '150px' : '180px' }}>
-                                    <GameCard
-                                        mode={mode}
-                                        locked={mode.tier === 'premium' && !hasAccess}
-                                        isHovered={hoveredMode === mode.id}
-                                        isSelected={selectedMode === mode.id}
-                                        hoverProgress={hoveredMode === mode.id ? hoverProgress : 0}
-                                        onClick={() => handleSelect(mode)}
-                                    />
-                                </div>
-                            ))}
-                        </div>
+                    /* Phone portrait — compact vertical list (may scroll). */
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {MODES.map(mode => (
+                            <div key={mode.id} style={{ minHeight: 76 }}>
+                                <AdventureCard
+                                    mode={mode}
+                                    compact
+                                    locked={mode.tier === 'premium' && !hasAccess}
+                                    isHovered={hoveredMode === mode.id}
+                                    isSelected={selectedMode === mode.id}
+                                    hoverProgress={hoveredMode === mode.id ? hoverProgress : 0}
+                                    onClick={() => handleSelect(mode)}
+                                />
+                            </div>
+                        ))}
                     </div>
                 )}
 
-                {/* Footer instruction, Kid-UI cream pill */}
-                <div className="kid-panel" style={{
-                    padding: isPhone ? '12px 22px' : '14px 28px',
-                    background: '#FFFFFF',
-                    borderRadius: '9999px',
-                    border: '2px solid rgba(108, 63, 164, 0.15)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '10px',
-                    alignSelf: 'center',
-                    marginTop: isMobilePortrait ? '8px' : '12px',
-                    boxShadow: '0 4px 16px rgba(108, 63, 164, 0.12), 0 1px 2px rgba(108, 63, 164, 0.08)',
-                }}>
+                {/* Footer instruction pill */}
+                <div
+                    style={{
+                        alignSelf: 'center', marginTop: isMobilePortrait ? 4 : 6,
+                        padding: isPhone ? '10px 20px' : '12px 26px',
+                        background: 'var(--d2-bg-elevated)', borderRadius: 'var(--d2-r-pill)',
+                        border: '1px solid var(--d2-border-2)', boxShadow: 'var(--d2-shadow-2)',
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        fontFamily: 'var(--d2-font-display)', fontWeight: 700,
+                        fontSize: isPhone ? '0.9rem' : '1rem', color: 'var(--d2-fg-2)',
+                    }}
+                >
                     <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>👆</span>
-                    <span style={{
-                        fontFamily: "'Fredoka', 'Baloo 2', system-ui, sans-serif",
-                        fontSize: isPhone ? '0.9rem' : '1rem',
-                        fontWeight: 700,
-                        color: '#3F4052',
-                    }}>
-                        {isPhone ? 'Tap to play' : 'Point and hold to select'}
-                    </span>
+                    {isPhone ? 'Tap to play' : 'Point and hold to select'}
                 </div>
             </div>
 
@@ -711,6 +349,6 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
                     onClose={() => setLockedPrompt(null)}
                 />
             )}
-        </div>
+        </Dita2Root>
     );
 };

@@ -75,7 +75,7 @@ export const PromptBar = ({ displayName }: { displayName: string }) => (
             }}>
                 Let&apos;s build a{' '}
                 <span style={{
-                    color: '#6C3FA4',
+                    color: '#8A66F0',
                     fontWeight: tokens.fontWeight.extrabold,
                     textTransform: 'capitalize',
                 }}>
@@ -206,7 +206,7 @@ const PickerTileButton = ({
                 fontFamily: tokens.fontFamily.body,
                 fontWeight: tokens.fontWeight.bold,
                 fontSize: '0.85rem',
-                color: selected ? '#6C3FA4' : tokens.semantic.textPrimary,
+                color: selected ? '#8A66F0' : tokens.semantic.textPrimary,
             }}>
                 {tile.label}
             </div>
@@ -257,7 +257,7 @@ export const StepsPanel = ({ total, filled }: { total: number; filled: number })
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            background: done ? '#6C3FA4' : tokens.semantic.bgPanelTinted,
+                            background: done ? '#8A66F0' : tokens.semantic.bgPanelTinted,
                             color: done ? '#FFFFFF' : tokens.semantic.textSecondary,
                             fontFamily: tokens.fontFamily.body,
                             fontWeight: tokens.fontWeight.bold,
@@ -382,7 +382,7 @@ function pickerTileStyle(selected: boolean, disabled: boolean): React.CSSPropert
         borderRadius: '12px',
         background: selected ? tokens.semantic.bgPanelTinted : '#FFFFFF',
         border: selected
-            ? `2px solid #6C3FA4`
+            ? `2px solid #8A66F0`
             : `1.5px solid ${tokens.semantic.borderPanel}`,
         opacity: disabled ? 0.55 : 1,
         cursor: disabled ? 'default' : 'pointer',

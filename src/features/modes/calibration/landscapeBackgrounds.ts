@@ -42,7 +42,7 @@ export const SUNNY_MEADOW: LandscapeBackground = {
             type: 'sky',
             yPosition: 0,
             height: 0.65,
-            colors: ['#87CEEB', '#B0E0E6', '#E0F6FF', '#F0FFF0'],  // Sky blue to light blue-green
+            colors: ['#DCEEFF', '#EAF7FF', '#F3FBF4', '#FBF7EE'],  // Sky blue to light blue-green
             parallaxSpeed: 0
         },
         // Distant mountains/hills - Dark olive green with angular peaks
@@ -50,7 +50,7 @@ export const SUNNY_MEADOW: LandscapeBackground = {
             type: 'mountain',
             yPosition: 0.4,
             height: 0.25,
-            colors: ['#6B8E23', '#556B2F'],  // Olive green mountains
+            colors: ['#7BD9A8', '#5BCE9A'],  // Olive green mountains
             parallaxSpeed: 0.05
         },
         // Mid-ground hills - Lighter green, softer curves
@@ -58,7 +58,7 @@ export const SUNNY_MEADOW: LandscapeBackground = {
             type: 'hill',
             yPosition: 0.5,
             height: 0.3,
-            colors: ['#9ACD32', '#7CFC00', '#90EE90'],  // Yellow-green to light green
+            colors: ['#A7E8C7', '#7BD9A8', '#D2F4E0'],  // Yellow-green to light green
             parallaxSpeed: 0.15
         },
         // Foreground hills - Rich green with grass texture
@@ -66,7 +66,7 @@ export const SUNNY_MEADOW: LandscapeBackground = {
             type: 'ground',
             yPosition: 0.65,
             height: 0.35,
-            colors: ['#228B22', '#32CD32', '#3CB371'],  // Forest green to medium sea green
+            colors: ['#3FB87F', '#5BCE9A', '#7BD9A8'],  // Forest green to medium sea green
             parallaxSpeed: 0.25
         }
     ],
@@ -90,7 +90,7 @@ export const MISTY_MOUNTAINS: LandscapeBackground = {
             type: 'sky',
             yPosition: 0,
             height: 0.7,
-            colors: ['#E0F2F1', '#B2EBF2', '#80DEEA'],  // Light teal-blue sky
+            colors: ['#ECFBF3', '#D7E9FF', '#93C5FF'],  // Light teal-blue sky
             parallaxSpeed: 0
         },
         // Far mountains - Light desaturated blue-purple
@@ -98,7 +98,7 @@ export const MISTY_MOUNTAINS: LandscapeBackground = {
             type: 'mountain',
             yPosition: 0.55,
             height: 0.2,
-            colors: ['#B39BC8', '#C5A3D6'],  // Light purple-blue
+            colors: ['#CFBCFF', '#B69BFF'],  // Light purple-blue
             parallaxSpeed: 0.03
         },
         // Mid mountains - Medium blue-purple with rounded peaks
@@ -106,7 +106,7 @@ export const MISTY_MOUNTAINS: LandscapeBackground = {
             type: 'mountain',
             yPosition: 0.65,
             height: 0.25,
-            colors: ['#9575CD', '#B39BC8'],  // Medium purple-blue
+            colors: ['#9D7DFF', '#CFBCFF'],  // Medium purple-blue
             parallaxSpeed: 0.08
         },
         // Foreground hills - Darker blue-purple, smooth curves
@@ -114,7 +114,7 @@ export const MISTY_MOUNTAINS: LandscapeBackground = {
             type: 'hill',
             yPosition: 0.75,
             height: 0.25,
-            colors: ['#7E57C2', '#9575CD'],  // Darker purple-blue
+            colors: ['#8A66F0', '#9D7DFF'],  // Darker purple-blue
             parallaxSpeed: 0.15
         }
     ],
@@ -138,7 +138,7 @@ export const SUNSET_PEAKS: LandscapeBackground = {
             type: 'sky',
             yPosition: 0,
             height: 0.65,
-            colors: ['#4682B4', '#87CEEB', '#D2B48C', '#F5DEB3'],  // Steel blue to sandy beige
+            colors: ['#5A99F2', '#DCEEFF', '#D2B48C', '#F5DEB3'],  // Steel blue to sandy beige
             parallaxSpeed: 0
         },
         // Sun/Moon - Large pale orb
@@ -162,7 +162,7 @@ export const SUNSET_PEAKS: LandscapeBackground = {
             type: 'dune',
             yPosition: 0.7,
             height: 0.2,
-            colors: ['#CD853F', '#D2691E', '#FF6347'],  // Sandy brown to orange-red
+            colors: ['#CD853F', '#D2691E', '#FF9B7E'],  // Sandy brown to orange-red
             parallaxSpeed: 0.12
         },
         // Foreground dunes - Vibrant orange-red
@@ -170,7 +170,7 @@ export const SUNSET_PEAKS: LandscapeBackground = {
             type: 'dune',
             yPosition: 0.8,
             height: 0.2,
-            colors: ['#FF4500', '#FF6347', '#FF7F50'],  // Orange-red to coral
+            colors: ['#F07A5C', '#FF9B7E', '#FFAE92'],  // Orange-red to coral
             parallaxSpeed: 0.2
         }
     ],
