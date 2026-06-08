@@ -18,13 +18,14 @@ import { getTeacherProfile } from '../../lib/teacherApi';
 import { dbSelect } from '../../lib/supabase';
 import { conductorApi } from '../../features/classmode/conductor/api';
 import { useAuth } from '../../context/AuthContext';
-import { ChildrenView, ActivitiesView, LessonsView, EyfsView, TeamView, SettingsView } from './TeacherViews';
+import { ChildrenView, ActivitiesView, LessonsView, EyfsView, ResourcesView, TeamView, SettingsView } from './TeacherViews';
 import './teacher-dashboard.css';
 
 // nav id ⇄ URL path (deep-linkable)
 const NAV_PATH: Record<string, string> = {
   dashboard: '/teacher/dashboard', children: '/teacher/children', activities: '/teacher/activities',
-  lessons: '/teacher/lessons', eyfs: '/teacher/eyfs', team: '/teacher/team', settings: '/teacher/settings',
+  lessons: '/teacher/lessons', eyfs: '/teacher/eyfs', resources: '/teacher/resources',
+  team: '/teacher/team', settings: '/teacher/settings',
 };
 const viewFromPath = (): string => {
   const p = typeof window !== 'undefined' ? window.location.pathname : '';
@@ -76,10 +77,12 @@ const I = {
   eyfs: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l2.4 5 5.6.6-4.2 3.8 1.2 5.6L12 17.8 6.9 21l1.2-5.6L4 11.6 9.6 11z"/></svg>,
   team: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M18 8v6M21 11h-6"/></svg>,
   settings: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 12a7.4 7.4 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L16.6 2h-4l-.4 2.5a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5a7.4 7.4 0 0 0 0 2.4l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2l.4 2.5h4l.4-2.5a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.07-.4.1-.8.1-1.2z"/></svg>,
+  resources: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M13 3v5h5M8 13h8M8 17h5"/></svg>,
 };
 const NAV = [
   { title: 'Overview', items: [{ id: 'dashboard', label: 'Dashboard', icon: I.dashboard }, { id: 'children', label: 'Children', icon: I.children }, { id: 'activities', label: 'Activities', icon: I.activities }] },
   { title: 'Classroom', items: [{ id: 'classroom', label: 'Classroom mode', icon: I.classroom }, { id: 'lessons', label: 'Lesson plans', icon: I.lessons }, { id: 'eyfs', label: 'EYFS mapping', icon: I.eyfs }] },
+  { title: 'Resources', items: [{ id: 'resources', label: 'Teacher resources', icon: I.resources }] },
   { title: 'Account', items: [{ id: 'team', label: 'Team', icon: I.team }, { id: 'settings', label: 'Settings', icon: I.settings }] },
 ];
 
@@ -218,9 +221,10 @@ export default function TeacherDashboard() {
             : active === 'activities' ? <ActivitiesView />
               : active === 'lessons' ? <LessonsView />
                 : active === 'eyfs' ? <EyfsView />
-                  : active === 'team' ? <TeamView />
-                    : active === 'settings' ? <SettingsView />
-                      : null
+                  : active === 'resources' ? <ResourcesView />
+                    : active === 'team' ? <TeamView />
+                      : active === 'settings' ? <SettingsView />
+                        : null
         ) : (
         <>
         <div className="tdash-head">

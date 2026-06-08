@@ -311,3 +311,12 @@
 
 /* ── EYFS tags ───────────────────────────────────── */
 .tdash-eyfs-tag { display: inline-block; font-family: var(--t-font-display); font-weight: 700; font-size: 13px; padding: 5px 11px; border-radius: 999px; margin: 0 6px 6px 0; }
+
+/* ── Resources ───────────────────────────────────── */
+.tdash-res-group { font-family: var(--t-font-display); font-weight: 800; font-size: 18px; margin: 0 0 14px; color: var(--t-ink-700); }
+.tdash-letters { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 8px; margin-top: 14px; }
+.tdash-letter { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border: 1px solid var(--t-border); border-radius: 12px; background: #fff; text-decoration: none; transition: transform .15s, box-shadow .15s, border-color .15s; }
+.tdash-letter:hover { transform: translateY(-2px); box-shadow: var(--t-shadow-card); border-color: var(--t-lav-400); }
+.tdash-letter b { font-family: var(--t-font-display); font-weight: 800; font-size: 18px; color: var(--t-lav-600); }
+.tdash-letter span { font-size: 14px; }
+@media (max-width: 1080px) { .tdash-catalog { grid-template-columns: 1fr !important; } }

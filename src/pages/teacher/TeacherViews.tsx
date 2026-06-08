@@ -263,6 +263,84 @@ export function EyfsView() {
   );
 }
 
+/* ════════════════════════════════ RESOURCES ════════════════════════════════ */
+const GUIDES: { file: string; emoji: string; title: string; desc: string; audience: string; group: string }[] = [
+  { file: '01-teacher-quick-start-guide.pdf', emoji: '🚀', title: "Teacher's Quick Start Guide", desc: 'Get up and running in under 5 minutes. Covers all modes, the pinch gesture, and classroom setup.', audience: 'All teachers', group: 'Getting started' },
+  { file: '04-chromebook-classroom-setup.pdf', emoji: '💻', title: 'Chromebook Classroom Setup', desc: 'Step-by-step setup for school Chromebook carts, labs, and managed devices.', audience: 'Tech coordinators', group: 'Getting started' },
+  { file: '02-five-day-movement-break-plan.pdf', emoji: '📅', title: '5-Day Movement Break Plan', desc: 'A ready-to-run weekly structure · one activity per day, Monday to Friday.', audience: 'Class teachers', group: 'Planning & curriculum' },
+  { file: '08-eyfs-reception-activity-guide.pdf', emoji: '🎒', title: 'EYFS & Reception Activity Guide', desc: 'Development Matters mapping and a complete 15-minute session plan for Reception.', audience: 'EYFS / Reception', group: 'Planning & curriculum' },
+  { file: '09-year1-2-curriculum-connections.pdf', emoji: '📚', title: 'Year 1–2 Curriculum Connections', desc: 'KS1 National Curriculum links across English, Maths, Computing, and PE.', audience: 'Year 1 & 2', group: 'Planning & curriculum' },
+  { file: '10-after-school-club-guide.pdf', emoji: '🌙', title: 'After-School Club & Home Learning', desc: 'A 45-minute club session plan plus a tear-off parent guide for home use.', audience: 'Extended school', group: 'Planning & curriculum' },
+  { file: '03-fine-motor-skills-integration.pdf', emoji: '✋', title: 'Fine Motor Skills Integration', desc: 'The science behind gesture learning and how it connects to pre-writing development.', audience: 'EYFS / Reception', group: 'Pedagogy & inclusion' },
+  { file: '07-send-inclusion-support-guide.pdf', emoji: '💜', title: 'SEND & Inclusion Support Guide', desc: 'Specific adaptations for ASC, dyspraxia, ADHD, and EAL learners.', audience: 'SENCOs / TAs', group: 'Pedagogy & inclusion' },
+  { file: '06-progress-tracking-sheet.pdf', emoji: '📊', title: 'Progress & Observation Tracker', desc: 'Observation prompts and an A–Z letter mastery grid for learning-journey evidence.', audience: 'All teachers', group: 'Pedagogy & inclusion' },
+  { file: '05-parent-communication-pack.pdf', emoji: '📨', title: 'Parent Communication Pack', desc: 'Ready-to-send letters, ClassDojo messages, and a parent FAQ · zero writing required.', audience: 'Class teachers', group: 'Pedagogy & inclusion' },
+];
+const GROUPS = ['Getting started', 'Planning & curriculum', 'Pedagogy & inclusion'];
+const LETTER_EMOJI: Record<string, string> = { A: '🍎', B: '⚽', C: '🐱', D: '🐶', E: '🐘', F: '🐠', G: '🦒', H: '🎩', I: '🍦', J: '🤹', K: '🪁', L: '🦁', M: '🌙', N: '🪺', O: '🐙', P: '🐧', Q: '👑', R: '🌈', S: '☀️', T: '🌳', U: '☂️', V: '🎻', W: '🍉', X: '🎶', Y: '🪀', Z: '🦓' };
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const guideHref = (file: string) => `/classroom-guides/${file}`;
+
+export function ResourcesView() {
+  return (
+    <div>
+      <div className="tdash-head">
+        <div><h1 className="tdash-greet" style={{ fontSize: '2.4rem' }}>Resources</h1><p className="tdash-sub">Every teacher PDF on the platform · how-to guides, planning, inclusion, and printables. All free to download.</p></div>
+      </div>
+
+      {/* Download-everything banner */}
+      <div className="tdash-cta" style={{ marginTop: 0, marginBottom: 22 }}>
+        <div><h2>The complete pilot pack</h2><p>Every guide, lesson plan and printable in one PDF · ideal to print or share with your team.</p></div>
+        <a className="tdash-btn" href="/pilot-pack.pdf" download="Draw-in-the-Air-Pilot-Pack.pdf">⬇ Download all</a>
+      </div>
+
+      {GROUPS.map((g) => (
+        <section key={g} style={{ marginBottom: 28 }}>
+          <h2 className="tdash-res-group">{g}</h2>
+          <div className="tdash-catalog">
+            {GUIDES.filter((x) => x.group === g).map((r) => (
+              <div className="tdash-cat-card" key={r.file}>
+                <div className="tdash-cat-top">
+                  <span className="tdash-cat-badge" style={{ background: 'var(--t-lav-50)' }}>{r.emoji}</span>
+                  <span className="tdash-cat-pill" style={{ color: 'var(--t-ink-500)', background: 'var(--t-cream-200)' }}>{r.audience}</span>
+                </div>
+                <h3>{r.title}</h3>
+                <p className="tdash-cat-desc">{r.desc}</p>
+                <a className="tdash-btn ghost" style={{ fontSize: 14, padding: '10px 18px' }} href={guideHref(r.file)} download>⬇ Download PDF</a>
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
+
+      {/* Printables */}
+      <section style={{ marginBottom: 28 }}>
+        <h2 className="tdash-res-group">Printables · letter tracing</h2>
+        <div className="tdash-catalog" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 16 }}>
+          <div className="tdash-cat-card">
+            <div className="tdash-cat-top"><span className="tdash-cat-badge" style={{ background: 'var(--t-mint-100)' }}>✏️</span></div>
+            <h3>A–Z Letter Tracing Workbook</h3>
+            <p className="tdash-cat-desc">The full alphabet in one printable workbook · the off-screen pencil practice that mirrors the Tracing game.</p>
+            <a className="tdash-btn" style={{ fontSize: 14, padding: '10px 18px' }} href={guideHref('az-letter-tracing-workbook.pdf')} download="Draw-in-the-Air-AZ-Workbook.pdf">⬇ Download workbook</a>
+          </div>
+          <div className="tdash-cat-card">
+            <div className="tdash-cat-top"><span className="tdash-cat-badge" style={{ background: 'var(--t-sun-400)' }}>📊</span></div>
+            <h3>Single letter sheets</h3>
+            <p className="tdash-cat-desc">Print just the letters you're teaching this week. Tap any letter below to download its sheet.</p>
+            <div className="tdash-letters">
+              {LETTERS.map((L) => (
+                <a key={L} className="tdash-letter" href={guideHref(`letter-${L.toLowerCase()}.pdf`)} download title={`Letter ${L} tracing sheet`}>
+                  <b>{L}</b><span>{LETTER_EMOJI[L]}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 /* ════════════════════════════════ TEAM ════════════════════════════════ */
 export function TeamView() {
   const { user } = useAuth();
