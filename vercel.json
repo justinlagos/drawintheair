@@ -3,6 +3,19 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "framework": null,
+  "redirects": [
+    {
+      "source": "/stem-learning",
+      "destination": "/ai-learning-tools-for-kids",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.drawintheair.com" }],
+      "destination": "https://drawintheair.com/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/((?!assets|images|public|favicon|logo|robots|sitemap|health\\.json|\\.well-known).*)",
