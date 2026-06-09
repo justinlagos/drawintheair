@@ -21,6 +21,8 @@ import {
 } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { logEvent } from '../../lib/analytics';
+import { logAuthEvent } from '../../lib/authEvents';
+import { authFlags } from '../../lib/authFlags';
 import '../parent/parent.css';
 
 export default function TeacherLogin() {
@@ -63,6 +65,7 @@ export default function TeacherLogin() {
     setLoading(false);
     if (!result.ok) { setError(result.error); return; }
     logEvent('teacher_password_reset_completed');
+    if (authFlags.authObservabilityV1) logAuthEvent('auth_password_reset_completed', { role: 'teacher', outcome: 'success' });
     navigate(next);
   }
 
@@ -75,6 +78,7 @@ export default function TeacherLogin() {
     setLoading(false);
     if (!result.ok) {
       logEvent('teacher_login_failed');
+      if (authFlags.authObservabilityV1) logAuthEvent('auth_login_failed', { role: 'teacher', method: 'password', outcome: 'failed' });
       // Generic error to prevent email enumeration, EXCEPT the unconfirmed-
       // email case: that one needs an actionable message (the user holds
       // valid credentials, so nothing is being enumerated).
@@ -86,6 +90,7 @@ export default function TeacherLogin() {
       return;
     }
     logEvent('teacher_login_success');
+    if (authFlags.authObservabilityV1) logAuthEvent('auth_login_succeeded', { role: 'teacher', method: 'password', outcome: 'success' });
     navigate(next);
   }
 
@@ -96,6 +101,7 @@ export default function TeacherLogin() {
     }
     setError(null);
     await requestPasswordReset(email, `${window.location.origin}/teacher/login`);
+    if (authFlags.authObservabilityV1) logAuthEvent('auth_password_reset_requested', { role: 'teacher' });
     setResetSent(true);
   }
 

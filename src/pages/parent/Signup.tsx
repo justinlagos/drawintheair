@@ -19,6 +19,8 @@ import {
 } from '../../lib/supabase';
 import { recordConsent } from '../../lib/parentApi';
 import { logEvent } from '../../lib/analytics';
+import { logAuthEvent } from '../../lib/authEvents';
+import { authFlags } from '../../lib/authFlags';
 import './parent.css';
 
 const CONSENT_VERSION = 'v2026-05';
@@ -66,13 +68,16 @@ export default function ParentSignup() {
     setLoading(true);
     setError(null);
     logEvent('parent_signup_started');
+    if (authFlags.authObservabilityV1) logAuthEvent('auth_signup_started', { role: 'parent', method: 'password' });
     const result = await signUpWithEmail(email, password, displayName);
     if (!result.ok) {
       setError(result.error || 'Could not create your account.');
+      if (authFlags.authObservabilityV1) logAuthEvent('auth_signup_failed', { role: 'parent', method: 'password', outcome: 'failed' });
       setLoading(false);
       return;
     }
     logEvent('parent_signup_completed');
+    if (authFlags.authObservabilityV1) logAuthEvent('auth_signup_succeeded', { role: 'parent', method: 'password', outcome: 'success' });
     if (result.needsEmailConfirm) {
       // Email confirmation is on: there is no session yet, so don't
       // navigate to the dashboard (it would bounce to login) and don't

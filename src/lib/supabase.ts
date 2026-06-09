@@ -234,6 +234,96 @@ export async function signOut() {
   notifyAuthListeners(null);
 }
 
+/**
+ * Sign out of ALL devices (Auth Framework Phase 6). Uses GoTrue's global
+ * logout scope, which revokes every refresh token for this user, not just
+ * the local one. Falls back to a local sign-out if the network call fails
+ * so the current tab never gets stuck signed-in.
+ */
+export async function signOutEverywhere(): Promise<void> {
+  if (currentSession?.access_token) {
+    try {
+      await fetch(`${SUPABASE_URL}/auth/v1/logout?scope=global`, {
+        method: 'POST',
+        headers: authHeaders(),
+      });
+    } catch { /* fall through to local clear */ }
+  }
+  persistSession(null);
+  notifyAuthListeners(null);
+}
+
+/**
+ * Step-up guard for sensitive actions (Phase 6): delete account, export
+ * family data, change billing/email, view admin insights, delete learner
+ * data. Returns true only if the session was minted within `maxAgeMinutes`.
+ * When stale, the caller should re-prompt for the password (or, once MFA
+ * lands, an AAL2 challenge) via reauthenticateWithPassword() before
+ * proceeding. Server-side RPCs remain the real gate; this is the UX layer.
+ */
+export function isRecentlyAuthenticated(maxAgeMinutes = 15): boolean {
+  if (!currentSession?.expires_at) return false;
+  // expires_at = issued_at + expires_in(~3600s). Approximate issued_at and
+  // measure age against it. A fresh login/refresh resets this window.
+  const issuedAt = currentSession.expires_at - 3600;
+  const ageMin = (Date.now() / 1000 - issuedAt) / 60;
+  return ageMin <= maxAgeMinutes;
+}
+
+/**
+ * Re-verify the signed-in user's password without disturbing the active
+ * session (used by step-up before a sensitive action). Returns ok/error.
+ */
+export async function reauthenticateWithPassword(password: string): Promise<{ ok: boolean; error?: string }> {
+  const email = currentSession?.user?.email;
+  if (!email) return { ok: false, error: 'You are not signed in.' };
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json?.access_token) {
+      return { ok: false, error: friendlyAuthError(res.status, json, 'Password not recognised.') };
+    }
+    // Adopt the fresh session so the recency window resets.
+    adoptSession(json);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+// ─── MFA readiness (Auth Framework Phase 3 — staged, NOT enabled) ────────────
+//
+// Thin wrappers over GoTrue's native TOTP MFA endpoints. These are present
+// so the UI can be built and reviewed, but enrolment requires MFA to be
+// turned ON in the Supabase project's Auth settings (a console toggle, owner
+// decision). Until then enroll/challenge return GoTrue's "not enabled"
+// error verbatim. SMS is intentionally NOT implemented (children's platform
+// policy: TOTP/passkeys only). Backup codes are app-managed (see
+// docs/AUTH_FRAMEWORK_PLAN.md §PHASE 3) and not included here.
+
+export interface MfaEnrollResult { ok: boolean; factorId?: string; qrCode?: string; secret?: string; error?: string }
+
+/** Begin TOTP enrolment. Requires project-level MFA to be enabled. */
+export async function mfaEnrollTotp(): Promise<MfaEnrollResult> {
+  if (!currentSession?.access_token) return { ok: false, error: 'Sign in first.' };
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/factors`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json', Authorization: `Bearer ${currentSession.access_token}` },
+      body: JSON.stringify({ factor_type: 'totp', friendly_name: 'Authenticator app' }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return { ok: false, error: friendlyAuthError(res.status, json, 'Could not start MFA setup.') };
+    return { ok: true, factorId: json.id, qrCode: json?.totp?.qr_code, secret: json?.totp?.secret };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
 // ─── Email + password auth (parent accounts) ────────────────────────────────
 //
 // These wrap Supabase's GoTrue endpoints so the parent signup / login pages
@@ -439,7 +529,14 @@ export async function signInWithEmail(email: string, password: string): Promise<
 
 // ─── Account roles (tenant isolation, migration 0013) ───────────────────────
 
-export interface AccountRoles { parent: boolean; teacher: boolean; admin: boolean }
+export interface AccountRoles {
+  parent: boolean;
+  teacher: boolean;
+  admin: boolean;
+  /** Phase 2 RBAC (migration 0019). Optional so older callers compile. */
+  platform_admin?: boolean;
+  school_admin?: boolean;
+}
 
 let rolesCache: { userId: string; roles: AccountRoles } | null = null;
 

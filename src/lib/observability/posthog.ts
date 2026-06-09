@@ -90,6 +90,24 @@ export const PH_EVENT_ALLOWLIST = new Set<string>([
     'app_crash',
     'asset_load_failed',
     'dynamic_import_failed',
+    // Auth funnel + security (Phase 8). No PII — see authEvents.ts. Only
+    // a coarse outcome/method/role is ever attached; never an email.
+    'auth_signup_started',
+    'auth_signup_succeeded',
+    'auth_signup_failed',
+    'auth_login_succeeded',
+    'auth_login_failed',
+    'auth_logout',
+    'auth_logout_all',
+    'auth_password_reset_requested',
+    'auth_password_reset_completed',
+    'auth_role_switched',
+    'auth_step_up_succeeded',
+    'auth_step_up_failed',
+    'auth_mfa_enrolled',
+    'auth_mfa_removed',
+    'auth_suspicious_redirect_blocked',
+    'auth_login_new_context',
 ]);
 
 /**
@@ -131,6 +149,11 @@ export const PH_PROPERTY_ALLOWLIST = new Set<string>([
     'was_first_attempt',
     'reason',               // 'back_button' | 'tab_hidden' etc., bounded set
     'attempt_count',
+    // Auth (Phase 8) — coarse, PII-free
+    'auth_method',          // 'password' | 'google' | 'magic_link' | 'passkey'
+    'role',                 // 'parent' | 'teacher' | 'school_admin' | 'platform_admin'
+    'outcome',              // 'success' | 'failed' (bounded)
+    'error_code',           // GoTrue/app code only, never a message
 ]);
 
 // ─── Internal state ──────────────────────────────────────────────────────────

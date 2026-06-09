@@ -21,6 +21,8 @@ import {
 } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { logEvent } from '../../lib/analytics';
+import { logAuthEvent } from '../../lib/authEvents';
+import { authFlags } from '../../lib/authFlags';
 import './parent.css';
 
 export default function ParentLogin() {
@@ -63,6 +65,7 @@ export default function ParentLogin() {
     setLoading(false);
     if (!result.ok) { setError(result.error); return; }
     logEvent('parent_password_reset_completed');
+    if (authFlags.authObservabilityV1) logAuthEvent('auth_password_reset_completed', { role: 'parent', outcome: 'success' });
     navigate(next);
   }
 
@@ -75,6 +78,7 @@ export default function ParentLogin() {
     setLoading(false);
     if (!result.ok) {
       logEvent('parent_login_failed');
+      if (authFlags.authObservabilityV1) logAuthEvent('auth_login_failed', { role: 'parent', method: 'password', outcome: 'failed' });
       // Generic error to prevent email enumeration, EXCEPT the unconfirmed-
       // email case: that one needs an actionable message (the user holds
       // valid credentials, so nothing is being enumerated).
@@ -86,6 +90,7 @@ export default function ParentLogin() {
       return;
     }
     logEvent('parent_login_success');
+    if (authFlags.authObservabilityV1) logAuthEvent('auth_login_succeeded', { role: 'parent', method: 'password', outcome: 'success' });
     navigate(next);
   }
 
@@ -96,6 +101,7 @@ export default function ParentLogin() {
     }
     setError(null);
     await requestPasswordReset(email);
+    if (authFlags.authObservabilityV1) logAuthEvent('auth_password_reset_requested', { role: 'parent' });
     setResetSent(true);
   }
 

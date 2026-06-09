@@ -15,6 +15,8 @@ import { I } from '../parent/_shared';
 import { signInWithGoogle, setRoleIntent, resendConfirmation } from '../../lib/supabase';
 import { signUpTeacher } from '../../lib/teacherApi';
 import { logEvent } from '../../lib/analytics';
+import { logAuthEvent } from '../../lib/authEvents';
+import { authFlags } from '../../lib/authFlags';
 import '../parent/parent.css';
 
 export default function TeacherSignup() {
@@ -51,13 +53,16 @@ export default function TeacherSignup() {
     setLoading(true);
     setError(null);
     logEvent('teacher_signup_started');
+    if (authFlags.authObservabilityV1) logAuthEvent('auth_signup_started', { role: 'teacher', method: 'password' });
     const result = await signUpTeacher(email, password, fullName, schoolName);
     if (!result.ok) {
       setError(result.error || 'Could not create your account.');
+      if (authFlags.authObservabilityV1) logAuthEvent('auth_signup_failed', { role: 'teacher', method: 'password', outcome: 'failed' });
       setLoading(false);
       return;
     }
     logEvent('teacher_signup_completed');
+    if (authFlags.authObservabilityV1) logAuthEvent('auth_signup_succeeded', { role: 'teacher', method: 'password', outcome: 'success' });
     setLoading(false);
     if (result.needsEmailConfirm) {
       // No session yet (email confirmation enabled), landing in /class

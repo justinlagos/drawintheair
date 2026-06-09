@@ -9,6 +9,7 @@
  */
 
 import { callRpc, dbInsert, dbUpdate, dbSelect, getAccessToken, getAnonKey, getSupabaseUrl, ensureFreshSession } from './supabase';
+import { consentVersion } from './consent';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -163,8 +164,25 @@ export interface CreateChildInput {
   accessibility_prefs?: Record<string, unknown>;
 }
 
-export async function createChildProfile(input: CreateChildInput, parentId: string) {
-  return dbInsert('child_profiles', { ...input, parent_id: parentId }, { single: true });
+export async function createChildProfile(input: CreateChildInput, _parentId?: string) {
+  // Phase 7: route creation through the consent-enforced RPC. It records
+  // the current child_privacy consent (with version + timestamp) and
+  // refuses to create a child without it. parent_id is derived server-side
+  // from auth.uid(), so the legacy parentId arg is ignored (kept for
+  // back-compat). accessibility_prefs (not a parameter of the RPC) is
+  // applied as a follow-up patch when supplied.
+  const res = await callRpc<{ id: string }>('create_child_profile', {
+    p_nickname: input.nickname,
+    p_age_band: input.age_band ?? null,
+    p_learning_focus: input.learning_focus ?? null,
+    p_avatar: input.avatar ?? null,
+    p_preferred_hand: input.preferred_hand ?? null,
+    p_consent_version: consentVersion('child_privacy'),
+  });
+  if (!res.error && res.data?.id && input.accessibility_prefs) {
+    await dbUpdate('child_profiles', { accessibility_prefs: input.accessibility_prefs }, `id=eq.${res.data.id}`, { single: true });
+  }
+  return res;
 }
 
 export async function updateChildProfile(childId: string, patch: Partial<CreateChildInput>) {
