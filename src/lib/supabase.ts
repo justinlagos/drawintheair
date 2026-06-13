@@ -8,6 +8,7 @@
 // instrument every caller. The import is one-way (health → nothing),
 // so there's no circular-import risk.
 import { recordSupabaseRpcFailure } from './observability/health';
+import { createPkcePair, isSafeInternalPath } from './auth/pkce';
 
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string) || '';
 const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || '';
@@ -203,7 +204,12 @@ export function onAuthStateChange(callback: (user: SupabaseUser | null) => void)
  *                  auth completes (e.g. '/admin/insights'). Defaults
  *                  to '/class' (back-compat with teacher dashboard).
  */
-export function signInWithGoogle(returnTo?: string) {
+// H4 Phase A: PKCE. The code_verifier lives in sessionStorage (NOT
+// localStorage) and is single-use — created here, consumed in
+// handleAuthCallback, deleted immediately after.
+const PKCE_VERIFIER_KEY = 'sb-pkce-verifier';
+
+export async function signInWithGoogle(returnTo?: string): Promise<void> {
   if (returnTo) {
     try {
       sessionStorage.setItem('sb-return-to', returnTo);
@@ -215,9 +221,23 @@ export function signInWithGoogle(returnTo?: string) {
   // sessionStorage stash above stays as a belt-and-braces fallback: if a
   // redirect_to is ever NOT allow-listed, Supabase falls back to the Site
   // URL and handleAuthCallback still honours the stashed path.
-  const safePath = returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/class';
+  const safePath = isSafeInternalPath(returnTo) ? returnTo as string : '/class';
   const redirectTo = `${window.location.origin}${safePath}`;
-  const url = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}&flow_type=implicit`;
+
+  // PKCE (H4 Phase A) replaces the deprecated implicit flow: GoTrue returns a
+  // short-lived `?code=` which handleAuthCallback exchanges for a session,
+  // instead of returning long-lived tokens in the URL hash.
+  let authParams = '';
+  try {
+    const { verifier, challenge } = await createPkcePair();
+    sessionStorage.setItem(PKCE_VERIFIER_KEY, verifier);
+    authParams = `&code_challenge=${encodeURIComponent(challenge)}&code_challenge_method=s256`;
+  } catch {
+    // Web Crypto unavailable (very old browser): fall back to implicit so
+    // sign-in still works rather than hard-failing.
+    authParams = '&flow_type=implicit';
+  }
+  const url = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}${authParams}`;
   window.location.href = url;
 }
 
@@ -662,15 +682,60 @@ export async function requestPasswordReset(email: string, redirectTo?: string): 
  * Checks URL hash for access_token (Supabase implicit flow).
  */
 export async function handleAuthCallback(): Promise<SupabaseUser | null> {
-  // Check hash params from OAuth redirect
-  const hash = window.location.hash.substring(1);
-  const params = new URLSearchParams(hash);
-  const accessToken = params.get('access_token');
-  const refreshToken = params.get('refresh_token');
-  const expiresIn = params.get('expires_in');
+  let accessToken: string | null = null;
+  let refreshToken: string | null = null;
+  let expiresIn: string | null = null;
   // GoTrue labels the link type: 'recovery' (password reset), 'signup'
   // (email confirmation), 'magiclink', or absent for OAuth.
-  const linkType = params.get('type');
+  let linkType: string | null = null;
+
+  // H4 Phase A — PKCE: the OAuth (Google) redirect comes back with a
+  // short-lived `?code=` in the query string. Exchange it for a session using
+  // the verifier we stashed in sessionStorage. Email-link flows (recovery /
+  // signup / magiclink) still arrive as tokens in the URL hash and are handled
+  // by the fallback below — so those are untouched.
+  const authCode = new URLSearchParams(window.location.search).get('code');
+  if (authCode) {
+    let verifier: string | null = null;
+    try { verifier = sessionStorage.getItem(PKCE_VERIFIER_KEY); } catch { /* ignore */ }
+    if (verifier) {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=pkce`, {
+          method: 'POST',
+          headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ auth_code: authCode, code_verifier: verifier }),
+        });
+        if (res.ok) {
+          const t = await res.json();
+          accessToken = t.access_token ?? null;
+          refreshToken = t.refresh_token ?? null;
+          expiresIn = String(t.expires_in ?? 3600);
+        }
+      } catch { /* fall through to hash / existing-session handling */ }
+      try { sessionStorage.removeItem(PKCE_VERIFIER_KEY); } catch { /* ignore */ }
+    }
+  }
+
+  // Fallback: tokens in the URL hash (email links, and the implicit-flow
+  // fallback for ancient browsers).
+  if (!accessToken) {
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    accessToken = params.get('access_token');
+    refreshToken = params.get('refresh_token');
+    expiresIn = params.get('expires_in');
+    linkType = params.get('type');
+  }
+
+  // When cleaning the URL, strip the OAuth params (`code`, `state`) from the
+  // query string while preserving any unrelated query params.
+  const cleanedSearch = (() => {
+    const q = new URLSearchParams(window.location.search);
+    q.delete('code');
+    q.delete('state');
+    const s = q.toString();
+    return s ? `?${s}` : '';
+  })();
 
   if (accessToken) {
     // Fetch user from token
@@ -692,8 +757,8 @@ export async function handleAuthCallback(): Promise<SupabaseUser | null> {
         persistSession(session);
         notifyAuthListeners(user);
         scheduleTokenRefresh();
-        // Clean URL hash
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        // Clean URL: drop the hash and any OAuth query params.
+        window.history.replaceState(null, '', window.location.pathname + cleanedSearch);
 
         // Password recovery: remember that this session came from a reset
         // link so the login pages show the "set a new password" form
@@ -727,7 +792,7 @@ export async function handleAuthCallback(): Promise<SupabaseUser | null> {
           const returnTo = sessionStorage.getItem('sb-return-to');
           if (returnTo) {
             sessionStorage.removeItem('sb-return-to');
-            if (returnTo.startsWith('/') && returnTo !== window.location.pathname) {
+            if (isSafeInternalPath(returnTo) && returnTo !== window.location.pathname) {
               window.location.replace(returnTo);
               return user; // navigation in progress
             }
@@ -738,11 +803,11 @@ export async function handleAuthCallback(): Promise<SupabaseUser | null> {
       }
       // Token didn't resolve to a user (revoked/expired). Clean up so the
       // app doesn't sit behind the OAuth-callback loader forever.
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      window.history.replaceState(null, '', window.location.pathname + cleanedSearch);
       try { sessionStorage.removeItem('sb-return-to'); } catch { /* ignore */ }
     } catch {
       // Network failure fetching the user, same cleanup, same reason.
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      window.history.replaceState(null, '', window.location.pathname + cleanedSearch);
       try { sessionStorage.removeItem('sb-return-to'); } catch { /* ignore */ }
     }
   }

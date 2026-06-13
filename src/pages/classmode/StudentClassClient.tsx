@@ -19,11 +19,11 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { dbSelect, dbInsert, subscribeToTable } from '../../lib/supabase';
+import { callRpc, subscribeToTable } from '../../lib/supabase';
 import { isValidCode } from '../../features/classmode/sessionCode';
 import { MODE_LABELS } from '../../features/classmode/scoreMapping';
 import type { GameModeId } from '../../features/classmode/scoreMapping';
-import { avatarForStudent, avatarFromSeed, dedupeName } from '../../features/classmode/conductor/avatars';
+import { avatarFromSeed } from '../../features/classmode/conductor/avatars';
 import type { SessionRow, SessionActivityRow, StudentRow } from '../../features/classmode/conductor/types';
 
 import { TrackingLayer } from '../../features/tracking/TrackingLayer';
@@ -95,21 +95,22 @@ export default function StudentClassClient() {
                 return;
             }
             (async () => {
-                const { data } = await dbSelect<SessionRow[]>(
-                    'sessions', `id=eq.${memo.sessionId}&limit=1`,
+                // H1: reads go through capability-scoped SECURITY DEFINER RPCs
+                // (keyed on the session/student id we already hold) instead of
+                // broad anon table reads. class_get_session returns null for an
+                // ended session.
+                const { data: session } = await callRpc<SessionRow | null>(
+                    'class_get_session', { in_session_id: memo.sessionId },
                 );
-                if (!data || !data[0]) return;
-                const session = data[0];
-                if (session.class_state === 'ended') {
+                if (!session) {
                     sessionStorage.removeItem(RECONNECT_KEY);
-                    setUi({ kind: 'ended', sessionId: session.id });
+                    setUi({ kind: 'ended', sessionId: memo.sessionId });
                     return;
                 }
-                const { data: studs } = await dbSelect<StudentRow[]>(
-                    'session_students', `id=eq.${memo.studentId}&limit=1`,
+                const { data: student } = await callRpc<StudentRow | null>(
+                    'class_get_self', { in_student_id: memo.studentId },
                 );
-                if (!studs || !studs[0]) return;
-                const student = studs[0];
+                if (!student) return;
                 if (student.kicked_at) {
                     sessionStorage.removeItem(RECONNECT_KEY);
                     setUi({ kind: 'kicked', reason: student.kicked_reason });
@@ -117,10 +118,10 @@ export default function StudentClassClient() {
                 }
                 let activity: SessionActivityRow | null = null;
                 if (session.current_activity_id) {
-                    const { data: act } = await dbSelect<SessionActivityRow[]>(
-                        'session_activities', `id=eq.${session.current_activity_id}&limit=1`,
+                    const { data: act } = await callRpc<SessionActivityRow | null>(
+                        'class_get_activity', { in_activity_id: session.current_activity_id },
                     );
-                    if (act && act[0]) activity = act[0];
+                    if (act) activity = act;
                 }
                 setUi({ kind: 'classroom', session, student, activity });
             })();
@@ -149,10 +150,10 @@ export default function StudentClassClient() {
                 setUi((prev) => prev.kind === 'classroom' ? { ...prev, session: row } : prev);
                 // If current_activity_id changed, fetch the new activity row.
                 if (row.current_activity_id) {
-                    dbSelect<SessionActivityRow[]>('session_activities', `id=eq.${row.current_activity_id}&limit=1`)
+                    callRpc<SessionActivityRow | null>('class_get_activity', { in_activity_id: row.current_activity_id })
                         .then(({ data }) => {
-                            if (data && data[0]) {
-                                setUi((prev) => prev.kind === 'classroom' ? { ...prev, activity: data[0] } : prev);
+                            if (data) {
+                                setUi((prev) => prev.kind === 'classroom' ? { ...prev, activity: data } : prev);
                             }
                         });
                 } else {
@@ -217,23 +218,24 @@ export default function StudentClassClient() {
         const check = async () => {
             if (cancelled || document.visibilityState !== 'visible') return;
             try {
-                const { data } = await dbSelect<SessionRow[]>(
-                    'sessions', `id=eq.${sessionId}&limit=1`,
+                const { data: session } = await callRpc<SessionRow | null>(
+                    'class_get_session', { in_session_id: sessionId },
                 );
                 if (cancelled) return;
-                if (!data || !data[0] || data[0].class_state === 'ended') {
+                if (!session) {
+                    // null ⇒ session ended or gone.
                     sessionStorage.removeItem(RECONNECT_KEY);
                     setUi({ kind: 'ended', sessionId });
                     return;
                 }
                 // Also catch kicks that Realtime missed.
-                const { data: studs } = await dbSelect<StudentRow[]>(
-                    'session_students', `id=eq.${studentId}&limit=1`,
+                const { data: student } = await callRpc<StudentRow | null>(
+                    'class_get_self', { in_student_id: studentId },
                 );
                 if (cancelled) return;
-                if (studs && studs[0]?.kicked_at) {
+                if (student?.kicked_at) {
                     sessionStorage.removeItem(RECONNECT_KEY);
-                    setUi({ kind: 'kicked', reason: studs[0].kicked_reason });
+                    setUi({ kind: 'kicked', reason: student.kicked_reason });
                 }
             } catch {
                 /* network blip, next tick will retry */
@@ -260,11 +262,13 @@ export default function StudentClassClient() {
     const handleCode = useCallback(async (code: string) => {
         setError(null);
         if (!isValidCode(code)) { setError('Enter a 4-digit code'); return; }
-        const { data } = await dbSelect<SessionRow[]>(
-            'sessions', `code=eq.${code}&class_state=neq.ended&limit=1`,
+        // H1: resolve the code through the anon-callable SECURITY DEFINER RPC,
+        // which returns a tightly-scoped projection only for active sessions.
+        const { data } = await callRpc<SessionRow | null>(
+            'session_lookup_by_code', { in_code: code },
         );
-        if (!data || data.length === 0) { setError('No active class with that code'); return; }
-        setUi({ kind: 'name', session: data[0] });
+        if (!data) { setError('No active class with that code'); return; }
+        setUi({ kind: 'name', session: data });
     }, []);
 
     const handleName = useCallback(async (rawName: string) => {
@@ -272,38 +276,38 @@ export default function StudentClassClient() {
         setError(null);
         const desired = rawName.trim();
         if (!desired) { setError('Enter your first name'); return; }
-        const { data: existing } = await dbSelect<StudentRow[]>(
-            'session_students', `session_id=eq.${ui.session.id}&select=name`,
+        // H1: join is now a single SECURITY DEFINER RPC that validates the
+        // session, dedupes the name server-side, inserts, and returns the row
+        // (incl. name + avatar_seed). This removes the client's need to read
+        // other children's names from the roster.
+        const { data, error: joinErr } = await callRpc<StudentRow | null>(
+            'class_join', { in_session_id: ui.session.id, in_name: desired },
         );
-        const finalName = dedupeName(desired, (existing ?? []).map((s) => s.name));
-        const avatar = avatarForStudent(ui.session.id, finalName);
-        const { data, error: insertErr } = await dbInsert<StudentRow>(
-            'session_students',
-            {
-                session_id: ui.session.id,
-                name: finalName,
-                avatar_seed: avatar.seed,
-            },
-            { single: true },
-        );
-        if (insertErr || !data) {
-            setError(insertErr?.message ?? 'Could not join class');
+        if (joinErr || !data) {
+            setError(joinErr?.message ?? 'Could not join class');
             return;
         }
+        const finalName = data.name;
         const memo: ReconnectMemo = {
             sessionId: ui.session.id, studentId: data.id, name: finalName,
-            avatarSeed: avatar.seed, ts: Date.now(),
+            avatarSeed: data.avatar_seed ?? '', ts: Date.now(),
         };
         try { sessionStorage.setItem(RECONNECT_KEY, JSON.stringify(memo)); } catch { /* ignore */ }
 
+        // Fetch the authoritative full session (current_activity_id etc.) +
+        // the current activity, both via capability-scoped RPCs.
+        const { data: fullSession } = await callRpc<SessionRow | null>(
+            'class_get_session', { in_session_id: ui.session.id },
+        );
+        const session = fullSession ?? ui.session;
         let activity: SessionActivityRow | null = null;
-        if (ui.session.current_activity_id) {
-            const { data: act } = await dbSelect<SessionActivityRow[]>(
-                'session_activities', `id=eq.${ui.session.current_activity_id}&limit=1`,
+        if (session.current_activity_id) {
+            const { data: act } = await callRpc<SessionActivityRow | null>(
+                'class_get_activity', { in_activity_id: session.current_activity_id },
             );
-            if (act && act[0]) activity = act[0];
+            if (act) activity = act;
         }
-        setUi({ kind: 'classroom', session: ui.session, student: data, activity });
+        setUi({ kind: 'classroom', session, student: data, activity });
     }, [ui]);
 
     // ── Render ─────────────────────────────────────────────────────

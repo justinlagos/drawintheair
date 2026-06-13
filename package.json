@@ -12,6 +12,8 @@
     "type-check": "tsc -b --noEmit",
     "type-check:watch": "tsc -b --noEmit --watch",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "preview": "vite preview",
     "prebuild": "npm run check:csp && npm run type-check",
     "validate": "npm run type-check && npm run lint && npm run check:csp",
@@ -45,6 +47,7 @@
     "tailwindcss": "^3.4.19",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "^7.2.4"
+    "vite": "^7.2.4",
+    "vitest": "^2.1.9"
   }
 }

@@ -12,6 +12,7 @@
 
 import { corsHeaders } from '../_shared/cors.ts';
 import { getStripe, getServiceSupabase, getEnv } from '../_shared/stripe.ts';
+import { isDuplicateEventError, isStaleEvent } from './ordering.ts';
 
 declare const Deno: { serve: (handler: (req: Request) => Promise<Response> | Response) => void };
 
@@ -83,19 +84,46 @@ Deno.serve(async (req: Request) => {
 
   const parentId = await resolveParentId();
 
-  // ── Log every relevant event for audit / replay ─────────────────────────
-  await supabase.from('billing_events').insert({
+  // ── Idempotency gate (H3) ────────────────────────────────────────────────
+  // Stripe delivers at-least-once and retries, so the same event.id can arrive
+  // multiple times. billing_events.stripe_event_id is UNIQUE — we use the
+  // INSERT itself as the replay guard. A 23505 (unique violation) means we've
+  // already processed this event: ACK with 200 and do NOT re-apply the
+  // mutation. Any other insert error is a real failure → 500 so Stripe retries.
+  const { error: logErr } = await supabase.from('billing_events').insert({
     parent_id: parentId,
     stripe_event_id: event.id,
     type: event.type,
     payload: event as unknown,
   });
+  if (logErr) {
+    // PostgREST surfaces the Postgres SQLSTATE in `code`.
+    if (isDuplicateEventError((logErr as { code?: string }).code)) {
+      return new Response(JSON.stringify({ received: true, duplicate: true }), { status: 200, headers });
+    }
+    return new Response(`Log failure: ${logErr.message}`, { status: 500, headers });
+  }
 
   if (!parentId) {
     return new Response(JSON.stringify({ received: true, logged: true, no_parent: true }), {
       status: 200,
       headers,
     });
+  }
+
+  // ── Ordering guard (H3) ──────────────────────────────────────────────────
+  // Stripe does not guarantee delivery order. We stamp parent_subscriptions
+  // with the Stripe event timestamp we last applied. If this event is older
+  // than what we've already applied, skip the mutation so a delayed event
+  // (e.g. a late `past_due`) can't revert newer state (e.g. `active`).
+  const eventTs = new Date(event.created * 1000).toISOString();
+  const { data: existingSub } = await supabase
+    .from('parent_subscriptions')
+    .select('last_event_at')
+    .eq('parent_id', parentId)
+    .maybeSingle();
+  if (isStaleEvent(eventTs, existingSub?.last_event_at)) {
+    return new Response(JSON.stringify({ received: true, stale: true }), { status: 200, headers });
   }
 
   // ── Mirror the subscription into parent_subscriptions ───────────────────
@@ -139,6 +167,7 @@ Deno.serve(async (req: Request) => {
           cancel_at_period_end: !!sub.cancel_at_period_end,
           canceled_at: sub.canceled_at ? new Date(sub.canceled_at * 1000).toISOString() : null,
           updated_at: new Date().toISOString(),
+          last_event_at: eventTs,
         },
         { onConflict: 'parent_id' },
       );
@@ -147,7 +176,7 @@ Deno.serve(async (req: Request) => {
   if (event.type === 'invoice.payment_failed') {
     await supabase
       .from('parent_subscriptions')
-      .update({ status: 'past_due', updated_at: new Date().toISOString() })
+      .update({ status: 'past_due', updated_at: new Date().toISOString(), last_event_at: eventTs })
       .eq('parent_id', parentId);
   }
 
@@ -156,7 +185,7 @@ Deno.serve(async (req: Request) => {
     // sure status reflects "active" if a past_due invoice has now cleared.
     await supabase
       .from('parent_subscriptions')
-      .update({ status: 'active', updated_at: new Date().toISOString() })
+      .update({ status: 'active', updated_at: new Date().toISOString(), last_event_at: eventTs })
       .eq('parent_id', parentId)
       .eq('status', 'past_due');
   }
