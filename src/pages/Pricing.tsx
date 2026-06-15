@@ -12,6 +12,8 @@ import {
   CalmFooter, FAQList, GestureTrail, SectionHead,
 } from './Landing';
 import { HeaderNav } from '../components/landing/HeaderNav';
+import { trackMeta } from '../lib/observability';
+import { useLocalCurrency, formatIndicative, SUPPORTED_CURRENCIES } from '../lib/currency';
 import '../components/landing/landing-calm.css';
 
 function ArrowIcon({ size = 16 }: { size?: number }) {
@@ -86,8 +88,8 @@ const FAMILY_FEATS = [
 ];
 
 const FAMILY_PLANS = [
-  { name: 'Monthly', tagline: 'Try it for a month.',     amt: '$4.99',  per: '/month', cta: 'Start free trial', variant: 'secondary' as const, featured: false, save: undefined as string | undefined },
-  { name: 'Yearly',  tagline: 'Best value for the year.', amt: '$54.99', per: '/year',  cta: 'Start free trial', variant: 'primary'   as const, featured: true,  save: 'Save $5' },
+  { name: 'Monthly', tagline: 'Try it for a month.',     amt: '$4.99',  usd: 4.99,  per: '/month', cta: 'Start free trial', variant: 'secondary' as const, featured: false, save: undefined as string | undefined },
+  { name: 'Yearly',  tagline: 'Best value for the year.', amt: '$54.99', usd: 54.99, per: '/year',  cta: 'Start free trial', variant: 'primary'   as const, featured: true,  save: 'Save $5' },
 ];
 
 // Teachers (Free pilot + Teacher Pro)
@@ -158,6 +160,14 @@ export const Pricing: React.FC = () => {
   const rootRef = useRef<HTMLDivElement | null>(null);
   useReveal(rootRef);
 
+  // Meta ViewContent on the pricing page (spec §1a). No-op unless configured.
+  useEffect(() => { trackMeta('ViewContent', { content_name: 'pricing' }); }, []);
+
+  // Indicative local-currency display (spec §3b). USD figures are the real
+  // Stripe prices; the local figure is shown for reassurance and the actual
+  // charge currency is set by Adaptive Pricing at checkout.
+  const { currency, rate, isLocal, ready, setCurrency } = useLocalCurrency();
+
   // Default tab can be deep-linked via ?for=teachers / ?for=schools.
   const [audience, setAudience] = useState<Audience>(() => {
     if (typeof window === 'undefined') return 'parents';
@@ -227,6 +237,11 @@ export const Pricing: React.FC = () => {
                       <span className="price-amt">{p.amt}</span>
                       <span className="price-per">{p.per}</span>
                     </div>
+                    {isLocal && ready && (
+                      <div className="price-indicative" style={{ marginTop: 2, fontSize: 13, color: 'var(--fg-3)', fontWeight: 600 }}>
+                        {formatIndicative(p.usd, currency, rate)}{p.per} in your local currency
+                      </div>
+                    )}
                     <ul className="price-list">
                       {FAMILY_FEATS.map((f) => (
                         <li key={f}><span className="check">{'✓'}</span>{f}</li>
@@ -243,7 +258,19 @@ export const Pricing: React.FC = () => {
                   </div>
                 ))}
               </div>
-              <p className="auth-alt" style={{ marginTop: 28 }}>
+              <p className="auth-alt" style={{ marginTop: 18, fontSize: 13, color: 'var(--fg-3)' }}>
+                Prices in{' '}
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  aria-label="Display currency"
+                  style={{ font: 'inherit', padding: '2px 6px', borderRadius: 8, border: '1px solid var(--line, #ddd)', background: 'transparent', color: 'inherit' }}
+                >
+                  {SUPPORTED_CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+                . Shown in your local currency for reference — you'll be billed securely in your local currency at checkout.
+              </p>
+              <p className="auth-alt" style={{ marginTop: 14 }}>
                 Already have an account? <Link to="/parent/login">Sign in</Link>
               </p>
             </div>

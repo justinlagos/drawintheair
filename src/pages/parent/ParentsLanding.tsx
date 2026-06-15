@@ -21,6 +21,7 @@ import {
   ActivityGrid, CalmFooter, FAQList, GestureTrail, SectionHead,
 } from '../Landing';
 import { HeaderNav } from '../../components/landing/HeaderNav';
+import { trackMeta } from '../../lib/observability';
 import '../../components/landing/landing-calm.css';
 
 function PlayIcon() {
@@ -79,6 +80,9 @@ export default function ParentsLandingV2() {
   const navigate = useNavigate();
   const rootRef = useRef<HTMLDivElement | null>(null);
   useReveal(rootRef);
+
+  // Meta ViewContent on the parents landing page (spec §1a).
+  useEffect(() => { trackMeta('ViewContent', { content_name: 'parents' }); }, []);
 
   return (
     <div ref={rootRef} className="lp-shell">

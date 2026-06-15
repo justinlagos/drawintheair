@@ -290,9 +290,14 @@ async function callEdgeFunction<T>(fn: string, body: Record<string, unknown> = {
   }
 }
 
-/** Start a Stripe Checkout session for either the monthly or yearly plan. */
-export async function startStripeCheckout(interval: 'month' | 'year') {
-  const res = await callEdgeFunction<{ url: string }>('stripe-checkout', { interval });
+/** Start a Stripe Checkout session for either the monthly or yearly plan.
+ *  `metaEventId` (optional) is stamped onto the Stripe subscription so the
+ *  server CAPI Subscribe event deduplicates with the client Pixel. */
+export async function startStripeCheckout(interval: 'month' | 'year', metaEventId?: string) {
+  const res = await callEdgeFunction<{ url: string }>('stripe-checkout', {
+    interval,
+    ...(metaEventId ? { meta_event_id: metaEventId } : {}),
+  });
   return res?.url ?? null;
 }
 
@@ -345,6 +350,19 @@ export async function reconcileSubscription() {
     'reconcile-subscription',
     {},
   );
+}
+
+/**
+ * Send a deduplicated server-side Meta CAPI event (registration funnel). The
+ * matching client Pixel event must use the SAME eventId. No-ops server-side
+ * when the pixel/token aren't configured, or when the caller isn't signed in.
+ */
+export async function sendMetaCapi(eventName: 'Lead' | 'CompleteRegistration' | 'StartTrial', eventId: string) {
+  return callEdgeFunction<{ ok: boolean }>('meta-capi', {
+    eventName,
+    eventId,
+    eventSourceUrl: typeof window !== 'undefined' ? window.location.href : undefined,
+  });
 }
 
 // ── Stripe price IDs (public, read from stripe_price_map) ──────────────────

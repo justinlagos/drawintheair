@@ -23,6 +23,7 @@ import {
 } from '../../lib/parentApi';
 import { clearParentAccessCache } from '../../features/parent/useParentAccess';
 import { logEvent } from '../../lib/analytics';
+import { trackMeta, newEventId, rememberCheckoutEventId, readCheckoutEventId, clearCheckoutEventId } from '../../lib/observability';
 
 export default function ParentBilling() {
   return (
@@ -90,6 +91,14 @@ function BillingInner() {
       clearParentAccessCache();
       if (activated) {
         logEvent('parent_subscription_activated');
+        // Client Pixel mirror of Subscribe — shares the event_id stamped at
+        // checkout so it deduplicates with the server CAPI Subscribe. Value
+        // comes from the authoritative server CAPI event, not here.
+        try {
+          const eid = readCheckoutEventId();
+          trackMeta('Subscribe', {}, eid ?? undefined);
+          clearCheckoutEventId();
+        } catch { /* never block the redirect */ }
         window.location.replace('/parent/dashboard?welcome=1');
       } else {
         // Payment likely succeeded but we could not confirm yet. The webhook +
@@ -105,7 +114,9 @@ function BillingInner() {
     setBusy(true);
     setBillingNote(null);
     try {
-      const url = await startStripeCheckout(plan);
+      const metaEventId = newEventId();
+      rememberCheckoutEventId(metaEventId);
+      const url = await startStripeCheckout(plan, metaEventId);
       setBusy(false);
       if (url) {
         logEvent('parent_checkout_started');

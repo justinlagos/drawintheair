@@ -35,6 +35,7 @@ import {
     recordTrackerInitFailed,
     recordClassroomSyncFailure,
     setActiveClassSessions,
+    trackMeta as obsTrackMeta,
 } from './observability';
 
 // ════════════════════════════════════════════════════════════════════
@@ -961,6 +962,27 @@ const ONCE_PER_SESSION: Readonly<Record<string, EventName>> = {
 };
 
 /** Log an event. Fire-and-forget, flushes asynchronously. */
+// ── Meta Pixel event mapping (spec §1a) ──────────────────────────────────────
+// Only these internal events are mirrored to the Pixel from the fan-out, and
+// only as Pixel-ONLY events. Deduplicated events that pair with a server CAPI
+// event (Lead / CompleteRegistration / StartTrial / Subscribe / Purchase) are
+// fired at their own call-sites with a SHARED event_id, never here, so Meta
+// shows them "Deduplicated".
+const META_EVENT_MAP: Record<string, string> = {
+    parent_child_profile_created: 'AddChild',     // custom
+    mode_started: 'StartActivity',                // custom
+    parent_checkout_started: 'InitiateCheckout',  // standard
+};
+
+function maybeTrackMeta(eventName: string, opts: EventOptions): void {
+    const metaEvent = META_EVENT_MAP[eventName];
+    if (!metaEvent) return;
+    const params: { content_name?: string } = {};
+    const cn = opts.meta?.content_name;
+    if (typeof cn === 'string') params.content_name = cn;
+    obsTrackMeta(metaEvent, params, generateUUID());
+}
+
 export function logEvent(name: EventName, opts: EventOptions = {}): void {
     // Dedupe once-per-session events to avoid the alert-storm pattern
     // we saw 2026-05-12 (single device fired 46 camera_denied events
@@ -1047,6 +1069,11 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
             reason: opts.meta?.reason as string | undefined,
             cta_source: opts.meta?.source as string | undefined,
         });
+
+        // Mirror vetted funnel events to the Meta Pixel (Pixel-only events;
+        // deduplicated ones fire at their call-sites). No-op unless the pixel
+        // is configured. Never forwards raw meta.
+        maybeTrackMeta(name as string, opts);
 
         // setActiveClassSessions is exported only so callers OUTSIDE
         // analytics.ts (e.g. the class conductor) can mutate it. Silence

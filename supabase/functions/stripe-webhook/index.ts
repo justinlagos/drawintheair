@@ -23,6 +23,9 @@ import {
   loadBasePriceIds, mapSubscription, upsertSubscription,
   maybeSendActivationEmail, alertAdmin,
 } from '../_shared/billing.ts';
+import { sendCapiEvent } from '../_shared/metaCapi.ts';
+
+const APP_URL = 'https://drawintheair.com';
 
 declare const Deno: { serve: (handler: (req: Request) => Promise<Response> | Response) => void };
 
@@ -137,6 +140,12 @@ Deno.serve(async (req: Request) => {
     if (event.type === 'invoice.payment_succeeded') {
       const subId = obj?.subscription as string | undefined;
       if (subId) {
+        // Was this the first activation? Read BEFORE the email flips the flag,
+        // so the Subscribe CAPI event fires exactly once per subscription.
+        const { data: prior } = await supabase
+          .from('parent_subscriptions').select('activated_sent_at').eq('parent_id', parentId).maybeSingle();
+        const firstActivation = !prior?.activated_sent_at;
+
         const liveSub = await stripe.subscriptions.retrieve(subId);
         const row = mapSubscription(parentId, liveSub, basePriceIds, eventTs);
         const { error } = await upsertSubscription(supabase, row);
@@ -145,6 +154,22 @@ Deno.serve(async (req: Request) => {
           return new Response(`Upsert failure: ${error.message}`, { status: 500, headers });
         }
         await maybeSendActivationEmail(supabase, parentId);
+
+        // ── Meta CAPI (spec §1, §3c): value + currency come from the ACTUAL
+        // Stripe invoice, never the frontend display currency ───────────────
+        const { data: pp } = await supabase.from('parent_profiles').select('email').eq('id', parentId).maybeSingle();
+        const email = pp?.email ?? null;
+        const value = ((obj?.amount_paid ?? obj?.amount_due ?? 0) as number) / 100;
+        const currency = (obj?.currency as string | undefined) ?? undefined;
+        const src = `${APP_URL}/parent/billing`;
+        // Purchase: one per invoice (renewal-safe), server-authoritative.
+        await sendCapiEvent({ eventName: 'Purchase', eventId: obj.id as string, value, currency, userData: { email }, eventSourceUrl: src });
+        // Subscribe: once per subscription, deduplicated with the client Pixel
+        // via the shared meta_event_id stamped at checkout.
+        if (firstActivation) {
+          const metaEventId = (liveSub.metadata?.meta_event_id as string | undefined) || (obj.id as string);
+          await sendCapiEvent({ eventName: 'Subscribe', eventId: metaEventId, value, currency, userData: { email }, eventSourceUrl: src });
+        }
       }
     }
 

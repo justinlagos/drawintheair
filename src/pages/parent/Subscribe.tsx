@@ -9,6 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ParentShell, Card, I } from './_shared';
 import { startStripeCheckout } from '../../lib/parentApi';
 import { logEvent } from '../../lib/analytics';
+import { newEventId, rememberCheckoutEventId } from '../../lib/observability';
 
 export default function ParentSubscribe() {
   const { user, loading } = useAuth();
@@ -25,7 +26,10 @@ export default function ParentSubscribe() {
     }
     (async () => {
       logEvent('parent_checkout_started');
-      const url = await startStripeCheckout(plan);
+      // Shared dedup id for Subscribe (Pixel mirror ↔ server CAPI).
+      const metaEventId = newEventId();
+      rememberCheckoutEventId(metaEventId);
+      const url = await startStripeCheckout(plan, metaEventId);
       if (url) {
         window.location.href = url;
       } else {

@@ -17,10 +17,11 @@ import {
   setRoleIntent,
   resendConfirmation,
 } from '../../lib/supabase';
-import { recordConsent } from '../../lib/parentApi';
+import { recordConsent, sendMetaCapi } from '../../lib/parentApi';
 import { logEvent } from '../../lib/analytics';
 import { logAuthEvent } from '../../lib/authEvents';
 import { authFlags } from '../../lib/authFlags';
+import { trackMeta, newEventId } from '../../lib/observability';
 import './parent.css';
 
 const CONSENT_VERSION = 'v2026-05';
@@ -78,6 +79,21 @@ export default function ParentSignup() {
     }
     logEvent('parent_signup_completed');
     if (authFlags.authObservabilityV1) logAuthEvent('auth_signup_succeeded', { role: 'parent', method: 'password', outcome: 'success' });
+
+    // ── Meta: registration conversion (the campaign optimisation event) ──
+    // Lead + CompleteRegistration + StartTrial (trial is card-free, so the
+    // trial starts at this same moment). Fired Pixel-side here AND server-side
+    // via CAPI with a SHARED event_id so Meta deduplicates. CAPI no-ops if the
+    // pixel/token are unset or there is no session yet (email-confirm flow).
+    try {
+      const rid = newEventId();
+      trackMeta('Lead', {}, rid);
+      trackMeta('CompleteRegistration', {}, rid);
+      trackMeta('StartTrial', {}, rid);
+      void sendMetaCapi('Lead', rid);
+      void sendMetaCapi('CompleteRegistration', rid);
+      void sendMetaCapi('StartTrial', rid);
+    } catch { /* never block signup for analytics */ }
     if (result.needsEmailConfirm) {
       // Email confirmation is on: there is no session yet, so don't
       // navigate to the dashboard (it would bounce to login) and don't

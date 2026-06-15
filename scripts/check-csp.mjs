@@ -97,6 +97,25 @@ const REQUIREMENTS = [
         why: 'Fredoka + Nunito font binaries',
         owner: 'fonts.googleapis.com CSS',
     },
+    // ── Meta (Facebook) Pixel ────────────────────────────────────────
+    {
+        directive: 'script-src',
+        origin: 'https://connect.facebook.net',
+        why: 'Meta Pixel fbevents.js base script',
+        owner: 'src/lib/observability/meta.ts → initMetaPixel',
+    },
+    {
+        directive: 'connect-src',
+        origin: 'https://www.facebook.com',
+        why: 'Meta Pixel event beacons (tr/ endpoint)',
+        owner: 'src/lib/observability/meta.ts',
+    },
+    {
+        directive: 'connect-src',
+        origin: 'https://graph.facebook.com',
+        why: 'Meta Graph API (reserved for any client-side CAPI; server CAPI runs from Supabase)',
+        owner: 'src/lib/observability/meta.ts',
+    },
 ];
 
 // ─────────────────────────────────────────────────────────────────────

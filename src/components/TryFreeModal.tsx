@@ -7,6 +7,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { logEvent, startSession, type AgeBand as PilotAgeBand } from '../lib/analytics';
+import { useIsMobile } from '../lib/useIsMobile';
+import { sendLaptopLink } from '../lib/handoff';
+import { trackMeta, newEventId } from '../lib/observability';
 import './tryFreeModal.css';
 
 // Removed 12+ option: the landing pill says "Motion learning for ages
@@ -53,6 +56,24 @@ export const TryFreeModal: React.FC<TryFreeModalProps> = ({ open, onClose }) => 
     const [schoolCode, setSchoolCode] = useState('');
     const [classCode, setClassCode] = useState('');
     const [showAdmin] = useState(initialAdmin);
+
+    // Mobile → laptop handoff (spec §4). On a phone the webcam air-drawing is
+    // poor, so we offer to email a laptop link instead of dumping the parent
+    // into a broken camera screen.
+    const isMobile = useIsMobile();
+    const [handoffEmail, setHandoffEmail] = useState('');
+    const [handoffStatus, setHandoffStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+
+    const handleHandoff = useCallback(async () => {
+        if (handoffStatus === 'sending') return;
+        setHandoffStatus('sending');
+        // Lead intent — fire Pixel so the email capture is attributed even
+        // though the gameplay happens later on the laptop.
+        try { trackMeta('Lead', { content_name: 'mobile_handoff' }, newEventId()); } catch { /* ignore */ }
+        const ok = await sendLaptopLink(handoffEmail, '/play');
+        setHandoffStatus(ok ? 'sent' : 'error');
+        if (ok) logEvent('cta_click', { meta: { source: 'mobile_handoff_sent' } });
+    }, [handoffEmail, handoffStatus]);
 
     const handleStart = useCallback(() => {
         // ageBand is always non-null now (DEFAULT_BAND on open) but the
@@ -182,6 +203,50 @@ export const TryFreeModal: React.FC<TryFreeModalProps> = ({ open, onClose }) => 
                     We only collect age band and gameplay stats. We do not collect names,
                     photos, addresses, or camera images.
                 </p>
+
+                {/* Mobile → laptop handoff (spec §4) */}
+                {isMobile && (
+                    <div className="tryfree-handoff" style={{ marginTop: 16, padding: 14, borderRadius: 14, background: 'rgba(138,102,240,0.08)', border: '1px solid rgba(138,102,240,0.2)' }}>
+                        {handoffStatus === 'sent' ? (
+                            <p style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
+                                ✓ Link sent! Check your email on your laptop to start.
+                            </p>
+                        ) : (
+                            <>
+                                <p style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600 }}>
+                                    On a phone? Draw in the Air works best on a laptop with a webcam.
+                                </p>
+                                <p style={{ margin: '0 0 10px', fontSize: 13, opacity: 0.8 }}>
+                                    Pop in your email and we'll send you a link to open it on your laptop.
+                                </p>
+                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                    <input
+                                        type="email"
+                                        inputMode="email"
+                                        placeholder="you@example.com"
+                                        value={handoffEmail}
+                                        onChange={(e) => setHandoffEmail(e.target.value)}
+                                        aria-label="Your email"
+                                        style={{ flex: '1 1 180px', minWidth: 0, padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(0,0,0,0.15)', font: 'inherit' }}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="tryfree-btn tryfree-btn-start"
+                                        onClick={handleHandoff}
+                                        disabled={handoffStatus === 'sending' || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(handoffEmail.trim())}
+                                    >
+                                        {handoffStatus === 'sending' ? 'Sending…' : 'Email me the link'}
+                                    </button>
+                                </div>
+                                {handoffStatus === 'error' && (
+                                    <p style={{ margin: '8px 0 0', fontSize: 12, color: '#b00' }}>
+                                        Couldn't send just now. Please try again in a moment.
+                                    </p>
+                                )}
+                            </>
+                        )}
+                    </div>
+                )}
 
                 {/* Actions */}
                 <div className="tryfree-actions">

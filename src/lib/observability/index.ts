@@ -24,6 +24,10 @@
 
 import { initSentry, captureError, setObservabilityContext, clearObservabilityContext, isSentryActive } from './sentry';
 import { initPostHog, trackEvent, identifyPseudonymous, resetPostHog, isPostHogActive } from './posthog';
+import {
+    initMetaPixel, trackMeta, trackMetaPageView, isMetaActive,
+    newEventId, rememberCheckoutEventId, readCheckoutEventId, clearCheckoutEventId,
+} from './meta';
 
 export {
     // Sentry
@@ -36,6 +40,15 @@ export {
     identifyPseudonymous,
     resetPostHog,
     isPostHogActive,
+    // Meta Pixel
+    initMetaPixel,
+    trackMeta,
+    trackMetaPageView,
+    isMetaActive,
+    newEventId,
+    rememberCheckoutEventId,
+    readCheckoutEventId,
+    clearCheckoutEventId,
 };
 
 // Health registry exports.

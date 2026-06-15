@@ -25,6 +25,8 @@ import {
   setObservabilityContext,
   trackEvent,
   captureError,
+  initMetaPixel,
+  trackMetaPageView,
 } from './lib/observability'
 import { AuthProvider } from './context/AuthContext.tsx'
 import { ParentProvider } from './context/ParentContext.tsx'
@@ -277,6 +279,9 @@ function Root() {
       try {
         setObservabilityContext({ route: path });
         trackEvent('route_view', { route: path });
+        // Meta Pixel SPA PageView (base snippet only fires once). No-op
+        // unless the pixel is configured.
+        trackMetaPageView();
       } catch {
         /* never let observability crash the router */
       }
@@ -790,6 +795,10 @@ function loadDeferredAnalytics(): void {
   const w = window as unknown as Record<string, unknown>;
   if (w.__diaAnalyticsLoaded) return;
   w.__diaAnalyticsLoaded = true;
+
+  // Meta Pixel base code — loaded post-interactive alongside GA4/Clarity so it
+  // never blocks first render. No-op unless VITE_META_PIXEL_ID is set.
+  try { initMetaPixel(); } catch { /* analytics must never break the app */ }
 
   // Google Analytics 4
   try {
