@@ -172,6 +172,8 @@ export type EventName =
     | 'parent_paywall_viewed'       // meta.reason: 'save_progress' | 'dashboard' | 'trial_ended' | 'premium_mode'
     | 'parent_checkout_started'     // Redirect to Stripe Checkout fired
     | 'parent_checkout_completed'   // checkout.session.completed webhook
+    | 'parent_checkout_returned'    // Back from Stripe on the success URL
+    | 'parent_subscription_activated' // Reconcile confirmed an active subscription
     | 'parent_portal_opened'        // Customer Portal redirect fired
     | 'parent_child_profile_created'   // meta.active_count (NOT nickname)
     | 'parent_child_profile_archived'

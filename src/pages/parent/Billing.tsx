@@ -18,8 +18,10 @@ import {
   getBillingPreview,
   openStripePortal,
   startStripeCheckout,
+  reconcileSubscription,
   type BillingPreview,
 } from '../../lib/parentApi';
+import { clearParentAccessCache } from '../../features/parent/useParentAccess';
 import { logEvent } from '../../lib/analytics';
 
 export default function ParentBilling() {
@@ -55,6 +57,49 @@ function BillingInner() {
   const hasActive = sub && subscriptionState !== 'none' && subscriptionState !== 'expired' && subscriptionState !== 'trial_expired';
 
   const [billingNote, setBillingNote] = useState<string | null>(null);
+
+  // ── Returning from Stripe Checkout ──────────────────────────────────────
+  // Activation is webhook-INDEPENDENT: we reconcile straight from Stripe so the
+  // dashboard unlocks immediately even if the webhook is delayed or down. The
+  // billing-health cron is the backstop if this somehow can't confirm yet.
+  const [finishing, setFinishing] = useState<null | 'working' | 'slow'>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get('checkout');
+    if (checkout === 'cancelled') {
+      setBillingNote('No problem — checkout was cancelled and you have not been charged. You can start your plan whenever you are ready.');
+      try { window.history.replaceState(null, '', '/parent/billing'); } catch { /* ignore */ }
+      return;
+    }
+    if (checkout !== 'success') return;
+
+    let cancelled = false;
+    setFinishing('working');
+    logEvent('parent_checkout_returned');
+    (async () => {
+      let activated = false;
+      // Retry briefly to cover the gap between Stripe confirming the payment
+      // and the subscription being queryable.
+      for (let attempt = 0; attempt < 4 && !cancelled; attempt++) {
+        const res = await reconcileSubscription();
+        if (res && res.ok && res.status && res.status !== 'canceled') { activated = true; break; }
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+      if (cancelled) return;
+      clearParentAccessCache();
+      if (activated) {
+        logEvent('parent_subscription_activated');
+        window.location.replace('/parent/dashboard?welcome=1');
+      } else {
+        // Payment likely succeeded but we could not confirm yet. The webhook +
+        // billing-health cron will finish it; reassure the user (no error tone).
+        setFinishing('slow');
+        try { window.history.replaceState(null, '', '/parent/billing'); } catch { /* ignore */ }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   async function goCheckout(plan: 'month' | 'year') {
     setBusy(true);
@@ -92,6 +137,38 @@ function BillingInner() {
     } else {
       setBillingNote("Couldn't reach Stripe. Please try again in a moment.");
     }
+  }
+
+  // ── Returning from checkout: finishing / reassurance screen ─────────
+  if (finishing) {
+    return (
+      <ParentShell>
+        <div className="text-center" style={{ maxWidth: 560, margin: '72px auto' }}>
+          <span className="eyebrow pill"><I.Card size={14} /> Family plan</span>
+          {finishing === 'working' ? (
+            <>
+              <h1 style={{ marginTop: 18 }}>Finishing setup…</h1>
+              <p role="status" className="form-note" style={{ marginTop: 12 }}>
+                Thank you! We're confirming your payment and unlocking your dashboard. This only takes a moment.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 style={{ marginTop: 18 }}>Payment received</h1>
+              <p role="status" className="form-note" style={{ marginTop: 12, maxWidth: 460, marginInline: 'auto' }}>
+                Thanks! Your payment went through. We're just finishing the last step of setup, which can occasionally take a minute. Your dashboard will unlock automatically — you can refresh below.
+              </p>
+              <div style={{ marginTop: 22, display: 'flex', gap: 12, justifyContent: 'center' }}>
+                <button className="btn btn-primary" onClick={() => window.location.replace('/parent/dashboard')}>
+                  Go to my dashboard
+                </button>
+                <button className="btn" onClick={() => window.location.reload()}>Refresh</button>
+              </div>
+            </>
+          )}
+        </div>
+      </ParentShell>
+    );
   }
 
   // ── No active subscription: paywall layout ─────────────────────────

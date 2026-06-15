@@ -334,6 +334,19 @@ export async function syncSubscriptionQuantity() {
   );
 }
 
+/**
+ * Pull the caller's subscription straight from Stripe and write the full state
+ * into the DB — WITHOUT waiting for a webhook. Called on the checkout-success
+ * page so the account activates instantly even if the Stripe webhook is slow,
+ * delayed, or not configured. Returns { ok, status } or null on failure.
+ */
+export async function reconcileSubscription() {
+  return callEdgeFunction<{ ok: boolean; status: string | null; subscription_id?: string }>(
+    'reconcile-subscription',
+    {},
+  );
+}
+
 // ── Stripe price IDs (public, read from stripe_price_map) ──────────────────
 
 export interface PriceMapEntry {
