@@ -8,7 +8,7 @@ export type Range = '24h' | '7d' | '30d' | '90d';
 export const RANGE_DAYS: Record<Range, number> = { '24h': 1, '7d': 7, '30d': 30, '90d': 90 };
 
 export type TabKey =
-    | 'executive' | 'engagement' | 'learning'
+    | 'executive' | 'activation' | 'engagement' | 'learning'
     | 'retention' | 'sessions' | 'errors' | 'friction' | 'progression' | 'adaptive' | 'observations' | 'observability' | 'system-health';
 
 export interface FilterState {

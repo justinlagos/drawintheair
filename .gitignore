@@ -35,3 +35,6 @@ internal/
 # Claude Code internal state (worktrees, settings, scratch)
 .claude/
 
+# Vitest transient config timestamp files (never commit)
+vitest.config.ts.timestamp-*.mjs
+

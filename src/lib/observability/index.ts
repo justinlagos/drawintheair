@@ -23,6 +23,7 @@
  */
 
 import { initSentry, captureError, setObservabilityContext, clearObservabilityContext, isSentryActive } from './sentry';
+import { safeInvoke, safeInvokeAsync } from './safeInvoke';
 import { initPostHog, trackEvent, identifyPseudonymous, resetPostHog, isPostHogActive } from './posthog';
 import {
     initMetaPixel, trackMeta, trackMetaPageView, isMetaActive,
@@ -35,6 +36,9 @@ export {
     setObservabilityContext,
     clearObservabilityContext,
     isSentryActive,
+    // Defensive instrumentation wrapper
+    safeInvoke,
+    safeInvokeAsync,
     // PostHog
     trackEvent,
     identifyPseudonymous,
@@ -67,6 +71,7 @@ export {
 } from './health';
 export type { HealthSnapshot, HealthIncident } from './health';
 export type { ObservabilityContext, CaptureErrorOptions } from './sentry';
+export type { SafeInvokeOptions } from './safeInvoke';
 
 /**
  * One-call bootstrap. Idempotent. Call from src/main.tsx BEFORE

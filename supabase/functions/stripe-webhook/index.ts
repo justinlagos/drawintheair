@@ -19,6 +19,7 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { getStripe, getServiceSupabase, getEnv } from '../_shared/stripe.ts';
 import { isDuplicateEventError, isStaleEvent } from './ordering.ts';
+import { buildWebhookLog } from './log.ts';
 import {
   loadBasePriceIds, mapSubscription, upsertSubscription,
   maybeSendActivationEmail, alertAdmin,
@@ -44,6 +45,8 @@ Deno.serve(async (req: Request) => {
 
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405, headers });
 
+  console.log(buildWebhookLog('received'));
+
   const sig = req.headers.get('stripe-signature');
   if (!sig) return new Response('Missing signature', { status: 400, headers });
 
@@ -55,12 +58,16 @@ Deno.serve(async (req: Request) => {
   } catch (e) {
     // A signature failure usually means a misconfigured STRIPE_WEBHOOK_SECRET —
     // the single most common reason billing silently stops working. Shout.
+    console.error(buildWebhookLog('signature_failed', { error: (e as Error).message, httpStatus: 400 }));
     await alertAdmin('webhook signature verification failed',
       `Every Stripe event is being rejected. Check STRIPE_WEBHOOK_SECRET matches the endpoint's signing secret.\n${(e as Error).message}`);
     return new Response(`Bad signature: ${(e as Error).message}`, { status: 400, headers });
   }
 
+  console.log(buildWebhookLog('signature_verified', { eventId: event.id, eventType: event.type }));
+
   if (!RELEVANT_TYPES.has(event.type)) {
+    console.log(buildWebhookLog('ignored_type', { eventId: event.id, eventType: event.type }));
     return new Response(JSON.stringify({ received: true, ignored: true }), { status: 200, headers });
   }
 
@@ -84,8 +91,17 @@ Deno.serve(async (req: Request) => {
     return data?.id ?? null;
   }
 
+  const logCtx = {
+    eventId: event.id,
+    eventType: event.type,
+    eventTs: new Date(event.created * 1000).toISOString(),
+    customerId: (obj?.customer as string | undefined) ?? null,
+    subscriptionId: (obj?.subscription ?? (event.type.startsWith('customer.subscription') ? obj?.id : undefined)) as string | undefined ?? null,
+  };
+
   try {
     const parentId = await resolveParentId();
+    console.log(buildWebhookLog(parentId ? 'parent_resolved' : 'parent_unresolved', { ...logCtx, parentId }));
 
     // ── Idempotency gate: billing_events.stripe_event_id is UNIQUE ──────────
     const { error: logErr } = await supabase.from('billing_events').insert({
@@ -93,12 +109,15 @@ Deno.serve(async (req: Request) => {
     });
     if (logErr) {
       if (isDuplicateEventError((logErr as { code?: string }).code)) {
+        console.log(buildWebhookLog('billing_event_duplicate', { ...logCtx, parentId, httpStatus: 200 }));
         return new Response(JSON.stringify({ received: true, duplicate: true }), { status: 200, headers });
       }
       // Real logging failure → retry.
+      console.error(buildWebhookLog('billing_event_insert_failed', { ...logCtx, parentId, error: logErr.message, httpStatus: 500 }));
       await alertAdmin('webhook billing_events insert failed', `event=${event.type} ${event.id}\n${logErr.message}`);
       return new Response(`Log failure: ${logErr.message}`, { status: 500, headers });
     }
+    console.log(buildWebhookLog('billing_event_logged', { ...logCtx, parentId }));
 
     if (!parentId) {
       // Logged but unattributable — don't retry forever, but make it visible.
@@ -108,10 +127,11 @@ Deno.serve(async (req: Request) => {
     }
 
     // ── Ordering guard ──────────────────────────────────────────────────────
-    const eventTs = new Date(event.created * 1000).toISOString();
+    const eventTs = logCtx.eventTs;
     const { data: existingSub } = await supabase
       .from('parent_subscriptions').select('last_event_at').eq('parent_id', parentId).maybeSingle();
     if (isStaleEvent(eventTs, existingSub?.last_event_at)) {
+      console.log(buildWebhookLog('stale_event_skipped', { ...logCtx, parentId, httpStatus: 200 }));
       return new Response(JSON.stringify({ received: true, stale: true }), { status: 200, headers });
     }
 
@@ -128,9 +148,11 @@ Deno.serve(async (req: Request) => {
       if (event.type === 'customer.subscription.deleted') row.status = 'canceled';
       const { error } = await upsertSubscription(supabase, row);
       if (error) {
+        console.error(buildWebhookLog('subscription_sync_failed', { ...logCtx, parentId, error: error.message, httpStatus: 500 }));
         await alertAdmin('webhook subscription upsert failed', `parent=${parentId} event=${event.type}\n${error.message}`);
         return new Response(`Upsert failure: ${error.message}`, { status: 500, headers });
       }
+      console.log(buildWebhookLog('subscription_sync_ok', { ...logCtx, parentId, status: row.status as string }));
       await maybeSendActivationEmail(supabase, parentId);
     }
 
@@ -150,9 +172,11 @@ Deno.serve(async (req: Request) => {
         const row = mapSubscription(parentId, liveSub, basePriceIds, eventTs);
         const { error } = await upsertSubscription(supabase, row);
         if (error) {
+          console.error(buildWebhookLog('subscription_sync_failed', { ...logCtx, parentId, subscriptionId: subId, error: error.message, httpStatus: 500 }));
           await alertAdmin('webhook payment_succeeded upsert failed', `parent=${parentId} sub=${subId}\n${error.message}`);
           return new Response(`Upsert failure: ${error.message}`, { status: 500, headers });
         }
+        console.log(buildWebhookLog('subscription_sync_ok', { ...logCtx, parentId, subscriptionId: subId, status: row.status as string }));
         await maybeSendActivationEmail(supabase, parentId);
 
         // ── Meta CAPI (spec §1, §3c): value + currency come from the ACTUAL
@@ -180,14 +204,18 @@ Deno.serve(async (req: Request) => {
         .update({ status: 'past_due', updated_at: new Date().toISOString(), last_event_at: eventTs })
         .eq('parent_id', parentId);
       if (error) {
+        console.error(buildWebhookLog('subscription_sync_failed', { ...logCtx, parentId, error: error.message, httpStatus: 500 }));
         await alertAdmin('webhook payment_failed update failed', `parent=${parentId}\n${error.message}`);
         return new Response(`Update failure: ${error.message}`, { status: 500, headers });
       }
+      console.log(buildWebhookLog('payment_failed_marked', { ...logCtx, parentId, status: 'past_due' }));
     }
 
+    console.log(buildWebhookLog('done', { ...logCtx, parentId, httpStatus: 200 }));
     return new Response(JSON.stringify({ received: true }), { status: 200, headers });
   } catch (e) {
     // Any unexpected error → 500 so Stripe retries, and shout to the admin.
+    console.error(buildWebhookLog('handler_error', { ...logCtx, error: (e as Error).message, httpStatus: 500 }));
     await alertAdmin('webhook handler threw', `event=${event?.type}\n${(e as Error).message}\n${(e as Error).stack ?? ''}`);
     return new Response(`Handler error: ${(e as Error).message}`, { status: 500, headers });
   }

@@ -27,6 +27,7 @@ import {
 } from './insights/rpc';
 import { days as rangeDays } from './insights/helpers';
 import { ExecutiveTab } from './insights/tabs/ExecutiveTab';
+import { ActivationTab } from './insights/tabs/ActivationTab';
 import { EngagementTab } from './insights/tabs/EngagementTab';
 import { LearningTab } from './insights/tabs/LearningTab';
 import { RetentionTab } from './insights/tabs/RetentionTab';
@@ -51,6 +52,7 @@ import './insights/insights.css';
 //   component sees per-tab "forbidden" errors, never data.
 const TABS: Array<{ key: TabKey; label: string }> = [
     { key: 'executive',  label: 'Executive' },
+    { key: 'activation', label: 'Activation' },
     { key: 'engagement', label: 'Engagement' },
     { key: 'learning',   label: 'Learning' },
     { key: 'retention',  label: 'Retention' },
@@ -318,6 +320,7 @@ const AuthenticatedDashboard: React.FC<{ email: string; onSignOut: () => Promise
             {/* Tab body */}
             <main className="iv-main">
                 {filter.tab === 'executive'  && <ExecutiveTab  filter={filter} />}
+                {filter.tab === 'activation' && <ActivationTab filter={filter} />}
                 {filter.tab === 'engagement' && <EngagementTab filter={filter} />}
                 {filter.tab === 'learning'   && <LearningTab   filter={filter} />}
                 {filter.tab === 'retention'  && <RetentionTab />}

@@ -9,10 +9,13 @@
  * Tracking logic (5 detected horizontal "swipes" → onWake) is unchanged.
  */
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { type HandLandmarkerResult } from '@mediapipe/tasks-vision';
 import { tokens } from '../../styles/tokens';
 import { logEvent } from '../../lib/analytics';
+import { StuckHelp } from '../feedback';
+import { currentDeviceProfile } from '../../lib/deviceProfile';
+import { getVisitState } from '../../lib/visitHistory';
 
 const useResponsiveLayout = () => {
     const [layout, setLayout] = useState(() => {
@@ -64,7 +67,7 @@ interface WaveToWakeProps {
     onRetryTracker?: () => void;
 }
 
-export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorCode, trackerReady, trackerError, visionFps, onRetryTracker }: WaveToWakeProps) => {
+export const WaveToWake = ({ onWake, trackingResults, cameraStatus, trackerReady, trackerError, visionFps, onRetryTracker }: WaveToWakeProps) => {
     const [waveCount, setWaveCount] = useState(0);
     // 'searching' = no hand seen yet, 'detected' = hand recently seen,
     // 'lost' = hand was seen but lost (give the user a hint)
@@ -178,7 +181,8 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorC
         }
     }, []);
 
-    // Wake when threshold reached
+    // Wake when threshold reached — with a short "Let's draw!" celebration
+    // beat so the win lands before we transition (reference State 3).
     useEffect(() => {
         if (waveCount >= wakeThreshold) {
             const timeToWave = Date.now() - waveStartTime.current;
@@ -186,11 +190,17 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorC
                 value_number: timeToWave,
                 meta: { wave_count: waveCount, threshold: wakeThreshold },
             });
-            onWake();
+            const t = setTimeout(onWake, 850);
+            return () => clearTimeout(t);
         }
     }, [waveCount, onWake]);
 
     const dotSize = isCompact ? 22 : 30;
+
+    // Device profile + returning-visitor state (hooks must run before any
+    // early return below). Drive personalised idle copy further down.
+    const device = useMemo(() => currentDeviceProfile(), []);
+    const returning = useMemo(() => getVisitState().returning, []);
 
     // ── Terminal tracker error → show help screen instead of wave UI ──
     // The wave gate failing while tracking is broken is the *correct*
@@ -201,6 +211,31 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorC
     if (trackerError) {
         return <TrackerErrorScreen error={trackerError} onRetry={onRetryTracker} isCompact={isCompact} />;
     }
+
+    // One action, three states. No camera feed, no system language —
+    // a 5-year-old should know what to do without reading a word.
+    // `celebrating` is derived (the gate is cleared) — not stored — so the
+    // wake effect stays side-effect-only.
+    const celebrating = waveCount >= wakeThreshold;
+    const isWaving = handStatus === 'detected' || waveCount > 0;
+    const heroState: 'idle' | 'active' | 'done' = celebrating ? 'done' : isWaving ? 'active' : 'idle';
+
+    // Personalise the idle copy: greet returning devices, and give
+    // mobile/tablet users a positioning tip (laptops need none).
+    const idleTitle = returning ? 'Welcome back!' : 'Wave your hand';
+    const idleSubtitle = device.positioningTip
+        || (returning ? 'Wave your hand to jump back in' : 'Show me your hand and wave side to side');
+
+    const title = celebrating
+        ? "Let's draw!"
+        : isWaving
+            ? 'Great — keep waving!'
+            : idleTitle;
+    const subtitle = celebrating
+        ? ''
+        : isWaving
+            ? "You've got it — keep going!"
+            : idleSubtitle;
 
     return (
         <div
@@ -311,47 +346,49 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorC
                             }}
                         />
 
+                        {/* State-based action title — never explains the
+                            technology, only the next move. */}
                         <h1
                             style={{
                                 fontFamily: tokens.fontFamily.display,
                                 fontWeight: 700,
                                 fontSize: isCompact
-                                    ? 'clamp(2rem, 8vw, 2.8rem)'
+                                    ? 'clamp(2rem, 8vw, 2.9rem)'
                                     : 'clamp(2.6rem, 5vw, 3.6rem)',
                                 lineHeight: 1.05,
                                 letterSpacing: '-0.02em',
-                                color: tokens.colors.charcoal,
+                                color: heroState === 'done' ? tokens.colors.deepPlum : tokens.colors.charcoal,
                                 margin: 0,
                                 position: 'relative',
                                 zIndex: 1,
+                                transition: 'color 0.3s ease',
                             }}
                         >
-                            Draw in the{' '}
-                            <span
-                                style={{
-                                    color: tokens.colors.deepPlum,
-                                    position: 'relative',
-                                    whiteSpace: 'nowrap',
-                                }}
-                            >
-                                Air
-                            </span>
+                            {title}{' '}
+                            {heroState === 'done'
+                                ? <span aria-hidden>🎉</span>
+                                : <WavingHand size={isCompact ? 30 : 40} />}
                         </h1>
 
                         <p
                             style={{
+                                minHeight: '1.5em',
                                 fontFamily: tokens.fontFamily.body,
-                                fontSize: isCompact ? '1.1rem' : '1.35rem',
+                                fontSize: isCompact ? '1.05rem' : '1.3rem',
                                 fontWeight: 600,
                                 color: tokens.colors.charcoal,
-                                opacity: 0.85,
-                                margin: isCompact ? '14px 0 0' : '20px 0 0',
+                                opacity: 0.8,
+                                margin: isCompact ? '12px 0 0' : '16px 0 0',
                                 position: 'relative',
                                 zIndex: 1,
                             }}
                         >
-                            Wave your hand to start! <WavingHand size={isCompact ? 28 : 34} />
+                            {subtitle}
                         </p>
+
+                        {/* The entire instruction is one giant animated hand.
+                            No camera feed, no diagnostics — the user copies it. */}
+                        <HeroHand state={heroState} isCompact={isCompact} />
 
                         {/* Progress dots */}
                         <div
@@ -392,112 +429,27 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorC
                             ))}
                         </div>
 
-                        {/* Hint copy */}
-                        <p
-                            style={{
-                                fontFamily: tokens.fontFamily.body,
-                                fontSize: isCompact ? '0.85rem' : '0.95rem',
-                                fontWeight: 600,
-                                color: tokens.colors.deepPlum,
-                                opacity: 0.75,
-                                margin: isCompact ? '20px 0 0' : '26px 0 0',
-                                position: 'relative',
-                                zIndex: 1,
-                            }}
-                        >
-                            Show me your hand and wave it side to side
-                        </p>
-
-                        {/* Real-status indicator, derived from camera + tracker + hand */}
-                        {(() => {
-                            // Decide which message to show, in priority order
-                            let statusKey: 'cam-error' | 'cam-loading' | 'tracker-loading' | 'hand-detected' | 'hand-lost' | 'hand-searching';
-                            if (cameraStatus === 'error') statusKey = 'cam-error';
-                            else if (cameraStatus === 'idle' || cameraStatus === 'requesting') statusKey = 'cam-loading';
-                            else if (trackerReady === false) statusKey = 'tracker-loading';
-                            else if (handStatus === 'detected') statusKey = 'hand-detected';
-                            else if (handStatus === 'lost') statusKey = 'hand-lost';
-                            else statusKey = 'hand-searching';
-
-                            const messages: Record<typeof statusKey, { msg: string; tone: 'aqua' | 'green' | 'orange' | 'red' }> = {
-                                'cam-error': {
-                                    msg: cameraErrorCode === 'PERMISSION_DENIED'
-                                        ? '🚫 Camera blocked. Allow it in your browser settings.'
-                                        : cameraErrorCode === 'NO_DEVICE'
-                                            ? '🚫 No camera found on this device.'
-                                            : cameraErrorCode === 'DEVICE_BUSY'
-                                                ? '⚠️ Camera in use by another app. Close it and refresh.'
-                                                : `⚠️ Camera error (${cameraErrorCode || 'unknown'})`,
-                                    tone: 'red',
-                                },
-                                'cam-loading': { msg: '📷 Starting camera…', tone: 'aqua' },
-                                'tracker-loading': { msg: '🤖 Loading hand tracker…', tone: 'aqua' },
-                                'hand-detected': { msg: '✋ Got it! Now wave!', tone: 'green' },
-                                'hand-lost': { msg: '👀 Come back into the picture', tone: 'orange' },
-                                'hand-searching': { msg: 'Looking for your hand…', tone: 'aqua' },
-                            };
-                            const { msg, tone } = messages[statusKey];
-                            const colors = {
-                                aqua: { bg: 'rgba(85, 221, 224, 0.18)', border: 'rgba(85, 221, 224, 0.55)', dot: tokens.colors.aqua },
-                                green: { bg: 'rgba(126, 217, 87, 0.18)', border: 'rgba(126, 217, 87, 0.55)', dot: tokens.colors.meadowGreen },
-                                orange: { bg: 'rgba(255, 177, 77, 0.18)', border: 'rgba(255, 177, 77, 0.55)', dot: tokens.colors.warmOrange },
-                                red: { bg: 'rgba(255, 107, 107, 0.18)', border: 'rgba(255, 107, 107, 0.55)', dot: tokens.colors.coral },
-                            }[tone];
-
-                            return (
-                                <div
-                                    style={{
-                                        marginTop: isCompact ? 16 : 22,
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: 8,
-                                        padding: '8px 16px',
-                                        borderRadius: 9999,
-                                        background: colors.bg,
-                                        border: `2px solid ${colors.border}`,
-                                        fontFamily: tokens.fontFamily.body,
-                                        fontWeight: 700,
-                                        fontSize: isCompact ? '0.82rem' : '0.92rem',
-                                        color: tokens.colors.charcoal,
-                                        position: 'relative',
-                                        zIndex: 1,
-                                        transition: 'all 0.3s ease',
-                                        maxWidth: '90%',
-                                    }}
-                                >
-                                    <span
-                                        style={{
-                                            width: 10,
-                                            height: 10,
-                                            borderRadius: '50%',
-                                            flexShrink: 0,
-                                            background: colors.dot,
-                                            boxShadow: tone === 'green' ? `0 0 0 4px ${colors.dot}33` : 'none',
-                                            animation: tone !== 'green' ? 'wtw-pulse 1.4s ease-in-out infinite' : 'none',
-                                        }}
-                                    />
-                                    {msg}
-                                </div>
-                            );
-                        })()}
-
-                        {/* Tiny FPS readout (only when running, helps debug perf) */}
-                        {visionFps !== undefined && visionFps > 0 && (
-                            <p style={{
-                                marginTop: 8,
-                                fontFamily: tokens.fontFamily.body,
-                                fontSize: '0.72rem',
-                                color: tokens.colors.charcoal,
-                                opacity: 0.45,
-                                fontWeight: 600,
-                            }}>
-                                Tracking · {visionFps} fps
-                            </p>
-                        )}
-
+                        {/* Nothing else. No camera, no diagnostics, no fps,
+                            no status pills. One action: wave. Real errors are
+                            handled by the CameraRecovery / TrackerError overlays,
+                            and the StuckHelp safety net appears only if the user
+                            is genuinely stuck. */}
                     </div>
                 </div>
             </div>
+
+            {/* Stuck-state help + feedback (triggers 1–3). Rescues a
+                confused user within ~10s instead of letting them leave,
+                and captures the reason if something's actually broken. */}
+            <StuckHelp
+                cameraStatus={cameraStatus ?? 'idle'}
+                handStatus={handStatus}
+                waveCompleted={waveCount >= wakeThreshold}
+                onboardingStep="wave_gate"
+                trackerFps={visionFps}
+                onRetryCamera={onRetryTracker}
+                isCompact={isCompact}
+            />
 
             <style>{`
                 @keyframes wtw-float {
@@ -520,8 +472,16 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, cameraErrorC
                     0%, 100% { opacity: 1; transform: scale(1); }
                     50% { opacity: 0.5; transform: scale(0.85); }
                 }
+                @keyframes wtw-arc {
+                    0%, 100% { opacity: 0.2; transform: translateX(4px); }
+                    50% { opacity: 1; transform: translateX(0); }
+                }
+                @keyframes wtw-pop {
+                    0% { transform: scale(0.4); opacity: 0; }
+                    100% { transform: scale(1); opacity: 1; }
+                }
                 @media (prefers-reduced-motion: reduce) {
-                    .wtw-cloud, .wtw-sun, .wtw-hand { animation: none !important; }
+                    .wtw-cloud, .wtw-sun, .wtw-hand, .wtw-hero-hand { animation: none !important; }
                 }
             `}</style>
         </div>
@@ -680,19 +640,7 @@ const Sparkle = ({ top, left, size, color, delay = 0 }: SparkleProps) => (
 );
 
 // ── Animated waving hand SVG ──────────────────────────────────────
-const WavingHand = ({ size }: { size: number }) => (
-    <span
-        className="wtw-hand"
-        style={{
-            display: 'inline-block',
-            width: size,
-            height: size,
-            verticalAlign: 'middle',
-            marginLeft: 6,
-            transformOrigin: '70% 80%',
-            animation: 'wtw-wave-hand 1.4s ease-in-out infinite',
-        }}
-    >
+const WavingHandSvg = ({ size }: { size: number }) => (
         <svg viewBox="0 0 64 64" width={size} height={size}>
             <defs>
                 <linearGradient id="wtw-hand-skin" x1="0" y1="0" x2="0" y2="1">
@@ -713,8 +661,130 @@ const WavingHand = ({ size }: { size: number }) => (
             <path d="M10 18 l1.5 0 l0.5 -5 l0.5 5 l1.5 0 l-1.5 0.5 l-0.5 5 l-0.5 -5 z" fill="#FFD84D" />
             <circle cx="58" cy="14" r="2" fill="#FF6B6B" />
         </svg>
+);
+
+const WavingHand = ({ size }: { size: number }) => (
+    <span
+        className="wtw-hand"
+        style={{
+            display: 'inline-block',
+            width: size,
+            height: size,
+            verticalAlign: 'middle',
+            marginLeft: 6,
+            transformOrigin: '70% 80%',
+            animation: 'wtw-wave-hand 1.4s ease-in-out infinite',
+        }}
+    >
+        <WavingHandSvg size={size} />
     </span>
 );
+
+// ─── Hero hand ──────────────────────────────────────────────────────
+// The whole instruction, shown not told: a giant waving hand flanked by
+// motion arcs. The user copies it. No words required.
+
+const MotionArcs = ({ side, color, energetic }: { side: 'left' | 'right'; color: string; energetic: boolean }) => (
+    <svg
+        width={56}
+        height={120}
+        viewBox="0 0 56 120"
+        aria-hidden
+        style={{
+            transform: side === 'right' ? 'scaleX(-1)' : 'none',
+            flexShrink: 0,
+        }}
+    >
+        {[0, 1, 2].map((i) => (
+            <path
+                key={i}
+                d={`M${44 - i * 14} 36 Q${20 - i * 14} 60 ${44 - i * 14} 84`}
+                fill="none"
+                stroke={color}
+                strokeWidth={5}
+                strokeLinecap="round"
+                opacity={0.85 - i * 0.22}
+                style={{
+                    animation: `wtw-arc ${energetic ? 0.9 : 1.6}s ease-in-out ${i * 0.14}s infinite`,
+                }}
+            />
+        ))}
+    </svg>
+);
+
+// The 3D hand asset lives in /public. Until it's present, we fall back to
+// the inline SVG hand so the screen never breaks.
+const HERO_HAND_SRC = '/hand-wave.png';
+
+const HeroHand = ({ state, isCompact }: { state: 'idle' | 'active' | 'done'; isCompact: boolean }) => {
+    const [imgOk, setImgOk] = useState(true);
+    const handPx = isCompact ? 132 : 184;
+
+    const handArt = imgOk ? (
+        <img
+            src={HERO_HAND_SRC}
+            alt=""
+            aria-hidden
+            draggable={false}
+            onError={() => setImgOk(false)}
+            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+        />
+    ) : (
+        <WavingHandSvg size={handPx} />
+    );
+
+    if (state === 'done') {
+        return (
+            <div
+                style={{
+                    height: handPx,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: isCompact ? '20px 0 4px' : '28px 0 8px',
+                }}
+            >
+                <div
+                    style={{
+                        width: handPx,
+                        height: handPx,
+                        animation: 'wtw-pop 0.5s cubic-bezier(0.34,1.56,0.64,1)',
+                        filter: 'drop-shadow(0 10px 20px rgba(108,63,164,0.20))',
+                    }}
+                >
+                    {handArt}
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: isCompact ? 2 : 10,
+                margin: isCompact ? '20px 0 4px' : '28px 0 8px',
+            }}
+        >
+            <MotionArcs side="left" color={tokens.colors.deepPlum} energetic={state === 'active'} />
+            <div
+                className="wtw-hero-hand"
+                style={{
+                    width: handPx,
+                    height: handPx,
+                    transformOrigin: '50% 88%',
+                    animation: `wtw-wave-hand ${state === 'active' ? 0.85 : 1.4}s ease-in-out infinite`,
+                    filter: 'drop-shadow(0 10px 20px rgba(108,63,164,0.20))',
+                }}
+            >
+                {handArt}
+            </div>
+            <MotionArcs side="right" color={tokens.colors.aqua} energetic={state === 'active'} />
+        </div>
+    );
+};
 
 // ─── Tracker error help screen ──────────────────────────────────────
 // Shown when handTracker.initialize() fails after CPU fallback + timeout.

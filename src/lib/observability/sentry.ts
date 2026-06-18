@@ -53,6 +53,11 @@ export interface ObservabilityContext {
     browser?: string;
     /** 'home' | 'classroom', surface context, not personal data. */
     surface?: string;
+    /**
+     * Coarse auth state for triage — 'anonymous' | 'parent' | 'teacher' |
+     * 'admin'. A role bucket only; NEVER a user id, email, or name.
+     */
+    authState?: string;
 }
 
 export interface CaptureErrorOptions {
@@ -261,6 +266,24 @@ export function initSentry(): void {
             // Common extension noise.
             /^chrome-extension:\/\//,
             /^moz-extension:\/\//,
+            // Android WebView / in-app-browser teardown race. When the page
+            // is unloaded inside a native WebView (or an embedded browser like
+            // the Facebook/Instagram/TikTok in-app browser), the host injects a
+            // JS↔native bridge plus its own instrumentation hooks
+            // (enableButtonsClickedMetaDataLogging, sendBeforeUnloadMessage,
+            // sendDataToNative…). On 'beforeunload' it calls back into that
+            // bridge, but Android has already destroyed the backing Java object
+            // — so it throws "Error invoking <hook>: Java object is gone".
+            // These frames are NOT ours; they're injected by the host, fire as
+            // the page is already dying, and break nothing the user sees.
+            // Confirmed non-actionable (Issue 2 RCA), so we drop them.
+            // Regexes match regardless of which injected hook name precedes the
+            // ": Java object is gone" suffix.
+            /Java object is gone/i,
+            /Error invoking .*MetaDataLogging/i,
+            /enableButtonsClickedMetaDataLogging/i,
+            'Error invoking postMessage',
+            'sendBeforeUnloadMessage',
         ],
     });
 
@@ -279,6 +302,7 @@ export function setObservabilityContext(ctx: ObservabilityContext): void {
     Sentry.setTag('browser', ctx.browser ?? 'unknown');
     Sentry.setTag('surface', ctx.surface ?? 'unknown');
     Sentry.setTag('age_band', ctx.ageBand ?? 'unknown');
+    if (ctx.authState !== undefined) Sentry.setTag('auth_state', ctx.authState);
     Sentry.setContext('session', {
         device_id: ctx.deviceId ?? null,
         session_id: ctx.sessionId ?? null,

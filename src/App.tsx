@@ -21,6 +21,20 @@ import { gestureSpellingLogic } from './features/modes/gestureSpelling/gestureSp
 import { BuildingMode } from './features/modes/building/BuildingMode';
 import { buildingLogic } from './features/modes/building/buildingLogic';
 import { WaveToWake } from './features/onboarding/WaveToWake';
+import { WarmupTutorial } from './features/onboarding/WarmupTutorial';
+import { InAppBrowserNotice } from './features/onboarding/InAppBrowserNotice';
+import { shouldShowInAppNotice } from './features/onboarding/inAppDetection';
+import { AudiencePrompt } from './features/onboarding/AudiencePrompt';
+import { recordVisit } from './lib/visitHistory';
+import { getAudience } from './lib/audience';
+import {
+  ExitFeedbackModal,
+  ExpectationCheck,
+  HappinessCheck,
+  shouldShowExpectation,
+  shouldShowHappiness,
+} from './features/feedback';
+import { getActivityCount, onActivityCompleted } from './lib/activationCounter';
 import { ModeSelectionMenu, type GameMode } from './features/menu/ModeSelectionMenu';
 import { GameCompanion } from './features/kid2/GameCompanion';
 import { ChildProfileSelector } from './features/parent/ChildProfileSelector';
@@ -46,7 +60,17 @@ import { logEvent, hasActiveSession, endSession } from './lib/analytics';
 import './App.css';
 import { startCountdown } from './core/countdownService';
 
-type AppState = 'onboarding' | 'menu' | 'game';
+type AppState = 'onboarding' | 'tutorial' | 'menu' | 'game';
+
+// First-run warm-up gate. The optional balloon tutorial is offered once
+// per device; returning devices skip straight to the menu.
+const WARMUP_DONE_KEY = 'dita_warmup_done';
+const warmupDone = (): boolean => {
+  try { return localStorage.getItem(WARMUP_DONE_KEY) === '1'; } catch { return false; }
+};
+const markWarmupDone = (): void => {
+  try { localStorage.setItem(WARMUP_DONE_KEY, '1'); } catch { /* private mode */ }
+};
 
 // Debug: Allow URL params to skip to specific screens
 const getInitialState = (): { appState: AppState; gameMode: GameMode } => {
@@ -80,6 +104,53 @@ function App() {
   const [gameMode, setGameMode] = useState<GameMode>(() => getInitialState().gameMode);
   const [flags, setFlags] = useState(featureFlags.getFlags());
 
+  // ── Sprint 2: feedback / survey surfaces ──────────────────────────
+  const [activityCount, setActivityCount] = useState(() => getActivityCount());
+  const [exitOpen, setExitOpen] = useState(false);
+  const [expectationOpen, setExpectationOpen] = useState(false);
+  const [happinessOpen, setHappinessOpen] = useState(false);
+  const [inAppDismissed, setInAppDismissed] = useState(false);
+  const [audienceOpen, setAudienceOpen] = useState(false);
+
+  // Sprint 3: record the visit (returning-device detection) and infer the
+  // home/school audience from acquisition signals — once per app load.
+  useEffect(() => {
+    const visit = recordVisit();
+    if (visit.returning) {
+      logEvent('returning_visitor', { meta: { visit_count: visit.count } });
+    }
+    const audience = getAudience();
+    if (audience !== 'unknown') {
+      logEvent('audience_identified', { meta: { audience } });
+    }
+  }, []);
+
+  // Drive the post-success surveys off completed activities. The 1st
+  // completion (incl. the warm-up) opens the expectation read; the 3rd
+  // opens the happiness check. Both self-gate to once per session.
+  // set-state here is in an event-driven subscription callback, not the
+  // effect body — the legitimate exception to the rule.
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    return onActivityCompleted((count) => {
+      setActivityCount(count);
+      if (count >= 1 && shouldShowExpectation(count)) setExpectationOpen(true);
+      if (count >= 3 && shouldShowHappiness(count)) setHappinessOpen(true);
+      // Home/school path: ask once, only if we couldn't already infer it.
+      if (count >= 1 && getAudience() === 'unknown') {
+        try {
+          if (sessionStorage.getItem('dita_audience_prompted') !== '1') {
+            sessionStorage.setItem('dita_audience_prompted', '1');
+            setAudienceOpen(true);
+          }
+        } catch {
+          setAudienceOpen(true);
+        }
+      }
+    });
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
   // One-time debug noise on mount, gated by the debug flag. Moved out
   // of the function body for the same reason as the version marker.
   useEffect(() => {
@@ -107,13 +178,33 @@ function App() {
     return unsubscribe;
   }, []);
 
-  const handleWake = useCallback(() => {
+  const goToMenu = useCallback(() => {
     setAppState('menu');
     // Fire menu_opened event for pilot analytics
     if (hasActiveSession()) {
       logEvent('menu_opened');
     }
   }, []);
+
+  const handleWake = useCallback(() => {
+    // First-time devices get the optional balloon warm-up (learn-by-doing,
+    // guaranteed first success = activation). Returning devices skip it.
+    if (!warmupDone()) {
+      setAppState('tutorial');
+      return;
+    }
+    goToMenu();
+  }, [goToMenu]);
+
+  const handleTutorialComplete = useCallback(() => {
+    markWarmupDone();
+    goToMenu();
+  }, [goToMenu]);
+
+  const handleTutorialSkip = useCallback(() => {
+    markWarmupDone();
+    goToMenu();
+  }, [goToMenu]);
 
   const handleBackToLanding = useCallback(() => {
     // End pilot analytics session when leaving the app
@@ -122,6 +213,23 @@ function App() {
     }
     window.location.href = '/';
   }, []);
+
+  // Exit intent: if the user is leaving WITHOUT ever activating (no
+  // completed activity), capture one-tap intent + reason before they go.
+  // This turns an anonymous bounce into a tagged reason. Once they've
+  // activated, just leave.
+  const handleExitIntent = useCallback(() => {
+    if (activityCount === 0) {
+      setExitOpen(true);
+      return;
+    }
+    handleBackToLanding();
+  }, [activityCount, handleBackToLanding]);
+
+  const handleExitModalClose = useCallback(() => {
+    setExitOpen(false);
+    handleBackToLanding();
+  }, [handleBackToLanding]);
 
   const handleModeSelect = useCallback((mode: GameMode) => {
     // Detect mode-switching (kid bounced back to the menu and picked a
@@ -296,7 +404,7 @@ function App() {
       <PerfOverlay />
       <MessageCardOverlay />
       <CountdownOverlay />
-      <TrackingLayer onFrame={activeLogic}>
+      <TrackingLayer onFrame={activeLogic} suppressNotifications={appState === 'onboarding' || appState === 'tutorial'}>
         {(frameRef, diagnostics) => {
           return (
             <>
@@ -344,6 +452,22 @@ function App() {
                 />
               )}
 
+              {/* Mobile in-app webview (FB/IG) → hand off to a real browser
+                   before the camera prompt fails silently. */}
+              {appState === 'onboarding' && !inAppDismissed && shouldShowInAppNotice() && (
+                <InAppBrowserNotice onContinueAnyway={() => setInAppDismissed(true)} />
+              )}
+
+              {/* State: Warm-up tutorial (optional, first-run) */}
+              {appState === 'tutorial' && (
+                <WarmupTutorial
+                  frameRef={frameRef}
+                  onComplete={handleTutorialComplete}
+                  onSkip={handleTutorialSkip}
+                  isCompact={typeof window !== 'undefined' && window.innerWidth <= 768}
+                />
+              )}
+
               {/* State: Menu */}
               {appState === 'menu' && (
                 <>
@@ -360,7 +484,7 @@ function App() {
                   <SaveProgressNudge />
                   <ModeSelectionMenu
                     onSelect={handleModeSelect}
-                    onBack={handleBackToLanding}
+                    onBack={handleExitIntent}
                     trackingResults={frameRef.current.results}
                   />
                 </>
@@ -435,6 +559,38 @@ function App() {
 
                 </>
               )}
+
+              {/* ── Feedback surfaces (any state) ── */}
+              {/* Exit micro-survey: intent + reason, before an un-activated leave. */}
+              <ExitFeedbackModal
+                open={exitOpen}
+                onClose={handleExitModalClose}
+                runtime={{
+                  onboarding_step: appState,
+                  hand_detection: frameRef.current.hasHand ? 'detected' : 'never',
+                  session_length_ms: null,
+                }}
+                isCompact={typeof window !== 'undefined' && window.innerWidth <= 768}
+              />
+              {/* Expectation gap, immediately after the first activity. */}
+              <ExpectationCheck
+                open={expectationOpen}
+                onClose={() => setExpectationOpen(false)}
+                isCompact={typeof window !== 'undefined' && window.innerWidth <= 768}
+              />
+              {/* Happiness, after 3 completed activities. */}
+              <HappinessCheck
+                open={happinessOpen}
+                onClose={() => setHappinessOpen(false)}
+                isCompact={typeof window !== 'undefined' && window.innerWidth <= 768}
+              />
+              {/* Home vs school path — on the menu, once, when not already
+                   inferred. Yields to the survey cards to avoid overlap. */}
+              <AudiencePrompt
+                open={audienceOpen && appState === 'menu' && !expectationOpen && !happinessOpen}
+                onClose={() => setAudienceOpen(false)}
+                isCompact={typeof window !== 'undefined' && window.innerWidth <= 768}
+              />
             </>
           );
         }}

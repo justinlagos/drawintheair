@@ -23,6 +23,7 @@
  */
 
 import { dbInsert } from './supabase';
+import { recordActivityCompleted } from './activationCounter';
 import {
     trackEvent as obsTrackEvent,
     identifyPseudonymous,
@@ -36,6 +37,7 @@ import {
     recordClassroomSyncFailure,
     setActiveClassSessions,
     trackMeta as obsTrackMeta,
+    safeInvoke,
 } from './observability';
 
 // ════════════════════════════════════════════════════════════════════
@@ -191,7 +193,35 @@ export type EventName =
     | 'teacher_signup_started'
     | 'teacher_signup_completed'
     | 'teacher_login_success'
-    | 'teacher_login_failed';
+    | 'teacher_login_failed'
+
+    // ── Stuck-state help + feedback system ──
+    // The feedback system's primary job is comprehension + rescue, not
+    // satisfaction polling. These events let every drop-off carry a reason.
+    | 'stuck_help_shown'        // A rescue prompt was shown; meta.prompt, .onboarding_step
+    | 'stuck_help_action'       // User acted on a prompt; meta.prompt, .action
+    | 'feedback_submitted'      // Any structured feedback submitted; meta.kind, .reason/.rating
+    | 'exit_reason_submitted'   // Trigger 4 exit micro-survey; meta.reason
+    | 'happiness_rating'        // Trigger 5 post-success survey; value_number = 1-4
+
+    // ── Warm-up tutorial (learn-by-doing; first success = activation) ──
+    | 'tutorial_offered'        // "Quick warm-up?" offer shown
+    | 'tutorial_started'        // User accepted the warm-up
+    | 'tutorial_step_completed' // meta.gesture: 'wave' | 'point' | 'pinch'
+    | 'tutorial_completed'      // All 3 balloons popped; value_number = duration_ms
+    | 'tutorial_skipped'        // User declined the warm-up
+
+    // ── Sprint 2: intent, expectation gap, in-app handoff ──
+    | 'intent_captured'         // meta.intent — what the user came to do
+    | 'expectation_rating'      // Expectation gap after 1st success; value_number = 1-3
+    | 'inapp_browser_detected'  // FB/IG webview on a camera-first page; meta.browser
+    | 'inapp_open_external_clicked' // User tapped "open in your browser"
+
+    // ── Sprint 3: personalised paths ──
+    | 'returning_visitor'       // Device seen before; meta.visit_count
+    | 'audience_identified'     // Inferred home/school from acquisition; meta.audience
+    | 'audience_selected'       // User confirmed home/school; meta.audience
+    | 'audience_path_clicked';  // User followed the tailored next-step CTA
 
 export type AgeBand = '4-5' | '6-7' | '8-9' | '10-11' | '12+';
 
@@ -879,28 +909,37 @@ function startHeartbeat(): void {
 
 function setupBeforeUnload(): void {
     if (typeof window === 'undefined') return;
+    // The ENTIRE handler runs through safeInvoke so nothing thrown during page
+    // teardown — a destroyed bridge, a missing API, a serialization error —
+    // can surface as an uncaught error (see Issue 2 RCA: instrumentation must
+    // never crash or degrade the page, least of all while it is unloading).
     window.addEventListener('beforeunload', () => {
-        // Use sendBeacon for reliable last-gasp delivery during page unload.
-        // dbInsert won't work here because the page is being torn down.
-        //
-        // LIOS: sendBeacon doesn't expose the Prefer header (the body
-        // is a Blob and the browser sets Content-Type only). We append
-        // the resolution preference as a URL hint that PostgREST also
-        // accepts on the query string, same effect, duplicate
-        // event_uids are silently ignored instead of failing the batch.
-        if (eventQueue.length === 0 || typeof navigator.sendBeacon !== 'function') return;
-        const url = (import.meta.env.VITE_SUPABASE_URL as string) || '';
-        const key = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || '';
-        if (!url || !key) return;
-        const body = new Blob([JSON.stringify(eventQueue)], { type: 'application/json' });
-        try {
+        safeInvoke(() => {
+            // Use sendBeacon for reliable last-gasp delivery during page unload.
+            // dbInsert won't work here because the page is being torn down.
+            //
+            // LIOS: sendBeacon doesn't expose the Prefer header (the body
+            // is a Blob and the browser sets Content-Type only). We append
+            // the resolution preference as a URL hint that PostgREST also
+            // accepts on the query string, same effect, duplicate
+            // event_uids are silently ignored instead of failing the batch.
+            if (eventQueue.length === 0) return;
+            const url = (import.meta.env.VITE_SUPABASE_URL as string) || '';
+            const key = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || '';
+            if (!url || !key) return;
+            const body = new Blob([JSON.stringify(eventQueue)], { type: 'application/json' });
             navigator.sendBeacon(
                 `${url}/rest/v1/analytics_events?apikey=${encodeURIComponent(key)}&on_conflict=event_uid`,
                 body,
             );
             eventQueue = [];
             persistQueue();
-        } catch { /* best effort */ }
+        }, {
+            label: 'analytics.beforeunload',
+            // Feature-detect sendBeacon (and the window) before touching it; an
+            // in-app browser mid-teardown may have already torn the API away.
+            available: () => typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function',
+        });
     });
 }
 
@@ -1022,6 +1061,12 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
     }
     if (name === 'stage_completed' || name === 'mode_completed' || name === 'mode_abandoned') {
         clearStuckWatcher();
+    }
+    // A completed activity is the activation unit. Bump the session
+    // counter so the UI can fire the expectation (1st) / happiness (3rd)
+    // surveys. Guarded so analytics never breaks on a counter error.
+    if (name === 'mode_completed') {
+        try { recordActivityCompleted(); } catch { /* never break analytics */ }
     }
     const row = buildRow(name, opts);
     eventQueue.push(row);

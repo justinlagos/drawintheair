@@ -83,9 +83,15 @@ export interface TrackingDiagnostics {
     visionFps: number;
     /** Force a re-initialisation of the tracker (used by retry button). */
     retryTracker: () => void;
+    /** The live (1×1-pinned) camera video, shared so onboarding can render
+     *  a visible mirrored preview without a second getUserMedia call. */
+    videoRef: React.RefObject<HTMLVideoElement | null>;
 }
 
 interface TrackingLayerProps {
+    /** Hide the bottom camera/positioning toast (e.g. during onboarding,
+     *  where the clean wave screen handles all messaging itself). */
+    suppressNotifications?: boolean;
     onFrame?: (
         ctx: CanvasRenderingContext2D,
         frameData: TrackingFrameData,
@@ -119,7 +125,7 @@ const EMPTY_FRAME: TrackingFrameData = {
     pressValue: 0.5,
 };
 
-export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
+export const TrackingLayer = ({ onFrame, children, suppressNotifications }: TrackingLayerProps) => {
     const { videoRef, state: cameraState, startCamera, restartCamera, updateVisionMetrics } = useCameraController();
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -594,6 +600,7 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
                 trackerDelegate,
                 visionFps: cameraState.fpsVision,
                 retryTracker,
+                videoRef,
             }) : children}
 
             {/* Parent-trust badge, visible whenever the camera is live.
@@ -619,7 +626,7 @@ export const TrackingLayer = ({ onFrame, children }: TrackingLayerProps) => {
             )}
 
             {/* Camera / positioning notification */}
-            {cameraNotification && (
+            {cameraNotification && !suppressNotifications && (
                 <>
                     <style>{`
                         @keyframes notificationSlideUp {

@@ -96,7 +96,26 @@ export async function loadBasePriceIds(supabase: AnyObj): Promise<Set<string>> {
   return new Set((data ?? []).map((r: AnyObj) => r.stripe_price_id));
 }
 
-/** Map a Stripe subscription object to a parent_subscriptions row. */
+/**
+ * Map a Stripe subscription object to a parent_subscriptions row.
+ *
+ * `last_event_at` is the input to the webhook's out-of-order guard
+ * (`isStaleEvent`). It must ONLY ever hold a Stripe `event.created` value, so
+ * that "is this event older than the last one we applied?" compares like with
+ * like (Stripe's clock vs Stripe's clock).
+ *
+ * CRITICAL (root cause of the 2026-06 silent-billing incident): the
+ * reconcile/health paths call this WITHOUT an eventTs. They used to default
+ * `last_event_at` to `new Date()` — wall-clock now() — which pushed the guard
+ * clock into the present. Every subsequently-delivered webhook event (Stripe
+ * routinely delivers/retries events whose `created` is seconds-to-days in the
+ * past) then failed the freshness check, was acknowledged 200 `{stale:true}`,
+ * and was NEVER synced. So we now OMIT `last_event_at` entirely when there is
+ * no event timestamp: on an existing row the upsert leaves the event-driven
+ * value untouched; on a new row it stays null (treated as "apply first event").
+ * Reconcile is a full authoritative overwrite of every other field regardless,
+ * so it does not need — and must not corrupt — the ordering clock.
+ */
 export function mapSubscription(
   parentId: string,
   sub: AnyObj,
@@ -107,7 +126,16 @@ export function mapSubscription(
   const baseItem = items.find((i: AnyObj) => basePriceIds.has(i.price?.id)) ?? items[0];
   const addonItem = items.find((i: AnyObj) => i !== baseItem);
   const interval = baseItem?.price?.recurring?.interval ?? items[0]?.price?.recurring?.interval ?? null;
-  return {
+  // Stripe API version skew (2025+/clover): current_period_start/end were
+  // removed from the Subscription object and now live on each subscription
+  // ITEM. Webhook payloads arrive in the endpoint's API version, which may be
+  // newer than the SDK pin, so read the top-level field first and fall back to
+  // the item's. Without this, newer-shape webhook events map both dates to null.
+  const periodStart = sub.current_period_start
+    ?? baseItem?.current_period_start ?? items[0]?.current_period_start ?? null;
+  const periodEnd = sub.current_period_end
+    ?? baseItem?.current_period_end ?? items[0]?.current_period_end ?? null;
+  const row: Record<string, unknown> = {
     parent_id: parentId,
     stripe_customer_id: typeof sub.customer === 'string' ? sub.customer : sub.customer?.id ?? null,
     stripe_subscription_id: sub.id,
@@ -118,13 +146,16 @@ export function mapSubscription(
     billed_addon_quantity: addonItem?.quantity ?? 0,
     trial_start: iso(sub.trial_start),
     trial_end: iso(sub.trial_end),
-    current_period_start: iso(sub.current_period_start),
-    current_period_end: iso(sub.current_period_end),
+    current_period_start: iso(periodStart),
+    current_period_end: iso(periodEnd),
     cancel_at_period_end: !!sub.cancel_at_period_end,
     canceled_at: iso(sub.canceled_at),
-    last_event_at: eventTs ?? new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
+  // Only advance the ordering clock from a genuine Stripe event timestamp.
+  // Omitting the key on reconcile/health leaves any existing value intact.
+  if (eventTs) row.last_event_at = eventTs;
+  return row;
 }
 
 /**
