@@ -572,15 +572,16 @@ function App() {
                 }}
                 isCompact={typeof window !== 'undefined' && window.innerWidth <= 768}
               />
-              {/* Expectation gap, immediately after the first activity. */}
+              {/* Expectation gap, after the first activity. Menu-only:
+                   never interrupt active gameplay — it waits for the pause. */}
               <ExpectationCheck
-                open={expectationOpen}
+                open={expectationOpen && appState === 'menu'}
                 onClose={() => setExpectationOpen(false)}
                 isCompact={typeof window !== 'undefined' && window.innerWidth <= 768}
               />
-              {/* Happiness, after 3 completed activities. */}
+              {/* Happiness, after 3 completed activities. Menu-only. */}
               <HappinessCheck
-                open={happinessOpen}
+                open={happinessOpen && appState === 'menu'}
                 onClose={() => setHappinessOpen(false)}
                 isCompact={typeof window !== 'undefined' && window.innerWidth <= 768}
               />
