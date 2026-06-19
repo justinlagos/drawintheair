@@ -893,6 +893,7 @@
 .pa-shell .modal-head, .scrim.pa-scrim .modal-head {
   display: flex; align-items: flex-start; gap: var(--space-5);
   padding: var(--space-7) var(--space-7) var(--space-6); position: relative;
+  flex-shrink: 0;
 }
 .pa-shell .modal-head.tint-lav, .scrim.pa-scrim .modal-head.tint-lav {
   background: linear-gradient(150deg, var(--lavender-50), #fff 80%);
@@ -924,12 +925,19 @@
 .pa-shell .modal-x:active, .scrim.pa-scrim .modal-x:active { transform: scale(0.96); }
 .pa-shell .modal-x svg, .scrim.pa-scrim .modal-x svg { width: 16px; height: 16px; }
 .pa-shell .modal-body, .scrim.pa-scrim .modal-body {
-  padding: var(--space-7); overflow-y: auto; flex: 1;
+  padding: var(--space-7); overflow-y: auto; flex: 1 1 auto;
+  /* min-height:0 lets this flex child shrink and scroll instead of
+     growing past the modal and pushing the footer out of the
+     overflow:hidden container (which made Continue unreachable on the
+     tall avatar step of Add-a-learner). */
+  min-height: 0;
 }
 .pa-shell .modal-foot, .scrim.pa-scrim .modal-foot {
   display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3);
   padding: var(--space-6) var(--space-7);
   border-top: 1px solid var(--border-1); background: var(--cream-50);
+  /* Never let the footer (with Continue / Add learner) shrink or clip. */
+  flex-shrink: 0;
 }
 .pa-shell .modal-foot .foot-left, .scrim.pa-scrim .modal-foot .foot-left {
   margin-right: auto;
