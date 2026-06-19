@@ -1200,6 +1200,17 @@
 }
 
 .scrim.pa-scrim .step-panel { display: block; }
+/* CSS-only enter animation (replaces the framer-motion step transition that
+   could freeze the panel on a stale step). Replays on each step because the
+   panel is keyed by `step` and remounts. */
+.scrim.pa-scrim .step-panel.show { animation: paStepIn 0.3s var(--ease-out) both; }
+@keyframes paStepIn {
+  from { opacity: 0; transform: translateX(14px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scrim.pa-scrim .step-panel.show { animation: none; }
+}
 .scrim.pa-scrim .step-q {
   font-family: var(--font-display); font-weight: var(--fw-bold);
   font-size: var(--text-xl); margin: 0 0 var(--space-3);

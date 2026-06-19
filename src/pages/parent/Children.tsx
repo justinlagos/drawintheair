@@ -7,7 +7,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import type { FormEvent } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   ParentShell, Card, RequireParentAuth, RequireSubscription, I, stagger,
@@ -466,15 +466,13 @@ function AddChildModal({ onClose, onDone }: { onClose: () => void; onDone: () =>
         })}
       </div>
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={step}
-          initial={{ opacity: 0, x: 14 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -14 }}
-          transition={{ duration: 0.36, ease: [0.34, 1.56, 0.64, 1] }}
-          className="step-panel show"
-        >
+      {/* Plain keyed div — NOT AnimatePresence/motion. `mode="wait"` here
+          could freeze the panel on a stale step when framer-motion's exit
+          callback didn't fire (React 19 + framer 11, timing-sensitive): the
+          stepper advanced but the panel stayed behind, so Continue looked
+          dead on the avatar step for some users. A CSS-only fade on remount
+          (keyed by step) is robust and can never desync from `step`. */}
+      <div key={step} className="step-panel show">
           {step === 0 && (
             <>
               <h4 className="step-q">What should we call them?</h4>
@@ -567,8 +565,7 @@ function AddChildModal({ onClose, onDone }: { onClose: () => void; onDone: () =>
               )}
             </>
           )}
-        </motion.div>
-      </AnimatePresence>
+      </div>
       </>
       )}
 
