@@ -4,6 +4,10 @@ import { FreePaintMode } from './features/modes/FreePaintMode';
 import { freePaintLogic } from './features/modes/freePaintLogic';
 import { PreWritingMode } from './features/modes/PreWritingMode';
 import { preWritingLogic } from './features/modes/preWriting/preWritingLogic';
+// Playful tracing redesign (V2), gated behind tracingPlayfulUiV1. Falls back
+// to PreWritingMode/preWritingLogic above when the flag is off.
+import { TracingModePlayful } from './features/modes/tracing/TracingModePlayful';
+import { playfulTracingFrame } from './features/modes/tracing/tracingPlayfulFrame';
 import { BubbleCalibration } from './features/modes/calibration/BubbleCalibration';
 import { bubbleCalibrationLogic } from './features/modes/calibration/bubbleCalibrationLogic';
 import { SortAndPlaceMode } from './features/modes/sortAndPlace/SortAndPlaceMode';
@@ -333,7 +337,8 @@ function App() {
         logic = freePaintLogic;
         break;
       case 'pre-writing':
-        logic = preWritingLogic;
+        // Flag decides the engine BEFORE mount; the two never run together.
+        logic = featureFlags.getFlag('tracingPlayfulUiV1') ? playfulTracingFrame : preWritingLogic;
         break;
       case 'calibration':
         logic = bubbleCalibrationLogic;
@@ -512,7 +517,9 @@ function App() {
                   )}
 
                   {gameMode === 'pre-writing' && (
-                    <PreWritingMode onExit={handleExitToMenu} />
+                    flags.tracingPlayfulUiV1
+                      ? <TracingModePlayful onExit={handleExitToMenu} />
+                      : <PreWritingMode onExit={handleExitToMenu} />
                   )}
 
                   {gameMode === 'sort-and-place' && (

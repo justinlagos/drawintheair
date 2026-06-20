@@ -182,25 +182,26 @@ export const completeLevel = (pathId: string, accuracy: number): void => {
     saveProgress(currentProgress);
 };
 
-// Check if packs should be unlocked
+// Check if packs should be unlocked. Thresholds track the trimmed pack sizes:
+// Pack 1 = 1 warm-up, Pack 2 = 4 shapes, Pack 3 = 26 letters, Pack 4 = 10 numbers.
 const checkPackUnlocks = (): void => {
-    // Pack 2 unlocks after 4 completions in Pack 1
+    // Pack 2 (Shapes) unlocks after the single warm-up is completed.
     if (!currentProgress.packs[2].unlocked) {
-        if (currentProgress.packs[1].completedLevels >= 4) {
+        if (currentProgress.packs[1].completedLevels >= 1) {
             currentProgress.packs[2].unlocked = true;
             currentProgress.packs[2].unlockedLevelIndex = 0;
         }
     }
-    
-    // Pack 3 unlocks after 5 completions in Pack 2
+
+    // Pack 3 (Letters) unlocks after all 4 shapes are completed.
     if (!currentProgress.packs[3].unlocked && currentProgress.packs[2].unlocked) {
-        if (currentProgress.packs[2].completedLevels >= 5) {
+        if (currentProgress.packs[2].completedLevels >= 4) {
             currentProgress.packs[3].unlocked = true;
             currentProgress.packs[3].unlockedLevelIndex = 0;
         }
     }
-    
-    // Pack 4 unlocks after 6 completions in Pack 3
+
+    // Pack 4 (Numbers) unlocks after 6 letters are completed.
     if (!currentProgress.packs[4].unlocked && currentProgress.packs[3].unlocked) {
         if (currentProgress.packs[3].completedLevels >= 6) {
             currentProgress.packs[4].unlocked = true;

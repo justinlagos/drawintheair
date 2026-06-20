@@ -26,6 +26,12 @@ export interface FeatureFlags {
     tracingStreak: boolean;          // Tracing streak meter
     narrator: boolean;               // Safe narrator TTS
 
+    // Playful tracing redesign (V2 engine). When ON, the 'pre-writing' mode
+    // mounts the redesigned tracing experience; when OFF it falls back to the
+    // legacy PreWritingMode unchanged. Production kill switch: set to false
+    // (setFlags / disableFlag) — no code rollback needed.
+    tracingPlayfulUiV1: boolean;
+
     // Free Paint Pro features (AIR PAINT PRO)
     airPaintEnabled: boolean;        // Enable AIR PAINT PRO mode
     layersEnabled: boolean;          // Enable layered canvas system
@@ -52,6 +58,11 @@ const DEFAULT_FLAGS: FeatureFlags = {
     // fallback, so the surface area is small. Set this to false to silence
     // ALL voice cues across the app.
     narrator: true,
+    // Playful tracing redesign: ON in local development for easy testing,
+    // OFF in production until controlled rollout via the flag system.
+    tracingPlayfulUiV1:
+        typeof import.meta !== 'undefined' &&
+        Boolean((import.meta as { env?: { DEV?: boolean } }).env?.DEV),
     // Free Paint Pro - AIR PAINT PRO (default OFF as per requirements)
     airPaintEnabled: false,  // Phase 1-5: All changes behind flag, default OFF
     layersEnabled: false,    // Phase 5: Layered canvas system, default OFF

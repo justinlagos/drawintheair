@@ -126,6 +126,10 @@ export type EventName =
     | 'wordsearch_word_found'
     | 'wordsearch_level_complete'
     | 'tracing_letter_completed'
+    | 'tracing_activity_loaded'     // playful_v1: activity mounted; meta.type, .strokes
+    | 'tracing_stroke_completed'    // playful_v1: a stroke finished; meta.stroke
+    | 'tracing_off_path'            // playful_v1: gentle off-path correction shown
+    | 'tracing_recovered'           // playful_v1: returned to path after off-path
     | 'colourbuilder_match_made'
     | 'balloonmath_balloon_popped'
     | 'rainbowbridge_match_made'
