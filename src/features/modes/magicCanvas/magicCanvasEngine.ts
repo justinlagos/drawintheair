@@ -78,8 +78,6 @@ export interface EngineSnapshot {
     predictionPx: number;
 }
 
-const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
-
 const RESOLVE_QUALITY = (tier: PerfTier, reduced: boolean): RenderQuality => {
     const base: Record<PerfTier, RenderQuality> = {
         low: { glow: false, shadowScale: 0, texture: false, particles: 0 },
@@ -94,11 +92,6 @@ const RESOLVE_QUALITY = (tier: PerfTier, reduced: boolean): RenderQuality => {
     return q;
 };
 
-// Latency tuning (Free-Paint profile — immediacy over heavy smoothing).
-const PREDICT_MS = 14;
-const MAX_PREDICT_PX = 24;
-const MIN_SAMPLE_NORM = 0.004; // adaptive point sampling distance (slow)
-const MAX_SAMPLE_NORM = 0.03;
 
 function makeOffscreen(w: number, h: number): { canvas: CanvasImageSource; ctx: CanvasRenderingContext2D } | null {
     try {
@@ -251,26 +244,16 @@ export class MagicCanvasEngine {
             return;
         }
         this.prevRendered = { ...this.rendered };
-        // Speed in normalized units per ms → alpha (less smoothing when fast).
-        const moved = Math.hypot(raw.x - this.rendered.x, raw.y - this.rendered.y);
-        const speed = moved / dt;
-        const alpha = clamp(0.4 + speed * 220, 0.4, 1);
-        this.rendered = {
-            x: this.rendered.x + (raw.x - this.rendered.x) * alpha,
-            y: this.rendered.y + (raw.y - this.rendered.y) * alpha,
-        };
+        // The incoming point is ALREADY One-Euro filtered upstream. Track it
+        // directly — no extra easing, no prediction — so the ink sits exactly
+        // under the fingertip with no added lag or overshoot ("jerk").
+        this.rendered = { x: raw.x, y: raw.y };
         this.velocity = {
             x: (this.rendered.x - this.prevRendered.x) / dt,
             y: (this.rendered.y - this.prevRendered.y) / dt,
         };
-        // Short clamped prediction for the DISPLAYED tip only; off on low confidence.
-        if (confidence >= 0.5) {
-            const px = this.velocity.x * PREDICT_MS * this.width;
-            const py = this.velocity.y * PREDICT_MS * this.height;
-            this.predictionPx = clamp(Math.hypot(px, py), 0, MAX_PREDICT_PX);
-        } else {
-            this.predictionPx = 0;
-        }
+        this.predictionPx = 0;
+        void confidence;
     }
 
     private beginLiveStroke(now: number): void {
@@ -282,13 +265,27 @@ export class MagicCanvasEngine {
         if (!this.live || !this.rendered) return;
         const p = this.rendered;
         const last = this.live.pts[this.live.pts.length - 1];
-        if (!first && last) {
-            const moved = Math.hypot(p.x - last.x, p.y - last.y);
-            const minSample = this.live.pts.length < 2 ? MIN_SAMPLE_NORM : clamp(MIN_SAMPLE_NORM + Math.hypot(this.velocity.x, this.velocity.y) * 60, MIN_SAMPLE_NORM, MAX_SAMPLE_NORM);
-            if (moved < minSample) return; // adaptive sampling — avoid near-duplicate points
-        }
         const speedPx = Math.hypot(this.velocity.x, this.velocity.y) * Math.min(this.width, this.height);
         const wf = widthForSpeed(this.live.sizePx, BRUSHES[this.brushId], speedPx) / this.live.sizePx;
+        if (first || !last) {
+            this.live.pts.push({ x: p.x, y: p.y, wf });
+            this.signals.addPoint(p.x, p.y, now);
+            return;
+        }
+        const moved = Math.hypot(p.x - last.x, p.y - last.y);
+        if (moved < 0.0012) return; // dedupe only (no aggressive down-sampling)
+        // Fill big gaps so fast strokes stay continuous (no beading).
+        const STEP = 0.009;
+        if (moved > STEP) {
+            const n = Math.min(48, Math.floor(moved / STEP));
+            for (let i = 1; i < n; i++) {
+                const t = i / n;
+                const ix = last.x + (p.x - last.x) * t;
+                const iy = last.y + (p.y - last.y) * t;
+                this.live.pts.push({ x: ix, y: iy, wf });
+                this.signals.addPoint(ix, iy, now);
+            }
+        }
         this.live.pts.push({ x: p.x, y: p.y, wf });
         this.signals.addPoint(p.x, p.y, now);
     }
@@ -371,12 +368,12 @@ export class MagicCanvasEngine {
             renderStroke(ctx, this.toPx(this.live), this.live.colour, BRUSHES[this.live.brushId], q, { settled: false });
         }
 
-        // Pointer / live tip (with the small predictive lead).
+        // Brush tip — drawn EXACTLY at the tracked point (no lead) so the
+        // cursor and the ink are the same place. The global MagicCursor is
+        // hidden for Magic Canvas so there is only this one tip.
         if (this.rendered) {
-            const dirLen = Math.hypot(this.velocity.x, this.velocity.y) || 1;
-            const lead = this.predictionPx;
-            const tx = this.rendered.x * this.width + (this.velocity.x / dirLen) * lead;
-            const ty = this.rendered.y * this.height + (this.velocity.y / dirLen) * lead;
+            const tx = this.rendered.x * this.width;
+            const ty = this.rendered.y * this.height;
             ctx.save();
             ctx.fillStyle = this.colour;
             if (q.glow) { ctx.shadowBlur = 8 * q.shadowScale; ctx.shadowColor = this.colour; }

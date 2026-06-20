@@ -16,7 +16,6 @@ import { KidPanel, KidButton, KidObjectiveCard } from '../../../components/kid-u
 import { tokens } from '../../../styles/tokens';
 import { featureFlags } from '../../../core/featureFlags';
 import { logEvent } from '../../../lib/analytics';
-import { getChallengesByAge, getSceneChallenges } from './paintChallenges';
 import { getWorldById } from './paintWorlds';
 import { BRUSHES, BRUSH_IDS, type BrushId } from './paintBrushes';
 import type { SizeId, EngineSnapshot } from './magicCanvasEngine';
@@ -71,7 +70,6 @@ export const MagicCanvasMode = ({ onExit }: Props = {}) => {
 
     const dockRef = useRef<HTMLDivElement | null>(null);
     const hudRef = useRef<HTMLDivElement | null>(null);
-    const challengeIdx = useRef(0);
     const celebratedRef = useRef(false);
     const mouseDownRef = useRef(false);
     const isCompact = typeof window !== 'undefined' && window.innerWidth <= 900;
@@ -214,23 +212,6 @@ export const MagicCanvasMode = ({ onExit }: Props = {}) => {
         logEvent('free_create_started', { game_mode: 'free', meta: { world_id: 'magicpaper' } });
         enterDraw('create', 'magicpaper', null);
     };
-    const startChallenge = () => {
-        const list = getChallengesByAge('all').filter((c) => c.category !== 'scene');
-        const ch = list[challengeIdx.current % list.length];
-        challengeIdx.current += 1;
-        logEvent('magic_canvas_entry_selected', { meta: { experience: 'challenge' } });
-        logEvent('paint_challenge_started', { game_mode: 'free', stage_id: ch.id });
-        enterDraw('challenge', ch.worldId ?? 'magicpaper', ch);
-    };
-    const startWorld = () => {
-        const scenes = getSceneChallenges();
-        const ch = scenes[challengeIdx.current % scenes.length];
-        challengeIdx.current += 1;
-        logEvent('magic_canvas_entry_selected', { meta: { experience: 'world' } });
-        logEvent('finish_world_started', { game_mode: 'free', stage_id: ch.id, meta: { world_id: ch.worldId } });
-        enterDraw('world', ch.worldId ?? 'playground', ch);
-    };
-
     // ── Tool actions ──────────────────────────────────────────────────────────
     const pickColour = (hex: string) => { setColour(hex); setMagicColour(hex); logEvent('paint_colour_selected', { game_mode: 'free' }); };
     const pickBrush = (b: BrushId) => { setBrush(b); setMagicBrush(b); logEvent('paint_brush_selected', { game_mode: 'free', meta: { brush: b } }); };
@@ -251,7 +232,7 @@ export const MagicCanvasMode = ({ onExit }: Props = {}) => {
 
     // ── Render ────────────────────────────────────────────────────────────────
     if (phase === 'entry') {
-        return <EntryChooser onCreate={startCreate} onChallenge={startChallenge} onWorld={startWorld} onDrawThis={startDrawThis} onColouring={startColouring} onExit={onExit} />;
+        return <EntryChooser onCreate={startCreate} onDrawThis={startDrawThis} onColouring={startColouring} onExit={onExit} />;
     }
 
     const progress = snap?.challenge;
@@ -403,8 +384,7 @@ export const MagicCanvasMode = ({ onExit }: Props = {}) => {
                 <NextActions
                     onKeep={() => { setPhase('draw'); celebratedRef.current = false; }}
                     onNew={() => { magicClear(); setPhase('draw'); celebratedRef.current = false; }}
-                    onChallenge={startChallenge}
-                    onWorld={startWorld}
+                    onMore={() => setPhase('entry')}
                 />
             )}
         </>
@@ -438,11 +418,9 @@ const dockTool = (active: boolean): React.CSSProperties => ({
 });
 const Divider = () => <div style={{ width: 1, height: 28, background: 'rgba(31,27,46,0.12)' }} />;
 
-function EntryChooser({ onCreate, onChallenge, onWorld, onDrawThis, onColouring, onExit }: { onCreate: () => void; onChallenge: () => void; onWorld: () => void; onDrawThis: () => void; onColouring: () => void; onExit?: () => void }) {
+function EntryChooser({ onCreate, onDrawThis, onColouring, onExit }: { onCreate: () => void; onDrawThis: () => void; onColouring: () => void; onExit?: () => void }) {
     const cards: { title: string; sub: string; emoji: string; onClick: () => void; tint: string }[] = [
         { title: 'Free Create', sub: 'Make anything you like.', emoji: '🎨', onClick: onCreate, tint: tokens.colors.aqua },
-        { title: 'Try a Challenge', sub: 'Complete a fun drawing mission.', emoji: '🏆', onClick: onChallenge, tint: tokens.colors.sunshine },
-        { title: 'Finish a World', sub: 'Add your ideas to a playful scene.', emoji: '🌍', onClick: onWorld, tint: tokens.colors.meadowGreen },
         { title: 'Draw This', sub: 'Copy the picture before time runs out.', emoji: '✏️', onClick: onDrawThis, tint: tokens.colors.warmOrange },
         { title: 'Colour It In', sub: 'Colour the picture, staying in the lines.', emoji: '🖍️', onClick: onColouring, tint: tokens.colors.coral },
     ];
@@ -471,13 +449,12 @@ function EntryChooser({ onCreate, onChallenge, onWorld, onDrawThis, onColouring,
     );
 }
 
-function NextActions({ onKeep, onNew, onChallenge, onWorld }: { onKeep: () => void; onNew: () => void; onChallenge: () => void; onWorld: () => void }) {
+function NextActions({ onKeep, onNew, onMore }: { onKeep: () => void; onNew: () => void; onMore: () => void }) {
     return (
         <div style={{ position: 'absolute', bottom: '12%', left: '50%', transform: 'translateX(-50%)', zIndex: tokens.zIndex.hud, display: 'flex', gap: tokens.spacing.md, flexWrap: 'wrap', justifyContent: 'center' }}>
             <KidButton variant="secondary" size="md" onClick={onKeep}>Keep drawing</KidButton>
             <KidButton variant="secondary" size="md" onClick={onNew}>New canvas</KidButton>
-            <KidButton variant="primary" size="md" onClick={onChallenge}>Try a challenge</KidButton>
-            <KidButton variant="primary" size="md" onClick={onWorld}>Finish a world</KidButton>
+            <KidButton variant="primary" size="md" onClick={onMore}>More activities</KidButton>
         </div>
     );
 }

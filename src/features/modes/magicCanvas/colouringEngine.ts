@@ -39,7 +39,6 @@ export class ColouringEngine {
     private live: CStroke | null = null;
     private rendered: { x: number; y: number } | null = null;
     private pinchPrev = false;
-    private recovered = false;
     private lastNow = 0;
 
     private colour = '#F07A5C';
@@ -76,6 +75,12 @@ export class ColouringEngine {
         const m = this.sizeId === 'small' ? 0.02 : this.sizeId === 'big' ? 0.05 : 0.035;
         return Math.max(4, vmin * m);
     }
+
+    // The picture sits in a centred box (a colouring-book "page"), not full
+    // bleed. Map between page DESIGN coords (0..1) and SCREEN-normalized coords.
+    private box() { const s = Math.min(this.width, this.height) * 0.6; return { x: (this.width - s) / 2, y: (this.height - s) / 2 - this.height * 0.03, s }; }
+    private d2s(p: { x: number; y: number }) { const b = this.box(); return { x: (b.x + p.x * b.s) / this.width, y: (b.y + p.y * b.s) / this.height }; }
+    private s2d(p: { x: number; y: number }) { const b = this.box(); return { x: (p.x * this.width - b.x) / b.s, y: (p.y * this.height - b.y) / b.s }; }
 
     private precomputeRegionTotals(): void {
         this.regionTotal.clear();
@@ -115,9 +120,11 @@ export class ColouringEngine {
 
     private mark(region: string, x: number, y: number): void {
         const r = this.page.regions.find((rr) => rr.id === region);
-        if (!r || !pointInPolygon(x, y, r.polygon)) return; // coverage only counts INSIDE the region
-        const gx = Math.max(0, Math.min(GRID - 1, Math.floor(x * GRID)));
-        const gy = Math.max(0, Math.min(GRID - 1, Math.floor(y * GRID)));
+        if (!r) return;
+        const d = this.s2d({ x, y }); // x,y are screen-normalized; coverage works in design space
+        if (!pointInPolygon(d.x, d.y, r.polygon)) return; // coverage only counts INSIDE the region
+        const gx = Math.max(0, Math.min(GRID - 1, Math.floor(d.x * GRID)));
+        const gy = Math.max(0, Math.min(GRID - 1, Math.floor(d.y * GRID)));
         let set = this.regionCells.get(region);
         if (!set) { set = new Set(); this.regionCells.set(region, set); }
         set.add(gy * GRID + gx);
@@ -139,21 +146,20 @@ export class ColouringEngine {
     update(input: EngineInput): ColouringSnapshot {
         this.justCompletedRegion = null;
         const now = input.now;
-        const dt = this.lastNow ? Math.max(1, now - this.lastNow) : 16;
         const pinch = input.pinch && input.hasHand;
 
         if (!input.hasHand) {
-            if (this.live) this.endStroke();
-            this.recovered = true;
+            if (this.live) this.endStroke(); // tracking loss ends the stroke (no reconnect)
             this.pinchPrev = pinch;
             this.lastNow = now;
             return this.snapshot();
         }
-        if (input.pointer) this.updateRendered(input.pointer, dt);
+        if (input.pointer) this.updateRendered(input.pointer);
 
         const penDown = pinch && !this.pinchPrev;
         if (penDown && this.rendered) {
-            const r = regionAt(this.page, this.rendered.x, this.rendered.y);
+            const d = this.s2d(this.rendered);
+            const r = regionAt(this.page, d.x, d.y);
             this.live = { region: r ? r.id : '', colour: this.colour, sizePx: this.sizePx(), pts: [] };
             this.addPoint();
         } else if (pinch && this.live && this.rendered) {
@@ -166,18 +172,33 @@ export class ColouringEngine {
         return this.snapshot();
     }
 
-    private updateRendered(raw: { x: number; y: number }, dt: number): void {
-        if (!this.rendered || this.recovered) { this.rendered = { ...raw }; this.recovered = false; return; }
-        const moved = Math.hypot(raw.x - this.rendered.x, raw.y - this.rendered.y);
-        const alpha = Math.max(0.45, Math.min(1, 0.45 + (moved / dt) * 220));
-        this.rendered = { x: this.rendered.x + (raw.x - this.rendered.x) * alpha, y: this.rendered.y + (raw.y - this.rendered.y) * alpha };
+    private updateRendered(raw: { x: number; y: number }): void {
+        // Track the (already-filtered) point directly — no added lag.
+        this.rendered = { x: raw.x, y: raw.y };
     }
 
     private addPoint(): void {
         if (!this.live || !this.rendered) return;
         if (!this.live.region) return; // started outside any region — nothing to colour
-        this.live.pts.push({ x: this.rendered.x, y: this.rendered.y });
-        this.mark(this.live.region, this.rendered.x, this.rendered.y);
+        const p = this.rendered;
+        const last = this.live.pts[this.live.pts.length - 1];
+        // Interpolate big gaps so a quick swipe fills continuously (no specks).
+        if (last) {
+            const moved = Math.hypot(p.x - last.x, p.y - last.y);
+            const STEP = 0.008;
+            if (moved > STEP) {
+                const n = Math.min(60, Math.floor(moved / STEP));
+                for (let i = 1; i < n; i++) {
+                    const t = i / n;
+                    const ix = last.x + (p.x - last.x) * t;
+                    const iy = last.y + (p.y - last.y) * t;
+                    this.live.pts.push({ x: ix, y: iy });
+                    this.mark(this.live.region, ix, iy);
+                }
+            }
+        }
+        this.live.pts.push({ x: p.x, y: p.y });
+        this.mark(this.live.region, p.x, p.y);
         this.checkRegion(this.live.region, true);
     }
 
@@ -200,12 +221,17 @@ export class ColouringEngine {
     getSnapshot(): ColouringSnapshot { return this.snapshot(); }
 
     // ── rendering ──────────────────────────────────────────────────────────
+    /** Region polygon mapped to SCREEN pixels (through the centred page box). */
+    private polyPx(poly: { x: number; y: number }[]): { x: number; y: number }[] {
+        return poly.map((p) => { const s = this.d2s(p); return { x: s.x * this.width, y: s.y * this.height }; });
+    }
     private clipTo(ctx: CanvasRenderingContext2D, region: string): boolean {
         const r = this.page.regions.find((rr) => rr.id === region);
         if (!r) return false;
+        const pts = this.polyPx(r.polygon);
         ctx.beginPath();
-        ctx.moveTo(r.polygon[0].x * this.width, r.polygon[0].y * this.height);
-        for (let i = 1; i < r.polygon.length; i++) ctx.lineTo(r.polygon[i].x * this.width, r.polygon[i].y * this.height);
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
         ctx.closePath();
         ctx.clip();
         return true;
@@ -214,7 +240,9 @@ export class ColouringEngine {
         return s.pts.map((p) => ({ x: p.x * this.width, y: p.y * this.height, w: s.sizePx }));
     }
     private centroid(r: ColourRegion): { x: number; y: number } {
-        let x = 0, y = 0; for (const p of r.polygon) { x += p.x; y += p.y; } return { x: (x / r.polygon.length) * this.width, y: (y / r.polygon.length) * this.height };
+        let x = 0, y = 0; for (const p of r.polygon) { x += p.x; y += p.y; }
+        const c = this.d2s({ x: x / r.polygon.length, y: y / r.polygon.length });
+        return { x: c.x * this.width, y: c.y * this.height };
     }
 
     render(ctx: CanvasRenderingContext2D, now = this.lastNow): void {
@@ -239,9 +267,10 @@ export class ColouringEngine {
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
         for (const poly of this.page.outline) {
+            const pts = this.polyPx(poly);
             ctx.beginPath();
-            ctx.moveTo(poly[0].x * this.width, poly[0].y * this.height);
-            for (let i = 1; i < poly.length; i++) ctx.lineTo(poly[i].x * this.width, poly[i].y * this.height);
+            ctx.moveTo(pts[0].x, pts[0].y);
+            for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
             ctx.stroke();
         }
         ctx.restore();

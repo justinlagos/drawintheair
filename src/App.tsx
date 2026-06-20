@@ -436,15 +436,19 @@ function App() {
                 />
               )}
 
-              {/* Magic Cursor - shows pen state */}
-              <MagicCursor
-                frameRef={frameRef}
-                airPaintEnabled={flags.airPaintEnabled}
-                mode={gameMode}
-                getPenDown={() => (gameMode === 'free' && appState === 'game'
-                  ? drawingEngine.getPenState() === PenState.DOWN
-                  : false)}
-              />
+              {/* Magic Cursor - shows pen state. Hidden during Magic Canvas
+                  gameplay: that engine draws its own brush tip exactly where the
+                  ink lands, so a second cursor would diverge from the paint. */}
+              {!(gameMode === 'free' && flags.freePaintMagicCanvasV1 && appState === 'game') && (
+                <MagicCursor
+                  frameRef={frameRef}
+                  airPaintEnabled={flags.airPaintEnabled}
+                  mode={gameMode}
+                  getPenDown={() => (gameMode === 'free' && appState === 'game'
+                    ? drawingEngine.getPenState() === PenState.DOWN
+                    : false)}
+                />
+              )}
 
               {/* State: Onboarding */}
               {appState === 'onboarding' && (
