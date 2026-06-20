@@ -2,6 +2,9 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { TrackingLayer } from './features/tracking/TrackingLayer';
 import { FreePaintMode } from './features/modes/FreePaintMode';
 import { freePaintLogic } from './features/modes/freePaintLogic';
+// Magic Canvas (Free Paint redesign), gated behind freePaintMagicCanvasV1.
+import { MagicCanvasMode } from './features/modes/magicCanvas/MagicCanvasMode';
+import { magicCanvasFrame } from './features/modes/magicCanvas/magicCanvasFrame';
 import { PreWritingMode } from './features/modes/PreWritingMode';
 import { preWritingLogic } from './features/modes/preWriting/preWritingLogic';
 // Playful tracing redesign (V2), gated behind tracingPlayfulUiV1. Falls back
@@ -334,7 +337,8 @@ function App() {
     let logic;
     switch (gameMode) {
       case 'free':
-        logic = freePaintLogic;
+        // Flag decides the engine BEFORE mount; the two never run together.
+        logic = featureFlags.getFlag('freePaintMagicCanvasV1') ? magicCanvasFrame : freePaintLogic;
         break;
       case 'pre-writing':
         // Flag decides the engine BEFORE mount; the two never run together.
@@ -513,7 +517,9 @@ function App() {
                   )}
 
                   {gameMode === 'free' && (
-                    <FreePaintMode frameRef={frameRef} onExit={handleExitToMenu} />
+                    flags.freePaintMagicCanvasV1
+                      ? <MagicCanvasMode onExit={handleExitToMenu} />
+                      : <FreePaintMode frameRef={frameRef} onExit={handleExitToMenu} />
                   )}
 
                   {gameMode === 'pre-writing' && (

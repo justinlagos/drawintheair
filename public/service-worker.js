@@ -22,7 +22,7 @@
 
 // v7-brand-2026-05-20: bumped to invalidate returning-user cache for the
 // new brand-mark + light SEO theme migration.
-const CACHE_VERSION = 'v9-ng-reliability-2026-05-27';
+const CACHE_VERSION = 'v10-playful-tracing-magic-canvas-2026-06-20';
 const CACHE_NAME = `draw-in-the-air-${CACHE_VERSION}`;
 
 /** Assets to pre-cache on install for fastest first load */

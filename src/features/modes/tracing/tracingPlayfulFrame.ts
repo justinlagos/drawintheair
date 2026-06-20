@@ -12,8 +12,7 @@ import type { TrackingFrameData } from '../../../features/tracking/TrackingLayer
 import type { DrawingUtils } from '@mediapipe/tasks-vision';
 import { perf } from '../../../core/perf';
 import { isCountdownActive } from '../../../core/countdownService';
-import { getCurrentPath, completeLevel, advanceToNextLevel } from './tracingProgress';
-import { getActivityById } from './tracingActivities';
+import { getCurrentActivity, completeCurrent, advance as advanceProgress, setSection } from './playfulProgress';
 import { getSafeRegion, type PerfTier } from './tracingThemes';
 import { PlayfulTracingEngine, type EngineSnapshot } from './playfulTracingEngine';
 
@@ -42,8 +41,7 @@ const perfTier = (): PerfTier => {
 };
 
 const buildEngine = (w: number, h: number): PlayfulTracingEngine | null => {
-    const path = getCurrentPath();
-    const activity = path ? getActivityById(path.id) : undefined;
+    const activity = getCurrentActivity();
     if (!activity) return null;
     const region = getSafeRegion(w, h);
     const e = new PlayfulTracingEngine(activity, w, h, region, {
@@ -51,8 +49,7 @@ const buildEngine = (w: number, h: number): PlayfulTracingEngine | null => {
         reducedMotion: reducedMotion(),
     });
     e.setCompletionCallback(() => {
-        // Persist to the shared progress store with the engine's real accuracy.
-        if (path) completeLevel(path.id, lastSnapshot?.accuracy ?? 0.95);
+        completeCurrent();
         if (completionCb) completionCb();
     });
     return e;
@@ -87,11 +84,17 @@ export const resetPlayfulLevel = (): void => {
     engine?.reset();
 };
 
-/** Advance to the next level in the shared progression; returns false at the end. */
+/** Advance to the next activity (wraps around — never gets stuck). */
 export const nextPlayfulLevel = (): boolean => {
-    const ok = advanceToNextLevel();
-    if (ok) reloadPlayfulActivity();
-    return ok;
+    advanceProgress();
+    reloadPlayfulActivity();
+    return true;
+};
+
+/** Jump straight to a section (Warm-up / Shapes / Letters / Numbers). */
+export const setPlayfulSection = (pack: number, index = 0): void => {
+    setSection(pack, index);
+    reloadPlayfulActivity();
 };
 
 export const getPlayfulSnapshot = (): EngineSnapshot | null => lastSnapshot;

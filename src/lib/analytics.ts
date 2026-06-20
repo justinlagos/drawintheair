@@ -130,6 +130,19 @@ export type EventName =
     | 'tracing_stroke_completed'    // playful_v1: a stroke finished; meta.stroke
     | 'tracing_off_path'            // playful_v1: gentle off-path correction shown
     | 'tracing_recovered'           // playful_v1: returned to path after off-path
+    // ── Magic Canvas (Free Paint redesign) ──
+    | 'magic_canvas_opened'         // entry chooser shown
+    | 'magic_canvas_entry_selected' // meta.experience: 'create'|'challenge'|'world'
+    | 'free_create_started'         // meta.world_id
+    | 'paint_challenge_started'     // stage_id = challenge id
+    | 'paint_challenge_completed'   // stage_id = challenge id; meta.active_seconds, .stroke_count
+    | 'finish_world_started'        // meta.world_id; stage_id = challenge id
+    | 'paint_creation_finished'     // Done pressed; meta.stroke_count, .colour_count
+    | 'paint_clear_confirmed'       // meta.stroke_count cleared
+    | 'paint_colour_selected'
+    | 'paint_brush_selected'        // meta.brush
+    | 'paint_size_selected'         // meta.size
+    | 'paint_undo_used'
     | 'colourbuilder_match_made'
     | 'balloonmath_balloon_popped'
     | 'rainbowbridge_match_made'

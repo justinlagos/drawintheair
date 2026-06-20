@@ -92,6 +92,7 @@ const SpecialActivityPage = lazyWithRetry(() => import('./pages/seo/SpecialActiv
 // The lazy chunk is only ever fetched when the route resolves, which is
 // gated by import.meta.env.DEV below, so it never loads in production.
 const DevTracingPreview = lazyWithRetry(() => import('./features/modes/tracing/dev/TracingPreviewHarness.tsx'));
+const DevFreePaintPreview = lazyWithRetry(() => import('./features/modes/magicCanvas/dev/FreePaintPreviewHarness.tsx'));
 
 // Education audience pages (were missing from router, critical fix)
 const ForTeachersPage = lazyWithRetry(() => import('./pages/seo/ForTeachersPage.tsx'));
@@ -152,9 +153,12 @@ function getRouteFromPath(path: string, hash: string): string {
     }
   }
 
-  // DEV-only tracing preview harness. Never resolves in production builds.
+  // DEV-only preview harnesses. Never resolve in production builds.
   if (import.meta.env.DEV && path === '/dev/tracing-preview') {
     return 'dev-tracing-preview';
+  }
+  if (import.meta.env.DEV && path === '/dev/free-paint-preview') {
+    return 'dev-free-paint-preview';
   }
 
   // Class Mode routes, all collapse to the two new persistent screens.
@@ -346,6 +350,10 @@ function Root() {
 
   if (route === 'dev-tracing-preview') {
     return <DevTracingPreview />;
+  }
+
+  if (route === 'dev-free-paint-preview') {
+    return <DevFreePaintPreview />;
   }
 
   if (route === 'play') {

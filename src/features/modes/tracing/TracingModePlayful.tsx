@@ -14,16 +14,15 @@ import { Celebration } from '../../../components/Celebration';
 import { GameTopBar } from '../../../components/GameTopBar';
 import { KidPanel, KidButton, KidObjectiveCard } from '../../../components/kid-ui';
 import { tokens } from '../../../styles/tokens';
-import { getCurrentPath, getCurrentPackProgress } from './tracingProgress';
-import { getActivitiesByPack, PACK_INFO } from './tracingActivities';
+import { getCurrentPack, getPackProgress, getSections, type SectionInfo } from './playfulProgress';
 import {
     initPlayfulTracing,
     setPlayfulCompletionCallback,
     resetPlayfulLevel,
-    reloadPlayfulActivity,
     nextPlayfulLevel,
     getPlayfulSnapshot,
     playfulInitFailed,
+    setPlayfulSection,
 } from './tracingPlayfulFrame';
 import { featureFlags } from '../../../core/featureFlags';
 import { logEvent } from '../../../lib/analytics';
@@ -55,6 +54,8 @@ export const TracingModePlayful = ({ onExit }: Props = {}) => {
     const [totalStrokes, setTotalStrokes] = useState(1);
     const [message, setMessage] = useState<string | null>(null);
     const [showCelebration, setShowCelebration] = useState(false);
+    const [phase, setPhase] = useState<'sections' | 'draw'>('sections');
+    const [sections, setSections] = useState<SectionInfo[]>(() => getSections());
 
     const isCompact = typeof window !== 'undefined' && window.innerWidth <= 900;
     const celebratingRef = useRef(false);
@@ -77,9 +78,6 @@ export const TracingModePlayful = ({ onExit }: Props = {}) => {
             featureFlags.setFlags({ tracingPlayfulUiV1: false });
             return;
         }
-
-        const path = getCurrentPath();
-        if (path) setLabel(path.name);
 
         // Record which engine the child is on (legacy vs playful_v1) — fired
         // once here in the React layer, never from the render loop.
@@ -123,8 +121,7 @@ export const TracingModePlayful = ({ onExit }: Props = {}) => {
             setStrokeIndex(snap.currentStrokeIndex);
             setTotalStrokes(snap.totalStrokes);
             setMessage(snap.message);
-            const path = getCurrentPath();
-            if (path) setPack(path.pack);
+            setPack(getCurrentPack());
 
             // ── Edge-triggered telemetry (React layer, not the frame loop) ──
             if (snap.activityId && snap.activityId !== prevActivityRef.current) {
@@ -158,16 +155,10 @@ export const TracingModePlayful = ({ onExit }: Props = {}) => {
         setShowCelebration(false);
         advanceRef.current = window.setTimeout(() => {
             celebratingRef.current = false;
-            if (!nextPlayfulLevel()) {
-                // All levels done — reload current as a gentle loop.
-                reloadPlayfulActivity();
-            }
-            const path = getCurrentPath();
-            if (path) {
-                setLabel(path.name);
-                setPack(path.pack);
-                setProgress(0);
-            }
+            nextPlayfulLevel(); // wraps around — never stuck
+            setPack(getCurrentPack());
+            setProgress(0);
+            setSections(getSections());
         }, 500);
     };
 
@@ -180,11 +171,27 @@ export const TracingModePlayful = ({ onExit }: Props = {}) => {
         if (advanceRef.current) clearTimeout(advanceRef.current);
     };
 
-    const packInfo = PACK_INFO[pack] ?? PACK_INFO[1];
-    const packProgress = (() => {
-        try { return getCurrentPackProgress(); } catch { return { completedLevels: 0, unlockedLevelIndex: 0 } as never; }
-    })();
-    const packTotal = getActivitiesByPack(pack).length || 1;
+    const startSection = (p: number) => {
+        setPlayfulSection(p, 0);
+        setPack(p);
+        setProgress(0);
+        setShowCelebration(false);
+        celebratingRef.current = false;
+        prevStrokeRef.current = 0;
+        prevActivityRef.current = '';
+        prevCoachRef.current = null;
+        setSections(getSections());
+        setPhase('draw');
+    };
+
+    if (phase === 'sections') {
+        return <SectionPicker sections={sections} onPick={startSection} onExit={onExit} />;
+    }
+
+    const section = sections.find((s) => s.pack === pack) ?? sections[0];
+    const pp = getPackProgress(pack);
+    const packTotal = pp.total || 1;
+    const positionInPack = Math.min(pp.currentIndex + 1, packTotal);
     const percent = Math.round(progress * 100);
     const hud = tokens.spacing.lg;
 
@@ -196,13 +203,13 @@ export const TracingModePlayful = ({ onExit }: Props = {}) => {
             <div style={{ position: 'absolute', top: hud, left: hud, zIndex: tokens.zIndex.hud, pointerEvents: 'none', maxWidth: isCompact ? '46%' : 260 }}>
                 <KidPanel size={isCompact ? 'sm' : 'md'}>
                     <div style={{ fontFamily: tokens.fontFamily.body, fontSize: tokens.fontSize.caption, color: tokens.semantic.textSecondary, display: 'flex', gap: 6, alignItems: 'center' }}>
-                        <span>{packInfo.icon}</span><span>{CATEGORY[type] ?? 'Tracing'}</span>
+                        <span>{section?.icon}</span><span>{CATEGORY[type] ?? 'Tracing'}</span>
                     </div>
                     <div style={{ fontFamily: tokens.fontFamily.heading, fontWeight: tokens.fontWeight.extrabold, fontSize: isCompact ? '2rem' : '2.6rem', color: tokens.semantic.textPrimary, lineHeight: 1.05, margin: '2px 0 4px' }}>
                         {label}
                     </div>
                     <div style={{ fontFamily: tokens.fontFamily.body, fontSize: tokens.fontSize.caption, color: tokens.semantic.textSecondary }}>
-                        {packInfo.name} · {Math.min((packProgress.completedLevels ?? 0) + 1, packTotal)} of {packTotal}
+                        {section?.name} · {positionInPack} of {packTotal}
                     </div>
                     {/* Stroke sequence indicator */}
                     {totalStrokes > 1 && (
@@ -230,10 +237,13 @@ export const TracingModePlayful = ({ onExit }: Props = {}) => {
                 </KidPanel>
             </div>
 
-            {/* BOTTOM-CENTER: restart */}
-            <div style={{ position: 'absolute', bottom: isCompact ? 12 : 24, left: '50%', transform: 'translateX(-50%)', zIndex: tokens.zIndex.hud }}>
+            {/* BOTTOM-CENTER: sections + restart */}
+            <div style={{ position: 'absolute', bottom: isCompact ? 12 : 24, left: '50%', transform: 'translateX(-50%)', zIndex: tokens.zIndex.hud, display: 'flex', gap: tokens.spacing.md }}>
+                <KidButton variant="secondary" size="md" onClick={() => { setPhase('sections'); setSections(getSections()); }} icon={<span>📚</span>}>
+                    {isCompact ? '' : 'Sections'}
+                </KidButton>
                 <KidButton variant="secondary" size="md" onClick={handleRestart} icon={<span>🔄</span>}>
-                    {isCompact ? 'Restart' : (RESTART_LABEL[type] ?? 'Restart')}
+                    {isCompact ? '' : (RESTART_LABEL[type] ?? 'Restart')}
                 </KidButton>
             </div>
 
@@ -258,5 +268,34 @@ export const TracingModePlayful = ({ onExit }: Props = {}) => {
         </>
     );
 };
+
+function SectionPicker({ sections, onPick, onExit }: { sections: SectionInfo[]; onPick: (pack: number) => void; onExit?: () => void }) {
+    const tints = [tokens.colors.aqua, tokens.colors.meadowGreen, tokens.colors.deepPlum, tokens.colors.warmOrange];
+    return (
+        <>
+            {onExit && <GameTopBar onBack={onExit} />}
+            <div style={{ position: 'absolute', inset: 0, zIndex: tokens.zIndex.hud, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing.xl, padding: tokens.spacing.lg }}>
+                <h1 style={{ fontFamily: tokens.fontFamily.heading, fontWeight: tokens.fontWeight.extrabold, fontSize: tokens.fontSize.heading, color: tokens.semantic.primary, textAlign: 'center', margin: 0 }}>
+                    Choose what to trace
+                </h1>
+                <div style={{ display: 'flex', gap: tokens.spacing.lg, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    {sections.map((s, i) => (
+                        <button key={s.pack} onClick={() => onPick(s.pack)} style={{
+                            width: 210, minHeight: 210, borderRadius: tokens.radius.xxl, cursor: 'pointer', border: 'none',
+                            background: tokens.semantic.bgPanel, boxShadow: tokens.shadow.panel,
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing.md, padding: tokens.spacing.xl,
+                        }}>
+                            <div style={{ width: 88, height: 88, borderRadius: '50%', background: tints[i % tints.length], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.6rem' }}>{s.icon}</div>
+                            <div style={{ fontFamily: tokens.fontFamily.heading, fontWeight: tokens.fontWeight.bold, fontSize: tokens.fontSize.objective, color: tokens.semantic.textPrimary }}>{s.name}</div>
+                            <div style={{ fontFamily: tokens.fontFamily.body, fontSize: tokens.fontSize.body, color: tokens.semantic.textSecondary }}>
+                                {s.completed > 0 ? `${s.completed} of ${s.total} done` : `${s.total} to trace`}
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            </div>
+        </>
+    );
+}
 
 export default TracingModePlayful;
