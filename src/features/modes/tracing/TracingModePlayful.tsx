@@ -26,6 +26,7 @@ import {
 } from './tracingPlayfulFrame';
 import { featureFlags } from '../../../core/featureFlags';
 import { logEvent } from '../../../lib/analytics';
+import { GestureLayer } from '../../../components/GestureLayer';
 
 interface Props {
     onExit?: () => void;
@@ -197,6 +198,7 @@ export const TracingModePlayful = ({ onExit }: Props = {}) => {
 
     return (
         <>
+            <GestureLayer />
             {onExit && <GameTopBar onBack={onExit} compact={isCompact} />}
 
             {/* TOP-LEFT: compact activity card */}
@@ -239,10 +241,10 @@ export const TracingModePlayful = ({ onExit }: Props = {}) => {
 
             {/* BOTTOM-CENTER: sections + restart */}
             <div style={{ position: 'absolute', bottom: isCompact ? 12 : 24, left: '50%', transform: 'translateX(-50%)', zIndex: tokens.zIndex.hud, display: 'flex', gap: tokens.spacing.md }}>
-                <KidButton variant="secondary" size="md" onClick={() => { setPhase('sections'); setSections(getSections()); }} icon={<span>📚</span>}>
+                <KidButton data-gesture variant="secondary" size="md" onClick={() => { setPhase('sections'); setSections(getSections()); }} icon={<span>📚</span>}>
                     {isCompact ? '' : 'Sections'}
                 </KidButton>
-                <KidButton variant="secondary" size="md" onClick={handleRestart} icon={<span>🔄</span>}>
+                <KidButton data-gesture variant="secondary" size="md" onClick={handleRestart} icon={<span>🔄</span>}>
                     {isCompact ? '' : (RESTART_LABEL[type] ?? 'Restart')}
                 </KidButton>
             </div>
@@ -273,6 +275,7 @@ function SectionPicker({ sections, onPick, onExit }: { sections: SectionInfo[]; 
     const tints = [tokens.colors.aqua, tokens.colors.meadowGreen, tokens.colors.deepPlum, tokens.colors.warmOrange];
     return (
         <>
+            <GestureLayer />
             {onExit && <GameTopBar onBack={onExit} />}
             <div style={{ position: 'absolute', inset: 0, zIndex: tokens.zIndex.hud, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing.xl, padding: tokens.spacing.lg }}>
                 <h1 style={{ fontFamily: tokens.fontFamily.heading, fontWeight: tokens.fontWeight.extrabold, fontSize: tokens.fontSize.heading, color: tokens.semantic.primary, textAlign: 'center', margin: 0 }}>
@@ -280,7 +283,7 @@ function SectionPicker({ sections, onPick, onExit }: { sections: SectionInfo[]; 
                 </h1>
                 <div style={{ display: 'flex', gap: tokens.spacing.lg, flexWrap: 'wrap', justifyContent: 'center' }}>
                     {sections.map((s, i) => (
-                        <button key={s.pack} onClick={() => onPick(s.pack)} style={{
+                        <button key={s.pack} data-gesture onClick={() => onPick(s.pack)} style={{
                             width: 210, minHeight: 210, borderRadius: tokens.radius.xxl, cursor: 'pointer', border: 'none',
                             background: tokens.semantic.bgPanel, boxShadow: tokens.shadow.panel,
                             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing.md, padding: tokens.spacing.xl,

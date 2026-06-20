@@ -25,6 +25,7 @@ import type { PaintChallenge } from './challengeModel';
 import { DEFAULT_WORLD_ID } from './paintWorlds';
 import { ColouringEngine, type ColouringSnapshot } from './colouringEngine';
 import { getColouringPage } from './colouringPages';
+import { setGesturePointer } from '../../../core/gestureInput';
 
 let engine: MagicCanvasEngine | null = null;
 let colouring: ColouringEngine | null = null;
@@ -125,6 +126,10 @@ export const magicCanvasFrame = (
     }
 
     const countdown = isCountdownActive(frameData.timestamp);
+
+    // Publish the hand point so the React UI (entry cards, dock) can be driven
+    // in the air by <GestureLayer>.
+    setGesturePointer(frameData.filteredPoint, frameData.pinchActive, frameData.hasHand);
 
     // Prefer mouse/trackpad when recently active, else hand tracking — so the
     // canvas responds to BOTH input methods.

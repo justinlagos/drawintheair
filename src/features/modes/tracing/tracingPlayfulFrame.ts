@@ -14,6 +14,7 @@ import { perf } from '../../../core/perf';
 import { isCountdownActive } from '../../../core/countdownService';
 import { getCurrentActivity, completeCurrent, advance as advanceProgress, setSection } from './playfulProgress';
 import { getSafeRegion, type PerfTier } from './tracingThemes';
+import { setGesturePointer } from '../../../core/gestureInput';
 import { PlayfulTracingEngine, type EngineSnapshot } from './playfulTracingEngine';
 
 let engine: PlayfulTracingEngine | null = null;
@@ -120,6 +121,9 @@ export const playfulTracingFrame = (
 
     // During the 3-2-1 countdown, show the scene but accept no input yet.
     const countdown = isCountdownActive(frameData.timestamp);
+
+    // Publish the hand point so the section picker can be selected in the air.
+    setGesturePointer(frameData.filteredPoint, frameData.pinchActive, frameData.hasHand);
 
     lastSnapshot = engine.update({
         pointer: frameData.filteredPoint,

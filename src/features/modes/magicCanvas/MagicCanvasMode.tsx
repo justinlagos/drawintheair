@@ -39,6 +39,7 @@ import {
 } from './magicCanvasFrame';
 import { DRAW_THIS_PROMPTS, type DrawThisPrompt } from './drawThisPrompts';
 import { COLOURING_PAGES } from './colouringPages';
+import { GestureLayer } from '../../../components/GestureLayer';
 
 type Phase = 'entry' | 'draw' | 'done';
 type Experience = 'create' | 'challenge' | 'world' | 'drawthis' | 'colouring';
@@ -244,6 +245,7 @@ export const MagicCanvasMode = ({ onExit }: Props = {}) => {
 
     return (
         <>
+            <GestureLayer />
             {onExit && <GameTopBar onBack={onExit} compact={isCompact} />}
 
             {/* Mouse / trackpad drawing layer — sits above the canvas, below the
@@ -316,7 +318,7 @@ export const MagicCanvasMode = ({ onExit }: Props = {}) => {
                     {/* Colours (true circles) */}
                     <div style={{ display: 'flex', gap: 6 }}>
                         {palette.slice(0, 7).map((hex) => (
-                            <button key={hex} onClick={() => pickColour(hex)} aria-label={`colour ${hex}`} style={{
+                            <button key={hex} data-gesture onClick={() => pickColour(hex)} aria-label={`colour ${hex}`} style={{
                                 flex: '0 0 auto', width: 32, height: 32, padding: 0, boxSizing: 'border-box',
                                 borderRadius: '50%', aspectRatio: '1 / 1', background: hex, cursor: 'pointer', appearance: 'none',
                                 border: colour === hex ? `3px solid ${tokens.semantic.primary}` : '3px solid rgba(255,255,255,0.95)',
@@ -330,7 +332,7 @@ export const MagicCanvasMode = ({ onExit }: Props = {}) => {
                             <Divider />
                             <div style={{ display: 'flex', gap: 4 }}>
                                 {BRUSH_IDS.map((b) => (
-                                    <button key={b} onClick={() => pickBrush(b)} title={BRUSHES[b].name} style={dockTool(brush === b)}>
+                                    <button key={b} data-gesture onClick={() => pickBrush(b)} title={BRUSHES[b].name} style={dockTool(brush === b)}>
                                         <span style={{ fontSize: '1.05rem', lineHeight: 1 }}>{BRUSH_EMOJI[b]}</span>
                                         <span style={{ fontSize: 9, fontWeight: 700, color: brush === b ? tokens.semantic.primary : tokens.semantic.textSecondary }}>{BRUSHES[b].name}</span>
                                     </button>
@@ -342,16 +344,16 @@ export const MagicCanvasMode = ({ onExit }: Props = {}) => {
                     {/* Sizes (dot + label) */}
                     <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                         {([['small', 'S', 8], ['medium', 'M', 14], ['big', 'L', 20]] as [SizeId, string, number][]).map(([s, lbl, d]) => (
-                            <button key={s} onClick={() => pickSize(s)} title={s} style={dockTool(size === s)}>
+                            <button key={s} data-gesture onClick={() => pickSize(s)} title={s} style={dockTool(size === s)}>
                                 <span style={{ display: 'inline-block', borderRadius: '50%', background: colour, width: d, height: d }} />
                                 <span style={{ fontSize: 9, fontWeight: 700, color: size === s ? tokens.semantic.primary : tokens.semantic.textSecondary }}>{lbl}</span>
                             </button>
                         ))}
                     </div>
                     <Divider />
-                    <button onClick={doUndo} title="Undo" style={dockBtn(false)} disabled={!snap?.canUndo}>↩︎</button>
-                    <button onClick={() => setShowClear(true)} title="Clear canvas" style={{ ...dockBtn(false), color: tokens.semantic.danger }}>🗑</button>
-                    <KidButton variant="primary" size="md" onClick={doFinish} icon={<span>✓</span>}>Done</KidButton>
+                    <button data-gesture onClick={doUndo} title="Undo" style={dockBtn(false)} disabled={!snap?.canUndo}>↩︎</button>
+                    <button data-gesture onClick={() => setShowClear(true)} title="Clear canvas" style={{ ...dockBtn(false), color: tokens.semantic.danger }}>🗑</button>
+                    <KidButton data-gesture variant="primary" size="md" onClick={doFinish} icon={<span>✓</span>}>Done</KidButton>
                 </KidPanel>
             </div>
 
@@ -361,8 +363,8 @@ export const MagicCanvasMode = ({ onExit }: Props = {}) => {
                     <KidPanel size="md" style={{ textAlign: 'center', maxWidth: 360 }}>
                         <div style={{ fontFamily: tokens.fontFamily.heading, fontWeight: tokens.fontWeight.bold, fontSize: tokens.fontSize.objective, color: tokens.semantic.textPrimary, marginBottom: tokens.spacing.lg }}>Clear everything?</div>
                         <div style={{ display: 'flex', gap: tokens.spacing.md, justifyContent: 'center' }}>
-                            <KidButton variant="secondary" size="md" onClick={() => setShowClear(false)}>Keep drawing</KidButton>
-                            <KidButton variant="primary" size="md" onClick={doClearConfirm}>Clear canvas</KidButton>
+                            <KidButton data-gesture variant="secondary" size="md" onClick={() => setShowClear(false)}>Keep drawing</KidButton>
+                            <KidButton data-gesture variant="primary" size="md" onClick={doClearConfirm}>Clear canvas</KidButton>
                         </div>
                     </KidPanel>
                 </div>
@@ -426,6 +428,7 @@ function EntryChooser({ onCreate, onDrawThis, onColouring, onExit }: { onCreate:
     ];
     return (
         <>
+            <GestureLayer />
             {onExit && <GameTopBar onBack={onExit} />}
             <div style={{ position: 'absolute', inset: 0, zIndex: tokens.zIndex.hud, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing.xl, padding: tokens.spacing.lg, overflowY: 'auto' }}>
                 <h1 style={{ fontFamily: tokens.fontFamily.heading, fontWeight: tokens.fontWeight.extrabold, fontSize: tokens.fontSize.heading, color: tokens.semantic.primary, textAlign: 'center', margin: 0 }}>
@@ -433,7 +436,7 @@ function EntryChooser({ onCreate, onDrawThis, onColouring, onExit }: { onCreate:
                 </h1>
                 <div style={{ display: 'flex', gap: tokens.spacing.lg, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 980 }}>
                     {cards.map((c) => (
-                        <button key={c.title} onClick={c.onClick} style={{
+                        <button key={c.title} data-gesture onClick={c.onClick} style={{
                             width: 200, minHeight: 200, borderRadius: tokens.radius.xxl, cursor: 'pointer',
                             border: 'none', background: tokens.semantic.bgPanel, boxShadow: tokens.shadow.panel,
                             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing.sm, padding: tokens.spacing.lg,
@@ -452,9 +455,9 @@ function EntryChooser({ onCreate, onDrawThis, onColouring, onExit }: { onCreate:
 function NextActions({ onKeep, onNew, onMore }: { onKeep: () => void; onNew: () => void; onMore: () => void }) {
     return (
         <div style={{ position: 'absolute', bottom: '12%', left: '50%', transform: 'translateX(-50%)', zIndex: tokens.zIndex.hud, display: 'flex', gap: tokens.spacing.md, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <KidButton variant="secondary" size="md" onClick={onKeep}>Keep drawing</KidButton>
-            <KidButton variant="secondary" size="md" onClick={onNew}>New canvas</KidButton>
-            <KidButton variant="primary" size="md" onClick={onMore}>More activities</KidButton>
+            <KidButton data-gesture variant="secondary" size="md" onClick={onKeep}>Keep drawing</KidButton>
+            <KidButton data-gesture variant="secondary" size="md" onClick={onNew}>New canvas</KidButton>
+            <KidButton data-gesture variant="primary" size="md" onClick={onMore}>More activities</KidButton>
         </div>
     );
 }
