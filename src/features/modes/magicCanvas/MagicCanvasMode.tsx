@@ -35,10 +35,14 @@ import {
     setMagicCompletionCallback,
     setMagicUiRegions,
     setMagicMouseInput,
+    setMagicColouringPage,
+    getMagicColouringSnapshot,
 } from './magicCanvasFrame';
+import { DRAW_THIS_PROMPTS, type DrawThisPrompt } from './drawThisPrompts';
+import { COLOURING_PAGES } from './colouringPages';
 
 type Phase = 'entry' | 'draw' | 'done';
-type Experience = 'create' | 'challenge' | 'world';
+type Experience = 'create' | 'challenge' | 'world' | 'drawthis' | 'colouring';
 
 interface Props {
     onExit?: () => void;
@@ -59,6 +63,11 @@ export const MagicCanvasMode = ({ onExit }: Props = {}) => {
     const [snap, setSnap] = useState<EngineSnapshot | null>(null);
     const [showClear, setShowClear] = useState(false);
     const [showCelebration, setShowCelebration] = useState(false);
+    const [prompt, setPrompt] = useState<DrawThisPrompt | null>(null);
+    const [timeLeft, setTimeLeft] = useState(0);
+    const [colourDone, setColourDone] = useState({ done: 0, total: 0 });
+    const promptIdx = useRef(0);
+    const pageIdx = useRef(0);
 
     const dockRef = useRef<HTMLDivElement | null>(null);
     const hudRef = useRef<HTMLDivElement | null>(null);
@@ -123,8 +132,35 @@ export const MagicCanvasMode = ({ onExit }: Props = {}) => {
         return () => window.removeEventListener('resize', onResize);
     }, [worldId]);
 
+    // Draw This: gentle per-prompt countdown that auto-advances (never fails).
+    useEffect(() => {
+        if (phase !== 'draw' || experience !== 'drawthis') return;
+        if (timeLeft > 0) {
+            const id = window.setTimeout(() => setTimeLeft((t) => t - 1), 1000);
+            return () => window.clearTimeout(id);
+        }
+        // Time's up → move on encouragingly.
+        const ni = promptIdx.current + 1;
+        promptIdx.current = ni;
+        const p = DRAW_THIS_PROMPTS[ni % DRAW_THIS_PROMPTS.length];
+        setPrompt(p);
+        magicClear();
+        setTimeLeft(p.timerSeconds);
+    }, [phase, experience, timeLeft]);
+
+    // Colouring: reflect per-region progress in the header.
+    useEffect(() => {
+        if (phase !== 'draw' || experience !== 'colouring') return;
+        const id = window.setInterval(() => {
+            const s = getMagicColouringSnapshot();
+            if (s) setColourDone({ done: s.done, total: s.total });
+        }, 200);
+        return () => window.clearInterval(id);
+    }, [phase, experience]);
+
     // ── Entry actions ────────────────────────────────────────────────────────
     const enterDraw = (exp: Experience, wId: string, ch: PaintChallenge | null) => {
+        setMagicColouringPage(null); // ensure freeform engine (not colouring)
         setExperience(exp);
         setWorldId(wId);
         setChallenge(ch);
@@ -133,6 +169,41 @@ export const MagicCanvasMode = ({ onExit }: Props = {}) => {
         setMagicColour(colour);
         setMagicBrush(brush);
         setMagicSize(size);
+        celebratedRef.current = false;
+        setShowCelebration(false);
+        setPhase('draw');
+    };
+
+    const startDrawThisPrompt = (idx: number) => {
+        const p = DRAW_THIS_PROMPTS[idx % DRAW_THIS_PROMPTS.length];
+        setPrompt(p);
+        setTimeLeft(p.timerSeconds);
+        magicClear();
+    };
+    const startDrawThis = () => {
+        promptIdx.current = 0;
+        logEvent('magic_canvas_entry_selected', { meta: { experience: 'drawthis' } });
+        enterDraw('drawthis', 'magicpaper', null);
+        startDrawThisPrompt(0);
+    };
+    const startColouring = () => {
+        const page = COLOURING_PAGES[pageIdx.current % COLOURING_PAGES.length];
+        setMagicChallenge(null);
+        setMagicColour(colour);
+        setMagicSize(size);
+        setMagicColouringPage(page.id);
+        setExperience('colouring');
+        celebratedRef.current = false;
+        setShowCelebration(false);
+        setColourDone({ done: 0, total: page.regions.length });
+        logEvent('magic_canvas_entry_selected', { meta: { experience: 'colouring' } });
+        setPhase('draw');
+    };
+    const nextColouringPage = () => {
+        pageIdx.current += 1;
+        const page = COLOURING_PAGES[pageIdx.current % COLOURING_PAGES.length];
+        setMagicColouringPage(page.id);
+        setColourDone({ done: 0, total: page.regions.length });
         celebratedRef.current = false;
         setShowCelebration(false);
         setPhase('draw');
@@ -180,11 +251,13 @@ export const MagicCanvasMode = ({ onExit }: Props = {}) => {
 
     // ── Render ────────────────────────────────────────────────────────────────
     if (phase === 'entry') {
-        return <EntryChooser onCreate={startCreate} onChallenge={startChallenge} onWorld={startWorld} onExit={onExit} />;
+        return <EntryChooser onCreate={startCreate} onChallenge={startChallenge} onWorld={startWorld} onDrawThis={startDrawThis} onColouring={startColouring} onExit={onExit} />;
     }
 
     const progress = snap?.challenge;
-    const showHint = (snap?.strokeCount ?? 0) === 0 && phase === 'draw';
+    const isColouring = experience === 'colouring';
+    const isDrawThis = experience === 'drawthis';
+    const showHint = !isColouring && (snap?.strokeCount ?? 0) === 0 && phase === 'draw';
 
     const toNorm = (ev: React.PointerEvent) => ({ x: ev.clientX / window.innerWidth, y: ev.clientY / window.innerHeight });
 
@@ -202,13 +275,33 @@ export const MagicCanvasMode = ({ onExit }: Props = {}) => {
                 onPointerLeave={(ev) => { mouseDownRef.current = false; setMagicMouseInput(toNorm(ev), false); }}
             />
 
+            {/* Draw This: reference card to the side + countdown */}
+            {isDrawThis && prompt && (
+                <div style={{ position: 'absolute', top: tokens.spacing.lg, right: tokens.spacing.lg, zIndex: tokens.zIndex.hud, pointerEvents: 'none' }}>
+                    <KidPanel size="sm" style={{ textAlign: 'center', padding: tokens.spacing.md }}>
+                        <div style={{ fontFamily: tokens.fontFamily.body, fontSize: tokens.fontSize.caption, color: tokens.semantic.textSecondary, marginBottom: 4 }}>Draw this</div>
+                        <DrawThisReference prompt={prompt} size={isCompact ? 96 : 132} />
+                        <div style={{ fontFamily: tokens.fontFamily.heading, fontWeight: tokens.fontWeight.bold, color: tokens.semantic.textPrimary, marginTop: 4 }}>{prompt.label}</div>
+                        <div style={{ marginTop: 6, height: 8, background: 'rgba(108,63,164,0.12)', borderRadius: tokens.radius.pill, overflow: 'hidden' }}>
+                            <div style={{ width: `${Math.max(0, (timeLeft / prompt.timerSeconds) * 100)}%`, height: '100%', background: timeLeft <= 5 ? tokens.colors.warmOrange : tokens.colors.aqua, borderRadius: tokens.radius.pill, transition: 'width 1s linear' }} />
+                        </div>
+                        <div style={{ fontSize: tokens.fontSize.caption, color: tokens.semantic.textSecondary, marginTop: 2 }}>{timeLeft}s · keep going!</div>
+                    </KidPanel>
+                </div>
+            )}
+
             {/* TOP-CENTRE: title / challenge HUD (clear of the Menu on the left) */}
             <div ref={hudRef} style={{ position: 'absolute', top: tokens.spacing.lg, left: '50%', transform: 'translateX(-50%)', zIndex: tokens.zIndex.hud, pointerEvents: 'none', maxWidth: isCompact ? 'calc(100% - 160px)' : 520 }}>
                 <KidPanel size="sm" style={{ padding: `${tokens.spacing.sm} ${tokens.spacing.lg}`, textAlign: 'center' }}>
                     <div style={{ fontFamily: tokens.fontFamily.heading, fontWeight: tokens.fontWeight.bold, fontSize: tokens.fontSize.button, color: tokens.semantic.primary }}>
-                        {experience === 'create' ? '✨ Magic Canvas' : challenge?.title ?? 'Magic Canvas'}
+                        {isColouring ? '🖍️ Colour it in' : isDrawThis ? (prompt?.instruction ?? 'Draw This') : experience === 'create' ? '✨ Magic Canvas' : challenge?.title ?? 'Magic Canvas'}
                     </div>
-                    {challenge && (
+                    {isColouring && (
+                        <div style={{ fontFamily: tokens.fontFamily.body, fontSize: tokens.fontSize.label, color: tokens.semantic.textSecondary, marginTop: 2 }}>
+                            {colourDone.done} of {colourDone.total} sections coloured
+                        </div>
+                    )}
+                    {challenge && !isColouring && !isDrawThis && (
                         <div style={{ fontFamily: tokens.fontFamily.body, fontSize: tokens.fontSize.label, color: tokens.semantic.textSecondary, marginTop: 2 }}>
                             {challenge.instruction}
                         </div>
@@ -230,6 +323,11 @@ export const MagicCanvasMode = ({ onExit }: Props = {}) => {
                     <KidObjectiveCard icon="👆">Pinch your fingers and move your hand to paint</KidObjectiveCard>
                 </div>
             )}
+            {isColouring && colourDone.done === 0 && !showCelebration && (
+                <div style={{ position: 'absolute', bottom: isCompact ? 120 : 150, left: '50%', transform: 'translateX(-50%)', zIndex: tokens.zIndex.hud, pointerEvents: 'none' }}>
+                    <KidObjectiveCard icon="🖍️">Pick a colour, then paint inside a shape</KidObjectiveCard>
+                </div>
+            )}
 
             {/* BOTTOM: one coherent creative tool dock */}
             <div ref={dockRef} style={{ position: 'absolute', bottom: isCompact ? 10 : 18, left: '50%', transform: 'translateX(-50%)', zIndex: tokens.zIndex.hud, pointerEvents: 'auto' }}>
@@ -245,16 +343,20 @@ export const MagicCanvasMode = ({ onExit }: Props = {}) => {
                             }} />
                         ))}
                     </div>
-                    <Divider />
-                    {/* Brushes (icon + name) */}
-                    <div style={{ display: 'flex', gap: 4 }}>
-                        {BRUSH_IDS.map((b) => (
-                            <button key={b} onClick={() => pickBrush(b)} title={BRUSHES[b].name} style={dockTool(brush === b)}>
-                                <span style={{ fontSize: '1.05rem', lineHeight: 1 }}>{BRUSH_EMOJI[b]}</span>
-                                <span style={{ fontSize: 9, fontWeight: 700, color: brush === b ? tokens.semantic.primary : tokens.semantic.textSecondary }}>{BRUSHES[b].name}</span>
-                            </button>
-                        ))}
-                    </div>
+                    {/* Brushes (icon + name) — not needed in guided colouring */}
+                    {!isColouring && (
+                        <>
+                            <Divider />
+                            <div style={{ display: 'flex', gap: 4 }}>
+                                {BRUSH_IDS.map((b) => (
+                                    <button key={b} onClick={() => pickBrush(b)} title={BRUSHES[b].name} style={dockTool(brush === b)}>
+                                        <span style={{ fontSize: '1.05rem', lineHeight: 1 }}>{BRUSH_EMOJI[b]}</span>
+                                        <span style={{ fontSize: 9, fontWeight: 700, color: brush === b ? tokens.semantic.primary : tokens.semantic.textSecondary }}>{BRUSHES[b].name}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    )}
                     <Divider />
                     {/* Sizes (dot + label) */}
                     <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
@@ -288,16 +390,16 @@ export const MagicCanvasMode = ({ onExit }: Props = {}) => {
             {/* Completion */}
             <Celebration
                 show={showCelebration}
-                message={progress?.completed ? 'You made it!' : 'Look what you made!'}
-                subMessage={challenge ? 'Your world is ready!' : 'Beautiful creation!'}
-                icon="🎨"
+                message={isColouring ? 'All coloured in!' : progress?.completed ? 'You made it!' : 'Look what you made!'}
+                subMessage={isColouring ? 'Your picture is bright!' : challenge ? 'Your world is ready!' : 'Beautiful creation!'}
+                icon={isColouring ? '🖍️' : '🎨'}
                 duration={1600}
                 stars={2}
                 showConfetti
                 soundEffect
-                onComplete={() => setShowCelebration(false)}
+                onComplete={() => { setShowCelebration(false); if (isColouring) nextColouringPage(); }}
             />
-            {phase === 'done' && !showCelebration && (
+            {phase === 'done' && !showCelebration && !isColouring && (
                 <NextActions
                     onKeep={() => { setPhase('draw'); celebratedRef.current = false; }}
                     onNew={() => { magicClear(); setPhase('draw'); celebratedRef.current = false; }}
@@ -308,6 +410,17 @@ export const MagicCanvasMode = ({ onExit }: Props = {}) => {
         </>
     );
 };
+
+function DrawThisReference({ prompt, size }: { prompt: DrawThisPrompt; size: number }) {
+    const ref = useRef<HTMLCanvasElement | null>(null);
+    useEffect(() => {
+        const c = ref.current; if (!c) return;
+        const ctx = c.getContext('2d'); if (!ctx) return;
+        ctx.clearRect(0, 0, size, size);
+        prompt.draw(ctx, size);
+    }, [prompt, size]);
+    return <canvas ref={ref} width={size} height={size} style={{ width: size, height: size, display: 'block', margin: '0 auto' }} />;
+}
 
 // ── small UI helpers ─────────────────────────────────────────────────────────
 const dockBtn = (active: boolean): React.CSSProperties => ({
@@ -325,27 +438,29 @@ const dockTool = (active: boolean): React.CSSProperties => ({
 });
 const Divider = () => <div style={{ width: 1, height: 28, background: 'rgba(31,27,46,0.12)' }} />;
 
-function EntryChooser({ onCreate, onChallenge, onWorld, onExit }: { onCreate: () => void; onChallenge: () => void; onWorld: () => void; onExit?: () => void }) {
+function EntryChooser({ onCreate, onChallenge, onWorld, onDrawThis, onColouring, onExit }: { onCreate: () => void; onChallenge: () => void; onWorld: () => void; onDrawThis: () => void; onColouring: () => void; onExit?: () => void }) {
     const cards: { title: string; sub: string; emoji: string; onClick: () => void; tint: string }[] = [
         { title: 'Free Create', sub: 'Make anything you like.', emoji: '🎨', onClick: onCreate, tint: tokens.colors.aqua },
         { title: 'Try a Challenge', sub: 'Complete a fun drawing mission.', emoji: '🏆', onClick: onChallenge, tint: tokens.colors.sunshine },
         { title: 'Finish a World', sub: 'Add your ideas to a playful scene.', emoji: '🌍', onClick: onWorld, tint: tokens.colors.meadowGreen },
+        { title: 'Draw This', sub: 'Copy the picture before time runs out.', emoji: '✏️', onClick: onDrawThis, tint: tokens.colors.warmOrange },
+        { title: 'Colour It In', sub: 'Colour the picture, staying in the lines.', emoji: '🖍️', onClick: onColouring, tint: tokens.colors.coral },
     ];
     return (
         <>
             {onExit && <GameTopBar onBack={onExit} />}
-            <div style={{ position: 'absolute', inset: 0, zIndex: tokens.zIndex.hud, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing.xl, padding: tokens.spacing.lg }}>
+            <div style={{ position: 'absolute', inset: 0, zIndex: tokens.zIndex.hud, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing.xl, padding: tokens.spacing.lg, overflowY: 'auto' }}>
                 <h1 style={{ fontFamily: tokens.fontFamily.heading, fontWeight: tokens.fontWeight.extrabold, fontSize: tokens.fontSize.heading, color: tokens.semantic.primary, textAlign: 'center', margin: 0 }}>
                     What do you want to make?
                 </h1>
-                <div style={{ display: 'flex', gap: tokens.spacing.lg, flexWrap: 'wrap', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', gap: tokens.spacing.lg, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 980 }}>
                     {cards.map((c) => (
                         <button key={c.title} onClick={c.onClick} style={{
-                            width: 240, minHeight: 240, borderRadius: tokens.radius.xxl, cursor: 'pointer',
+                            width: 200, minHeight: 200, borderRadius: tokens.radius.xxl, cursor: 'pointer',
                             border: 'none', background: tokens.semantic.bgPanel, boxShadow: tokens.shadow.panel,
-                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing.md, padding: tokens.spacing.xl,
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing.sm, padding: tokens.spacing.lg,
                         }}>
-                            <div style={{ width: 96, height: 96, borderRadius: '50%', background: c.tint, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>{c.emoji}</div>
+                            <div style={{ width: 80, height: 80, borderRadius: '50%', background: c.tint, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.6rem' }}>{c.emoji}</div>
                             <div style={{ fontFamily: tokens.fontFamily.heading, fontWeight: tokens.fontWeight.bold, fontSize: tokens.fontSize.objective, color: tokens.semantic.textPrimary }}>{c.title}</div>
                             <div style={{ fontFamily: tokens.fontFamily.body, fontSize: tokens.fontSize.body, color: tokens.semantic.textSecondary, textAlign: 'center' }}>{c.sub}</div>
                         </button>

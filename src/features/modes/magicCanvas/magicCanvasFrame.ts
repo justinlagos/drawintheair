@@ -23,8 +23,14 @@ import {
 import type { BrushId } from './paintBrushes';
 import type { PaintChallenge } from './challengeModel';
 import { DEFAULT_WORLD_ID } from './paintWorlds';
+import { ColouringEngine, type ColouringSnapshot } from './colouringEngine';
+import { getColouringPage } from './colouringPages';
 
 let engine: MagicCanvasEngine | null = null;
+let colouring: ColouringEngine | null = null;
+let colouringSnap: ColouringSnapshot | null = null;
+let currentColour = '#7BB6FF';
+let currentSize: SizeId = 'medium';
 let canvasW = 0;
 let canvasH = 0;
 let worldId = DEFAULT_WORLD_ID;
@@ -75,13 +81,25 @@ export const magicInitFailed = (): boolean => initFailed;
 export const getMagicEngine = (): MagicCanvasEngine | null => engine;
 export const setMagicWorld = (id: string): void => { worldId = id; engine?.setWorld(id); };
 export const setMagicChallenge = (c: PaintChallenge | null): void => engine?.setChallenge(c);
-export const setMagicColour = (hex: string): void => engine?.setColour(hex);
+export const setMagicColour = (hex: string): void => { currentColour = hex; engine?.setColour(hex); colouring?.setColour(hex); };
 export const setMagicBrush = (b: BrushId): void => engine?.setBrush(b);
-export const setMagicSize = (s: SizeId): void => engine?.setSize(s);
-export const magicUndo = (): void => engine?.undo();
-export const magicClear = (): void => engine?.clear();
+export const setMagicSize = (s: SizeId): void => { currentSize = s; engine?.setSize(s); colouring?.setSize(s); };
+export const magicUndo = (): void => (colouring ? colouring.undo() : engine?.undo());
+export const magicClear = (): void => (colouring ? colouring.clear() : engine?.clear());
 export const getMagicSnapshot = (): EngineSnapshot | null => lastSnapshot;
+export const getMagicColouringSnapshot = (): ColouringSnapshot | null => colouringSnap;
 export const setMagicCompletionCallback = (cb: (() => void) | null): void => { completionCb = cb; };
+
+/** Enter/leave guided colouring. Pass a page id to enter, null to return to freeform. */
+export const setMagicColouringPage = (pageId: string | null): void => {
+    if (!pageId) { colouring = null; colouringSnap = null; return; }
+    const page = getColouringPage(pageId);
+    if (!page) { colouring = null; return; }
+    colouring = new ColouringEngine(page, canvasW || 1280, canvasH || 720, { perfTier: perfTier(), reducedMotion: reducedMotion() });
+    colouring.setColour(currentColour);
+    colouring.setSize(currentSize);
+    colouring.setCompletionCallback(() => completionCb?.());
+};
 export const setMagicUiRegions = (rects: { x: number; y: number; w: number; h: number }[]): void => { uiRegions = rects; };
 
 const inUiRegion = (p: { x: number; y: number } | null): boolean => {
@@ -130,15 +148,20 @@ export const magicCanvasFrame = (
     // Suppress drawing during countdown or while the pointer is over UI controls.
     const overUi = inUiRegion(pointer);
     const pinch = rawPinch && !countdown && !overUi;
+    const input = { pointer, pinch, hasHand: hasHand && !overUi, now: frameData.timestamp, confidence };
+
+    // Guided colouring takes over when a page is active (its own engine).
+    if (colouring) {
+        if (colouringSnap === null || canvasW !== width || canvasH !== height) colouring.resize(width, height);
+        const prevDone = colouringSnap?.completed ?? false;
+        colouringSnap = colouring.update(input);
+        colouring.render(ctx, frameData.timestamp);
+        if (colouringSnap.completed && !prevDone && completionCb) completionCb();
+        return;
+    }
 
     const prevCompleted = lastSnapshot?.challenge?.completed ?? false;
-    lastSnapshot = engine.update({
-        pointer,
-        pinch,
-        hasHand: hasHand && !overUi,
-        now: frameData.timestamp,
-        confidence,
-    });
+    lastSnapshot = engine.update(input);
     engine.render(ctx, frameData.timestamp);
 
     if (lastSnapshot.challengeJustCompleted && !prevCompleted && completionCb) {
