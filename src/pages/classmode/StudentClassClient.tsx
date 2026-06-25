@@ -139,6 +139,7 @@ export default function StudentClassClient() {
 
     // ── Central updater: call getStudentClassState + set classroom state ─
     const syncFromServer = useCallback(async (sessionId: string, studentId: string) => {
+        try {
         const result = await fetchStudentClassState(sessionId, studentId);
         if (result.state?.error) {
             if (result.state.error === 'STUDENT_NOT_FOUND' || result.state.error === 'SESSION_NOT_FOUND') {
@@ -187,6 +188,12 @@ export default function StudentClassClient() {
             ts: Date.now(),
         };
         try { sessionStorage.setItem(RECONNECT_KEY, JSON.stringify(memo)); } catch { /* ignore */ }
+        } catch (e) {
+            // Transient network/Realtime failure — keep current UI; the 10s
+            // heartbeat and reconnect retry. Never strand the child on a stale
+            // screen, and never leave an unhandled promise rejection.
+            console.warn('[StudentClassClient] syncFromServer failed (will retry)', e);
+        }
     }, []);
 
     // ── Try to auto-rejoin from sessionStorage on mount ────────────

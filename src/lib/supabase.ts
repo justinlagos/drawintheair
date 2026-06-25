@@ -994,8 +994,14 @@ let realtimeRef = 0;
 const channels = new Map<string, RealtimeChannel>();
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 
+// Reconnect with exponential backoff (capped) so a sustained Realtime outage
+// doesn't hammer the server every 2s, and concurrent closes don't stack timers.
+let reconnectAttempts = 0;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
 function connectRealtime() {
   if (realtimeSocket?.readyState === WebSocket.OPEN) return;
+  if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
 
   const wsUrl = SUPABASE_URL.replace('https://', 'wss://').replace('http://', 'ws://');
   realtimeSocket = new WebSocket(
@@ -1003,6 +1009,7 @@ function connectRealtime() {
   );
 
   realtimeSocket.onopen = () => {
+    reconnectAttempts = 0; // healthy connection — reset backoff
     // Re-subscribe all channels
     channels.forEach((_ch, topic) => {
       sendPhxJoin(topic);
@@ -1040,8 +1047,10 @@ function connectRealtime() {
 
   realtimeSocket.onclose = () => {
     if (heartbeatInterval) clearInterval(heartbeatInterval);
-    // Reconnect after 2s
-    setTimeout(connectRealtime, 2000);
+    if (reconnectTimer) return; // a reconnect is already scheduled
+    const delay = Math.min(30000, 1000 * 2 ** reconnectAttempts) + Math.floor(Math.random() * 500);
+    reconnectAttempts += 1;
+    reconnectTimer = setTimeout(() => { reconnectTimer = null; connectRealtime(); }, delay);
   };
 }
 
@@ -1108,8 +1117,16 @@ export function subscribeToTable(
   }
 
   const channel = channels.get(topic)!;
-  const entry = { event, table, filter, callback };
-  channel.callbacks.push(entry);
+  // Dedup: a re-run of the same effect (e.g. React Strict Mode setup-setup, or
+  // a reconnect) must not register the same callback twice, or every Realtime
+  // event would fire it N times (duplicate re-syncs / duplicate score submits).
+  let entry = channel.callbacks.find(
+    (c) => c.callback === callback && c.table === table && c.event === event && c.filter === filter,
+  );
+  if (!entry) {
+    entry = { event, table, filter, callback };
+    channel.callbacks.push(entry);
+  }
 
   // Connect and subscribe
   connectRealtime();
