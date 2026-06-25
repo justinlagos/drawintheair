@@ -1,8 +1,8 @@
 /**
  * TracingModePlayful — HUD shell for the redesigned (V2) tracing experience.
  *
- * Mounted only when `tracingPlayfulUiV1` is ON (App falls back to the legacy
- * PreWritingMode otherwise). The canvas track + vehicle are drawn by the
+ * The single tracing experience (legacy PreWritingMode retired June 2026).
+ * The canvas track + vehicle are drawn by the
  * shared engine via the TrackingLayer onFrame adapter (tracingPlayfulFrame);
  * this component owns only the lightweight DOM HUD: a compact activity card,
  * a calm progress bar, ONE contextual coaching line, and the restart control,
@@ -25,7 +25,6 @@ import {
     setPlayfulSection,
     setPlayfulActive,
 } from './tracingPlayfulFrame';
-import { featureFlags } from '../../../core/featureFlags';
 import { logEvent } from '../../../lib/analytics';
 import { GestureLayer } from '../../../components/GestureLayer';
 
@@ -69,6 +68,7 @@ export const TracingModePlayful = ({
     const [totalStrokes, setTotalStrokes] = useState(1);
     const [message, setMessage] = useState<string | null>(null);
     const [showCelebration, setShowCelebration] = useState(false);
+    const [initError, setInitError] = useState(false);
     // Start in the category picker only when selection is allowed. When a
     // specific category was assigned, enter the `draw` phase directly.
     const [phase, setPhase] = useState<'sections' | 'draw'>(
@@ -93,8 +93,9 @@ export const TracingModePlayful = ({
         // and disable the flag so App swaps back to the legacy experience
         // BEFORE gameplay begins (no code rollback needed).
         if (playfulInitFailed()) {
-            console.error('[TracingModePlayful] V2 init failed — falling back to legacy PreWritingMode');
-            featureFlags.setFlags({ tracingPlayfulUiV1: false });
+            console.error('[TracingModePlayful] tracing engine init failed — exiting to menu');
+            logEvent('tracing_init_failed', { game_mode: 'pre-writing' });
+            setInitError(true);
             return;
         }
 
@@ -215,6 +216,20 @@ export const TracingModePlayful = ({
         setPlayfulActive(true);
         setPhase('draw');
     };
+
+    if (initError) {
+        return (
+            <>
+                {onExit && <GameTopBar onBack={onExit} />}
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing.lg, padding: tokens.spacing.lg, zIndex: tokens.zIndex.hud }}>
+                    <KidObjectiveCard icon="🙈">Let's try that again in a moment.</KidObjectiveCard>
+                    {onExit && (
+                        <KidButton data-gesture variant="primary" size="lg" onClick={onExit} icon={<span>🏠</span>}>Back</KidButton>
+                    )}
+                </div>
+            </>
+        );
+    }
 
     if (phase === 'sections') {
         return <SectionPicker sections={sections} onPick={startSection} onExit={onExit} />;

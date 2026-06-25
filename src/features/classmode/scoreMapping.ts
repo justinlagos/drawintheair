@@ -8,7 +8,7 @@ import { getScore as getBubbleScore } from '../modes/calibration/bubbleCalibrati
 import { getScore as getSortScore } from '../modes/sortAndPlace/sortAndPlaceLogic';
 import { getScore as getColourScore } from '../modes/colourBuilder/colourBuilderLogic';
 import { getBalloonMathScore } from '../modes/balloonMath/balloonMathLogic';
-import { getProgress as getPreWritingProgress } from '../modes/preWriting/preWritingLogic';
+import { getTracingProgress } from '../modes/tracing/tracingResolver';
 import { getRainbowTotalCompleted } from '../modes/rainbowBridge/rainbowBridgeLogic';
 import { getSpellingWordsSpelled } from '../modes/gestureSpelling/gestureSpellingLogic';
 
@@ -41,7 +41,7 @@ export function getRawScore(mode: GameModeId): number {
     case 'balloon-math':
       return getBalloonMathScore();
     case 'pre-writing':
-      return Math.round(getPreWritingProgress() * 100); // 0-100 scale
+      return Math.round(getTracingProgress() * 100); // 0-100 scale (active tracing engine)
     case 'rainbow-bridge':
       return getRainbowTotalCompleted();
     case 'gesture-spelling':

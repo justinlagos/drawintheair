@@ -1,49 +1,50 @@
 /**
- * Canonical Tracing resolver — unit tests.
+ * Canonical Tracing resolver - unit tests.
  *
- * Guards the root-cause fix: solo play and classroom play must resolve the SAME
- * tracing engine, and the legacy engine must only ever appear when the flag is
- * explicitly off. Before the fix the classroom hard-coded the legacy engine
- * regardless of the flag.
+ * Guards the root-cause fix: solo play and classroom play resolve the SAME
+ * tracing engine, and the legacy engine has been fully retired - there is now
+ * only ONE tracing engine regardless of the tracingPlayfulUiV1 flag.
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { featureFlags } from '../src/core/featureFlags';
 import {
     TRACING_ACTIVITY_ID,
     getTracingFrameLogic,
+    getTracingProgress,
     isPlayfulTracingActive,
 } from '../src/features/modes/tracing/tracingResolver';
 import { playfulTracingFrame } from '../src/features/modes/tracing/tracingPlayfulFrame';
-import { preWritingLogic } from '../src/features/modes/preWriting/preWritingLogic';
 
 describe('canonical tracing resolver', () => {
-    // Restore the production default after each case.
     afterEach(() => featureFlags.setFlags({ tracingPlayfulUiV1: true }));
 
     it('canonical activity id is "pre-writing"', () => {
         expect(TRACING_ACTIVITY_ID).toBe('pre-writing');
     });
 
-    it('flag ON resolves to the playful (V2) engine — never the legacy one', () => {
+    it('resolves to the single playful engine when the flag is ON', () => {
         featureFlags.setFlags({ tracingPlayfulUiV1: true });
         expect(isPlayfulTracingActive()).toBe(true);
         expect(getTracingFrameLogic()).toBe(playfulTracingFrame);
-        expect(getTracingFrameLogic()).not.toBe(preWritingLogic);
     });
 
-    it('flag OFF resolves to the legacy engine', () => {
+    it('legacy engine retired: even with the flag OFF the engine stays playful', () => {
         featureFlags.setFlags({ tracingPlayfulUiV1: false });
-        expect(isPlayfulTracingActive()).toBe(false);
-        expect(getTracingFrameLogic()).toBe(preWritingLogic);
+        // The legacy preWritingLogic no longer exists; the resolver must never
+        // fall back to a second engine.
+        expect(getTracingFrameLogic()).toBe(playfulTracingFrame);
     });
 
     it('solo and classroom resolve the SAME engine (single source of truth)', () => {
-        featureFlags.setFlags({ tracingPlayfulUiV1: true });
-        const solo = getTracingFrameLogic();      // src/App.tsx path
+        const solo = getTracingFrameLogic();       // src/App.tsx path
         const classroom = getTracingFrameLogic();  // StudentClassClient path
         expect(solo).toBe(classroom);
+    });
 
-        featureFlags.setFlags({ tracingPlayfulUiV1: false });
-        expect(getTracingFrameLogic()).toBe(getTracingFrameLogic());
+    it('getTracingProgress returns a number in [0,1] (0 when no engine is mounted)', () => {
+        const p = getTracingProgress();
+        expect(typeof p).toBe('number');
+        expect(p).toBeGreaterThanOrEqual(0);
+        expect(p).toBeLessThanOrEqual(1);
     });
 });

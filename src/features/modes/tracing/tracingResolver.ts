@@ -8,8 +8,7 @@
  * here, so callers can import either from one module.
  */
 import { featureFlags } from '../../../core/featureFlags';
-import { preWritingLogic } from '../preWriting/preWritingLogic';
-import { playfulTracingFrame } from './tracingPlayfulFrame';
+import { playfulTracingFrame, getPlayfulSnapshot } from './tracingPlayfulFrame';
 
 /** Canonical activity id for the Tracing experience (solo + classroom). */
 export const TRACING_ACTIVITY_ID = 'pre-writing' as const;
@@ -23,8 +22,16 @@ export const isPlayfulTracingActive = (): boolean =>
  * same engine the render shell uses, so the shell and the frame loop can never
  * disagree about which tracing engine is running.
  */
-export const getTracingFrameLogic = () =>
-    isPlayfulTracingActive() ? playfulTracingFrame : preWritingLogic;
+export const getTracingFrameLogic = () => playfulTracingFrame;
+
+/**
+ * Current tracing progress (0-1) from the ACTIVE engine. Classroom scoring
+ * (scoreMapping) reads this so the star score reflects the SAME engine the
+ * child traced on. The legacy engine was retired (June 2026); this is the
+ * playful engine's overall progress.
+ */
+export const getTracingProgress = (): number =>
+    getPlayfulSnapshot()?.overallProgress ?? 0;
 
 export interface CanonicalTracingProps {
     onExit?: () => void;

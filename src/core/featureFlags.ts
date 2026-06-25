@@ -33,10 +33,9 @@ export interface FeatureFlags {
     tracingStreak: boolean;          // Tracing streak meter
     narrator: boolean;               // Safe narrator TTS
 
-    // Playful tracing redesign (V2 engine). When ON, the 'pre-writing' mode
-    // mounts the redesigned tracing experience; when OFF it falls back to the
-    // legacy PreWritingMode unchanged. Production kill switch: set to false
-    // (setFlags / disableFlag) — no code rollback needed.
+    // Playful tracing engine. The legacy PreWritingMode was retired (June 2026)
+    // so this is the only tracing engine; the flag is retained for telemetry /
+    // exposure attribution only and no longer switches engines.
     tracingPlayfulUiV1: boolean;
 
     // Magic Canvas redesign of Free Paint. When ON, the 'free' mode mounts the
@@ -71,8 +70,7 @@ const DEFAULT_FLAGS: FeatureFlags = {
     // fallback, so the surface area is small. Set this to false to silence
     // ALL voice cues across the app.
     narrator: true,
-    // Playful tracing redesign — LIVE (dev + production). Kill switch:
-    // featureFlags.setFlags({ tracingPlayfulUiV1: false }) or ?flags=!tracingPlayfulUiV1.
+    // Playful tracing engine — the only tracing engine (legacy retired June 2026).
     tracingPlayfulUiV1: true,
     // Magic Canvas (Free Paint redesign) — LIVE (dev + production). Kill switch:
     // featureFlags.setFlags({ freePaintMagicCanvasV1: false }) or ?flags=!freePaintMagicCanvasV1.

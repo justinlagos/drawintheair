@@ -53,7 +53,6 @@ import { GestureSpellingMode } from '../../features/modes/gestureSpelling/Gestur
 
 // Per-frame logic functions
 import { freePaintLogic } from '../../features/modes/freePaintLogic';
-import { preWritingLogic } from '../../features/modes/preWriting/preWritingLogic';
 import { bubbleCalibrationLogic } from '../../features/modes/calibration/bubbleCalibrationLogic';
 import { sortAndPlaceLogic } from '../../features/modes/sortAndPlace/sortAndPlaceLogic';
 import { wordSearchLogic } from '../../features/modes/wordSearch/wordSearchLogic';
@@ -72,10 +71,11 @@ type ReconnectMemo = {
     activityVersion: number; assignments: ActivityAssignment[]; ts: number;
 };
 
-const LOGIC_MAP: Record<GameModeId, unknown> = {
+// Tracing ('pre-writing') is intentionally absent — it resolves via
+// getTracingFrameLogic() (the canonical engine), never this static map.
+const LOGIC_MAP: Partial<Record<GameModeId, unknown>> = {
     'calibration': bubbleCalibrationLogic,
     'free': freePaintLogic,
-    'pre-writing': preWritingLogic,
     'sort-and-place': sortAndPlaceLogic,
     'word-search': wordSearchLogic,
     'colour-builder': colourBuilderLogic,
