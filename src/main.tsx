@@ -33,6 +33,10 @@ import { ParentProvider } from './context/ParentContext.tsx'
 import { KidStyles } from './styles/KidStyles.tsx'
 import { lazyWithRetry } from './lib/lazyWithRetry.tsx'
 import { BrowserRouter } from 'react-router-dom'
+import { registerBuildInfo } from './lib/buildInfo.ts'
+
+// Publish build identity (commit SHA / env) to window for admin/debug only.
+registerBuildInfo();
 
 // ── Observability bootstrap ────────────────────────────────────────────────
 // Initialise Sentry + PostHog BEFORE React mounts so even the very first

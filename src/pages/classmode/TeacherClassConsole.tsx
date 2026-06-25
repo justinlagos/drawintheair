@@ -25,6 +25,7 @@ import { generateSessionCode } from '../../features/classmode/sessionCode';
 import { MODE_LABELS, SCOREABLE_MODES } from '../../features/classmode/scoreMapping';
 import type { GameModeId } from '../../features/classmode/scoreMapping';
 import { conductorApi } from '../../features/classmode/conductor/api';
+import { joinApi } from '../../features/classmode/conductor/joinApi';
 import { avatarFromSeed, avatarForStudent } from '../../features/classmode/conductor/avatars';
 import type {
     SessionRow,
@@ -34,6 +35,7 @@ import type {
     ClassSummary,
     EngagementStatus,
 } from '../../features/classmode/conductor/types';
+import type { AssignActivityRequest } from '../../features/classmode/conductor/joinTypes';
 import './classmode.css';
 import './conductor.css';
 
@@ -155,6 +157,16 @@ export default function TeacherClassConsole() {
             setCreating(false);
             return;
         }
+
+        // Set network fingerprint for same-network enforcement
+        if (data) {
+            try {
+                await joinApi.setNetworkFingerprint(data.id);
+            } catch {
+                // Non-critical: network enforcement degrades gracefully
+            }
+        }
+
         if (data) setActiveSession(data);
         setCreating(false);
     }, [user, recent]);
@@ -348,6 +360,8 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
     const [summaryOpen, setSummaryOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [now, setNow] = useState(Date.now());
+    const [assignModal, setAssignModal] = useState<{ student: StudentRow; mode: 'individual' | 'bulk'; selectedStudentIds?: Set<string> } | null>(null);
+    const [bulkSelection, setBulkSelection] = useState<Set<string> | null>(null);
 
     // Tick every second so the elapsed-time pill stays alive.
     useEffect(() => {
@@ -448,9 +462,23 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
     }, [session.id, onSessionUpdate]);
 
     // ── Actions ────────────────────────────────────────────────────
+    const [startingActivity, setStartingActivity] = useState<GameModeId | null>(null);
     const handleStartActivity = useCallback(async (activity: GameModeId) => {
-        try { setError(null); await conductorApi.startActivity(session.id, activity); }
-        catch (e) { setError((e as Error).message); }
+        try {
+            setError(null);
+            setStartingActivity(activity);
+            const result = await conductorApi.startActivity(session.id, activity);
+            // The result includes: activity_version, status, etc.
+            // The Realtime subscription on the sessions table will notify all
+            // connected students. The return value is the authoritative confirmation.
+            if (result.status !== 'playing' || !result.activity_version) {
+                console.warn('startActivity: unexpected server response', result);
+            }
+        } catch (e) {
+            setError((e as Error).message);
+        } finally {
+            setStartingActivity(null);
+        }
     }, [session.id]);
 
     // If pause/resume errors with "no active activity" the server has
@@ -491,6 +519,43 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
         try {
             await conductorApi.endSession(session.id);
             setSummaryOpen(true);
+        } catch (e) {
+            setError((e as Error).message);
+        }
+    }, [session.id]);
+
+    const handleAssignActivities = useCallback(async (
+        studentId: string,
+        activities: AssignActivityRequest[],
+    ) => {
+        try {
+            setError(null);
+            await joinApi.setStudentAssignments(session.id, studentId, activities);
+        } catch (e) {
+            setError((e as Error).message);
+        }
+    }, [session.id]);
+
+    const handleBulkAssign = useCallback(async (
+        studentIds: string[],
+        activities: AssignActivityRequest[],
+    ) => {
+        try {
+            setError(null);
+            await Promise.all(
+                studentIds.map((sid) =>
+                    joinApi.setStudentAssignments(session.id, sid, activities),
+                ),
+            );
+        } catch (e) {
+            setError((e as Error).message);
+        }
+    }, [session.id]);
+
+    const handleSetDefaults = useCallback(async (activities: string[]) => {
+        try {
+            setError(null);
+            await joinApi.setClassroomDefaults(session.id, activities);
         } catch (e) {
             setError((e as Error).message);
         }
@@ -577,8 +642,44 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
                                     student={s}
                                     onClickStats={() => setStatsForStudent(s)}
                                     onKick={() => handleKick(s)}
+                                    onAssign={() => setAssignModal({ student: s, mode: 'individual' })}
                                 />
                             ))}
+                            {activeStudents.length > 1 && (
+                                <div className="cd-bulk-actions">
+                                    {bulkSelection ? (
+                                        <>
+                                            <button
+                                                className="cm-btn-secondary"
+                                                onClick={() => setAssignModal({
+                                                    student: activeStudents[0],
+                                                    mode: 'bulk',
+                                                    selectedStudentIds: bulkSelection,
+                                                })}
+                                                style={{ padding: '4px 12px', fontSize: '0.8rem' }}
+                                                disabled={bulkSelection.size === 0}
+                                            >
+                                                Assign to {bulkSelection.size} selected
+                                            </button>
+                                            <button
+                                                className="cm-btn-secondary"
+                                                onClick={() => setBulkSelection(null)}
+                                                style={{ padding: '4px 12px', fontSize: '0.8rem' }}
+                                            >
+                                                Clear selection
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <button
+                                            className="cm-btn-secondary"
+                                            onClick={() => setBulkSelection(new Set(activeStudents.map(s => s.id)))}
+                                            style={{ padding: '4px 12px', fontSize: '0.8rem' }}
+                                        >
+                                            Select all
+                                        </button>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
                 </aside>
@@ -609,6 +710,7 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
                                     ? 'Pick the first activity'
                                     : 'Pick the next activity'
                             }
+                            startingActivity={startingActivity}
                         />
                     )}
 
@@ -643,6 +745,26 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
                     onKick={async () => { await handleKick(statsForStudent); setStatsForStudent(null); }}
                 />
             )}
+
+            {assignModal && (
+                <AssignActivitiesModal
+                    sessionId={session.id}
+                    student={assignModal.mode === 'individual' ? assignModal.student : null}
+                    studentIds={assignModal.mode === 'bulk' && assignModal.selectedStudentIds
+                        ? Array.from(assignModal.selectedStudentIds) : null}
+                    onSave={async (activities) => {
+                        if (assignModal.mode === 'individual' && assignModal.student) {
+                            await handleAssignActivities(assignModal.student.id, activities);
+                        } else if (assignModal.mode === 'bulk' && assignModal.selectedStudentIds) {
+                            await handleBulkAssign(Array.from(assignModal.selectedStudentIds), activities);
+                        }
+                        setAssignModal(null);
+                        setBulkSelection(null);
+                    }}
+                    onSetDefaults={handleSetDefaults}
+                    onClose={() => { setAssignModal(null); setBulkSelection(null); }}
+                />
+            )}
         </div>
     );
 }
@@ -664,8 +786,8 @@ function ConductorTopBar({ userName, userAvatarUrl, onSignOut }: { userName: str
     );
 }
 
-function StudentRosterCard({ student, onClickStats, onKick }: {
-    student: StudentRow; onClickStats: () => void; onKick: () => void;
+function StudentRosterCard({ student, onClickStats, onKick, onAssign }: {
+    student: StudentRow; onClickStats: () => void; onKick: () => void; onAssign?: () => void;
 }) {
     const eng = engagementOf(student);
     const avatar = avatarFromSeed(student.avatar_seed ?? `${student.session_id}:${student.name.toLowerCase()}`);
@@ -678,9 +800,16 @@ function StudentRosterCard({ student, onClickStats, onKick }: {
                     {eng === 'engaged' ? '🟢 engaged' : eng === 'stuck' ? '🟡 stuck' : '⚫ offline'}
                 </span>
             </button>
-            <button className="cd-roster-card-kick" onClick={onKick} aria-label={`Remove ${student.name} from class`}>
-                ✕
-            </button>
+            <div className="cd-roster-actions">
+                {onAssign && (
+                    <button className="cd-roster-btn-assign" onClick={onAssign} aria-label={`Assign activities to ${student.name}`} title="Assign activities">
+                        📋
+                    </button>
+                )}
+                <button className="cd-roster-card-kick" onClick={onKick} aria-label={`Remove ${student.name} from class`}>
+                    ✕
+                </button>
+            </div>
         </div>
     );
 }
@@ -715,23 +844,36 @@ function ActivityNowPlaying({ activity, onPause, onResume, onEnd }: {
     );
 }
 
-function ActivityLauncher({ onStart, heading }: { onStart: (a: GameModeId) => void; heading: string }) {
+function ActivityLauncher({ onStart, heading, startingActivity }: {
+    onStart: (a: GameModeId) => void; heading: string; startingActivity: GameModeId | null;
+}) {
     return (
         <div className="cd-launcher">
             <h2>{heading}</h2>
             <div className="cm-activity-grid">
                 {SCOREABLE_MODES.map((modeId) => {
                     const mode = MODE_LABELS[modeId];
+                    const isStarting = startingActivity === modeId;
                     return (
                         <button
                             key={modeId}
                             type="button"
-                            className="cm-activity-card cd-launcher-card"
-                            onClick={() => onStart(modeId)}
+                            className={`cm-activity-card cd-launcher-card${isStarting ? ' cd-launcher-starting' : ''}`}
+                            onClick={() => !isStarting && onStart(modeId)}
+                            disabled={isStarting || startingActivity !== null}
                         >
-                            <div className="cm-activity-icon" aria-hidden>{mode.icon}</div>
-                            <div className="cm-activity-name">{mode.title}</div>
-                            <div className="cm-activity-subtitle">{mode.subtitle}</div>
+                            {isStarting ? (
+                                <div className="cd-launcher-loading">
+                                    <div className="cm-waiting-spinner" />
+                                    <span>Starting…</span>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="cm-activity-icon" aria-hidden>{mode.icon}</div>
+                                    <div className="cm-activity-name">{mode.title}</div>
+                                    <div className="cm-activity-subtitle">{mode.subtitle}</div>
+                                </>
+                            )}
                         </button>
                     );
                 })}
@@ -964,6 +1106,167 @@ function ClassSummaryView({ sessionId, onDone, userName, userAvatarUrl, onSignOu
                     <button className="cm-btn-primary" onClick={onDone}>Back to dashboard</button>
                     <button className="cm-btn-secondary" onClick={() => window.print()}>Print summary</button>
                 </div>
+            </div>
+        </div>
+    );
+}
+
+// ── Assign Activities Modal ──────────────────────────────────────
+function AssignActivitiesModal({ sessionId, student, studentIds, onSave, onSetDefaults, onClose }: {
+    sessionId: string;
+    student: StudentRow | null;
+    studentIds: string[] | null;
+    onSave: (activities: AssignActivityRequest[]) => Promise<void>;
+    onSetDefaults: (activities: string[]) => Promise<void>;
+    onClose: () => void;
+}) {
+    const [selected, setSelected] = useState<Set<GameModeId>>(new Set(SCOREABLE_MODES));
+    const [order, setOrder] = useState<GameModeId[]>([...SCOREABLE_MODES]);
+    const [saving, setSaving] = useState(false);
+    // When editing a single student, preload their CURRENT assignment so the
+    // teacher sees and edits what's actually assigned (not a blank "all").
+    const [loading, setLoading] = useState<boolean>(Boolean(student));
+
+    useEffect(() => {
+        if (!student) { setLoading(false); return; }
+        let cancelled = false;
+        (async () => {
+            try {
+                const existing = await joinApi.getStudentAssignments(student.id, sessionId);
+                if (cancelled || !existing || existing.length === 0) return;
+                const enabled = existing
+                    .filter((a) => a.is_enabled)
+                    .sort((a, b) => a.sequence_order - b.sequence_order)
+                    .map((a) => a.activity as GameModeId)
+                    .filter((a) => SCOREABLE_MODES.includes(a));
+                if (enabled.length > 0) {
+                    setSelected(new Set(enabled));
+                    setOrder([...enabled, ...SCOREABLE_MODES.filter((m) => !enabled.includes(m))]);
+                }
+            } catch { /* keep the all-selected default on any error */ }
+            finally { if (!cancelled) setLoading(false); }
+        })();
+        return () => { cancelled = true; };
+    }, [student, sessionId]);
+
+    const toggle = (mode: GameModeId) => {
+        const next = new Set(selected);
+        if (next.has(mode)) {
+            if (next.size > 1) next.delete(mode);
+        } else {
+            next.add(mode);
+        }
+        setSelected(next);
+        setOrder((cur) => {
+            if (cur.includes(mode)) return cur;
+            return [...cur, mode];
+        });
+    };
+
+    const moveUp = (mode: GameModeId) => {
+        const idx = order.indexOf(mode);
+        if (idx <= 0) return;
+        const next = [...order];
+        [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+        setOrder(next);
+    };
+
+    const moveDown = (mode: GameModeId) => {
+        const idx = order.indexOf(mode);
+        if (idx < 0 || idx >= order.length - 1) return;
+        const next = [...order];
+        [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+        setOrder(next);
+    };
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            const activities = order
+                .filter((a) => selected.has(a))
+                .map((a, i) => ({ activity: a, sequence_order: i }));
+            await onSave(activities);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleSetDefault = async () => {
+        setSaving(true);
+        try {
+            await onSetDefaults(order.filter((a) => selected.has(a)));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const label = student ? `${student.name}` : `${studentIds?.length ?? 0} students`;
+
+    return (
+        <div className="cd-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+            <div className="cd-modal cd-modal-wide">
+                <header className="cd-modal-header">
+                    <div>
+                        <h2>Assign activities</h2>
+                        <p className="cd-modal-sub">{loading ? 'Loading current activities…' : label}</p>
+                    </div>
+                    <button className="cd-modal-close" onClick={onClose} aria-label="Close">✕</button>
+                </header>
+
+                <div className="cd-assign-grid">
+                    {SCOREABLE_MODES.map((modeId) => {
+                        const mode = MODE_LABELS[modeId];
+                        const isOn = selected.has(modeId);
+                        return (
+                            <button
+                                key={modeId}
+                                type="button"
+                                className={`cd-assign-card ${isOn ? 'cd-assign-on' : 'cd-assign-off'}`}
+                                onClick={() => toggle(modeId)}
+                            >
+                                <span className="cd-assign-icon">{mode.icon}</span>
+                                <span className="cd-assign-name">{mode.title}</span>
+                                {isOn && (
+                                    <span className="cd-assign-order">
+                                        #{order.indexOf(modeId) + 1}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {selected.size > 1 && (
+                    <div className="cd-assign-order-section">
+                        <h3>Reorder activities</h3>
+                        <div className="cd-assign-order-list">
+                            {order.filter((a) => selected.has(a)).map((modeId) => {
+                                const mode = MODE_LABELS[modeId];
+                                return (
+                                    <div key={modeId} className="cd-assign-order-row">
+                                        <span className="cd-assign-order-icon">{mode.icon}</span>
+                                        <span className="cd-assign-order-name">{mode.title}</span>
+                                        <div className="cd-assign-order-btns">
+                                            <button onClick={() => moveUp(modeId)} disabled={order.indexOf(modeId) === 0}>▲</button>
+                                            <button onClick={() => moveDown(modeId)} disabled={order.indexOf(modeId) >= order.length - 1}>▼</button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                <footer className="cd-modal-footer">
+                    <button className="cm-btn-secondary" onClick={handleSetDefault} disabled={saving || loading || selected.size === 0}>
+                        {saving ? 'Saving…' : 'Save as classroom default'}
+                    </button>
+                    <div style={{ flex: 1 }} />
+                    <button className="cm-btn-secondary" onClick={onClose}>Cancel</button>
+                    <button className="cm-btn-primary" onClick={handleSave} disabled={saving || loading || selected.size === 0}>
+                        {saving ? 'Saving…' : 'Assign'}
+                    </button>
+                </footer>
             </div>
         </div>
     );

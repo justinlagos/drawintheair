@@ -34,6 +34,8 @@ export interface StartActivityResult {
     session_activity_id: string;
     ordinal: number;
     state: 'playing';
+    status: string;
+    activity_version: number;
 }
 
 export interface StateChangeResult {

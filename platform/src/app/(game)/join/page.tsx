@@ -1,16 +1,35 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
-import type { Database } from '@/lib/supabase/types'
-
-type SessionRow = Database['public']['Tables']['sessions']['Row']
 
 type Step = 'code' | 'name' | 'waiting'
+
+interface JoinValidationResult {
+  valid: boolean;
+  code: string;
+  session?: {
+    id: string;
+    code: string;
+    activity: string | null;
+    class_state: string;
+    current_activity_id: string | null;
+    timer_seconds: number;
+  };
+  retry_after_seconds?: number;
+}
+
+const ERROR_MESSAGES: Record<string, string> = {
+  INVALID_CODE: "We couldn't find that class. Check the code and try again.",
+  CODE_EXPIRED: 'This class session has ended. Ask your teacher for a new code.',
+  SESSION_INACTIVE: 'This class session is no longer active. Ask your teacher for a new code.',
+  NETWORK_MISMATCH: 'Connect to the same school Wi-Fi as your teacher, then try again.',
+  RATE_LIMITED: 'Too many attempts. Please wait a moment and try again.',
+};
 
 export default function JoinPage() {
   const router = useRouter()
@@ -21,47 +40,55 @@ export default function JoinPage() {
   const [name, setName] = useState('')
   const [isValidating, setIsValidating] = useState(false)
   const [error, setError] = useState('')
-  const [session, setSession] = useState<SessionRow | null>(null)
+  const [session, setSession] = useState<{ id: string; code: string; timer_seconds?: number } | null>(null)
   const [studentId, setStudentId] = useState<string | null>(null)
   const [studentCount, setStudentCount] = useState(0)
+
+  const validateCode = useCallback(async (rawCode: string) => {
+    const trimmed = rawCode.trim()
+    if (!/^\d{4}$/.test(trimmed)) return
+
+    setIsValidating(true)
+    setError('')
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/rpc/class_validate_join`,
+        {
+          method: 'POST',
+          headers: {
+            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ in_code: trimmed }),
+        }
+      )
+      const result: JoinValidationResult = await res.json()
+
+      if (!result.valid || !result.session) {
+        setError(ERROR_MESSAGES[result.code] || 'Invalid code. Please check and try again.')
+        setCode('')
+        setIsValidating(false)
+        return
+      }
+
+      setSession(result.session)
+      setStep('name')
+      setIsValidating(false)
+    } catch (err) {
+      console.error('Validation error:', err)
+      setError('An error occurred. Please try again.')
+      setCode('')
+      setIsValidating(false)
+    }
+  }, [])
 
   // Validate code on 4th digit
   useEffect(() => {
     if (code.length !== 4) return
-
-    const validateCode = async () => {
-      setIsValidating(true)
-      setError('')
-
-      try {
-        const { data: sessionData, error: sessionError } = await supabase
-          .from('sessions')
-          .select('*')
-          .eq('session_code', code)
-          .eq('status', 'active')
-          .single()
-
-        if (sessionError || !sessionData) {
-          setError('Invalid session code. Please check and try again.')
-          setCode('')
-          setIsValidating(false)
-          return
-        }
-
-        setSession(sessionData)
-        setStep('name')
-        setIsValidating(false)
-      } catch (err) {
-        console.error('Validation error:', err)
-        setError('An error occurred. Please try again.')
-        setCode('')
-        setIsValidating(false)
-      }
-    }
-
-    const timer = setTimeout(validateCode, 300)
+    const timer = setTimeout(() => validateCode(code), 300)
     return () => clearTimeout(timer)
-  }, [code, supabase])
+  }, [code, validateCode])
 
   const handleCodeInput = (digit: string) => {
     if (code.length < 4 && /^\d$/.test(digit)) {
@@ -81,35 +108,42 @@ export default function JoinPage() {
     setError('')
 
     try {
-      // Insert student into session
-      const { data: studentData, error: studentError } = await supabase
-        .from('session_students')
-        .insert({
-          session_id: session.id,
-          student_name: name.trim(),
-          is_active: true,
-        })
-        .select()
-        .single()
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/rpc/class_join_with_network`,
+        {
+          method: 'POST',
+          headers: {
+            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            in_session_id: session.id,
+            in_name: name.trim(),
+          }),
+        }
+      )
 
-      if (studentError || !studentData) {
-        console.error('Student creation failed:', studentError)
-        setError('Failed to join session. Please try again.')
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}))
+        const msg = errBody?.message || 'Failed to join. Please try again.'
+        if (msg.includes('network') || msg.includes('NETWORK')) {
+          setError('Connect to the same school Wi-Fi as your teacher, then try again.')
+        } else {
+          setError(msg)
+        }
         setIsValidating(false)
         return
       }
 
-      setStudentId(studentData.id)
+      const data = await res.json()
+      setStudentId(data.id)
 
-      // Store in sessionStorage for later use
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('session_id', session.id)
-        sessionStorage.setItem('student_id', studentData.id)
+        sessionStorage.setItem('student_id', data.id)
         sessionStorage.setItem('student_name', name.trim())
-        sessionStorage.setItem('activity_id', session.metadata?.activity_id || '')
       }
 
-      // Fetch initial student count
       const { data: studentsData } = await supabase
         .from('session_students')
         .select('*')
@@ -141,15 +175,14 @@ export default function JoinPage() {
           filter: `id=eq.${session.id}`,
         },
         (payload) => {
-          const updatedSession = payload.new as SessionRow
-          if (updatedSession.status === 'playing') {
+          const updated = payload.new as { status?: string; class_state?: string }
+          if (updated.status === 'playing' || updated.class_state === 'in_activity') {
             router.push('/join/play')
           }
         }
       )
       .subscribe()
 
-    // Also subscribe to student count updates
     const studentChannel = supabase
       .channel(`session:${session.id}:students`)
       .on(
@@ -188,14 +221,12 @@ export default function JoinPage() {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {/* Code Display */}
             <div className="bg-slate-100 p-6 rounded-lg border border-slate-200 text-center">
               <div className="text-5xl font-bold text-orange-500 font-mono tracking-widest">
-                {code.padEnd(4, '•')}
+                {code.padEnd(4, '\u2022')}
               </div>
             </div>
 
-            {/* Number Pad */}
             <div className="grid grid-cols-3 gap-3">
               {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
                 <Button
@@ -226,10 +257,8 @@ export default function JoinPage() {
               </Button>
             </div>
 
-            {/* Error Message */}
             {error && <div className="p-3 bg-red-100 border border-red-300 rounded text-red-700 text-sm">{error}</div>}
 
-            {/* Validation Status */}
             {isValidating && code.length === 4 && (
               <div className="flex items-center justify-center gap-2 text-slate-600">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -295,7 +324,6 @@ export default function JoinPage() {
           </CardHeader>
 
           <CardContent className="space-y-8">
-            {/* Waiting Animation */}
             <div className="space-y-4">
               <div className="text-5xl mb-4">
                 <span className="inline-block animate-bounce" style={{ animationDelay: '0s' }}>
@@ -312,7 +340,6 @@ export default function JoinPage() {
               </div>
             </div>
 
-            {/* Student Count */}
             <div className="bg-slate-100 p-6 rounded-lg border border-slate-200">
               <p className="text-slate-600 text-sm mb-2">Students ready</p>
               <p className="text-4xl font-bold text-orange-500">{studentCount}</p>

@@ -15,7 +15,11 @@ import type { GameModeId } from '../../features/classmode/scoreMapping';
 // Import all game mode components
 import { BubbleCalibration } from '../../features/modes/calibration/BubbleCalibration';
 import { FreePaintMode } from '../../features/modes/FreePaintMode';
-import { PreWritingMode } from '../../features/modes/PreWritingMode';
+// NOTE: This screen is legacy and currently UNROUTED (main.tsx mounts
+// StudentClassClient for /join). Tracing still resolves canonically here so no
+// reachable path can ever mount the old pastel tracing. Recommended for removal.
+import { CanonicalTracingMode } from '../../features/modes/tracing/canonicalTracing';
+import { getTracingFrameLogic, TRACING_ACTIVITY_ID } from '../../features/modes/tracing/tracingResolver';
 import { SortAndPlaceMode } from '../../features/modes/sortAndPlace/SortAndPlaceMode';
 import { WordSearchMode } from '../../features/modes/wordSearch/WordSearchMode';
 import { ColourBuilderMode } from '../../features/modes/colourBuilder/ColourBuilderMode';
@@ -59,7 +63,10 @@ export default function StudentGameScreen() {
   const round = parseInt(sessionStorage.getItem('cm_round') || '1', 10);
   const timerSeconds = parseInt(sessionStorage.getItem('cm_timer') || '90', 10);
 
-  const activeLogic = useMemo(() => LOGIC_MAP[activity], [activity]);
+  const activeLogic = useMemo(
+    () => (activity === TRACING_ACTIVITY_ID ? getTracingFrameLogic() : LOGIC_MAP[activity]),
+    [activity],
+  );
 
   const handleRoundEnd = useCallback((stars: number) => {
     setEarnedStars(stars);
@@ -118,7 +125,7 @@ export default function StudentGameScreen() {
                 <FreePaintMode frameRef={frameRef} onExit={handleExit} />
               )}
               {activity === 'pre-writing' && (
-                <PreWritingMode onExit={handleExit} />
+                <CanonicalTracingMode onExit={handleExit} allowCategorySelection />
               )}
               {activity === 'sort-and-place' && (
                 <SortAndPlaceMode onExit={handleExit} />

@@ -141,12 +141,15 @@ export default function ClassroomStartPage() {
       const activity = ACTIVITIES.find((a) => a.id === selectedActivity)
 
       // Create session in Supabase
+      const sessionCodeValue = sessionCode;
       const { data, error } = await supabase
         .from('sessions')
         .insert({
           teacher_id: session.user.id,
-          session_code: sessionCode,
-          status: 'active',
+          code: sessionCodeValue,
+          class_state: 'lobby',
+          status: 'waiting',
+          timer_seconds: timerSeconds,
           scoreboard_mode: scoreboardMode === 'personal stars only' ? 'individual' : 'team',
           metadata: {
             activity_id: selectedActivity,

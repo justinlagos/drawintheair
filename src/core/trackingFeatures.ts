@@ -33,7 +33,10 @@ export interface TrackingFeatureFlags {
     
     /** Enable two-hand ergonomics (palette panel) */
     enableTwoHandMode: boolean;
-    
+
+    /** Enable primary-player lock (filters multi-hand detection to one owned hand). */
+    enableActivePlayerLock: boolean;
+
     /** Enable tactile audio cues */
     enableTactileAudio: boolean;
     
@@ -163,6 +166,7 @@ const DEFAULT_FLAGS: TrackingFeatureFlags = {
     enableMagneticTargets: false,
     enableDynamicDifficulty: false,
     enableTwoHandMode: false,
+    enableActivePlayerLock: false,
     enableTactileAudio: false,
     enablePressIntegration: false,
 };
@@ -274,6 +278,7 @@ class TrackingFeaturesManager {
             enableMagneticTargets: centralFlags.assistMode,
             enableDynamicDifficulty: centralFlags.dynamicDifficulty,
             enableTwoHandMode: centralFlags.twoHandPalette,
+            enableActivePlayerLock: centralFlags.activePlayerLock,
             enableTactileAudio: this.flags.enableTactileAudio, // Keep separate
             enablePressIntegration: centralFlags.pressSignal,
         };
@@ -303,7 +308,10 @@ class TrackingFeaturesManager {
         if ('enableTwoHandMode' in flags) {
             centralUpdates.twoHandPalette = flags.enableTwoHandMode;
         }
-        
+        if ('enableActivePlayerLock' in flags) {
+            centralUpdates.activePlayerLock = flags.enableActivePlayerLock;
+        }
+
         if (Object.keys(centralUpdates).length > 0) {
             featureFlags.setFlags(centralUpdates);
         }
