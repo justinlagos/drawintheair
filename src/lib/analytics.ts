@@ -683,6 +683,75 @@ export function abandonOpenAttempt(reason: AttemptExitReason): string | null {
     return open;
 }
 
+// ── Attempt idle timeout → 'timed_out' terminal outcome ────────────
+// If an activity stays open with ZERO real interaction for a sustained
+// window, the child has almost certainly walked away or left the tab
+// parked. Close the attempt as 'timed_out' rather than leaving the
+// `mode_started` orphaned (which otherwise inflates time-on-task and
+// hides the drop-off). Passive telemetry (heartbeats, tracker quality
+// samples, visibility flips) does NOT count as activity, so a parked
+// tab is detected even though it keeps emitting background events.
+//
+// Conservative 3-minute default keeps a slow or thinking child safe.
+// Tunable WITHOUT a redeploy via localStorage 'dita_idle_timeout_ms'
+// (set 0 to disable) — this is the threshold-tuning lever.
+const IDLE_ABANDON_DEFAULT_MS = 180_000;
+let lastActivityAt = Date.now();
+
+// Events that are NOT real interaction; they must not reset the idle
+// clock, otherwise a walked-away child's background pulse would keep the
+// attempt alive forever.
+const IDLE_PASSIVE_EVENTS = new Set<EventName>([
+    'session_heartbeat',
+    'tracker_quality_sample',
+    'tracker_warmup_timing',
+    'tracker_low_confidence',
+    'two_hands_detected',
+    'tab_hidden',
+    'tab_visible',
+    'feature_flag_exposed',
+    'system_error',
+    'csp_violation',
+]);
+
+/**
+ * Pure decision: should an open attempt time out? Exported for tests so
+ * the policy is verified without driving real timers.
+ */
+export function shouldTimeoutAttempt(
+    attemptOpen: boolean,
+    idleMs: number,
+    thresholdMs: number,
+): boolean {
+    if (!attemptOpen) return false;
+    if (thresholdMs <= 0) return false; // disabled
+    return idleMs >= thresholdMs;
+}
+
+function idleThresholdMs(): number {
+    if (typeof window === 'undefined') return IDLE_ABANDON_DEFAULT_MS;
+    try {
+        const raw = localStorage.getItem('dita_idle_timeout_ms');
+        if (raw !== null) {
+            const n = Number(raw);
+            if (Number.isFinite(n) && n >= 0) return n;
+        }
+    } catch { /* private mode */ }
+    return IDLE_ABANDON_DEFAULT_MS;
+}
+
+/** Heartbeat hook: close an idle-abandoned attempt with a 'timed_out'
+ *  outcome. No-op when nothing is open or the timeout is disabled. */
+function checkAttemptIdleTimeout(): void {
+    if (shouldTimeoutAttempt(
+        getCurrentAttemptId() !== null,
+        Date.now() - lastActivityAt,
+        idleThresholdMs(),
+    )) {
+        abandonOpenAttempt('timed_out');
+    }
+}
+
 // ── LIOS Sprint 3: classroom-code redemption flow ──────────────
 // Resolution order (highest priority first):
 //   1. ?join=<CODE> URL param   → classroom-context, code captured
@@ -1101,6 +1170,7 @@ function startFlushTimer(): void {
 function startHeartbeat(): void {
     if (heartbeatTimer) return;
     heartbeatTimer = setInterval(() => {
+        checkAttemptIdleTimeout();
         logEvent('session_heartbeat');
     }, HEARTBEAT_INTERVAL_MS);
 }
@@ -1239,6 +1309,10 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
             oncePerSessionFired.add(name);
         }
     }
+
+    // Reset the idle clock on real interaction (not passive telemetry) so
+    // the attempt idle-timeout only fires when the child has truly stopped.
+    if (!IDLE_PASSIVE_EVENTS.has(name)) lastActivityAt = Date.now();
 
     // Side-effect: harvest action timing for fatigue analysis.
     if (name === 'item_dropped') {

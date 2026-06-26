@@ -5,6 +5,7 @@ import {
     endAttempt,
     getCurrentAttemptId,
     abandonOpenAttempt,
+    shouldTimeoutAttempt,
 } from '../src/lib/analytics';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -93,4 +94,25 @@ describe('terminal-outcome guarantee (abandonOpenAttempt)', () => {
             expect(getCurrentAttemptId()).toBeNull();
         },
     );
+});
+
+describe('idle-timeout decision (shouldTimeoutAttempt)', () => {
+    const THRESH = 180_000;
+
+    it('never times out when no attempt is open', () => {
+        expect(shouldTimeoutAttempt(false, 10_000_000, THRESH)).toBe(false);
+    });
+
+    it('does not time out before the threshold (a thinking/slow child)', () => {
+        expect(shouldTimeoutAttempt(true, THRESH - 1, THRESH)).toBe(false);
+    });
+
+    it('times out at or beyond the threshold (walked away / parked tab)', () => {
+        expect(shouldTimeoutAttempt(true, THRESH, THRESH)).toBe(true);
+        expect(shouldTimeoutAttempt(true, THRESH + 60_000, THRESH)).toBe(true);
+    });
+
+    it('is disabled when the threshold is 0 (kill switch)', () => {
+        expect(shouldTimeoutAttempt(true, 10_000_000, 0)).toBe(false);
+    });
 });
