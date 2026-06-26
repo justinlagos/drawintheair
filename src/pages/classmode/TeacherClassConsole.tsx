@@ -18,7 +18,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import {
-    dbSelect, dbInsert, subscribeToTable,
+    dbSelect, dbInsert, subscribeToTable, onRealtimeReconnect,
     getAccountRoles, registerTeacherAccount, consumeRoleIntent,
 } from '../../lib/supabase';
 import { generateSessionCode } from '../../features/classmode/sessionCode';
@@ -355,23 +355,44 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
         return () => clearInterval(id);
     }, []);
 
-    // Load + subscribe: students
-    useEffect(() => {
-        let cancelled = false;
-        (async () => {
-            const { data } = await dbSelect<StudentRow[]>(
-                'session_students',
-                `session_id=eq.${session.id}&order=joined_at.asc`,
-            );
-            if (!cancelled && data) setStudents(data);
-        })();
+    // Authoritative re-fetchers (audit 2026-06-26). Realtime is the fast
+    // path, but the hand-rolled client can miss an event during the
+    // connect/join window or a reconnect gap. These reload the canonical
+    // roster + activity state from the DB and are driven both on mount and
+    // by the reconciliation fallback below, so a missed INSERT/UPDATE no
+    // longer leaves the teacher staring at a stale screen until a manual
+    // refresh.
+    const reloadStudents = useCallback(async () => {
+        const { data } = await dbSelect<StudentRow[]>(
+            'session_students',
+            `session_id=eq.${session.id}&order=joined_at.asc`,
+        );
+        if (data) setStudents(data);
+    }, [session.id]);
 
+    const reloadActivities = useCallback(async () => {
+        const { data } = await dbSelect<SessionActivityRow[]>(
+            'session_activities',
+            `session_id=eq.${session.id}&order=ordinal.asc`,
+        );
+        if (!data) return;
+        const open = data.find((a) => a.state !== 'ended');
+        const closed = data.filter((a) => a.state === 'ended');
+        setCurrentActivity(open ?? null);
+        setPastActivities(closed);
+    }, [session.id]);
+
+    // Load + subscribe: students. Subscribe FIRST, then load, so an INSERT
+    // that lands while the initial select is in flight is still applied
+    // (the dedup below keeps it from doubling up).
+    useEffect(() => {
         const unsubInsert = subscribeToTable(
             `session-students-${session.id}`,
             'session_students', 'INSERT',
             (payload) => {
                 const row = payload.new as unknown as StudentRow;
-                if (row.session_id === session.id) setStudents((cur) => [...cur, row]);
+                if (row.session_id !== session.id) return;
+                setStudents((cur) => (cur.some((s) => s.id === row.id) ? cur : [...cur, row]));
             },
             `session_id=eq.${session.id}`,
         );
@@ -380,29 +401,21 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
             'session_students', 'UPDATE',
             (payload) => {
                 const row = payload.new as unknown as StudentRow;
-                setStudents((cur) => cur.map((s) => (s.id === row.id ? row : s)));
+                if (row.session_id !== session.id) return;
+                setStudents((cur) => (cur.some((s) => s.id === row.id)
+                    ? cur.map((s) => (s.id === row.id ? row : s))
+                    : [...cur, row]));
             },
             `session_id=eq.${session.id}`,
         );
 
-        return () => { cancelled = true; unsubInsert(); unsubUpdate(); };
-    }, [session.id]);
+        void reloadStudents();
+
+        return () => { unsubInsert(); unsubUpdate(); };
+    }, [session.id, reloadStudents]);
 
     // Load + subscribe: session activities
     useEffect(() => {
-        let cancelled = false;
-        (async () => {
-            const { data } = await dbSelect<SessionActivityRow[]>(
-                'session_activities',
-                `session_id=eq.${session.id}&order=ordinal.asc`,
-            );
-            if (cancelled || !data) return;
-            const open = data.find((a) => a.state !== 'ended');
-            const closed = data.filter((a) => a.state === 'ended');
-            setCurrentActivity(open ?? null);
-            setPastActivities(closed);
-        })();
-
         const unsubInsert = subscribeToTable(
             `session-activities-${session.id}`,
             'session_activities', 'INSERT',
@@ -430,8 +443,34 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
             `session_id=eq.${session.id}`,
         );
 
-        return () => { cancelled = true; unsubInsert(); unsubUpdate(); };
-    }, [session.id]);
+        void reloadActivities();
+
+        return () => { unsubInsert(); unsubUpdate(); };
+    }, [session.id, reloadActivities]);
+
+    // ── Reconciliation fallback ─────────────────────────────────────
+    // Belt-and-braces for Realtime gaps: poll the authoritative state on a
+    // gentle interval, when the tab regains focus, and whenever the
+    // Realtime socket reconnects. This is what makes a join show up for the
+    // teacher without a manual refresh even if the INSERT event was dropped.
+    useEffect(() => {
+        const reloadBoth = () => {
+            if (document.visibilityState !== 'visible') return;
+            void reloadStudents();
+            void reloadActivities();
+        };
+        const id = window.setInterval(reloadBoth, 5000);
+        const onVis = () => { if (document.visibilityState === 'visible') reloadBoth(); };
+        document.addEventListener('visibilitychange', onVis);
+        window.addEventListener('focus', onVis);
+        const unsubReconnect = onRealtimeReconnect(reloadBoth);
+        return () => {
+            window.clearInterval(id);
+            document.removeEventListener('visibilitychange', onVis);
+            window.removeEventListener('focus', onVis);
+            unsubReconnect();
+        };
+    }, [reloadStudents, reloadActivities]);
 
     // Subscribe to session row updates (class_state, current_activity_id)
     useEffect(() => {
