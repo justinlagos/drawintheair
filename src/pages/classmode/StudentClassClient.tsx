@@ -20,6 +20,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { callRpc, subscribeToTable } from '../../lib/supabase';
+import { analytics } from '../../lib/analytics';
 import { isValidCode } from '../../features/classmode/sessionCode';
 import { MODE_LABELS } from '../../features/classmode/scoreMapping';
 import type { GameModeId } from '../../features/classmode/scoreMapping';
@@ -254,6 +255,10 @@ export default function StudentClassClient() {
     // ── Auto-redirect after kicked / ended ─────────────────────────
     useEffect(() => {
         if (ui.kind !== 'kicked' && ui.kind !== 'ended') return;
+        // Teacher authority: ending the session or removing the student is a
+        // terminal outcome for any activity the child still had open. Record
+        // it as teacher_ended so it isn't mislabelled as difficulty/abandon.
+        analytics.abandonOpenAttempt('teacher_ended');
         const t = setTimeout(() => { window.location.href = '/'; }, 8000);
         return () => clearTimeout(t);
     }, [ui.kind]);
@@ -288,6 +293,13 @@ export default function StudentClassClient() {
             return;
         }
         const finalName = data.name;
+
+        // Mark this device's session as a CLASSROOM session for analytics,
+        // so every subsequent event carries context='classroom' + the class
+        // code. Conductor join is in-UI (not a /?join= URL), so this is the
+        // only place the context flips — without it the whole class session
+        // is mis-attributed as 'home' in Insights (Home vs Classroom).
+        analytics.setClassCode(ui.session.code);
         const memo: ReconnectMemo = {
             sessionId: ui.session.id, studentId: data.id, name: finalName,
             avatarSeed: data.avatar_seed ?? '', ts: Date.now(),

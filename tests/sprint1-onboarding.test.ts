@@ -140,4 +140,41 @@ describe('activation funnel', () => {
         expect(z.every((s) => Number.isFinite(s.pctOfTop) && Number.isFinite(s.pctOfPrev))).toBe(true);
         expect(activationRate({ sessions_started: 0, cam_granted: 0, tracker_ok: 0, mode_completions: 0 })).toBe(0);
     });
+
+    // ── Regression: the impossible 105.7% activation ──────────────────
+    // mode_completions is an EVENT count (fires per stage/letter) and was
+    // wrongly used as the numerator over distinct sessions. The fix uses
+    // sessions_completed (distinct sessions) so the rate can't exceed 100.
+    it('uses distinct sessions_completed as the activation numerator', () => {
+        const real = {
+            sessions_started: 123,
+            cam_granted: 65,
+            tracker_ok: 102,
+            mode_starts: 28,
+            mode_completions: 130,   // event count (the old, wrong numerator)
+            sessions_completed: 19,  // distinct sessions that activated
+        };
+        // 19 / 123 = 15.4%, NOT 130 / 123 = 105.7%.
+        expect(activationRate(real)).toBeCloseTo(15.4, 1);
+        const steps = buildActivationFunnel(real);
+        const star = steps[steps.length - 1];
+        expect(star.n).toBe(19);                 // funnel step uses distinct too
+        expect(star.pctOfTop).toBeLessThanOrEqual(100);
+    });
+
+    it('is bounded to 100% even if a miscount slips through', () => {
+        // Defensive clamp: a numerator above the denominator can never
+        // produce >100% activation.
+        expect(
+            activationRate({
+                sessions_started: 123, cam_granted: 0, tracker_ok: 0,
+                mode_completions: 0, sessions_completed: 130,
+            }),
+        ).toBe(100);
+    });
+
+    it('falls back to mode_completions only when sessions_completed is absent', () => {
+        // Back-compat for any caller not yet passing the distinct count.
+        expect(activationRate(m)).toBe(8); // m has no sessions_completed
+    });
 });
