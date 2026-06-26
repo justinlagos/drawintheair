@@ -20,6 +20,13 @@ export interface FeatureFlags {
     dynamicDifficulty: boolean;      // Dynamic difficulty scaling
     twoHandPalette: boolean;         // Two-hand ergonomics
 
+    // Primary-player lock (Phase 1). When ON, raw multi-hand detection is
+    // filtered through ActivePlayerLock so exactly one child owns the session
+    // and background hands can never steal the cursor. Default OFF — enable
+    // via ?flags=activePlayerLock or featureFlags.setFlags. See
+    // docs/PRIMARY_PLAYER_LOCK_ARCHITECTURE.md.
+    activePlayerLock: boolean;
+
     // ToyMode features
     toyModeTheme: boolean;           // ToyMode styling and tokens
     stickerRewards: boolean;         // Sticker book system
@@ -54,6 +61,7 @@ const DEFAULT_FLAGS: FeatureFlags = {
     assistMode: false,
     dynamicDifficulty: false,
     twoHandPalette: false,
+    activePlayerLock: false,
     toyModeTheme: false,
     stickerRewards: false,
     tracingStreak: false,

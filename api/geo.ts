@@ -1,11 +1,11 @@
 /**
  * GET /api/geo  — coarse country + suggested currency from the Vercel edge.
+ * Also returns the client IP for network fingerprinting (same-network
+ * enforcement for classroom join codes).
  *
- * Returns ONLY the ISO country code Vercel already attaches at the edge
- * (`x-vercel-ip-country`) plus a suggested ISO-4217 currency. No IP, no
- * precise location, nothing stored — used purely to pick the indicative
- * display currency on the pricing pages. The user can always override via the
- * on-page switcher.
+ * Returns country, currency, and the verified client IP from the edge proxy.
+ * The IP is NOT stored client-side — it is forwarded to the join RPC for
+ * server-side network comparison.
  */
 export const config = { runtime: 'edge' };
 
@@ -21,11 +21,19 @@ const COUNTRY_CURRENCY: Record<string, string> = {
 export default function handler(req: Request): Response {
   const country = (req.headers.get('x-vercel-ip-country') || '').toUpperCase();
   const currency = COUNTRY_CURRENCY[country] || 'USD';
-  return new Response(JSON.stringify({ country: country || null, currency }), {
+
+  // Use Vercel's trusted edge IP header. Do NOT trust client-supplied
+  // X-Forwarded-For — only read the header Vercel sets at the edge.
+  const ip =
+    req.headers.get('x-real-ip') ||
+    req.headers.get('x-vercel-forwarded-for') ||
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    '';
+
+  return new Response(JSON.stringify({ country: country || null, currency, ip }), {
     status: 200,
     headers: {
       'Content-Type': 'application/json',
-      // Vary per country so the CDN caches correctly; short TTL.
       'Cache-Control': 'public, max-age=300',
       'Vary': 'x-vercel-ip-country',
     },

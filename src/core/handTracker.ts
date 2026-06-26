@@ -69,7 +69,11 @@ export class HandTracker {
         if (this.initialized && this.handLandmarker) return;
 
         const flags = trackingFeatures.getFlags();
-        const numHands = flags.enableTwoHandMode ? 2 : 1;
+        // The primary-player lock can only reject a background hand if MediaPipe
+        // actually returns it, so we detect several hands and let the lock pick
+        // the owner. Costs more inference (measured in Phase 6); gated behind the
+        // flag so default behaviour is unchanged.
+        const numHands = flags.enableActivePlayerLock ? 4 : flags.enableTwoHandMode ? 2 : 1;
         this.currentNumHands = numHands;
 
         const tried: HandTrackerDelegate[] = [];

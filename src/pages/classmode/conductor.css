@@ -347,6 +347,24 @@
   /* inherits cm-activity-card from existing classmode.css */
   cursor: pointer;
 }
+.cd-launcher-starting {
+  opacity: 0.6;
+  pointer-events: none;
+}
+.cd-launcher-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 0;
+  min-height: 60px;
+}
+.cd-launcher-loading span {
+  font-size: 12px;
+  color: var(--cd-plum);
+  font-weight: 600;
+}
 
 /* ── Timeline ─────────────────────────────────────────────────── */
 .cd-timeline {
@@ -661,3 +679,131 @@
   cursor: pointer;
 }
 .cm-btn-danger-outline:hover { background: var(--cd-bad-bg); }
+
+/* ── Assignment UI ──────────────────────────────────────────── */
+.cd-roster-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.cd-roster-btn-assign {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  opacity: 0.7;
+  line-height: 1;
+}
+.cd-roster-btn-assign:hover { opacity: 1; }
+
+.cd-bulk-actions {
+  display: flex;
+  gap: 8px;
+  padding: 8px 4px;
+  justify-content: center;
+}
+
+.cd-modal-wide {
+  max-width: 520px !important;
+}
+
+.cd-assign-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 16px 0;
+}
+.cd-assign-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border-radius: 12px;
+  border: 2px solid var(--cd-line);
+  background: var(--cd-panel);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  font-family: var(--cd-body);
+  font-size: 13px;
+  position: relative;
+}
+.cd-assign-card:hover { border-color: var(--cd-plum-line); }
+.cd-assign-on {
+  border-color: var(--cd-plum);
+  background: var(--cd-plum-soft);
+}
+.cd-assign-off {
+  opacity: 0.6;
+}
+.cd-assign-icon {
+  font-size: 24px;
+}
+.cd-assign-name {
+  font-weight: 600;
+  color: var(--cd-ink);
+  font-size: 12px;
+}
+.cd-assign-order {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--cd-plum);
+  font-family: var(--cd-mono);
+}
+
+.cd-assign-order-section {
+  border-top: 1px solid var(--cd-line);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+.cd-assign-order-section h3 {
+  font-family: var(--cd-display);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cd-ink);
+  margin: 0 0 8px;
+}
+.cd-assign-order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cd-assign-order-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--cd-line-soft);
+  border-radius: 8px;
+}
+.cd-assign-order-icon { font-size: 18px; }
+.cd-assign-order-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cd-ink);
+}
+.cd-assign-order-btns {
+  display: flex;
+  gap: 4px;
+}
+.cd-assign-order-btns button {
+  background: var(--cd-panel);
+  border: 1px solid var(--cd-line);
+  border-radius: 6px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--cd-ink);
+}
+.cd-assign-order-btns button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.cd-assign-order-btns button:hover:not(:disabled) {
+  background: var(--cd-plum-soft);
+}

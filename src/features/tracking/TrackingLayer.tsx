@@ -14,6 +14,7 @@ import { interactionStateManager, type InteractionState } from '../../core/Inter
 import { perf } from '../../core/perf';
 import { trackingFeatures } from '../../core/trackingFeatures';
 import { DynamicResolutionManager } from '../../core/tracking/DynamicResolution';
+import { activePlayerLock, summarizeHand, type ActivePlayerLockSnapshot } from '../../core/tracking/ActivePlayerLock';
 import { TrackingDebugOverlay, type DebugMetrics } from '../../components/TrackingDebugOverlay';
 import { initCanvasCoordinateMapper, updateCanvasCoordinateMapper, getCanvasCoordinateMapper } from '../../core/canvasCoordinateMapper';
 import { getTrackingFlag, isDebugModeEnabled } from '../../core/flags/TrackingFlags';
@@ -27,6 +28,7 @@ import { CameraExplainer } from '../onboarding/CameraExplainer';
 import { CameraRecovery } from '../onboarding/CameraRecovery';
 import type { CameraCause } from '../../lib/cameraHelp';
 import { ParentTransparencyBanner } from './ParentTransparencyBanner';
+import { ActivePlayerLockHud } from './ActivePlayerLockHud';
 
 // ---------------------------------------------------------------------------
 // Mirror helpers (front-facing camera, natural left/right orientation)
@@ -139,6 +141,10 @@ export const TrackingLayer = ({ onFrame, children, suppressNotifications }: Trac
 
     // Latest interaction state (written by vision loop, read by render loop)
     const latestInteractionStateRef = useRef<InteractionState | null>(null);
+
+    // Latest primary-player lock snapshot (written by vision loop, read by the
+    // lock HUD). Null until the lock flag is enabled and the loop runs.
+    const lockSnapshotRef = useRef<ActivePlayerLockSnapshot | null>(null);
 
     // Dynamic resolution
     const dynamicResolutionRef = useRef<DynamicResolutionManager | null>(null);
@@ -297,8 +303,36 @@ export const TrackingLayer = ({ onFrame, children, suppressNotifications }: Trac
         // Mirror for natural (front-facing) interaction
         const results = rawResults ? mirrorResults(rawResults) : null;
 
+        // Primary-player lock: when enabled, reduce the (possibly multi-hand)
+        // result to the single hand that owns the session, so background hands
+        // can never drive the cursor. Off → results pass through unchanged.
+        let processedResults = results;
+        if (flags.enableActivePlayerLock) {
+            const hands = results?.landmarks ?? [];
+            const samples = hands
+                .map(summarizeHand)
+                .filter((s): s is NonNullable<typeof s> => s !== null);
+            const snapshot = activePlayerLock.update(samples, timestamp);
+            lockSnapshotRef.current = snapshot;
+
+            if (results) {
+                const i = snapshot.ownedIndex;
+                processedResults = i >= 0 && results.landmarks[i]
+                    ? {
+                        ...results,
+                        landmarks: [results.landmarks[i]],
+                        worldLandmarks: results.worldLandmarks?.[i] ? [results.worldLandmarks[i]] : [],
+                        handedness: results.handedness?.[i] ? [results.handedness[i]] : [],
+                        handednesses: results.handednesses?.[i] ? [results.handednesses[i]] : [],
+                    }
+                    // Locked-but-lost or still searching: present no hand rather
+                    // than fall back to an unrelated one.
+                    : { ...results, landmarks: [], worldLandmarks: [], handedness: [], handednesses: [] };
+            }
+        }
+
         // Process through unified interaction state manager
-        const interactionState = interactionStateManager.process(results, timestamp);
+        const interactionState = interactionStateManager.process(processedResults, timestamp);
         latestInteractionStateRef.current = interactionState;
 
         // Dynamic resolution metrics
@@ -680,6 +714,12 @@ export const TrackingLayer = ({ onFrame, children, suppressNotifications }: Trac
                     canvasWidth={canvasRef.current?.width || 1920}
                     canvasHeight={canvasRef.current?.height || 1080}
                 />
+            )}
+
+            {/* Primary-player lock: teacher Change-player control + nudge + debug.
+                Mounted only when the flag is on so default behaviour is unchanged. */}
+            {trackingFeatures.getFlags().enableActivePlayerLock && (
+                <ActivePlayerLockHud snapshotRef={lockSnapshotRef} />
             )}
 
             {/* Camera debug badge (visible only with ?debug=camera) */}

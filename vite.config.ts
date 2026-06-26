@@ -4,6 +4,15 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   cacheDir: '/tmp/vite-cache',
+  // Build identity — baked in at build time so local, GitHub and the deployed
+  // production bundle can be matched to an explicit commit. On Vercel,
+  // VERCEL_GIT_COMMIT_SHA / VERCEL_ENV are populated automatically. Surfaced to
+  // admins/debug only (see src/lib/buildInfo.ts) — never in the child UI.
+  define: {
+    __BUILD_SHA__: JSON.stringify(process.env.VERCEL_GIT_COMMIT_SHA || process.env.GIT_COMMIT_SHA || 'dev'),
+    __BUILD_ENV__: JSON.stringify(process.env.VERCEL_ENV || process.env.NODE_ENV || 'development'),
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
   plugins: [react()],
   server: {
     port: 5175,

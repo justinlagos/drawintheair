@@ -24,6 +24,14 @@ let completionCb: (() => void) | null = null;
 let lastSnapshot: EngineSnapshot | null = null;
 let initFailed = false;
 
+// Interaction-scope gate. The redesigned tracing has two phases: category
+// selection (`sections`) and tracing (`draw`). The engine must run ONLY during
+// `draw`. While the category picker is up this stays false, so the engine
+// renders nothing and consumes no pinch — there is exactly one active
+// interaction scope (the picker cards) and no trace appears behind them.
+// The React shell (TracingModePlayful) flips this on every phase change.
+let inputActive = false;
+
 const reducedMotion = (): boolean => {
     try {
         return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
@@ -98,6 +106,19 @@ export const setPlayfulSection = (pack: number, index = 0): void => {
     reloadPlayfulActivity();
 };
 
+/**
+ * Arm/disarm the tracing engine. Called by the React shell on every phase
+ * change: `true` when the child enters the `draw` phase, `false` while the
+ * category picker is up (and on unmount). When disarmed, {@link playfulTracingFrame}
+ * renders nothing and processes no input.
+ */
+export const setPlayfulActive = (active: boolean): void => {
+    inputActive = active;
+};
+
+/** Whether the engine is currently armed (test/diagnostic helper). */
+export const isPlayfulActive = (): boolean => inputActive;
+
 export const getPlayfulSnapshot = (): EngineSnapshot | null => lastSnapshot;
 
 /**
@@ -119,11 +140,21 @@ export const playfulTracingFrame = (
         if (!engine) return;
     }
 
+    // Publish the hand point so the section picker can be selected in the air.
+    // This happens in BOTH phases so the picker cards remain selectable, but it
+    // only ever drives the picker — never the trace — because the engine below
+    // is gated on `inputActive`.
+    setGesturePointer(frameData.filteredPoint, frameData.pinchActive, frameData.hasHand);
+
+    // Category-selection phase (engine disarmed): render nothing and consume no
+    // input. Clear any prior frame so no trace lingers behind the picker cards.
+    if (!inputActive) {
+        ctx.clearRect(0, 0, width, height);
+        return;
+    }
+
     // During the 3-2-1 countdown, show the scene but accept no input yet.
     const countdown = isCountdownActive(frameData.timestamp);
-
-    // Publish the hand point so the section picker can be selected in the air.
-    setGesturePointer(frameData.filteredPoint, frameData.pinchActive, frameData.hasHand);
 
     lastSnapshot = engine.update({
         pointer: frameData.filteredPoint,

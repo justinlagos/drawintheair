@@ -5,12 +5,11 @@ import { freePaintLogic } from './features/modes/freePaintLogic';
 // Magic Canvas (Free Paint redesign), gated behind freePaintMagicCanvasV1.
 import { MagicCanvasMode } from './features/modes/magicCanvas/MagicCanvasMode';
 import { magicCanvasFrame } from './features/modes/magicCanvas/magicCanvasFrame';
-import { PreWritingMode } from './features/modes/PreWritingMode';
-import { preWritingLogic } from './features/modes/preWriting/preWritingLogic';
-// Playful tracing redesign (V2), gated behind tracingPlayfulUiV1. Falls back
-// to PreWritingMode/preWritingLogic above when the flag is off.
-import { TracingModePlayful } from './features/modes/tracing/TracingModePlayful';
-import { playfulTracingFrame } from './features/modes/tracing/tracingPlayfulFrame';
+// Tracing resolves through the canonical module so solo play and classroom
+// play mount the SAME experience (playful V2 when tracingPlayfulUiV1 is on,
+// legacy PreWritingMode when off). See canonicalTracing.tsx.
+import { CanonicalTracingMode } from './features/modes/tracing/canonicalTracing';
+import { getTracingFrameLogic } from './features/modes/tracing/tracingResolver';
 import { BubbleCalibration } from './features/modes/calibration/BubbleCalibration';
 import { bubbleCalibrationLogic } from './features/modes/calibration/bubbleCalibrationLogic';
 import { SortAndPlaceMode } from './features/modes/sortAndPlace/SortAndPlaceMode';
@@ -105,6 +104,13 @@ const getInitialState = (): { appState: AppState; gameMode: GameMode } => {
 if (typeof window !== 'undefined') {
   (window as { __DRAW_IN_AIR_VERSION__?: string }).__DRAW_IN_AIR_VERSION__ = '2.0.0-updated';
 }
+
+// In-app survey cards (Expectation / Happiness / Audience) render as a fixed
+// card at bottom-centre on the menu. They were judged distracting in the
+// learner experience, so they are suppressed here. Feedback collection belongs
+// on the teacher dashboard / end-of-session, not over the child's screen
+// (see docs/PRIMARY_PLAYER_LOCK_ARCHITECTURE.md §3.5). Flip to true to restore.
+const SHOW_INLINE_SURVEYS = false;
 
 function App() {
   const [appState, setAppState] = useState<AppState>(() => getInitialState().appState);
@@ -341,8 +347,9 @@ function App() {
         logic = featureFlags.getFlag('freePaintMagicCanvasV1') ? magicCanvasFrame : freePaintLogic;
         break;
       case 'pre-writing':
-        // Flag decides the engine BEFORE mount; the two never run together.
-        logic = featureFlags.getFlag('tracingPlayfulUiV1') ? playfulTracingFrame : preWritingLogic;
+        // Canonical resolver: same engine the render shell uses. The two never
+        // run together, and solo + classroom resolve identically.
+        logic = getTracingFrameLogic();
         break;
       case 'calibration':
         logic = bubbleCalibrationLogic;
@@ -527,9 +534,8 @@ function App() {
                   )}
 
                   {gameMode === 'pre-writing' && (
-                    flags.tracingPlayfulUiV1
-                      ? <TracingModePlayful onExit={handleExitToMenu} />
-                      : <PreWritingMode onExit={handleExitToMenu} />
+                    // Solo play: category selection is always allowed.
+                    <CanonicalTracingMode onExit={handleExitToMenu} allowCategorySelection />
                   )}
 
                   {gameMode === 'sort-and-place' && (
@@ -592,20 +598,20 @@ function App() {
               {/* Expectation gap, after the first activity. Menu-only:
                    never interrupt active gameplay — it waits for the pause. */}
               <ExpectationCheck
-                open={expectationOpen && appState === 'menu'}
+                open={SHOW_INLINE_SURVEYS && expectationOpen && appState === 'menu'}
                 onClose={() => setExpectationOpen(false)}
                 isCompact={typeof window !== 'undefined' && window.innerWidth <= 768}
               />
               {/* Happiness, after 3 completed activities. Menu-only. */}
               <HappinessCheck
-                open={happinessOpen && appState === 'menu'}
+                open={SHOW_INLINE_SURVEYS && happinessOpen && appState === 'menu'}
                 onClose={() => setHappinessOpen(false)}
                 isCompact={typeof window !== 'undefined' && window.innerWidth <= 768}
               />
               {/* Home vs school path — on the menu, once, when not already
                    inferred. Yields to the survey cards to avoid overlap. */}
               <AudiencePrompt
-                open={audienceOpen && appState === 'menu' && !expectationOpen && !happinessOpen}
+                open={SHOW_INLINE_SURVEYS && audienceOpen && appState === 'menu' && !expectationOpen && !happinessOpen}
                 onClose={() => setAudienceOpen(false)}
                 isCompact={typeof window !== 'undefined' && window.innerWidth <= 768}
               />
