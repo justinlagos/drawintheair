@@ -1,8 +1,8 @@
 /**
  * TracingModePlayful — HUD shell for the redesigned (V2) tracing experience.
  *
- * Mounted only when `tracingPlayfulUiV1` is ON (App falls back to the legacy
- * PreWritingMode otherwise). The canvas track + vehicle are drawn by the
+ * The single tracing experience (legacy PreWritingMode retired June 2026).
+ * The canvas track + vehicle are drawn by the
  * shared engine via the TrackingLayer onFrame adapter (tracingPlayfulFrame);
  * this component owns only the lightweight DOM HUD: a compact activity card,
  * a calm progress bar, ONE contextual coaching line, and the restart control,
@@ -23,13 +23,22 @@ import {
     getPlayfulSnapshot,
     playfulInitFailed,
     setPlayfulSection,
+    setPlayfulActive,
 } from './tracingPlayfulFrame';
-import { featureFlags } from '../../../core/featureFlags';
 import { logEvent } from '../../../lib/analytics';
 import { GestureLayer } from '../../../components/GestureLayer';
 
 interface Props {
     onExit?: () => void;
+    /**
+     * Whether the child may pick a category before tracing. Stated explicitly
+     * by the caller (see canonicalTracing.tsx) — never inferred. When false the
+     * shell skips the picker and enters `initialSection` directly, and the
+     * in-game "Sections" escape is hidden so an assigned category can't be left.
+     */
+    allowCategorySelection?: boolean;
+    /** Section (pack) to enter when category selection is not allowed. */
+    initialSection?: number | null;
 }
 
 const CATEGORY: Record<string, string> = {
@@ -46,7 +55,11 @@ const RESTART_LABEL: Record<string, string> = {
     number: 'Restart Number',
 };
 
-export const TracingModePlayful = ({ onExit }: Props = {}) => {
+export const TracingModePlayful = ({
+    onExit,
+    allowCategorySelection = true,
+    initialSection = null,
+}: Props = {}) => {
     const [progress, setProgress] = useState(0);
     const [label, setLabel] = useState('');
     const [type, setType] = useState<string>('letter');
@@ -55,7 +68,12 @@ export const TracingModePlayful = ({ onExit }: Props = {}) => {
     const [totalStrokes, setTotalStrokes] = useState(1);
     const [message, setMessage] = useState<string | null>(null);
     const [showCelebration, setShowCelebration] = useState(false);
-    const [phase, setPhase] = useState<'sections' | 'draw'>('sections');
+    const [initError, setInitError] = useState(false);
+    // Start in the category picker only when selection is allowed. When a
+    // specific category was assigned, enter the `draw` phase directly.
+    const [phase, setPhase] = useState<'sections' | 'draw'>(
+        allowCategorySelection ? 'sections' : 'draw',
+    );
     const [sections, setSections] = useState<SectionInfo[]>(() => getSections());
 
     const isCompact = typeof window !== 'undefined' && window.innerWidth <= 900;
@@ -75,8 +93,9 @@ export const TracingModePlayful = ({ onExit }: Props = {}) => {
         // and disable the flag so App swaps back to the legacy experience
         // BEFORE gameplay begins (no code rollback needed).
         if (playfulInitFailed()) {
-            console.error('[TracingModePlayful] V2 init failed — falling back to legacy PreWritingMode');
-            featureFlags.setFlags({ tracingPlayfulUiV1: false });
+            console.error('[TracingModePlayful] tracing engine init failed — exiting to menu');
+            logEvent('tracing_init_failed', { game_mode: 'pre-writing' });
+            setInitError(true);
             return;
         }
 
@@ -98,11 +117,21 @@ export const TracingModePlayful = ({ onExit }: Props = {}) => {
             });
         });
 
+        // When a category was assigned (no picker), enter it directly and arm
+        // the engine. Otherwise the engine stays disarmed until the child picks.
+        if (!allowCategorySelection) {
+            if (initialSection != null) setPlayfulSection(initialSection, 0);
+            setPlayfulActive(true);
+        } else {
+            setPlayfulActive(false);
+        }
+
         return () => {
             setPlayfulCompletionCallback(null);
+            setPlayfulActive(false);
             if (advanceRef.current) clearTimeout(advanceRef.current);
         };
-    }, []);
+    }, [allowCategorySelection, initialSection]);
 
     // Re-init on resize (keeps the safe region + track sized correctly).
     useEffect(() => {
@@ -182,8 +211,25 @@ export const TracingModePlayful = ({ onExit }: Props = {}) => {
         prevActivityRef.current = '';
         prevCoachRef.current = null;
         setSections(getSections());
+        // Arm the engine BEFORE switching to the draw phase so the first armed
+        // frame already has a section loaded.
+        setPlayfulActive(true);
         setPhase('draw');
     };
+
+    if (initError) {
+        return (
+            <>
+                {onExit && <GameTopBar onBack={onExit} />}
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing.lg, padding: tokens.spacing.lg, zIndex: tokens.zIndex.hud }}>
+                    <KidObjectiveCard icon="🙈">Let's try that again in a moment.</KidObjectiveCard>
+                    {onExit && (
+                        <KidButton data-gesture variant="primary" size="lg" onClick={onExit} icon={<span>🏠</span>}>Back</KidButton>
+                    )}
+                </div>
+            </>
+        );
+    }
 
     if (phase === 'sections') {
         return <SectionPicker sections={sections} onPick={startSection} onExit={onExit} />;
@@ -241,9 +287,11 @@ export const TracingModePlayful = ({ onExit }: Props = {}) => {
 
             {/* BOTTOM-CENTER: sections + restart */}
             <div style={{ position: 'absolute', bottom: isCompact ? 12 : 24, left: '50%', transform: 'translateX(-50%)', zIndex: tokens.zIndex.hud, display: 'flex', gap: tokens.spacing.md }}>
-                <KidButton data-gesture variant="secondary" size="md" onClick={() => { setPhase('sections'); setSections(getSections()); }} icon={<span>📚</span>}>
-                    {isCompact ? '' : 'Sections'}
-                </KidButton>
+                {allowCategorySelection && (
+                    <KidButton data-gesture variant="secondary" size="md" onClick={() => { setPlayfulActive(false); setPhase('sections'); setSections(getSections()); }} icon={<span>📚</span>}>
+                        {isCompact ? '' : 'Sections'}
+                    </KidButton>
+                )}
                 <KidButton data-gesture variant="secondary" size="md" onClick={handleRestart} icon={<span>🔄</span>}>
                     {isCompact ? '' : (RESTART_LABEL[type] ?? 'Restart')}
                 </KidButton>

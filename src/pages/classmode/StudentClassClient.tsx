@@ -25,6 +25,10 @@ import { MODE_LABELS } from '../../features/classmode/scoreMapping';
 import type { GameModeId } from '../../features/classmode/scoreMapping';
 import { avatarFromSeed } from '../../features/classmode/conductor/avatars';
 import type { SessionRow, SessionActivityRow, StudentRow } from '../../features/classmode/conductor/types';
+import { joinApi } from '../../features/classmode/conductor/joinApi';
+import { JOIN_ERROR_MESSAGES } from '../../features/classmode/conductor/joinTypes';
+import type { JoinErrorCode } from '../../features/classmode/conductor/joinTypes';
+import type { ActivityAssignment, StudentClassState } from '../../features/classmode/conductor/joinTypes';
 
 import { TrackingLayer } from '../../features/tracking/TrackingLayer';
 import { ModeBackground } from '../../components/ModeBackground';
@@ -35,7 +39,11 @@ import ClassModeGameWrapper from '../../features/classmode/ClassModeGameWrapper'
 // All game-mode entry components
 import { BubbleCalibration } from '../../features/modes/calibration/BubbleCalibration';
 import { FreePaintMode } from '../../features/modes/FreePaintMode';
-import { PreWritingMode } from '../../features/modes/PreWritingMode';
+// Tracing resolves through the canonical module so the classroom mounts the
+// SAME experience as solo play (the divergence this fixed: the classroom used
+// to hard-code the legacy PreWritingMode here). See canonicalTracing.tsx.
+import { CanonicalTracingMode } from '../../features/modes/tracing/canonicalTracing';
+import { getTracingFrameLogic, TRACING_ACTIVITY_ID } from '../../features/modes/tracing/tracingResolver';
 import { SortAndPlaceMode } from '../../features/modes/sortAndPlace/SortAndPlaceMode';
 import { WordSearchMode } from '../../features/modes/wordSearch/WordSearchMode';
 import { ColourBuilderMode } from '../../features/modes/colourBuilder/ColourBuilderMode';
@@ -45,7 +53,6 @@ import { GestureSpellingMode } from '../../features/modes/gestureSpelling/Gestur
 
 // Per-frame logic functions
 import { freePaintLogic } from '../../features/modes/freePaintLogic';
-import { preWritingLogic } from '../../features/modes/preWriting/preWritingLogic';
 import { bubbleCalibrationLogic } from '../../features/modes/calibration/bubbleCalibrationLogic';
 import { sortAndPlaceLogic } from '../../features/modes/sortAndPlace/sortAndPlaceLogic';
 import { wordSearchLogic } from '../../features/modes/wordSearch/wordSearchLogic';
@@ -57,14 +64,18 @@ import { gestureSpellingLogic } from '../../features/modes/gestureSpelling/gestu
 import './classmode.css';
 import './conductor.css';
 
-const RECONNECT_KEY = 'cd_reconnect_v1';
+const RECONNECT_KEY = 'cd_reconnect_v2';
 const RECONNECT_TTL_MS = 15 * 60 * 1000;
-type ReconnectMemo = { sessionId: string; studentId: string; name: string; avatarSeed: string; ts: number };
+type ReconnectMemo = {
+    sessionId: string; studentId: string; name: string; avatarSeed: string;
+    activityVersion: number; assignments: ActivityAssignment[]; ts: number;
+};
 
-const LOGIC_MAP: Record<GameModeId, unknown> = {
+// Tracing ('pre-writing') is intentionally absent — it resolves via
+// getTracingFrameLogic() (the canonical engine), never this static map.
+const LOGIC_MAP: Partial<Record<GameModeId, unknown>> = {
     'calibration': bubbleCalibrationLogic,
     'free': freePaintLogic,
-    'pre-writing': preWritingLogic,
     'sort-and-place': sortAndPlaceLogic,
     'word-search': wordSearchLogic,
     'colour-builder': colourBuilderLogic,
@@ -75,14 +86,115 @@ const LOGIC_MAP: Record<GameModeId, unknown> = {
 
 type UiState =
     | { kind: 'code' }
+    | { kind: 'network_error'; message: string }
     | { kind: 'name'; session: SessionRow }
-    | { kind: 'classroom'; session: SessionRow; student: StudentRow; activity: SessionActivityRow | null }
+    | { kind: 'classroom'; session: SessionRow; student: StudentRow; activity: SessionActivityRow | null; assignments: ActivityAssignment[]; activityVersion: number }
     | { kind: 'kicked'; reason: string | null }
     | { kind: 'ended'; sessionId: string };
+
+/**
+ * Fetch the authoritative student class state from the server.
+ * Uses get_student_class_state RPC (single-call resolver).
+ */
+async function fetchStudentClassState(
+    sessionId: string, studentId: string,
+): Promise<{
+    session: SessionRow | null;
+    student: StudentRow | null;
+    activity: SessionActivityRow | null;
+    state: StudentClassState | null;
+    error?: string;
+}> {
+    const { data: raw } = await callRpc<StudentClassState | { error: string }>(
+        'get_student_class_state',
+        { in_student_id: studentId, in_session_id: sessionId },
+    );
+    if (!raw || 'error' in (raw as Record<string, unknown>)) {
+        const err = (raw as { error?: string })?.error ?? 'unknown';
+        return { session: null, student: null, activity: null, state: null, error: err };
+    }
+    const st = raw as StudentClassState;
+
+    const { data: session } = await callRpc<SessionRow | null>(
+        'class_get_session', { in_session_id: sessionId },
+    );
+    const { data: student } = await callRpc<StudentRow | null>(
+        'class_get_self', { in_student_id: studentId },
+    );
+
+    let activity: SessionActivityRow | null = null;
+    if (st.assignedActivity) {
+        const { data: act } = await callRpc<SessionActivityRow | null>(
+            'class_get_activity', { in_activity_id: st.assignedActivity.sessionActivityId },
+        );
+        if (act) activity = act;
+    }
+
+    return { session, student, activity, state: st };
+}
 
 export default function StudentClassClient() {
     const [ui, setUi] = useState<UiState>({ kind: 'code' });
     const [error, setError] = useState<string | null>(null);
+
+    // ── Central updater: call getStudentClassState + set classroom state ─
+    const syncFromServer = useCallback(async (sessionId: string, studentId: string) => {
+        try {
+        const result = await fetchStudentClassState(sessionId, studentId);
+        if (result.state?.error) {
+            if (result.state.error === 'STUDENT_NOT_FOUND' || result.state.error === 'SESSION_NOT_FOUND') {
+                sessionStorage.removeItem(RECONNECT_KEY);
+                setUi({ kind: 'ended', sessionId });
+            }
+            return;
+        }
+        if (!result.session || !result.student) {
+            sessionStorage.removeItem(RECONNECT_KEY);
+            setUi({ kind: 'ended', sessionId });
+            return;
+        }
+        if (result.student.kicked_at) {
+            sessionStorage.removeItem(RECONNECT_KEY);
+            setUi({ kind: 'kicked', reason: result.student.kicked_reason });
+            return;
+        }
+        if (result.state!.sessionStatus === 'ended') {
+            sessionStorage.removeItem(RECONNECT_KEY);
+            setUi({ kind: 'ended', sessionId });
+            return;
+        }
+
+        const { data: assignments } = await callRpc<ActivityAssignment[]>(
+            'get_student_assignments',
+            { in_student_id: studentId, in_session_id: sessionId },
+        );
+
+        setUi({
+            kind: 'classroom',
+            session: result.session,
+            student: result.student,
+            activity: result.activity,
+            assignments: assignments ?? [],
+            activityVersion: result.state!.activityVersion,
+        });
+
+        // Persist reconnect memo
+        const memo: ReconnectMemo = {
+            sessionId, studentId,
+            name: result.student.name,
+            avatarSeed: result.student.avatar_seed ?? '',
+            activityVersion: result.state!.activityVersion,
+            assignments: assignments ?? [],
+            ts: Date.now(),
+        };
+        try { sessionStorage.setItem(RECONNECT_KEY, JSON.stringify(memo)); } catch { /* ignore */ }
+        } catch (e) {
+            // Transient network/Realtime failure — keep current UI; the 10s
+            // heartbeat and reconnect retry. Never strand the child on a stale
+            // screen, and never leave an unhandled promise rejection.
+            console.warn('[StudentClassClient] syncFromServer failed (will retry)', e);
+        }
+    }, []);
 
     // ── Try to auto-rejoin from sessionStorage on mount ────────────
     useEffect(() => {
@@ -94,41 +206,15 @@ export default function StudentClassClient() {
                 sessionStorage.removeItem(RECONNECT_KEY);
                 return;
             }
+            // On reconnect, use getStudentClassState with the stored IDs.
+            // This is the authoritative state resolver.
             (async () => {
-                // H1: reads go through capability-scoped SECURITY DEFINER RPCs
-                // (keyed on the session/student id we already hold) instead of
-                // broad anon table reads. class_get_session returns null for an
-                // ended session.
-                const { data: session } = await callRpc<SessionRow | null>(
-                    'class_get_session', { in_session_id: memo.sessionId },
-                );
-                if (!session) {
-                    sessionStorage.removeItem(RECONNECT_KEY);
-                    setUi({ kind: 'ended', sessionId: memo.sessionId });
-                    return;
-                }
-                const { data: student } = await callRpc<StudentRow | null>(
-                    'class_get_self', { in_student_id: memo.studentId },
-                );
-                if (!student) return;
-                if (student.kicked_at) {
-                    sessionStorage.removeItem(RECONNECT_KEY);
-                    setUi({ kind: 'kicked', reason: student.kicked_reason });
-                    return;
-                }
-                let activity: SessionActivityRow | null = null;
-                if (session.current_activity_id) {
-                    const { data: act } = await callRpc<SessionActivityRow | null>(
-                        'class_get_activity', { in_activity_id: session.current_activity_id },
-                    );
-                    if (act) activity = act;
-                }
-                setUi({ kind: 'classroom', session, student, activity });
+                await syncFromServer(memo.sessionId, memo.studentId);
             })();
         } catch {
             sessionStorage.removeItem(RECONNECT_KEY);
         }
-    }, []);
+    }, [syncFromServer]);
 
     // ── Subscribe once we're in the classroom ──────────────────────
     useEffect(() => {
@@ -142,23 +228,18 @@ export default function StudentClassClient() {
             (payload) => {
                 const row = payload.new as unknown as SessionRow;
                 if (row.id !== sessionId) return;
-                if (row.class_state === 'ended') {
-                    sessionStorage.removeItem(RECONNECT_KEY);
-                    setUi({ kind: 'ended', sessionId });
-                    return;
-                }
-                setUi((prev) => prev.kind === 'classroom' ? { ...prev, session: row } : prev);
-                // If current_activity_id changed, fetch the new activity row.
-                if (row.current_activity_id) {
-                    callRpc<SessionActivityRow | null>('class_get_activity', { in_activity_id: row.current_activity_id })
-                        .then(({ data }) => {
-                            if (data) {
-                                setUi((prev) => prev.kind === 'classroom' ? { ...prev, activity: data } : prev);
-                            }
-                        });
-                } else {
-                    setUi((prev) => prev.kind === 'classroom' ? { ...prev, activity: null } : prev);
-                }
+                setUi((prev) => {
+                    // Check version for duplicate/stale events
+                    if (prev.kind !== 'classroom') return prev;
+                    const newVer = (row as { activity_version?: number }).activity_version ?? 0;
+                    if (newVer <= prev.activityVersion) return prev;
+
+                    // Trigger async refetch (outside setUi setter — can't await)
+                    syncFromServer(sessionId, studentId);
+
+                    // Optimistically update session + clear activity (will be corrected by fetch)
+                    return { ...prev, session: row as SessionRow, activity: null, activityVersion: newVer };
+                });
             },
             `id=eq.${sessionId}`,
         );
@@ -193,23 +274,12 @@ export default function StudentClassClient() {
         );
 
         return () => { unsubSession(); unsubMyRow(); unsubActivity(); };
-    }, [ui.kind, ui.kind === 'classroom' ? ui.session.id : null, ui.kind === 'classroom' ? ui.student.id : null]);
+    }, [ui.kind, ui.kind === 'classroom' ? ui.session.id : null, ui.kind === 'classroom' ? ui.student.id : null, syncFromServer]);
 
     // ── Defensive session heartbeat ────────────────────────────────
-    // The PRD "Teacher ended class but student continued" bug class.
-    // The Realtime subscription above is the primary path for state
-    // changes, but websockets are not reliable: load balancers kill
-    // idle connections, tabs get suspended on mobile, Supabase
-    // reconnects can lose events fired during the gap. When that
-    // happens the teacher sets class_state='ended' but the student
-    // never sees the UPDATE and the experience stays live.
-    //
-    // This effect adds a 10s safety-net poll. It re-fetches the
-    // session row directly. If class_state is 'ended', or the row
-    // is gone entirely, we transition out immediately. We also
-    // re-check on tab visibility-change so a student who tabbed
-    // away and back catches up at once instead of waiting for the
-    // next tick.
+    // Uses getStudentClassState (authoritative) instead of individual
+    // RPC calls. Catches Realtime gaps (mobile tab suspension, LB
+    // killing idle connections, Supabase reconnect gaps).
     useEffect(() => {
         if (ui.kind !== 'classroom') return;
         const sessionId = ui.session.id;
@@ -218,27 +288,30 @@ export default function StudentClassClient() {
         const check = async () => {
             if (cancelled || document.visibilityState !== 'visible') return;
             try {
-                const { data: session } = await callRpc<SessionRow | null>(
-                    'class_get_session', { in_session_id: sessionId },
+                const { data: raw } = await callRpc<StudentClassState | { error: string }>(
+                    'get_student_class_state',
+                    { in_student_id: studentId, in_session_id: sessionId },
                 );
-                if (cancelled) return;
-                if (!session) {
-                    // null ⇒ session ended or gone.
+                if (cancelled || !raw || 'error' in (raw as Record<string, unknown>)) return;
+                const st = raw as StudentClassState;
+
+                if (st.sessionStatus === 'ended' || st.kicked) {
                     sessionStorage.removeItem(RECONNECT_KEY);
-                    setUi({ kind: 'ended', sessionId });
+                    setUi(st.kicked
+                        ? { kind: 'kicked', reason: st.kickedReason }
+                        : { kind: 'ended', sessionId });
                     return;
                 }
-                // Also catch kicks that Realtime missed.
-                const { data: student } = await callRpc<StudentRow | null>(
-                    'class_get_self', { in_student_id: studentId },
-                );
-                if (cancelled) return;
-                if (student?.kicked_at) {
-                    sessionStorage.removeItem(RECONNECT_KEY);
-                    setUi({ kind: 'kicked', reason: student.kicked_reason });
-                }
+
+                setUi((prev) => {
+                    if (prev.kind !== 'classroom') return prev;
+                    if (st.activityVersion <= prev.activityVersion) return prev;
+                    // Version changed — fetch full state
+                    syncFromServer(sessionId, studentId);
+                    return prev;
+                });
             } catch {
-                /* network blip, next tick will retry */
+                /* network blip */
             }
         };
         const id = window.setInterval(check, 10_000);
@@ -249,7 +322,7 @@ export default function StudentClassClient() {
             window.clearInterval(id);
             document.removeEventListener('visibilitychange', onVis);
         };
-    }, [ui.kind, ui.kind === 'classroom' ? ui.session.id : null, ui.kind === 'classroom' ? ui.student.id : null]);
+    }, [ui.kind, ui.kind === 'classroom' ? ui.session.id : null, ui.kind === 'classroom' ? ui.student.id : null, syncFromServer]);
 
     // ── Auto-redirect after kicked / ended ─────────────────────────
     useEffect(() => {
@@ -261,58 +334,108 @@ export default function StudentClassClient() {
     // ── Submit handlers ────────────────────────────────────────────
     const handleCode = useCallback(async (code: string) => {
         setError(null);
-        if (!isValidCode(code)) { setError('Enter a 4-digit code'); return; }
-        // H1: resolve the code through the anon-callable SECURITY DEFINER RPC,
-        // which returns a tightly-scoped projection only for active sessions.
-        const { data } = await callRpc<SessionRow | null>(
-            'session_lookup_by_code', { in_code: code },
-        );
-        if (!data) { setError('No active class with that code'); return; }
-        setUi({ kind: 'name', session: data });
+        const trimmed = code.trim();
+        if (!isValidCode(trimmed)) { setError('Enter a 4-digit code'); return; }
+
+        const result = await joinApi.validateCode(trimmed);
+        if (!result) {
+            setError('No active class with that code');
+            return;
+        }
+        if (!result.valid) {
+            const msg = JOIN_ERROR_MESSAGES[result.code as JoinErrorCode] || 'Could not join. Check the code and try again.';
+            if (result.code === 'NETWORK_MISMATCH') {
+                setUi({ kind: 'network_error', message: msg });
+                return;
+            }
+            setError(msg);
+            return;
+        }
+        if (!result.session) {
+            setError('No active class with that code');
+            return;
+        }
+        const sessionRow: SessionRow = {
+            id: result.session.id,
+            teacher_id: '',
+            code: result.session.code,
+            activity: result.session.activity,
+            class_state: result.session.class_state as SessionRow['class_state'],
+            current_activity_id: result.session.current_activity_id,
+            class_name: null,
+            scoreboard_visible: false,
+            timer_seconds: result.session.timer_seconds,
+            started_at: null,
+            ended_at: null,
+            created_at: '',
+            updated_at: null,
+        };
+        setUi({ kind: 'name', session: sessionRow });
     }, []);
 
     const handleName = useCallback(async (rawName: string) => {
         if (ui.kind !== 'name') return;
         setError(null);
         const desired = rawName.trim();
-        if (!desired) { setError('Enter your first name'); return; }
-        // H1: join is now a single SECURITY DEFINER RPC that validates the
-        // session, dedupes the name server-side, inserts, and returns the row
-        // (incl. name + avatar_seed). This removes the client's need to read
-        // other children's names from the roster.
-        const { data, error: joinErr } = await callRpc<StudentRow | null>(
-            'class_join', { in_session_id: ui.session.id, in_name: desired },
-        );
+        if (!desired) { setError(JOIN_ERROR_MESSAGES.INVALID_NAME); return; }
+
+        const { data, error: joinErr } = await joinApi.joinWithNetwork(ui.session.id, desired);
         if (joinErr || !data) {
-            setError(joinErr?.message ?? 'Could not join class');
+            const code = (joinErr?.message ?? '') as JoinErrorCode;
+            setError(JOIN_ERROR_MESSAGES[code] || JOIN_ERROR_MESSAGES.JOIN_FAILED);
             return;
         }
         const finalName = data.name;
+
+        // Use authoritative getStudentClassState instead of separate RPCs
+        const result = await fetchStudentClassState(ui.session.id, data.id);
+        if (!result.session || !result.student) {
+            // Session might have ended between join and fetch
+            const session = ui.session;
+            const student = data as StudentRow;
+            const ass = await callRpc<ActivityAssignment[]>(
+                'get_student_assignments',
+                { in_student_id: data.id, in_session_id: ui.session.id },
+            );
+            const memo: ReconnectMemo = {
+                sessionId: ui.session.id, studentId: data.id, name: finalName,
+                avatarSeed: data.avatar_seed ?? '', activityVersion: 0,
+                assignments: ass.data ?? [], ts: Date.now(),
+            };
+            try { sessionStorage.setItem(RECONNECT_KEY, JSON.stringify(memo)); } catch { /* ignore */ }
+            setUi({ kind: 'classroom', session, student, activity: null, assignments: ass.data ?? [], activityVersion: 0 });
+            return;
+        }
+
+        const ass = await callRpc<ActivityAssignment[]>(
+            'get_student_assignments',
+            { in_student_id: data.id, in_session_id: ui.session.id },
+        );
+        const finalAssignments = ass.data ?? [];
+
         const memo: ReconnectMemo = {
             sessionId: ui.session.id, studentId: data.id, name: finalName,
-            avatarSeed: data.avatar_seed ?? '', ts: Date.now(),
+            avatarSeed: data.avatar_seed ?? '', activityVersion: result.state?.activityVersion ?? 0,
+            assignments: finalAssignments, ts: Date.now(),
         };
         try { sessionStorage.setItem(RECONNECT_KEY, JSON.stringify(memo)); } catch { /* ignore */ }
 
-        // Fetch the authoritative full session (current_activity_id etc.) +
-        // the current activity, both via capability-scoped RPCs.
-        const { data: fullSession } = await callRpc<SessionRow | null>(
-            'class_get_session', { in_session_id: ui.session.id },
-        );
-        const session = fullSession ?? ui.session;
-        let activity: SessionActivityRow | null = null;
-        if (session.current_activity_id) {
-            const { data: act } = await callRpc<SessionActivityRow | null>(
-                'class_get_activity', { in_activity_id: session.current_activity_id },
-            );
-            if (act) activity = act;
-        }
-        setUi({ kind: 'classroom', session, student: data, activity });
+        setUi({
+            kind: 'classroom',
+            session: result.session!,
+            student: result.student!,
+            activity: result.activity,
+            assignments: finalAssignments,
+            activityVersion: result.state?.activityVersion ?? 0,
+        });
     }, [ui]);
 
     // ── Render ─────────────────────────────────────────────────────
     if (ui.kind === 'code') {
         return <CodeEntry error={error} onSubmit={handleCode} />;
+    }
+    if (ui.kind === 'network_error') {
+        return <NetworkErrorScreen message={ui.message} onRetry={() => setUi({ kind: 'code' })} />;
     }
     if (ui.kind === 'name') {
         return <NameEntry session={ui.session} error={error} onSubmit={handleName} />;
@@ -381,7 +504,25 @@ function CodeEntry({ error, onSubmit }: { error: string | null; onSubmit: (code:
 // ── Step 2: Name entry ─────────────────────────────────────────────
 function NameEntry({ session, error, onSubmit }: { session: SessionRow; error: string | null; onSubmit: (name: string) => void }) {
     const [name, setName] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const inputRef = useRef<HTMLInputElement | null>(null);
+    const errorAnnounce = useRef<HTMLDivElement | null>(null);
     const label = session.activity ? MODE_LABELS[session.activity as GameModeId] : null;
+
+    const handleSubmit = useCallback(async () => {
+        if (!name.trim() || submitting) return;
+        setSubmitting(true);
+        await new Promise(requestAnimationFrame);
+        onSubmit(name);
+        setSubmitting(false);
+    }, [name, submitting, onSubmit]);
+
+    useEffect(() => {
+        if (error && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [error]);
+
     return (
         <div className="cm-page">
             <div className="cm-student-page">
@@ -392,23 +533,60 @@ function NameEntry({ session, error, onSubmit }: { session: SessionRow; error: s
                     ) : (
                         <p style={{ color: '#94a3b8', marginBottom: 20 }}>Joining your teacher's class</p>
                     )}
-                    <input
-                        className="cm-name-input"
-                        type="text"
-                        placeholder="First name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && name.trim() && onSubmit(name)}
-                        maxLength={20}
-                        autoFocus
-                    />
-                    {error && <div className="cm-error">{error}</div>}
+                    <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+                        <input
+                            ref={inputRef}
+                            className="cm-name-input"
+                            type="text"
+                            placeholder="First name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            maxLength={20}
+                            autoFocus
+                            aria-describedby={error ? 'name-error' : undefined}
+                            aria-invalid={!!error}
+                        />
+                        <div
+                            id="name-error"
+                            ref={errorAnnounce}
+                            className="cm-error"
+                            role="alert"
+                            aria-live="assertive"
+                            aria-atomic="true"
+                            style={error ? {} : { visibility: 'hidden', height: 0, overflow: 'hidden' }}
+                        >
+                            {error || '\u00A0'}
+                        </div>
+                        <button
+                            className="cm-btn-primary"
+                            style={{ width: '100%' }}
+                            onClick={handleSubmit}
+                            disabled={!name.trim() || submitting}
+                            type="submit"
+                        >
+                            {submitting ? 'Joining…' : 'Join class'}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ── Network error screen ──────────────────────────────────────────
+function NetworkErrorScreen({ message, onRetry }: { message: string; onRetry: () => void }) {
+    return (
+        <div className="cm-page">
+            <div className="cm-student-page">
+                <div className="cm-join-card cd-join-card">
+                    <div className="cd-student-emoji" style={{ fontSize: '3rem', marginBottom: 12 }}>🌐</div>
+                    <h2>Network issue</h2>
+                    <p style={{ color: '#94a3b8', marginBottom: 20 }}>{message}</p>
                     <button
                         className="cm-btn-primary"
                         style={{ width: '100%' }}
-                        onClick={() => onSubmit(name)}
-                        disabled={!name.trim()}
-                    >Join class</button>
+                        onClick={onRetry}
+                    >Try again</button>
                 </div>
             </div>
         </div>
@@ -416,11 +594,11 @@ function NameEntry({ session, error, onSubmit }: { session: SessionRow; error: s
 }
 
 // ── Locked-in classroom shell ──────────────────────────────────────
-function ClassroomShell({ ui }: { ui: { kind: 'classroom'; session: SessionRow; student: StudentRow; activity: SessionActivityRow | null } }) {
-    const { session, student, activity } = ui;
+function ClassroomShell({ ui }: { ui: { kind: 'classroom'; session: SessionRow; student: StudentRow; activity: SessionActivityRow | null; assignments: ActivityAssignment[] } }) {
+    const { session, student, activity, assignments } = ui;
     const avatar = avatarFromSeed(student.avatar_seed ?? `${session.id}:${student.name.toLowerCase()}`);
 
-    // No activity loaded → waiting room
+    // No activity loaded, or not yet in an activity → waiting room
     if (!activity || session.class_state === 'lobby' || session.class_state === 'between_activities') {
         const between = session.class_state === 'between_activities';
         return (
@@ -436,6 +614,12 @@ function ClassroomShell({ ui }: { ui: { kind: 'classroom'; session: SessionRow; 
                                 <div className="cd-student-emoji">⭐</div>
                                 <h2>Great job!</h2>
                                 <p>Your teacher is picking the next activity…</p>
+                            </>
+                        ) : session.class_state === 'in_activity' ? (
+                            <>
+                                <div className="cd-student-emoji">🚀</div>
+                                <h2>Your activity is starting…</h2>
+                                <p>Just a moment.</p>
                             </>
                         ) : (
                             <>
@@ -472,7 +656,7 @@ function ClassroomShell({ ui }: { ui: { kind: 'classroom'; session: SessionRow; 
 
     // Activity playing → render the game
     if (activity.state === 'playing' || activity.state === 'starting') {
-        return <ClassroomGame student={student} avatar={avatar} session={session} activity={activity} />;
+        return <ClassroomGame student={student} avatar={avatar} session={session} activity={activity} assignments={assignments} />;
     }
 
     // Activity ended (waiting for next or end-of-class)
@@ -495,15 +679,40 @@ function ClassroomShell({ ui }: { ui: { kind: 'classroom'; session: SessionRow; 
 }
 
 // ── The actual game render ─────────────────────────────────────────
-function ClassroomGame({ student, avatar, session, activity }: {
+function ClassroomGame({ student, avatar, session, activity, assignments }: {
     student: StudentRow;
     avatar: { emoji: string; color: string };
     session: SessionRow;
     activity: SessionActivityRow;
+    assignments: ActivityAssignment[];
 }) {
-    const activeLogic = useMemo(() => LOGIC_MAP[activity.activity], [activity.activity]) as never;
-    // Stub onExit, we never let the kid exit; only the teacher does.
+    // Tracing resolves through the canonical helper (same engine the canonical
+    // render shell uses); all other modes use the static map.
+    const activeLogic = useMemo(
+        () => activity.activity === TRACING_ACTIVITY_ID ? getTracingFrameLogic() : LOGIC_MAP[activity.activity],
+        [activity.activity],
+    ) as never;
     const noop = useCallback(() => { /* locked-in: teacher controls */ }, []);
+    const isAssigned = assignments.length === 0 ||
+        assignments.some((a) => a.activity === activity.activity && a.is_enabled);
+    if (!isAssigned) {
+        return (
+            <div className="cd-student-shell">
+                <header className="cd-student-header">
+                    <span className="cd-avatar cd-avatar-lg" style={{ background: avatar.color }}>{avatar.emoji}</span>
+                    <h1 className="cd-student-name">{student.name}</h1>
+                </header>
+                <main className="cd-student-main">
+                    <div className="cd-student-bigcard">
+                        <div className="cd-student-emoji">🎒</div>
+                        <h2>Waiting for your activity</h2>
+                        <p>Your teacher will start your activity soon.</p>
+                        <div className="cd-student-spinner" />
+                    </div>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div className="App">
@@ -540,7 +749,11 @@ function ClassroomGame({ student, avatar, session, activity }: {
                         >
                             {activity.activity === 'calibration' && <BubbleCalibration onComplete={noop} onExit={noop} />}
                             {activity.activity === 'free' && <FreePaintMode frameRef={frameRef} onExit={noop} />}
-                            {activity.activity === 'pre-writing' && <PreWritingMode onExit={noop} />}
+                            {/* General Tracing assignment → category selection
+                                is allowed (explicit, not inferred). A future
+                                per-category assignment passes allowCategorySelection
+                                {false} + initialSection. */}
+                            {activity.activity === 'pre-writing' && <CanonicalTracingMode onExit={noop} allowCategorySelection />}
                             {activity.activity === 'sort-and-place' && <SortAndPlaceMode onExit={noop} />}
                             {activity.activity === 'word-search' && (
                                 <WordSearchMode frameRef={frameRef} showSettings={false} onCloseSettings={noop} onExit={noop} />

@@ -35,7 +35,10 @@ export default function ClassModeGameWrapper({
   freeze = false,
 }: ClassModeGameWrapperProps) {
   const [timeLeft, setTimeLeft] = useState(timerSeconds > 0 ? timerSeconds : 0);
-  const [submitted, setSubmitted] = useState(false);
+  // Synchronous guard: the timer-zero path and the teacher 'results'/'ended'
+  // Realtime event can both fire before a state update repaints. A ref makes
+  // submission idempotent (no duplicate round_scores rows).
+  const submittedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const scoreRef = useRef(0);
 
@@ -88,8 +91,8 @@ export default function ClassModeGameWrapper({
   }, [sessionId]);
 
   const submitScore = useCallback(async () => {
-    if (submitted) return;
-    setSubmitted(true);
+    if (submittedRef.current) return;
+    submittedRef.current = true;
 
     if (timerRef.current) clearInterval(timerRef.current);
 
@@ -97,8 +100,9 @@ export default function ClassModeGameWrapper({
     const finalRaw = getRawScore(activity);
     const stars = rawToStars(activity, finalRaw);
 
-    // Submit to database
-    await dbInsert('round_scores', {
+    // Submit to database. Do NOT fail silently — a lost score must be observable
+    // (the round_scores anon INSERT policy is added in migration 0028).
+    const { error } = await dbInsert('round_scores', {
       session_id: sessionId,
       student_id: studentId,
       round,
@@ -106,9 +110,12 @@ export default function ClassModeGameWrapper({
       raw_score: finalRaw,
       activity,
     });
+    if (error) {
+      console.warn('[ClassModeGameWrapper] round_scores insert failed', error);
+    }
 
     onRoundEnd(stars);
-  }, [submitted, activity, sessionId, studentId, round, onRoundEnd]);
+  }, [activity, sessionId, studentId, round, onRoundEnd]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;

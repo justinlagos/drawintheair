@@ -130,6 +130,7 @@ export type EventName =
     | 'tracing_stroke_completed'    // playful_v1: a stroke finished; meta.stroke
     | 'tracing_off_path'            // playful_v1: gentle off-path correction shown
     | 'tracing_recovered'           // playful_v1: returned to path after off-path
+    | 'tracing_init_failed'         // playful_v1: engine init failed, exited to menu
     // ── Magic Canvas (Free Paint redesign) ──
     | 'magic_canvas_opened'         // entry chooser shown
     | 'magic_canvas_entry_selected' // meta.experience: 'create'|'challenge'|'world'

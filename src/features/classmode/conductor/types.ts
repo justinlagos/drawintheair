@@ -35,6 +35,8 @@ export interface SessionRow {
     ended_at: string | null;
     created_at: string;
     updated_at: string | null;
+    activity_version?: number;
+    status?: string;
 }
 
 /** Row in public.session_activities. */

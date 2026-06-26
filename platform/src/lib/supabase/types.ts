@@ -408,6 +408,136 @@ export type Database = {
           created_at?: string
         }
       }
+      student_activity_assignments: {
+        Row: {
+          id: string
+          session_id: string
+          student_id: string
+          activity: string
+          sequence_order: number
+          is_enabled: boolean
+          assigned_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          student_id: string
+          activity: string
+          sequence_order?: number
+          is_enabled?: boolean
+          assigned_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          session_id?: string
+          student_id?: string
+          activity?: string
+          sequence_order?: number
+          is_enabled?: boolean
+          assigned_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      classroom_default_activities: {
+        Row: {
+          id: string
+          session_id: string
+          activities: string[]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          activities?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          session_id?: string
+          activities?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      session_network_fingerprints: {
+        Row: {
+          id: string
+          session_id: string
+          network_hash: string
+          algorithm: string
+          created_at: string
+          expires_at: string | null
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          network_hash: string
+          algorithm?: string
+          created_at?: string
+          expires_at?: string | null
+        }
+        Update: {
+          id?: string
+          session_id?: string
+          network_hash?: string
+          algorithm?: string
+          created_at?: string
+          expires_at?: string | null
+        }
+      }
+      join_audit_log: {
+        Row: {
+          id: string
+          session_id: string | null
+          student_id: string | null
+          event: string
+          result_code: string | null
+          metadata: Record<string, unknown> | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          session_id?: string | null
+          student_id?: string | null
+          event: string
+          result_code?: string | null
+          metadata?: Record<string, unknown> | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          session_id?: string | null
+          student_id?: string | null
+          event?: string
+          result_code?: string | null
+          metadata?: Record<string, unknown> | null
+          created_at?: string
+        }
+      }
+      join_rate_limits: {
+        Row: {
+          ip_hash: string
+          attempt_count: number
+          window_start: string
+        }
+        Insert: {
+          ip_hash: string
+          attempt_count?: number
+          window_start?: string
+        }
+        Update: {
+          ip_hash?: string
+          attempt_count?: number
+          window_start?: string
+        }
+      }
       client_errors: {
         Row: {
           id: string
@@ -528,6 +658,82 @@ export type Database = {
           teacher_id: string
         }
         Returns: 'free' | 'trial' | 'pro' | 'school' | 'admin'
+      }
+      class_validate_join: {
+        Args: {
+          in_code: string
+          in_student_ip: string
+        }
+        Returns: Record<string, unknown>
+      }
+      class_join_with_network: {
+        Args: {
+          in_session_id: string
+          in_name: string
+          in_student_ip: string
+        }
+        Returns: Record<string, unknown>
+      }
+      get_student_assignments: {
+        Args: {
+          in_student_id: string
+          in_session_id: string
+        }
+        Returns: Record<string, unknown>
+      }
+      set_student_assignments: {
+        Args: {
+          in_session_id: string
+          in_student_id: string
+          in_activities: Record<string, unknown>[]
+        }
+        Returns: Record<string, unknown>
+      }
+      set_classroom_default_activities: {
+        Args: {
+          in_session_id: string
+          in_activities: string[]
+        }
+        Returns: Record<string, unknown>
+      }
+      session_set_network_fingerprint: {
+        Args: {
+          in_session_id: string
+          in_teacher_ip: string
+        }
+        Returns: Record<string, unknown>
+      }
+      session_validate_network: {
+        Args: {
+          in_session_id: string
+          in_student_ip: string
+        }
+        Returns: Record<string, unknown>
+      }
+      check_join_rate_limit: {
+        Args: {
+          in_ip_hash: string
+        }
+        Returns: Record<string, unknown>
+      }
+      normalize_ip_for_network: {
+        Args: {
+          in_ip: string
+        }
+        Returns: string | null
+      }
+      generate_network_fingerprint: {
+        Args: {
+          in_ip: string
+          in_secret: string
+        }
+        Returns: string | null
+      }
+      session_lookup_by_code: {
+        Args: {
+          in_code: string
+        }
+        Returns: Record<string, unknown> | null
       }
     }
     Enums: {

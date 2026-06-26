@@ -233,8 +233,8 @@ BEGIN
     INTO r
     FROM public.sessions s
     WHERE s.code = in_code
-      AND s.status     <> 'ended'
-      AND s.class_state <> 'ended'
+      AND s.status      IN ('waiting', 'active', 'paused')
+      AND s.class_state IN ('lobby', 'in_activity')
     LIMIT 1;
 
     IF NOT FOUND THEN
