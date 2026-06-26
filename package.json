@@ -19,7 +19,8 @@
     "validate": "npm run type-check && npm run lint && npm run check:csp",
     "check:secrets": "node scripts/check-secrets.mjs",
     "check:csp": "node scripts/check-csp.mjs",
-    "tracking:test": "echo 'Note: Compile TypeScript first, then run: node scripts/tracking-smoke-test.js' || (tsc scripts/tracking-smoke-test.ts --outDir scripts --module esnext --target es2020 && node scripts/tracking-smoke-test.js)"
+    "tracking:test": "echo 'Note: Compile TypeScript first, then run: node scripts/tracking-smoke-test.js' || (tsc scripts/tracking-smoke-test.ts --outDir scripts --module esnext --target es2020 && node scripts/tracking-smoke-test.js)",
+    "check:env-safety": "node scripts/check-env-safety.mjs"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^0.10.22-rc.20250304",
