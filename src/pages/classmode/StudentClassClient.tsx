@@ -19,7 +19,8 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { callRpc, subscribeToTable } from '../../lib/supabase';
+import { callRpc, subscribeToTable, onRealtimeReconnect } from '../../lib/supabase';
+import { analytics } from '../../lib/analytics';
 import { isValidCode } from '../../features/classmode/sessionCode';
 import { MODE_LABELS } from '../../features/classmode/scoreMapping';
 import type { GameModeId } from '../../features/classmode/scoreMapping';
@@ -83,6 +84,10 @@ type UiState =
 export default function StudentClassClient() {
     const [ui, setUi] = useState<UiState>({ kind: 'code' });
     const [error, setError] = useState<string | null>(null);
+    // Last activity id we've materialised, so the reconciliation poll only
+    // fetches the activity row when the teacher has actually changed it
+    // (audit 2026-06-26). Avoids re-render churn inside the camera frame loop.
+    const lastActivityIdRef = useRef<string | null>(null);
 
     // ── Try to auto-rejoin from sessionStorage on mount ────────────
     useEffect(() => {
@@ -149,6 +154,7 @@ export default function StudentClassClient() {
                 }
                 setUi((prev) => prev.kind === 'classroom' ? { ...prev, session: row } : prev);
                 // If current_activity_id changed, fetch the new activity row.
+                lastActivityIdRef.current = row.current_activity_id ?? null;
                 if (row.current_activity_id) {
                     callRpc<SessionActivityRow | null>('class_get_activity', { in_activity_id: row.current_activity_id })
                         .then(({ data }) => {
@@ -195,6 +201,15 @@ export default function StudentClassClient() {
         return () => { unsubSession(); unsubMyRow(); unsubActivity(); };
     }, [ui.kind, ui.kind === 'classroom' ? ui.session.id : null, ui.kind === 'classroom' ? ui.student.id : null]);
 
+    // Keep the activity-id ref aligned with whatever entry path put us in
+    // the classroom (join, auto-rejoin, Realtime), so the reconciliation
+    // poll's change-detection has the right baseline.
+    useEffect(() => {
+        if (ui.kind === 'classroom') {
+            lastActivityIdRef.current = ui.session.current_activity_id ?? null;
+        }
+    }, [ui.kind, ui.kind === 'classroom' ? ui.session.current_activity_id : null]);
+
     // ── Defensive session heartbeat ────────────────────────────────
     // The PRD "Teacher ended class but student continued" bug class.
     // The Realtime subscription above is the primary path for state
@@ -218,42 +233,80 @@ export default function StudentClassClient() {
         const check = async () => {
             if (cancelled || document.visibilityState !== 'visible') return;
             try {
-                const { data: session } = await callRpc<SessionRow | null>(
-                    'class_get_session', { in_session_id: sessionId },
-                );
+                // Fetch session + self together (audit 2026-06-26: was two
+                // serial round-trips). class_get_session returns null for an
+                // ended/gone session.
+                const [{ data: session }, { data: student }] = await Promise.all([
+                    callRpc<SessionRow | null>('class_get_session', { in_session_id: sessionId }),
+                    callRpc<StudentRow | null>('class_get_self', { in_student_id: studentId }),
+                ]);
                 if (cancelled) return;
                 if (!session) {
-                    // null ⇒ session ended or gone.
                     sessionStorage.removeItem(RECONNECT_KEY);
                     setUi({ kind: 'ended', sessionId });
                     return;
                 }
-                // Also catch kicks that Realtime missed.
-                const { data: student } = await callRpc<StudentRow | null>(
-                    'class_get_self', { in_student_id: studentId },
-                );
-                if (cancelled) return;
+                // Catch kicks that Realtime missed.
                 if (student?.kicked_at) {
                     sessionStorage.removeItem(RECONNECT_KEY);
                     setUi({ kind: 'kicked', reason: student.kicked_reason });
+                    return;
+                }
+                // Reconcile the activity transition. This is the part the old
+                // poll was missing: if the teacher's "start activity" UPDATE
+                // was dropped by Realtime, the student would otherwise wait
+                // forever. Only fetch the activity row when the teacher has
+                // actually changed it, so we don't churn the frame loop.
+                const targetActivityId = session.current_activity_id ?? null;
+                if (targetActivityId !== lastActivityIdRef.current) {
+                    lastActivityIdRef.current = targetActivityId;
+                    let activity: SessionActivityRow | null = null;
+                    if (targetActivityId) {
+                        const { data: act } = await callRpc<SessionActivityRow | null>(
+                            'class_get_activity', { in_activity_id: targetActivityId },
+                        );
+                        if (cancelled) return;
+                        activity = act ?? null;
+                    }
+                    setUi((prev) => prev.kind === 'classroom'
+                        ? { ...prev, session, student: student ?? prev.student, activity }
+                        : prev);
+                } else {
+                    // Keep class_state fresh (e.g. lobby → between_activities)
+                    // without replacing the activity object.
+                    setUi((prev) => {
+                        if (prev.kind !== 'classroom') return prev;
+                        if (prev.session.class_state === session.class_state) return prev;
+                        return { ...prev, session };
+                    });
                 }
             } catch {
                 /* network blip, next tick will retry */
             }
         };
-        const id = window.setInterval(check, 10_000);
+        // 5s poll (was 10s) as the backup to Realtime, plus an immediate
+        // reconciliation whenever the tab refocuses or the Realtime socket
+        // reconnects — so a missed event resolves in well under a second on
+        // reconnect instead of waiting for the next tick.
+        const id = window.setInterval(check, 5_000);
         const onVis = () => { if (document.visibilityState === 'visible') check(); };
         document.addEventListener('visibilitychange', onVis);
+        const unsubReconnect = onRealtimeReconnect(check);
         return () => {
             cancelled = true;
             window.clearInterval(id);
             document.removeEventListener('visibilitychange', onVis);
+            unsubReconnect();
         };
     }, [ui.kind, ui.kind === 'classroom' ? ui.session.id : null, ui.kind === 'classroom' ? ui.student.id : null]);
 
     // ── Auto-redirect after kicked / ended ─────────────────────────
     useEffect(() => {
         if (ui.kind !== 'kicked' && ui.kind !== 'ended') return;
+        // Teacher authority: ending the session or removing the student is a
+        // terminal outcome for any activity the child still had open. Record
+        // it as teacher_ended so it isn't mislabelled as difficulty/abandon.
+        analytics.abandonOpenAttempt('teacher_ended');
         const t = setTimeout(() => { window.location.href = '/'; }, 8000);
         return () => clearTimeout(t);
     }, [ui.kind]);
@@ -288,6 +341,13 @@ export default function StudentClassClient() {
             return;
         }
         const finalName = data.name;
+
+        // Mark this device's session as a CLASSROOM session for analytics,
+        // so every subsequent event carries context='classroom' + the class
+        // code. Conductor join is in-UI (not a /?join= URL), so this is the
+        // only place the context flips — without it the whole class session
+        // is mis-attributed as 'home' in Insights (Home vs Classroom).
+        analytics.setClassCode(ui.session.code);
         const memo: ReconnectMemo = {
             sessionId: ui.session.id, studentId: data.id, name: finalName,
             avatarSeed: data.avatar_seed ?? '', ts: Date.now(),

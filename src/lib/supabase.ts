@@ -994,8 +994,32 @@ let realtimeRef = 0;
 const channels = new Map<string, RealtimeChannel>();
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 
+// Reconnect reconciliation (audit 2026-06-26). The hand-rolled Realtime
+// client can miss postgres_changes during the connect/join window or a
+// dropped-and-reconnected socket. There is no WAL replay, so any change
+// that happened in the gap is lost. Subscribers register here and re-fetch
+// their authoritative state whenever the socket (re)connects, closing the
+// gap that previously left teacher rosters and student screens stale until
+// a manual refresh.
+const reconnectListeners = new Set<() => void>();
+// True once the socket has opened at least once. The very first open is a
+// normal connect (callers already do an initial fetch), so we only fire the
+// reconnect listeners on subsequent opens.
+let hasConnectedBefore = false;
+
+/**
+ * Run `cb` every time the Realtime socket (re)connects after the initial
+ * connection. Use it to re-hydrate state that depends on Realtime so a
+ * dropped event never strands the UI. Returns an unsubscribe function.
+ */
+export function onRealtimeReconnect(cb: () => void): () => void {
+  reconnectListeners.add(cb);
+  return () => { reconnectListeners.delete(cb); };
+}
+
 function connectRealtime() {
   if (realtimeSocket?.readyState === WebSocket.OPEN) return;
+  if (realtimeSocket?.readyState === WebSocket.CONNECTING) return;
 
   const wsUrl = SUPABASE_URL.replace('https://', 'wss://').replace('http://', 'ws://');
   realtimeSocket = new WebSocket(
@@ -1008,9 +1032,15 @@ function connectRealtime() {
       sendPhxJoin(topic);
     });
     // Heartbeat every 30s
+    if (heartbeatInterval) clearInterval(heartbeatInterval);
     heartbeatInterval = setInterval(() => {
       sendPhx('heartbeat', 'phoenix', {});
     }, 30000);
+    // Tell subscribers to reconcile after a reconnect (not the first open).
+    if (hasConnectedBefore) {
+      reconnectListeners.forEach((fn) => { try { fn(); } catch { /* ignore */ } });
+    }
+    hasConnectedBefore = true;
   };
 
   realtimeSocket.onmessage = (event) => {
