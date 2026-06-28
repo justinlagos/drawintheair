@@ -1,0 +1,93 @@
+name: CI
+
+# Runs on every PR into master and on pushes to master (post-merge verification),
+# plus manual dispatch. Production branch is `master` (NOT `main`).
+on:
+  pull_request:
+    branches: [ master ]
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+# Least-privilege: workflow only needs to read repo contents.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---- Verified-green on master 2026-06-25; safe to make REQUIRED: typecheck, secret-scan, unit-tests ----
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run type-check
+
+  secret-scan:
+    name: secret-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Scan for committed secrets
+        run: npm run check:secrets
+      - name: Validate Content-Security-Policy
+        run: npm run check:csp
+      - name: Environment-safety guard (no prod refs / leaked service-role)
+        run: node scripts/check-env-safety.mjs
+
+  # ---- lint is RED on master (9 pre-existing errors) -> keep NON-required until fixed; see CONTRIBUTING.md ----
+  unit-tests:
+    name: unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Run unit tests (mocked MediaPipe; no webcam/network)
+        run: npm run test
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    # Uses SAFE PLACEHOLDER env so the production build compiles in CI without
+    # any real or production credentials. These are NOT secrets.
+    env:
+      VITE_SUPABASE_URL: https://example-preview.supabase.co
+      VITE_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+      VITE_APP_ENV: ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
