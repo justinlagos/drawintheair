@@ -1051,4 +1051,61 @@
     animation: none !important;
     transition: none !important;
   }
+  .cm-pick-card { transition: none !important; }
+}
+
+/* ── P3b: pick-your-picture (teacher-assigned token join) ──────────── */
+.cm-join-sub {
+  color: var(--cm-charcoal-soft);
+  margin: 0 0 18px;
+  font-size: 1.05rem;
+}
+.cm-pick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 12px;
+  margin: 4px 0 18px;
+}
+.cm-pick-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 8px 12px;
+  background: var(--cm-bg-panel);
+  border: 3px solid var(--cm-border);
+  border-radius: 20px;
+  box-shadow: var(--cm-shadow-panel);
+  cursor: pointer;
+  min-height: 110px;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+.cm-pick-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--cm-shadow-float);
+}
+.cm-pick-card-on {
+  border-color: var(--cm-deep-plum);
+  box-shadow: 0 0 0 4px rgba(138, 102, 240, 0.18), var(--cm-shadow-float);
+}
+.cm-pick-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  font-size: 2.1rem;
+  line-height: 1;
+  background: var(--cm-pick-bg, var(--cm-soft-lavender));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+.cm-pick-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--cm-charcoal);
+}
+@media (max-width: 480px) {
+  .cm-pick-grid { grid-template-columns: repeat(auto-fill, minmax(82px, 1fr)); gap: 10px; }
+  .cm-pick-emoji { width: 54px; height: 54px; font-size: 1.8rem; }
 }

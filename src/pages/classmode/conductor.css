@@ -661,3 +661,62 @@
   cursor: pointer;
 }
 .cm-btn-danger-outline:hover { background: var(--cd-bad-bg); }
+
+/* ── P3b: picture-token assignment + learner readiness ─────────── */
+.cd-panel-h-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cd-tok-open {
+  background: var(--cd-plum-bg, rgba(138, 102, 240, 0.10));
+  color: var(--cd-plum);
+  border: 1px solid var(--cd-line);
+  font-family: var(--cd-display);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cd-tok-open:hover { background: rgba(138, 102, 240, 0.18); }
+
+/* Small readiness chip on a roster card; sits under the engagement pill. */
+.cd-readiness {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--cd-ink-soft);
+  background: rgba(63, 64, 82, 0.06);
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.cd-tok-loading { color: var(--cd-ink-soft); padding: 18px 4px; text-align: center; }
+.cd-tok-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.cd-tok-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--cd-line);
+  border-radius: 12px;
+  background: #FBFCFF;
+}
+.cd-tok-name { font-weight: 700; color: var(--cd-ink); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cd-tok-select {
+  font-family: var(--cd-body);
+  font-size: 14px;
+  padding: 7px 10px;
+  border: 1.5px solid var(--cd-line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--cd-ink);
+  cursor: pointer;
+  min-width: 150px;
+}
+.cd-tok-select:focus { outline: none; border-color: var(--cd-plum); }

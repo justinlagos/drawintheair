@@ -43,6 +43,14 @@ export interface FeatureFlags {
     fillEnabled: boolean;             // Enable fill bucket tool
     shapesEnabled: boolean;          // Enable shape tools (line, rect, circle)
     selectionEnabled: boolean;       // Enable selection tools (rect select, move, delete)
+
+    // Persistent classroom token-join (P3b). When ON, the classroom join flow
+    // becomes: enter code → pick the teacher-given picture (token) → join, which
+    // links the child to their persistent class_children record and reports
+    // readiness. The teacher gets a picture-token assign control and learner
+    // readiness shows on the console. When OFF, the legacy name-typing join is
+    // used unchanged. Kill switch: featureFlags.setFlags({ tokenJoinV1: false }).
+    tokenJoinV1: boolean;
 }
 
 const DEFAULT_FLAGS: FeatureFlags = {
@@ -75,6 +83,8 @@ const DEFAULT_FLAGS: FeatureFlags = {
     fillEnabled: false,      // Fill bucket tool, default OFF
     shapesEnabled: false,    // Shape tools, default OFF
     selectionEnabled: false, // Selection tools, default OFF
+    // Persistent classroom token-join (P3b) — default OFF until staged + legal sign-off.
+    tokenJoinV1: false,
 };
 
 const STORAGE_KEY = 'feature-flags';

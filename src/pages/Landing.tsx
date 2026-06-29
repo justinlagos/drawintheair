@@ -370,7 +370,7 @@ export const Landing: React.FC = () => {
             <div className="hero-grid">
               <div>
                 <div className="eyebrow reveal">
-                  <span className="dot" />EYFS aligned, free for families
+                  <span className="dot" />EYFS aligned · for ages 3–7
                 </div>
                 <h1 className="h1 reveal d1">
                   Screen time that <span className="grad">makes you smile.</span>
@@ -395,7 +395,7 @@ export const Landing: React.FC = () => {
                   </button>
                 </div>
                 <div className="hero-trust reveal d4">
-                  <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{1F512}'}</span> No data stored</span>
+                  <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{1F512}'}</span> Webcam stays on your device</span>
                   <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{2728}'}</span> 7 days free</span>
                   <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{26A1}'}</span> Works instantly</span>
                 </div>

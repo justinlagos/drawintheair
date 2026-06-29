@@ -98,4 +98,14 @@ export const conductorApi = {
 
     endStaleSessions: () =>
         rpc<{ ended_count: number }>('class_end_stale_sessions', {}),
+
+    // P3b: assign a picture token to a rostered learner for this session.
+    // Returns the class_session_tokens row id. Teacher-authenticated; the RPC
+    // asserts the caller owns the session and the learner.
+    assignToken: (sessionId: string, classChildId: string, token: string) =>
+        rpc<string>('class_assign_token', {
+            in_session_id: sessionId,
+            in_class_child_id: classChildId,
+            in_token: token,
+        }),
 };

@@ -61,7 +61,28 @@ export interface StudentRow {
     is_connected: boolean;
     kicked_at: string | null;
     kicked_reason: string | null;
+    /** Persistent-learner link + authoritative readiness (P2/P3b). Optional:
+     *  only populated once the token-join + readiness migrations are live and
+     *  the tokenJoinV1 flag is on. */
+    class_child_id?: string | null;
+    readiness_state?: ReadinessState | null;
+    readiness_changed_at?: string | null;
 }
+
+/** Authoritative learner readiness (Decision DM2), separate from learning
+ *  performance. Mirrors the session_students.readiness_state CHECK. */
+export type ReadinessState =
+    | 'joined'
+    | 'camera_permission_needed'
+    | 'camera_ready'
+    | 'hand_detected'
+    | 'ready'
+    | 'playing'
+    | 'tracking_lost'
+    | 'needs_help'
+    | 'completed'
+    | 'disconnected'
+    | 'removed';
 
 /** Result shape returned by class_student_stats RPC. */
 export interface StudentStats {
