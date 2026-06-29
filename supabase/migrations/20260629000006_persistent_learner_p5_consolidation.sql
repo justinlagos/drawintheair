@@ -7,14 +7,39 @@
 -- the §0 sign-off + a deliberate deploy step.
 --
 -- Canonical decisions (Founder Decision Pack §DM1):
---   teacher identity → `teachers` (sessions.teacher_id already FKs it; it carries
---                      tier/trial/school_id). `teacher_profiles` becomes redundant.
---   org/school       → `schools` + `school_teachers`, mapped onto `tenants`.
+--   teacher identity → `teachers` is the APPROVED CANONICAL TARGET, while
+--     `teacher_profiles` REMAINS A COMPATIBILITY SOURCE until the application is
+--     migrated. `teachers` is NOT yet the single source of truth — the live app
+--     still reads/writes teacher_profiles (signup + role checks). The real switch
+--     happens only after signup writes to `teachers`, role/profile reads use
+--     `teachers`, and all triggers/RPCs/clients no longer depend on teacher_profiles.
+--   org/school → `schools` + `school_teachers`, mapped onto `tenants`.
 --
--- ── P5a — SAFE consolidation (additive, idempotent, APPLIED on staging) ──
--- Guarantee every teacher_profiles has a canonical `teachers` row so `teachers`
--- can be treated as the single source of truth. Sources email from auth.users
--- (teacher_profiles has none) and name from full_name.
+-- ── P5a — SAFE consolidation (additive, idempotent) ──
+-- Ensure every teacher_profiles has a `teachers` row. Sources email from
+-- auth.users (teacher_profiles has none), name from full_name.
+--
+-- PROD PROVENANCE (applied 2026-06-29): the insert below matched 0 rows on
+-- production — all 6 teacher_profiles already had a `teachers` row (auto-created
+-- at signup), so P5a was a NO-OP and inserted nothing. (1 pre-existing teacher
+-- has a blank name; unrelated to P5a — clean separately.)
+--
+-- REQUIRED HARDENING BEFORE ANY RE-RUN / FUTURE BACKFILL (per founder review):
+--   1. PREFLIGHT REPORT: profiles, already-represented, missing, profiles w/o
+--      auth user, auth users w/o email, tenant/email/name conflicts, duplicate
+--      emails, blank names. Do NOT treat "row exists" as "row is correct" —
+--      REPORT existing-but-conflicting rows, never silently skip them.
+--   2. TRANSACTION: run inside begin/commit; print expected count; validate
+--      counts + conflicts; commit only if clean, else rollback.
+--   3. PROVENANCE: record the EXACT inserted teacher ids (e.g. a migration audit
+--      table) so rollback removes ONLY those ids, after re-checking for new
+--      dependencies. Do NOT infer rollback from "has no sessions" — that would
+--      delete legitimate brand-new / invited / created-but-not-yet-run teachers.
+--   4. BLANK NAMES: do not turn missing full_name into '' silently — keep
+--      nullable, fall back to email, or flag the record for profile completion.
+--   POSTFLIGHT: confirm inserted count, no duplicate ids, no cross-tenant
+--      mismatch, role checks still work, signup still works, existing teachers
+--      can reach /teacher + /class, parent accounts stay blocked.
 insert into public.teachers (id, email, name, tenant_id)
 select tp.auth_user_id, u.email, coalesce(tp.full_name, ''), tp.tenant_id
 from public.teacher_profiles tp
@@ -23,32 +48,47 @@ where u.email is not null
   and not exists (select 1 from public.teachers t where t.id = tp.auth_user_id);
 
 -- ════════════════════════════════════════════════════════════════════
--- ── P5b — DESTRUCTIVE drops: AUTHORED, *NOT APPLIED* (gated) ───────────
--- BLOCKING PREREQUISITE: the production app still reads these objects, so
--- dropping them now would break deployed clients. Confirmed references:
+-- ── P5b — DESTRUCTIVE drops: FULLY BLOCKED (authored, NOT applied) ─────
+-- P5b is NOT merely "waiting for frontend changes." It requires a COMPLETE
+-- dependency audit across BOTH the database and every client contract before a
+-- single drop. Checking frontend references is necessary but NOT sufficient.
+--
+-- DEPENDENCY AUDIT (for EVERY proposed drop, produce a report covering):
+--   database functions · RPCs · views · materialised views · triggers ·
+--   RLS policies · generated-column expressions · tests · analytics queries ·
+--   scripts · admin tools · and any previous production clients still in use.
+-- Confirmed app references already found (so already blocking):
 --   • teacher_profiles — src/lib/teacherApi.ts (signup + getAccountRoles role check)
---   • session_students.is_active — StudentRow type + engagementOf() in
---     TeacherClassConsole.tsx
--- Do NOT run this section until the app no longer references the object AND it
--- has been re-verified on staging. Each drop is irreversible.
+--   • session_students.is_active — StudentRow + engagementOf() in TeacherClassConsole
 --
---   -- (1) Retire teacher_profiles once signup + getAccountRoles read `teachers`:
---   -- drop trigger if exists on_auth_user_created_teacher on auth.users;  -- if it targets teacher_profiles
---   -- drop table if exists public.teacher_profiles cascade;
+-- RETIREMENT RULES:
+--   • NO `cascade`. List every dependency, migrate each deliberately, remove
+--     dependencies explicitly, THEN drop without cascade. A blocked drop is
+--     PROTECTION, not an inconvenience.
+--   • Drop ONE object at a time; run the full test suite after each.
+--   • Keep old objects through a compatibility period with logging/tests that
+--     PROVE they are no longer used before removal.
 --
---   -- (2) Drop duplicate GENERATED columns once the client stops selecting them
---   --     (these are derived; safe only after the app reads the canonical column):
---   -- alter table public.session_students drop column if exists student_name;   -- = name
---   -- alter table public.session_students drop column if exists student_avatar;
---   -- alter table public.session_students drop column if exists is_active;      -- = is_connected  (APP USES THIS — migrate first)
---   -- alter table public.sessions          drop column if exists session_code;   -- = code
---   -- alter table public.schools           drop column if exists admin_teacher_id; -- = admin_user_id
---   -- alter table public.client_errors     drop column if exists error_message;  -- = message
---   -- (round_scores: session_student_id/round_number/gesture_name/accuracy/score are generated dups)
---
---   -- (3) Reconcile membership: standardise on school_teachers for school staff,
---   --     keep tenant_members for tenant isolation; reconcile role vocab. Define
---   --     precisely before any drop.
+-- PER-OBJECT NOTES (decide meaning before consolidating, do not assume):
+--   -- teacher_profiles: retire only after signup + getAccountRoles + profile
+--   --   reads + triggers move to `teachers`. Drop WITHOUT cascade.
+--   -- session_students.is_active vs is_connected: these are CONCEPTUALLY
+--   --   distinct (is_connected = live connection; is_active = allowed to take
+--   --   part / not removed). They are identical today only because is_active is
+--   --   generated from is_connected. Decide the intended future model BEFORE
+--   --   removing either — a disconnected learner may still be "active".
+--   -- sessions.session_code (=code): check join RPCs, analytics, admin exports,
+--   --   old clients, DB functions, any URL/QR generation.
+--   -- schools.admin_teacher_id (=admin_user_id): confirm which table each refers
+--   --   to and whether a school admin must always be a teacher.
+--   -- client_errors.error_message (=message): check observability exports,
+--   --   dashboards, retention jobs.
+--   -- round_scores duplicates (session_student_id/round_number/gesture_name/
+--   --   accuracy/score): review EACH column separately — a generated duplicate
+--   --   may still be in a public RPC contract, report, older payload, index, view
+--   --   or export.
+--   -- membership: standardise school staff on school_teachers, keep tenant_members
+--   --   for isolation; reconcile role vocab. Define precisely before any drop.
 -- ════════════════════════════════════════════════════════════════════
 
 -- ── ROLLBACK (P5a) ────────────────────────────────────────────────────
