@@ -720,3 +720,36 @@
   min-width: 150px;
 }
 .cd-tok-select:focus { outline: none; border-color: var(--cd-plum); }
+
+/* Add-a-child row inside the assign-pictures panel */
+.cd-tok-add {
+  display: flex;
+  gap: 8px;
+  margin: 14px 0 4px;
+}
+.cd-tok-add-input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--cd-body);
+  font-size: 14px;
+  padding: 9px 12px;
+  border: 1.5px solid var(--cd-line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--cd-ink);
+}
+.cd-tok-add-input:focus { outline: none; border-color: var(--cd-plum); }
+.cd-tok-add-btn {
+  flex: 0 0 auto;
+  font-family: var(--cd-display);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 9px 18px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--cd-plum);
+  color: #fff;
+  cursor: pointer;
+}
+.cd-tok-add-btn:disabled { opacity: 0.5; cursor: default; }
+.cd-tok-add-btn:hover:not(:disabled) { background: var(--cd-plum-active, #5C3FB0); }

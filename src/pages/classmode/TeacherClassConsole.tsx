@@ -16,6 +16,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
     dbSelect, dbInsert, subscribeToTable,
@@ -28,7 +29,7 @@ import { conductorApi } from '../../features/classmode/conductor/api';
 import { avatarFromSeed, avatarForStudent } from '../../features/classmode/conductor/avatars';
 import { featureFlags } from '../../core/featureFlags';
 import { PICTURE_TOKENS } from '../../features/classmode/tokens';
-import { listChildren, type ClassChild } from '../teacher/roster';
+import { listChildren, addChild, type ClassChild } from '../teacher/roster';
 import type {
     SessionRow,
     SessionActivityRow,
@@ -729,6 +730,8 @@ function TokenAssignModal({ sessionId, onClose }: { sessionId: string; onClose: 
     const [assigned, setAssigned] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(true);
     const [err, setErr] = useState<string | null>(null);
+    const [newName, setNewName] = useState('');
+    const [adding, setAdding] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -749,6 +752,8 @@ function TokenAssignModal({ sessionId, onClose }: { sessionId: string; onClose: 
 
     const usedTokens = useMemo(() => new Set(Object.values(assigned).filter(Boolean)), [assigned]);
 
+    const childName = (c: ClassChild) => c.nickname?.trim() || c.first_name || 'Learner';
+
     const assign = useCallback(async (childId: string, token: string) => {
         setErr(null);
         const prev = assigned[childId];
@@ -761,21 +766,51 @@ function TokenAssignModal({ sessionId, onClose }: { sessionId: string; onClose: 
         }
     }, [assigned, sessionId]);
 
-    const childName = (c: ClassChild) => c.nickname?.trim() || c.first_name || 'Learner';
+    const handleAdd = useCallback(async () => {
+        const name = newName.trim();
+        if (!name || adding) return;
+        setAdding(true);
+        setErr(null);
+        const res = await addChild({ first_name: name });
+        setAdding(false);
+        if (!res.ok) { setErr(res.error || 'Could not add child'); return; }
+        setChildren((cs) => [...cs, res.child]);
+        setNewName('');
+    }, [newName, adding]);
 
-    return (
+    // Rendered through a portal to document.body so it always sits above the
+    // console (the activity launcher etc.), never trapped behind it.
+    return createPortal(
         <div className="cd-modal-backdrop" role="dialog" aria-modal="true" aria-label="Assign pictures" onClick={onClose}>
             <div className="cd-modal" onClick={(e) => e.stopPropagation()}>
                 <div className="cd-modal-header">
                     <h2>Assign pictures</h2>
                     <button type="button" className="cd-modal-close" onClick={onClose} aria-label="Close">✕</button>
                 </div>
-                <p className="cd-modal-sub">Give each child a picture, then tell them which one is theirs. They pick it after entering the class code.</p>
+                <p className="cd-modal-sub">Add each child, give them a picture, then tell them which one is theirs. They pick it after entering the class code.</p>
+
+                <div className="cd-tok-add">
+                    <input
+                        className="cd-tok-add-input"
+                        type="text"
+                        placeholder="Add a child (first name or nickname)"
+                        value={newName}
+                        maxLength={40}
+                        onChange={(e) => setNewName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
+                        aria-label="Add a child"
+                    />
+                    <button type="button" className="cd-tok-add-btn" onClick={handleAdd} disabled={!newName.trim() || adding}>
+                        {adding ? 'Adding…' : 'Add'}
+                    </button>
+                </div>
+
                 {err && <div className="cd-error">{err}</div>}
+
                 {loading ? (
                     <div className="cd-tok-loading">Loading your class…</div>
                 ) : children.length === 0 ? (
-                    <div className="cd-tok-loading">No learners on your roster yet — add children from your dashboard first.</div>
+                    <div className="cd-tok-loading">No children yet — add your first one above.</div>
                 ) : (
                     <ul className="cd-tok-list">
                         {children.map((c) => {
@@ -803,7 +838,8 @@ function TokenAssignModal({ sessionId, onClose }: { sessionId: string; onClose: 
                 )}
                 <button type="button" className="cm-btn-primary" style={{ width: '100%', marginTop: 16 }} onClick={onClose}>Done</button>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 }
 
