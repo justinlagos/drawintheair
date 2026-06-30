@@ -265,7 +265,7 @@ export function EyfsView() {
 
 /* ════════════════════════════════ RESOURCES ════════════════════════════════ */
 const GUIDES: { file: string; emoji: string; title: string; desc: string; audience: string; group: string }[] = [
-  { file: '01-teacher-quick-start-guide.pdf', emoji: '🚀', title: "Teacher's Quick Start Guide", desc: 'Get up and running in under 5 minutes. Covers all modes, the pinch gesture, and classroom setup.', audience: 'All teachers', group: 'Getting started' },
+  { file: '00-teacher-guide.pdf', emoji: '🚀', title: 'Teacher Guide', desc: 'Everything for your first class: the four steps, what your children are learning, the activities, a first-lesson plan, and our privacy promise.', audience: 'All teachers', group: 'Getting started' },
   { file: '04-chromebook-classroom-setup.pdf', emoji: '💻', title: 'Chromebook Classroom Setup', desc: 'Step-by-step setup for school Chromebook carts, labs, and managed devices.', audience: 'Tech coordinators', group: 'Getting started' },
   { file: '02-five-day-movement-break-plan.pdf', emoji: '📅', title: '5-Day Movement Break Plan', desc: 'A ready-to-run weekly structure · one activity per day, Monday to Friday.', audience: 'Class teachers', group: 'Planning & curriculum' },
   { file: '08-eyfs-reception-activity-guide.pdf', emoji: '🎒', title: 'EYFS & Reception Activity Guide', desc: 'Development Matters mapping and a complete 15-minute session plan for Reception.', audience: 'EYFS / Reception', group: 'Planning & curriculum' },

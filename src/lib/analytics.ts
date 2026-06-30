@@ -23,6 +23,12 @@
  */
 
 import { dbInsert } from './supabase';
+import {
+    classifyEnvironment,
+    classifyTrafficType,
+    type AppEnvironment,
+    type TrafficType,
+} from './trafficClassifier';
 import { recordActivityCompleted } from './activationCounter';
 import {
     trackEvent as obsTrackEvent,
@@ -585,6 +591,167 @@ function getOrCreateSession(): SessionContext {
     return session;
 }
 
+// ════════════════════════════════════════════════════════════════════
+// Activity attempt identity (the keystone primitive)
+// ════════════════════════════════════════════════════════════════════
+//
+// An "attempt" is one play of one activity: it opens on `mode_started`
+// and closes on a terminal event (`mode_completed` / `mode_abandoned` /
+// `mode_switched`). Every event built while an attempt is open carries
+// its `attempt_id`, so the whole journey — start, stages, the win/lose
+// events, and the terminal outcome — joins on a single id.
+//
+// WHY THIS IS THE KEYSTONE
+//   Without it, completion is inferred by pairing `mode_started` with a
+//   later `mode_completed` on the same session by event order — which
+//   silently miscounts when a child replays, switches modes, or a tab
+//   fires two starts. It is also impossible to say honestly "of the
+//   attempts that began, how many finished" — the denominator the whole
+//   Engagement/Friction story depends on. attempt_id makes that exact.
+//
+// Auto-managed inside logEvent so existing call sites don't change.
+// Persisted in sessionStorage so a refresh mid-activity keeps the same
+// attempt rather than orphaning it. Shipped via event meta (the table
+// already has a jsonb meta column) so no schema change is needed to
+// start collecting; migration 20260626 promotes it to a column.
+const ATTEMPT_KEY = 'dita_current_attempt';
+let currentAttemptId: string | null = null;
+let attemptRestored = false;
+
+function persistAttemptId(): void {
+    if (typeof window === 'undefined') return;
+    try {
+        if (currentAttemptId) sessionStorage.setItem(ATTEMPT_KEY, currentAttemptId);
+        else sessionStorage.removeItem(ATTEMPT_KEY);
+    } catch { /* private mode */ }
+}
+
+/** Current open attempt id, restoring a refresh-interrupted one once. */
+export function getCurrentAttemptId(): string | null {
+    if (currentAttemptId) return currentAttemptId;
+    if (!attemptRestored && typeof window !== 'undefined') {
+        attemptRestored = true;
+        try { currentAttemptId = sessionStorage.getItem(ATTEMPT_KEY); } catch { /* ignore */ }
+    }
+    return currentAttemptId;
+}
+
+/** Open a fresh attempt and return its id. Auto-called on `mode_started`;
+ *  exported for explicit use (e.g. unassisted checkpoints in Workstream D). */
+export function startAttempt(): string {
+    currentAttemptId = generateUUID();
+    attemptRestored = true;
+    persistAttemptId();
+    return currentAttemptId;
+}
+
+/** Close the current attempt. Auto-called on terminal events. */
+export function endAttempt(): void {
+    currentAttemptId = null;
+    attemptRestored = true;
+    persistAttemptId();
+}
+
+const ATTEMPT_TERMINAL_EVENTS = new Set<EventName>([
+    'mode_completed',
+    'mode_abandoned',
+    'mode_switched',
+]);
+
+/** Why an attempt ended without a normal completion. Carried on the
+ *  terminal event's meta.exit_reason so the Friction/Engagement layer can
+ *  separate genuine difficulty from tab-close, idle, teacher control and
+ *  tracking loss (A3 in the data-to-growth plan). */
+export type AttemptExitReason =
+    | 'tab_close'
+    | 'timed_out'
+    | 'tracking_lost'
+    | 'teacher_ended'
+    | 'nav_away';
+
+/**
+ * Guarantee a terminal outcome for an open attempt. Emits `mode_abandoned`
+ * with the given exit reason (which closes the attempt via the terminal
+ * handler in logEvent) so an attempt that ends by tab-close, idle timeout,
+ * teacher action or tracking loss never orphans its `mode_started`. No-op
+ * when no attempt is open. Returns the closed attempt id, or null.
+ */
+export function abandonOpenAttempt(reason: AttemptExitReason): string | null {
+    const open = getCurrentAttemptId();
+    if (!open) return null;
+    logEvent('mode_abandoned', { meta: { exit_reason: reason } });
+    return open;
+}
+
+// ── Attempt idle timeout → 'timed_out' terminal outcome ────────────
+// If an activity stays open with ZERO real interaction for a sustained
+// window, the child has almost certainly walked away or left the tab
+// parked. Close the attempt as 'timed_out' rather than leaving the
+// `mode_started` orphaned (which otherwise inflates time-on-task and
+// hides the drop-off). Passive telemetry (heartbeats, tracker quality
+// samples, visibility flips) does NOT count as activity, so a parked
+// tab is detected even though it keeps emitting background events.
+//
+// Conservative 3-minute default keeps a slow or thinking child safe.
+// Tunable WITHOUT a redeploy via localStorage 'dita_idle_timeout_ms'
+// (set 0 to disable) — this is the threshold-tuning lever.
+const IDLE_ABANDON_DEFAULT_MS = 180_000;
+let lastActivityAt = Date.now();
+
+// Events that are NOT real interaction; they must not reset the idle
+// clock, otherwise a walked-away child's background pulse would keep the
+// attempt alive forever.
+const IDLE_PASSIVE_EVENTS = new Set<EventName>([
+    'session_heartbeat',
+    'tracker_quality_sample',
+    'tracker_warmup_timing',
+    'tracker_low_confidence',
+    'two_hands_detected',
+    'tab_hidden',
+    'tab_visible',
+    'feature_flag_exposed',
+    'system_error',
+    'csp_violation',
+]);
+
+/**
+ * Pure decision: should an open attempt time out? Exported for tests so
+ * the policy is verified without driving real timers.
+ */
+export function shouldTimeoutAttempt(
+    attemptOpen: boolean,
+    idleMs: number,
+    thresholdMs: number,
+): boolean {
+    if (!attemptOpen) return false;
+    if (thresholdMs <= 0) return false; // disabled
+    return idleMs >= thresholdMs;
+}
+
+function idleThresholdMs(): number {
+    if (typeof window === 'undefined') return IDLE_ABANDON_DEFAULT_MS;
+    try {
+        const raw = localStorage.getItem('dita_idle_timeout_ms');
+        if (raw !== null) {
+            const n = Number(raw);
+            if (Number.isFinite(n) && n >= 0) return n;
+        }
+    } catch { /* private mode */ }
+    return IDLE_ABANDON_DEFAULT_MS;
+}
+
+/** Heartbeat hook: close an idle-abandoned attempt with a 'timed_out'
+ *  outcome. No-op when nothing is open or the timeout is disabled. */
+function checkAttemptIdleTimeout(): void {
+    if (shouldTimeoutAttempt(
+        getCurrentAttemptId() !== null,
+        Date.now() - lastActivityAt,
+        idleThresholdMs(),
+    )) {
+        abandonOpenAttempt('timed_out');
+    }
+}
+
 // ── LIOS Sprint 3: classroom-code redemption flow ──────────────
 // Resolution order (highest priority first):
 //   1. ?join=<CODE> URL param   → classroom-context, code captured
@@ -678,6 +845,23 @@ export function setSessionContext(kind: SessionContextKind): void {
     try { localStorage.setItem(CONTEXT_KEY, kind); } catch { /* ignore */ }
 }
 
+/**
+ * Enter a classroom session: remember the class code AND flip context to
+ * 'classroom'. Needed for the Conductor join flow (StudentClassClient),
+ * where a child enters a code in the UI rather than via a /?join=CODE URL
+ * (which is the only path resolveDefaultContext covers). Without this the
+ * whole classroom session is mis-attributed as 'home' in Insights.
+ * Every subsequent event then carries context='classroom' and
+ * meta.class_code (buildRow injects the code via getClassCode()).
+ */
+export function setClassCode(code: string): void {
+    const trimmed = (code || '').trim().toUpperCase();
+    if (trimmed && trimmed.length <= 32) {
+        try { localStorage.setItem(CLASS_CODE_KEY, trimmed); } catch { /* private mode */ }
+    }
+    setSessionContext('classroom');
+}
+
 // ════════════════════════════════════════════════════════════════════
 // Context capture (browser, device, UTM, etc.)
 // ════════════════════════════════════════════════════════════════════
@@ -734,6 +918,62 @@ function getBuildVersion(): string {
     return (import.meta.env.VITE_BUILD_VERSION as string) || 'dev';
 }
 
+// ── Traffic classification (internal-traffic exclusion) ────────────
+// Stamps every event with `environment` and `traffic_type` so the
+// Insights queries can default to real-only and stop mixing founders,
+// QA, localhost and bots into the headline denominators. The decision
+// logic lives in the pure trafficClassifier module; this resolver only
+// gathers the live browser signals and the sticky device flags.
+//
+// Sticky flags: a single visit to /admin (or arriving with ?internal=1)
+// marks the whole device as internal for the lifetime of localStorage,
+// because an admin/founder navigates away from /admin into the product
+// and every one of those sessions must stay out of `real`.
+const TRAFFIC_INTERNAL_KEY = 'dita_traffic_internal';
+const TRAFFIC_QA_KEY        = 'dita_traffic_qa';
+
+function resolveTrafficStamp(): { environment: AppEnvironment; traffic_type: TrafficType } {
+    // SSR / prerender (scripts/prerender-seo.mjs): there is no real user
+    // here, so this must NEVER classify as 'real'.
+    if (typeof window === 'undefined') {
+        return { environment: 'production', traffic_type: 'internal' };
+    }
+
+    const environment = classifyEnvironment(window.location.hostname);
+    const path = window.location.pathname || '';
+    const params = new URLSearchParams(window.location.search);
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+    const webdriver =
+        typeof navigator !== 'undefined' &&
+        (navigator as Navigator & { webdriver?: boolean }).webdriver === true;
+
+    const adminVisit = path.startsWith('/admin');
+    const internalParam = params.get('internal') === '1';
+    const qaParam = params.get('qa') === '1';
+    const demo = params.get('demo') === '1' || path.startsWith('/demo');
+
+    let internal = adminVisit || internalParam;
+    let qa = qaParam;
+    try {
+        if (internal) localStorage.setItem(TRAFFIC_INTERNAL_KEY, '1');
+        if (qa) localStorage.setItem(TRAFFIC_QA_KEY, '1');
+        internal = localStorage.getItem(TRAFFIC_INTERNAL_KEY) === '1';
+        qa = localStorage.getItem(TRAFFIC_QA_KEY) === '1';
+    } catch {
+        // private mode: fall back to the per-call signals only.
+    }
+
+    const traffic_type = classifyTrafficType({
+        environment,
+        userAgent: ua,
+        webdriver,
+        internal,
+        qa,
+        demo,
+    });
+    return { environment, traffic_type };
+}
+
 // ════════════════════════════════════════════════════════════════════
 // Event row construction
 // ════════════════════════════════════════════════════════════════════
@@ -752,9 +992,19 @@ function buildRow(name: EventName, opts: EventOptions = {}): EventRow {
     // home-vs-classroom split is keyed on the `context` column,
     // but per-classroom drilldowns join on this meta field.
     const classCode = ctx.context === 'classroom' ? getClassCode() : null;
-    const eventMeta: Record<string, unknown> = classCode
-        ? { ...(opts.meta || {}), class_code: classCode }
-        : (opts.meta || {});
+    // Stamp traffic classification onto every event so Insights can
+    // default to real-only. Shipped via meta (the table already has a
+    // jsonb meta column) so this needs no schema change to take effect;
+    // migration 20260626 promotes these to first-class columns.
+    const traffic = resolveTrafficStamp();
+    const attemptId = getCurrentAttemptId();
+    const eventMeta: Record<string, unknown> = {
+        ...(opts.meta || {}),
+        ...(classCode ? { class_code: classCode } : {}),
+        ...(attemptId ? { attempt_id: attemptId } : {}),
+        traffic_type: traffic.traffic_type,
+        environment: traffic.environment,
+    };
     return {
         session_id: ctx.sessionId,
         device_id: getOrCreateDeviceId(),
@@ -920,6 +1170,7 @@ function startFlushTimer(): void {
 function startHeartbeat(): void {
     if (heartbeatTimer) return;
     heartbeatTimer = setInterval(() => {
+        checkAttemptIdleTimeout();
         logEvent('session_heartbeat');
     }, HEARTBEAT_INTERVAL_MS);
 }
@@ -932,6 +1183,12 @@ function setupBeforeUnload(): void {
     // never crash or degrade the page, least of all while it is unloading).
     window.addEventListener('beforeunload', () => {
         safeInvoke(() => {
+            // If a child is mid-activity when the tab closes, close the open
+            // attempt with a terminal outcome FIRST so the started attempt
+            // isn't orphaned. This enqueues a mode_abandoned event that the
+            // beacon below ships in the same last-gasp batch.
+            abandonOpenAttempt('tab_close');
+
             // Use sendBeacon for reliable last-gasp delivery during page unload.
             // dbInsert won't work here because the page is being torn down.
             //
@@ -1053,6 +1310,10 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
         }
     }
 
+    // Reset the idle clock on real interaction (not passive telemetry) so
+    // the attempt idle-timeout only fires when the child has truly stopped.
+    if (!IDLE_PASSIVE_EVENTS.has(name)) lastActivityAt = Date.now();
+
     // Side-effect: harvest action timing for fatigue analysis.
     if (name === 'item_dropped') {
         const dur = (opts.meta?.action_duration_ms as number | undefined);
@@ -1085,9 +1346,20 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
     if (name === 'mode_completed') {
         try { recordActivityCompleted(); } catch { /* never break analytics */ }
     }
+    // Attempt lifecycle: open on mode_started so the start event itself
+    // carries the new attempt_id. A terminal event is built below while
+    // the attempt is still open (so it carries the id) and closes after.
+    if (name === 'mode_started') startAttempt();
+
     const row = buildRow(name, opts);
     eventQueue.push(row);
     persistQueue();
+
+    // Close the attempt AFTER the row is built. The learning mirrors
+    // below read attempt_id from row.meta, not the live pointer, so
+    // clearing here keeps the lifecycle in one place without dropping
+    // the id from the terminal event's mirror rows.
+    if (ATTEMPT_TERMINAL_EVENTS.has(name)) endAttempt();
 
     // ── Observability fan-out ──────────────────────────────────────────────
     // Mirror funnel-relevant events to PostHog and bump the in-memory
@@ -1200,7 +1472,10 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
                 ms_to_attempt: (m.action_duration_ms as number | undefined) ?? null,
                 expected_value: expected,
                 actual_value: actual,
-                meta: m as Record<string, unknown>,
+                meta: {
+                    ...(m as Record<string, unknown>),
+                    attempt_id: (row.meta as Record<string, unknown>).attempt_id ?? null,
+                },
 
                 // Inherit the LIOS envelope from the parent event
                 // so analytics_events.event_uid ⇔ learning_attempts.event_uid
@@ -1298,7 +1573,11 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
                               ?? null,
                 expected_value: null,
                 actual_value: null,
-                meta: { ...(m as Record<string, unknown>), _mirror_source: name },
+                meta: {
+                    ...(m as Record<string, unknown>),
+                    _mirror_source: name,
+                    attempt_id: (row.meta as Record<string, unknown>).attempt_id ?? null,
+                },
                 event_uid: row.event_uid,
                 client_seq: row.client_seq,
                 client_ts: row.client_ts,
@@ -1572,6 +1851,11 @@ export const analytics = {
     noteProductiveAction,
     clearStuckWatcher,
     setSessionContext,
+    setClassCode,
     clearClassCode,
     getDeviceId: getOrCreateDeviceId,
+    startAttempt,
+    endAttempt,
+    getCurrentAttemptId,
+    abandonOpenAttempt,
 };
