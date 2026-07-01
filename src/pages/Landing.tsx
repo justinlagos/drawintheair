@@ -264,22 +264,17 @@ const HOME_FAQ = [
   { q: "How is my child's privacy protected?", a: 'No video, no audio, and no images are ever stored or sent anywhere. The camera frame is processed entirely inside the browser tab and discarded each frame. The product runs without a server connection once loaded.' },
   { q: 'What ages is it designed for?',         a: 'The interaction is built for children aged 3 to 7. Younger children play the warm-up and free-paint modes; from age 5 onward, tracing, spelling, and maths activities open up. Adult supervision is recommended for the first session.' },
   { q: 'Does it really not need special hardware?', a: 'Just a modern browser (Chrome, Edge, Safari 15+) and a webcam. Most laptops from the last five years work. No phone, no tablet, no controller, no glove.' },
-  { q: 'How is this different from a touchscreen?', a: 'A touchscreen needs only a wrist movement. Draw in the Air rewards whole-arm movement, how 3 to 7 year-olds naturally develop fine motor control. It is designed for a laptop and webcam, not a tablet.' },
-  { q: 'Is it free for parents?', a: 'Yes. The full activity set is free for individual families. Schools join a pilot programme; we set the first classroom session up with you personally.' },
+  { q: 'How is this different from a touchscreen?', a: 'A touchscreen needs only a wrist movement. Draw in the Air rewards whole-arm movement, how 3 to 7 year-olds naturally develop fine motor control. It works best on a laptop or Chromebook with a webcam; tablets can work too, but a laptop gives the most room to move.' },
+  { q: 'Is it free for parents?', a: 'You can start for free — core activities are always free to play. A Family plan (with a 7-day free trial) unlocks the full activity library, progress reports, and parental controls. Schools join a free pilot programme; we set the first classroom session up with you personally.' },
 ];
 
-const TRUST_STATS = [
-  { img: 'books-star.png',  n: '4,300+',   label: 'Children learning',     sub: 'last 90 days' },
-  { img: 'star-smile.png',  n: '128,000+', label: 'Activities completed',  sub: 'finished and counted' },
-  { img: 'badge-crown.png', n: '47,000+',  label: 'Items mastered',        sub: '5+ attempts, 80% accuracy' },
-  { img: 'globe.png',       n: '96%',      label: 'Tracker success',       sub: 'clean hand-tracking starts' },
-];
-
+// Honest, verifiable product facts — NOT usage counts. We are a pilot-stage
+// product, so we do not claim aggregate usage numbers we cannot substantiate.
 const PROOF_STATS = [
-  { n: '5,000+', l: 'Children reached' },
-  { n: '200+',   l: 'UK classrooms' },
-  { n: 'EYFS',   l: 'Curriculum aligned' },
-  { n: '100%',   l: 'Frames stay on-device' },
+  { n: 'EYFS',    l: 'Curriculum aligned' },
+  { n: '100%',    l: 'Frames stay on-device' },
+  { n: 'No',      l: 'Child accounts or logins' },
+  { n: 'Webcam',  l: 'Is all you need' },
 ];
 
 /* =====================================================================
@@ -370,7 +365,7 @@ export const Landing: React.FC = () => {
             <div className="hero-grid">
               <div>
                 <div className="eyebrow reveal">
-                  <span className="dot" />EYFS aligned, free for families
+                  <span className="dot" />EYFS aligned · for ages 3–7
                 </div>
                 <h1 className="h1 reveal d1">
                   Screen time that <span className="grad">makes you smile.</span>
@@ -395,7 +390,7 @@ export const Landing: React.FC = () => {
                   </button>
                 </div>
                 <div className="hero-trust reveal d4">
-                  <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{1F512}'}</span> No data stored</span>
+                  <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{1F512}'}</span> Webcam stays on your device</span>
                   <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{2728}'}</span> 7 days free</span>
                   <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{26A1}'}</span> Works instantly</span>
                 </div>
@@ -615,27 +610,6 @@ export const Landing: React.FC = () => {
                   </Link>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* EARLY USAGE */}
-        <section className="section" data-screen-label="Early usage">
-          <div className="wrap">
-            <SectionHead
-              eyebrow="Early usage"
-              title="Trusted by families and educators."
-              lead="Aggregate platform numbers, updated live. We do not track individual children. These are anonymous, device-level counts."
-            />
-            <div className="tstats">
-              {TRUST_STATS.map((s, i) => (
-                <div key={s.label} className={`tstat reveal d${i + 1}`}>
-                  <img src={`/landing-assets/icons/${s.img}`} alt="" />
-                  <div className="tstat-num">{s.n}</div>
-                  <div className="tstat-label">{s.label}</div>
-                  <div className="tstat-sub">{s.sub}</div>
-                </div>
-              ))}
             </div>
           </div>
         </section>

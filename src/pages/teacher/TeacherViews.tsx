@@ -5,6 +5,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import {
   listChildren, addChild, deleteChild, childInsights, displayName, ACT_LABEL,
   type ClassChild, type AgeBand, type ChildInsights,
@@ -265,7 +266,7 @@ export function EyfsView() {
 
 /* ════════════════════════════════ RESOURCES ════════════════════════════════ */
 const GUIDES: { file: string; emoji: string; title: string; desc: string; audience: string; group: string }[] = [
-  { file: '01-teacher-quick-start-guide.pdf', emoji: '🚀', title: "Teacher's Quick Start Guide", desc: 'Get up and running in under 5 minutes. Covers all modes, the pinch gesture, and classroom setup.', audience: 'All teachers', group: 'Getting started' },
+  { file: '00-teacher-guide.pdf', emoji: '🚀', title: 'Teacher Guide', desc: 'Everything for your first class: the four steps, what your children are learning, the activities, a first-lesson plan, and our privacy promise.', audience: 'All teachers', group: 'Getting started' },
   { file: '04-chromebook-classroom-setup.pdf', emoji: '💻', title: 'Chromebook Classroom Setup', desc: 'Step-by-step setup for school Chromebook carts, labs, and managed devices.', audience: 'Tech coordinators', group: 'Getting started' },
   { file: '02-five-day-movement-break-plan.pdf', emoji: '📅', title: '5-Day Movement Break Plan', desc: 'A ready-to-run weekly structure · one activity per day, Monday to Friday.', audience: 'Class teachers', group: 'Planning & curriculum' },
   { file: '08-eyfs-reception-activity-guide.pdf', emoji: '🎒', title: 'EYFS & Reception Activity Guide', desc: 'Development Matters mapping and a complete 15-minute session plan for Reception.', audience: 'EYFS / Reception', group: 'Planning & curriculum' },
@@ -281,6 +282,13 @@ const LETTER_EMOJI: Record<string, string> = { A: '🍎', B: '⚽', C: '🐱', D
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const guideHref = (file: string) => `/classroom-guides/${file}`;
 
+const SETUP_STEPS: { n: number; color: string; fg: string; title: string; body: ReactNode }[] = [
+  { n: 1, color: '#8A66F0', fg: '#fff', title: 'Start a class.', body: 'A four-digit code appears. Pop it on the board.' },
+  { n: 2, color: '#F07A5C', fg: '#fff', title: 'Add children and give each a picture.', body: 'Tap Pictures, add each child, then give them a picture such as Star, Flower, Moon or Sun.' },
+  { n: 3, color: '#FFB020', fg: '#1F1B2E', title: 'Tell each child their picture.', body: 'Quietly say or show each child which one is theirs. The class list stays private.' },
+  { n: 4, color: '#5BCE9A', fg: '#1F1B2E', title: 'Children join.', body: (<>On their own device they open the pupil page at <span style={{ color: '#5C3FB0', fontWeight: 700 }}>drawintheair.com/join</span>, enter the code, and tap their picture. They are in, with no names to type and no logins.</>) },
+];
+
 export function ResourcesView() {
   return (
     <div>
@@ -293,6 +301,28 @@ export function ResourcesView() {
         <div><h2>The complete pilot pack</h2><p>Every guide, lesson plan and printable in one PDF · ideal to print or share with your team.</p></div>
         <a className="tdash-btn" href="/pilot-pack.pdf" download="Draw-in-the-Air-Pilot-Pack.pdf">⬇ Download all</a>
       </div>
+
+      {/* Set up your class in four steps — mirrors the pilot welcome email so the app and email say the same thing */}
+      <section className="tdash-panel" style={{ marginBottom: 28 }}>
+        <h2 className="tdash-res-group" style={{ marginTop: 0 }}>Set up your class in four steps</h2>
+        <p className="tdash-sub" style={{ marginTop: 4, marginBottom: 18 }}>
+          Children wave to begin, pinch to draw and choose, and open a hand to pause. You guide the whole class from your screen, and setting up takes about two minutes.
+        </p>
+        <div>
+          {SETUP_STEPS.map((s) => (
+            <div key={s.n} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 14 }}>
+              <span style={{ flex: '0 0 34px', width: 34, height: 34, borderRadius: '50%', background: s.color, color: s.fg, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16 }}>{s.n}</span>
+              <p style={{ margin: 0, fontSize: 15, lineHeight: 1.55, color: 'var(--t-ink-700, #43405A)' }}>
+                <strong style={{ color: 'var(--t-ink-900, #1F1B2E)' }}>{s.title}</strong>{' '}
+                {s.body}
+              </p>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 6, padding: '14px 18px', borderRadius: 14, background: 'var(--t-mint-100, #E6F7EF)', color: '#1E6B4C', fontSize: 14, lineHeight: 1.6 }}>
+          <strong>Safe by design.</strong> Webcam video stays on the device, and we only ever keep a first name or nickname.
+        </div>
+      </section>
 
       {GROUPS.map((g) => (
         <section key={g} style={{ marginBottom: 28 }}>

@@ -33,6 +33,8 @@ import { ParentProvider } from './context/ParentContext.tsx'
 import { KidStyles } from './styles/KidStyles.tsx'
 import { lazyWithRetry } from './lib/lazyWithRetry.tsx'
 import { BrowserRouter } from 'react-router-dom'
+import { CookieConsentBanner } from './components/CookieConsentBanner.tsx'
+import { hasAnalyticsConsent, onConsentChange } from './lib/analyticsConsent.ts'
 
 // ── Observability bootstrap ────────────────────────────────────────────────
 // Initialise Sentry + PostHog BEFORE React mounts so even the very first
@@ -792,6 +794,9 @@ createRoot(document.getElementById('root')!).render(
             <Root />
           </React.Suspense>
         </ErrorBoundary>
+        {/* Opt-in cookie consent for non-essential analytics (GA4, Clarity,
+            Meta Pixel, PostHog). Shows once until a choice is made. */}
+        <CookieConsentBanner />
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
@@ -862,6 +867,9 @@ function loadDeferredAnalytics(): void {
 
 if (typeof window !== 'undefined') {
   const schedule = () => {
+    // Non-essential third-party analytics/marketing (GA4, Clarity, Meta Pixel)
+    // only load once the visitor has granted cookie consent.
+    if (!hasAnalyticsConsent()) return;
     const ric = (window as unknown as Record<string, any>).requestIdleCallback;
     if (typeof ric === 'function') {
       ric(loadDeferredAnalytics, { timeout: 4000 });
@@ -871,6 +879,8 @@ if (typeof window !== 'undefined') {
   };
   if (document.readyState === 'complete') schedule();
   else window.addEventListener('load', schedule);
+  // If consent is granted later via the cookie banner, load immediately.
+  onConsentChange((choice) => { if (choice === 'granted') loadDeferredAnalytics(); });
 }
 
 // ---------- Service Worker Registration ----------

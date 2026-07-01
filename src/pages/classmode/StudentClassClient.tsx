@@ -20,11 +20,14 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { callRpc, subscribeToTable } from '../../lib/supabase';
+import { analytics } from '../../lib/analytics';
 import { isValidCode } from '../../features/classmode/sessionCode';
 import { MODE_LABELS } from '../../features/classmode/scoreMapping';
 import type { GameModeId } from '../../features/classmode/scoreMapping';
 import { avatarFromSeed } from '../../features/classmode/conductor/avatars';
-import type { SessionRow, SessionActivityRow, StudentRow } from '../../features/classmode/conductor/types';
+import type { SessionRow, SessionActivityRow, StudentRow, ReadinessState } from '../../features/classmode/conductor/types';
+import { featureFlags } from '../../core/featureFlags';
+import { PICTURE_TOKENS } from '../../features/classmode/tokens';
 
 import { TrackingLayer } from '../../features/tracking/TrackingLayer';
 import { ModeBackground } from '../../components/ModeBackground';
@@ -76,6 +79,7 @@ const LOGIC_MAP: Record<GameModeId, unknown> = {
 type UiState =
     | { kind: 'code' }
     | { kind: 'name'; session: SessionRow }
+    | { kind: 'pick'; session: SessionRow }
     | { kind: 'classroom'; session: SessionRow; student: StudentRow; activity: SessionActivityRow | null }
     | { kind: 'kicked'; reason: string | null }
     | { kind: 'ended'; sessionId: string };
@@ -254,8 +258,14 @@ export default function StudentClassClient() {
     // ── Auto-redirect after kicked / ended ─────────────────────────
     useEffect(() => {
         if (ui.kind !== 'kicked' && ui.kind !== 'ended') return;
-        const t = setTimeout(() => { window.location.href = '/'; }, 8000);
-        return () => clearTimeout(t);
+        // Teacher authority: ending the session or removing the student is a
+        // terminal outcome for any activity the child still had open. Record
+        // it as teacher_ended so it isn't mislabelled as difficulty/abandon.
+        analytics.abandonOpenAttempt('teacher_ended');
+        // Classroom control: do NOT redirect the child to the marketing site.
+        // On shared/projected classroom devices that would drop a young learner
+        // onto the public homepage and its family signup CTA. The child stays on
+        // a static end screen until an adult closes or navigates the tab.
     }, [ui.kind]);
 
     // ── Submit handlers ────────────────────────────────────────────
@@ -268,38 +278,30 @@ export default function StudentClassClient() {
             'session_lookup_by_code', { in_code: code },
         );
         if (!data) { setError('No active class with that code'); return; }
-        setUi({ kind: 'name', session: data });
+        // P3b: token-join sends the child to the picture-pick step; the legacy
+        // flow types a first name. Flag-gated, default OFF.
+        if (featureFlags.getFlags().tokenJoinV1) {
+            setUi({ kind: 'pick', session: data });
+        } else {
+            setUi({ kind: 'name', session: data });
+        }
     }, []);
 
-    const handleName = useCallback(async (rawName: string) => {
-        if (ui.kind !== 'name') return;
-        setError(null);
-        const desired = rawName.trim();
-        if (!desired) { setError('Enter your first name'); return; }
-        // H1: join is now a single SECURITY DEFINER RPC that validates the
-        // session, dedupes the name server-side, inserts, and returns the row
-        // (incl. name + avatar_seed). This removes the client's need to read
-        // other children's names from the roster.
-        const { data, error: joinErr } = await callRpc<StudentRow | null>(
-            'class_join', { in_session_id: ui.session.id, in_name: desired },
-        );
-        if (joinErr || !data) {
-            setError(joinErr?.message ?? 'Could not join class');
-            return;
-        }
-        const finalName = data.name;
+    // Shared post-join transition (used by both name-join and token-join).
+    // Marks this device's session as a CLASSROOM session for analytics so every
+    // subsequent event carries context='classroom' + the class code, stores the
+    // reconnect memo, then hydrates the authoritative session + activity.
+    const enterClassroom = useCallback(async (joinSession: SessionRow, student: StudentRow) => {
+        analytics.setClassCode(joinSession.code);
         const memo: ReconnectMemo = {
-            sessionId: ui.session.id, studentId: data.id, name: finalName,
-            avatarSeed: data.avatar_seed ?? '', ts: Date.now(),
+            sessionId: joinSession.id, studentId: student.id, name: student.name,
+            avatarSeed: student.avatar_seed ?? '', ts: Date.now(),
         };
         try { sessionStorage.setItem(RECONNECT_KEY, JSON.stringify(memo)); } catch { /* ignore */ }
-
-        // Fetch the authoritative full session (current_activity_id etc.) +
-        // the current activity, both via capability-scoped RPCs.
         const { data: fullSession } = await callRpc<SessionRow | null>(
-            'class_get_session', { in_session_id: ui.session.id },
+            'class_get_session', { in_session_id: joinSession.id },
         );
-        const session = fullSession ?? ui.session;
+        const session = fullSession ?? joinSession;
         let activity: SessionActivityRow | null = null;
         if (session.current_activity_id) {
             const { data: act } = await callRpc<SessionActivityRow | null>(
@@ -307,12 +309,47 @@ export default function StudentClassClient() {
             );
             if (act) activity = act;
         }
-        setUi({ kind: 'classroom', session, student: data, activity });
-    }, [ui]);
+        setUi({ kind: 'classroom', session, student, activity });
+    }, []);
+
+    const handleName = useCallback(async (rawName: string) => {
+        if (ui.kind !== 'name') return;
+        setError(null);
+        const desired = rawName.trim();
+        if (!desired) { setError('Enter your first name'); return; }
+        // Legacy name-join: single SECURITY DEFINER RPC that validates the
+        // session, dedupes the name server-side, inserts, and returns the row.
+        const { data, error: joinErr } = await callRpc<StudentRow | null>(
+            'class_join', { in_session_id: ui.session.id, in_name: desired },
+        );
+        if (joinErr || !data) {
+            setError(joinErr?.message ?? 'Could not join class');
+            return;
+        }
+        await enterClassroom(ui.session, data);
+    }, [ui, enterClassroom]);
+
+    // P3b: token-join — the child confirms the teacher-given picture. The roster
+    // is never exposed; the server maps (session, token) → the persistent learner.
+    const handlePickToken = useCallback(async (token: string) => {
+        if (ui.kind !== 'pick') return;
+        setError(null);
+        const { data, error: joinErr } = await callRpc<StudentRow | null>(
+            'class_join_with_token', { in_session_id: ui.session.id, in_token: token },
+        );
+        if (joinErr || !data) {
+            setError('That picture didn’t match. Ask your teacher which picture is yours.');
+            return;
+        }
+        await enterClassroom(ui.session, data);
+    }, [ui, enterClassroom]);
 
     // ── Render ─────────────────────────────────────────────────────
     if (ui.kind === 'code') {
         return <CodeEntry error={error} onSubmit={handleCode} />;
+    }
+    if (ui.kind === 'pick') {
+        return <PicturePick error={error} onSubmit={handlePickToken} />;
     }
     if (ui.kind === 'name') {
         return <NameEntry session={ui.session} error={error} onSubmit={handleName} />;
@@ -415,6 +452,45 @@ function NameEntry({ session, error, onSubmit }: { session: SessionRow; error: s
     );
 }
 
+// ── Step 1b: Pick your picture (token join, P3b) ───────────────────
+function PicturePick({ error, onSubmit }: { error: string | null; onSubmit: (token: string) => void }) {
+    const [selected, setSelected] = useState<string | null>(null);
+    return (
+        <div className="cm-page">
+            <div className="cm-student-page">
+                <div className="cm-join-card cd-join-card">
+                    <h2>Find your picture</h2>
+                    <p className="cm-join-sub">Tap the picture your teacher gave you</p>
+                    <div className="cm-pick-grid" role="listbox" aria-label="Pictures">
+                        {PICTURE_TOKENS.map((t) => (
+                            <button
+                                key={t.id}
+                                type="button"
+                                role="option"
+                                aria-selected={selected === t.id}
+                                aria-label={t.label}
+                                className={`cm-pick-card${selected === t.id ? ' cm-pick-card-on' : ''}`}
+                                style={{ '--cm-pick-bg': t.color } as React.CSSProperties}
+                                onClick={() => setSelected(t.id)}
+                            >
+                                <span className="cm-pick-emoji" aria-hidden="true">{t.emoji}</span>
+                                <span className="cm-pick-label">{t.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                    {error && <div className="cm-error">{error}</div>}
+                    <button
+                        className="cm-btn-primary"
+                        style={{ width: '100%' }}
+                        onClick={() => selected && onSubmit(selected)}
+                        disabled={!selected}
+                    >That&rsquo;s me!</button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ── Locked-in classroom shell ──────────────────────────────────────
 function ClassroomShell({ ui }: { ui: { kind: 'classroom'; session: SessionRow; student: StudentRow; activity: SessionActivityRow | null } }) {
     const { session, student, activity } = ui;
@@ -494,6 +570,29 @@ function ClassroomShell({ ui }: { ui: { kind: 'classroom'; session: SessionRow; 
     );
 }
 
+// ── Readiness reporter (P3b): reports learner readiness to the server as the
+//    camera / tracker come up and the activity starts. No per-frame churn —
+//    only fires on a state change. ────────────────────────────────────────
+function ReadinessReporter({ studentId, cameraRunning, trackerReady, playing }: {
+    studentId: string; cameraRunning: boolean; trackerReady: boolean; playing: boolean;
+}) {
+    const last = useRef<ReadinessState | ''>('');
+    useEffect(() => {
+        const state: ReadinessState = playing
+            ? 'playing'
+            : cameraRunning && trackerReady
+                ? 'ready'
+                : cameraRunning
+                    ? 'camera_ready'
+                    : 'camera_permission_needed';
+        if (state !== last.current) {
+            last.current = state;
+            void callRpc('class_set_readiness', { in_student_id: studentId, in_state: state });
+        }
+    }, [studentId, cameraRunning, trackerReady, playing]);
+    return null;
+}
+
 // ── The actual game render ─────────────────────────────────────────
 function ClassroomGame({ student, avatar, session, activity }: {
     student: StudentRow;
@@ -504,6 +603,7 @@ function ClassroomGame({ student, avatar, session, activity }: {
     const activeLogic = useMemo(() => LOGIC_MAP[activity.activity], [activity.activity]) as never;
     // Stub onExit, we never let the kid exit; only the teacher does.
     const noop = useCallback(() => { /* locked-in: teacher controls */ }, []);
+    const tokenJoin = featureFlags.getFlags().tokenJoinV1;
 
     return (
         <div className="App">
@@ -516,6 +616,14 @@ function ClassroomGame({ student, avatar, session, activity }: {
                             getPenDown={() => activity.activity === 'free' ? drawingEngine.getPenState() === PenState.DOWN : false}
                             mode={activity.activity}
                         />
+                        {tokenJoin && (
+                            <ReadinessReporter
+                                studentId={student.id}
+                                cameraRunning={diagnostics.cameraStatus === 'running'}
+                                trackerReady={diagnostics.trackerReady}
+                                playing={activity.state === 'playing'}
+                            />
+                        )}
                         {/* Persistent name + avatar pip, top-right so a teacher
                             walking by can spot the kid on a projector. */}
                         <div className="cd-student-pip">
@@ -566,7 +674,7 @@ function KickedScreen({ reason }: { reason: string | null }) {
                     <div className="cd-student-emoji">👋</div>
                     <h2>Class is finished for you</h2>
                     <p>{reason ? reason : 'Your teacher has ended your session.'}</p>
-                    <p style={{ color: '#94a3b8', marginTop: 16, fontSize: '0.9rem' }}>You'll be sent home in a few seconds.</p>
+                    <p style={{ color: '#94a3b8', marginTop: 16, fontSize: '0.9rem' }}>Please ask your teacher for help.</p>
                 </div>
             </main>
         </div>

@@ -1,7 +1,7 @@
 /**
  * /parent/dashboard. The heart of the parent experience.
  *
- * Hero greeting · learner switcher · today snapshot · stat trio ·
+ * Hero greeting · learner switcher · overall snapshot · stat trio ·
  * strengths/support · recommended next · activity history.
  *
  * Voice: warm, calm, never analytical jargon.
@@ -237,14 +237,12 @@ function ChildPanel({ childId, onChange }: { childId: string; onChange: () => vo
     );
   }
 
+  // These are ALL-TIME totals (dash.totals is a lifetime rollup; the data
+  // model has no per-day figures). Label them honestly as such — never as
+  // "today" — so the report doesn't mislead.
   const mins = Math.round((dash.totals?.total_seconds ?? 0) / 60);
   const activitiesPlayed = dash.totals?.activities_played ?? 0;
   const mastered = dash.totals?.mastered ?? 0;
-
-  // Time donut progress (target: 20 mins/day)
-  const timePct = Math.min(100, Math.round((mins / 20) * 100));
-  const dashCirc = 2 * Math.PI * 32;
-  const dashOff = dashCirc * (1 - timePct / 100);
 
   return (
     <motion.div
@@ -255,30 +253,20 @@ function ChildPanel({ childId, onChange }: { childId: string; onChange: () => vo
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       className="stack"
     >
-      {/* Today snapshot */}
+      {/* Overall snapshot (all-time — see totals note above) */}
       <Card hero tint="lav">
         <div className="row gap-5" style={{ alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <span className="avatar sz-lg ring-lav">{dash.child.avatar || '🌱'}</span>
           <div style={{ flex: 1, minWidth: 240 }}>
-            <span className="eyebrow"><I.Sparkle size={14} /> Today</span>
+            <span className="eyebrow"><I.Sparkle size={14} /> Overall</span>
             <p className="serif-quote" style={{ margin: '8px 0 14px', maxWidth: '46ch' }}>
               {describeChildOverview(dash)}
             </p>
             <div className="row gap-3" style={{ flexWrap: 'wrap' }}>
-              <span className="chip chip-mint"><I.Check size={14} /> {mastered} skills mastered</span>
-              <span className="chip chip-sky"><I.Hourglass size={14} /> {mins} min today</span>
+              <span className="chip chip-mint"><I.Check size={14} /> {mastered} skills doing well</span>
+              <span className="chip chip-sky"><I.Hourglass size={14} /> {mins} min total</span>
               <span className="chip chip-sun"><I.Star size={14} /> {activitiesPlayed} activities</span>
             </div>
-          </div>
-          <div className="ring" aria-label={`${timePct}% of daily target`}>
-            <svg width="76" height="76" viewBox="0 0 76 76">
-              <circle className="track" cx="38" cy="38" r="32" strokeWidth="8" fill="none" />
-              <circle className="fill" cx="38" cy="38" r="32" strokeWidth="8" fill="none"
-                strokeDasharray={dashCirc}
-                strokeDashoffset={dashOff}
-              />
-            </svg>
-            <span className="ring-val">{timePct}%</span>
           </div>
         </div>
       </Card>

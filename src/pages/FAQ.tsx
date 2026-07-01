@@ -50,7 +50,7 @@ const faqSections: FAQSection[] = [
       },
       {
         question: 'What is Classroom Mode?',
-        answer: 'Classroom Mode lets a teacher run a whole-class session with a live leaderboard. Students join with a 4-digit code, no accounts needed. The teacher sees all students\' scores in real time. Available on the Teacher Pro plan.',
+        answer: 'Classroom Mode lets a teacher run a whole-class session with a live leaderboard. Students join with a 4-digit code, no accounts needed. The teacher sees all students\' scores in real time. It is included in the free classroom pilot.',
       },
       {
         question: 'Can we use it on school Chromebooks?',

@@ -67,8 +67,8 @@ const AUDIENCE_INTRO: Record<Audience, { eyebrow: string; h1: React.ReactNode; l
   },
   teachers: {
     eyebrow: 'For teachers',
-    h1: <>A plan for your <span className="grad">classroom.</span></>,
-    lead: 'Start with a free pilot. Upgrade when your classroom is ready for live mode, analytics, and printable activity guides.',
+    h1: <>A free pilot for your <span className="grad">classroom.</span></>,
+    lead: 'Run a free classroom pilot with live mode and the activity library. No card, no paid plan to worry about.',
   },
   schools: {
     eyebrow: 'For schools',
@@ -92,27 +92,19 @@ const FAMILY_PLANS = [
   { name: 'Yearly',  tagline: 'Best value for the year.', amt: '$54.99', usd: 54.99, per: '/year',  cta: 'Start free trial', variant: 'primary'   as const, featured: true,  save: 'Save $5' },
 ];
 
-// Teachers (Free pilot + Teacher Pro)
+// Teachers — the free classroom pilot is the only teacher offer in this
+// release. There is no paid Teacher plan yet (see src/main.tsx), so we do not
+// advertise one. When teacher billing, entitlements and the advertised
+// features actually exist, a paid tier can return here.
 const TEACHER_PILOT_FEATS = [
   'One classroom, up to 30 learners',
   'Live classroom mode',
   'Core activity library',
   'No card required',
-  'Cancel anytime',
-];
-
-const TEACHER_PRO_FEATS = [
-  'Everything in Pilot',
-  'Unlimited classrooms',
-  'Session history and analytics',
-  'Plain-English class insights',
-  'Printable activity guides',
-  'Playlist builder',
 ];
 
 const TEACHER_PLANS = [
-  { name: 'Free Pilot', tagline: 'Try it with one class.',  amt: 'Free', per: '',          desc: '',                                                            feats: TEACHER_PILOT_FEATS, cta: 'Start free pilot',    variant: 'secondary' as const, featured: false, to: '/teacher/signup', save: undefined as string | undefined },
-  { name: 'Teacher Pro', tagline: 'The full classroom kit.', amt: '$8',   per: 'per month', desc: '',                                                            feats: TEACHER_PRO_FEATS,   cta: 'Start free trial',     variant: 'primary'   as const, featured: true,  to: '/teacher/signup', save: 'Most popular' },
+  { name: 'Free Classroom Pilot', tagline: 'Run it with a class, free.', amt: 'Free', per: '', desc: '', feats: TEACHER_PILOT_FEATS, cta: 'Start free pilot', variant: 'primary' as const, featured: true, to: '/teacher/signup', save: undefined as string | undefined },
 ];
 
 // Schools (Whole school)
@@ -128,7 +120,7 @@ const SCHOOL_FEATS = [
 ];
 
 const SCHOOL_PLANS = [
-  { name: 'School Licence', tagline: 'One licence, every classroom.', amt: 'Custom', per: 'per school', desc: 'Priced by school size. Book a call and we will size it with you.', feats: SCHOOL_FEATS, cta: 'Talk to us',           variant: 'primary'   as const, featured: true,  to: '/teacher/signup', save: undefined as string | undefined },
+  { name: 'School Licence', tagline: 'One licence, every classroom.', amt: 'Custom', per: 'per school', desc: 'Priced by school size. Book a call and we will size it with you.', feats: SCHOOL_FEATS, cta: 'Talk to us',           variant: 'primary'   as const, featured: true,  to: 'mailto:hello@drawintheair.com?subject=School%20licence%20enquiry', save: undefined as string | undefined },
 ];
 
 // FAQ (audience-aware)
@@ -141,15 +133,15 @@ const FAQ_BY_AUDIENCE: Record<Audience, { q: string; a: string }[]> = {
   ],
   teachers: [
     { q: 'How do I start a free pilot?',             a: 'Create a teacher account and you are in. One class, up to 30 learners, no card required.' },
-    { q: 'What does Teacher Pro unlock?',            a: 'Unlimited classrooms, session history, analytics, plain-English class insights, printable guides, and the playlist builder.' },
+    { q: 'Is there a paid teacher plan?',            a: 'Not yet. The classroom pilot is free while we build out school features with our pilot teachers. We will only add a paid plan once those features actually exist.' },
     { q: 'Do children need accounts?',               a: 'No. Children join a class with a short code on the screen. They never log in, never have a profile.' },
     { q: 'Can I cancel anytime?',                    a: 'Yes. Cancel from your account page. We never auto-renew without a clear notice.' },
   ],
   schools: [
-    { q: 'How is school pricing decided?',           a: 'Priced per setting based on size and the number of classrooms. Book a call and we will give you a quote in writing the same day.' },
-    { q: 'Do you offer SSO?',                        a: 'Yes. Google Workspace, Microsoft Entra ID, and most SAML providers. We work with your IT lead on rollout.' },
-    { q: 'Is there onboarding support?',             a: 'Every school licence includes a kickoff call, training for staff, and priority support from a named contact during the first term.' },
-    { q: 'Can we pay annually or termly?',           a: 'Both. Whatever fits your school budget cycle.' },
+    { q: 'How is school pricing decided?',           a: 'We are onboarding schools one at a time and sizing each setup on a call. Tell us your number of classes and we will scope it with you.' },
+    { q: 'Do you offer SSO?',                        a: 'SSO is on our schools roadmap rather than shipped today. Tell us your provider (Google, Microsoft, SAML) and we will confirm what is possible for your rollout.' },
+    { q: 'Is there onboarding support?',             a: 'Yes — pilot schools get direct support from us while we set up your classes and gather feedback.' },
+    { q: 'Can we pay annually or termly?',           a: 'Billing terms are agreed on the scoping call so they fit your school budget cycle.' },
   ],
 };
 
@@ -328,9 +320,15 @@ export const Pricing: React.FC = () => {
                       <li key={f}><span className="check">{'✓'}</span>{f}</li>
                     ))}
                   </ul>
-                  <Link to={p.to} className={`btn btn-${p.variant} md`} style={{ width: '100%' }}>
-                    {p.cta} <ArrowIcon size={16} />
-                  </Link>
+                  {p.to.startsWith('mailto:') ? (
+                    <a href={p.to} className={`btn btn-${p.variant} md`} style={{ width: '100%' }}>
+                      {p.cta} <ArrowIcon size={16} />
+                    </a>
+                  ) : (
+                    <Link to={p.to} className={`btn btn-${p.variant} md`} style={{ width: '100%' }}>
+                      {p.cta} <ArrowIcon size={16} />
+                    </Link>
+                  )}
                 </div>
               ))}
             </div>
@@ -356,7 +354,7 @@ export const Pricing: React.FC = () => {
               </h2>
               <p className="lead">
                 {audience === 'schools' ? 'Whole-school access, admin reporting, and onboarding support.' :
-                 audience === 'teachers' ? 'Free pilot, no card required. Upgrade when you are ready.' :
+                 audience === 'teachers' ? 'Free pilot, no card required. No paid plan to set up.' :
                  'Up to 2 learners, the full activity library, and cancel anytime.'}
               </p>
               <div className="cta-actions">
@@ -378,7 +376,7 @@ export const Pricing: React.FC = () => {
                 )}
                 {audience === 'schools' && (
                   <>
-                    <Link to="/teacher/signup" className="btn btn-secondary lg">Book a school demo</Link>
+                    <a href="mailto:hello@drawintheair.com?subject=School%20demo%20request" className="btn btn-secondary lg">Book a school demo</a>
                     <Link to="/teachers" className="btn btn-ghost lg" style={{ color: 'inherit' }}>
                       See classroom mode <ArrowIcon size={17} />
                     </Link>

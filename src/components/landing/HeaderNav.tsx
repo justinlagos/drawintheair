@@ -69,13 +69,20 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ onTryFree }) => {
     path.startsWith('/about')    ? 'about'    :
     '';
 
+  // "Try free" must respect context: on the teacher pages it should lead to
+  // the teacher pilot signup, not parent signup. Elsewhere it opens the play
+  // demo (when provided) or falls back to family signup.
+  const tryFreeHref = activeId === 'teachers' ? '/teacher/signup' : '/parent/signup';
   const onTryFreeClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (activeId === 'teachers') {
+      navigate('/teacher/signup');
+      return;
+    }
     if (onTryFree) {
-      e.preventDefault();
       onTryFree();
       return;
     }
-    e.preventDefault();
     navigate('/parent/signup');
   };
 
@@ -151,7 +158,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ onTryFree }) => {
         <span className="nav-spacer" />
         <div className="nav-cta">
           {loginControl}
-          <a href="/parent/signup" className="btn btn-primary sm" onClick={onTryFreeClick}>
+          <a href={tryFreeHref} className="btn btn-primary sm" onClick={onTryFreeClick}>
             Try free
           </a>
         </div>
@@ -174,7 +181,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ onTryFree }) => {
             <Link to="/parent/login">Family login</Link>
             <Link to="/teacher/login">Teacher login</Link>
             <div className="nav-mobile-cta">
-              <a href="/parent/signup" className="btn btn-primary md" onClick={onTryFreeClick}>
+              <a href={tryFreeHref} className="btn btn-primary md" onClick={onTryFreeClick}>
                 Try free
               </a>
             </div>

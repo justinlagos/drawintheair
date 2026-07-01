@@ -76,7 +76,7 @@ export const NUMBER_META: Record<string, { emoji: string; funFact: string; word:
 export const PAGE_META = {
   home: {
     title: 'Draw in the Air, Free Gesture Drawing App for Kids | No Download',
-    description: 'Draw in the Air is a free, browser-based gesture learning platform for kids. Use your finger through the webcam to trace letters, pop bubbles, and draw in the air. No download needed. Ages 3–8.',
+    description: 'Draw in the Air is a free, browser-based gesture learning platform for kids. Use your finger through the webcam to trace letters, pop bubbles, and draw in the air. No download needed. Ages 3–7.',
     keywords: ['air drawing app for kids', 'gesture drawing kids', 'hand tracking drawing', 'draw in the air with finger', 'webcam drawing for kids', 'free kids drawing app browser', 'letter tracing webcam', 'preschool learning games'],
     canonical: '/',
   },
@@ -94,7 +94,7 @@ export const PAGE_META = {
   },
   bubblePop: {
     title: 'Bubble Pop Game, Free Hand Tracking Game for Kids | Draw in the Air',
-    description: 'Pop bubbles by pointing in the air! A fun, gesture-controlled learning game that builds hand-eye coordination. Free browser game, no app download needed. Ages 3–8.',
+    description: 'Pop bubbles by pointing in the air! A fun, gesture-controlled learning game that builds hand-eye coordination. Free browser game, no app download needed. Ages 3–7.',
     keywords: ['bubble pop game for kids', 'hand tracking game browser', 'kids webcam game free', 'gesture game preschool', 'hand eye coordination game kids'],
     canonical: '/activities/bubble-pop',
   },
@@ -106,7 +106,7 @@ export const PAGE_META = {
   },
   forParents: {
     title: 'For Parents, Safe Screen-Smart Gesture Learning | Draw in the Air',
-    description: 'Draw in the Air is a screen-smart alternative for curious kids. No ads, no accounts, no downloads. Develops motor skills, letter recognition, and hand-eye coordination through play. Ages 3–8.',
+    description: 'Draw in the Air is a screen-smart alternative for curious kids. No ads, no accounts, no downloads. Develops motor skills, letter recognition, and hand-eye coordination through play. Ages 3–7.',
     keywords: ['educational app for kids parents', 'safe kids learning app', 'screen-free learning games', 'motor skills app kids', 'preschool learning technology parents', 'kids STEM activity home'],
     canonical: '/for-parents',
   },
@@ -118,7 +118,7 @@ export const PAGE_META = {
   },
   forHomeschool: {
     title: 'Homeschool Activities, Gesture Learning for Kids at Home | Draw in the Air',
-    description: 'Perfect for homeschool families! Draw in the Air offers no-download gesture activities for letters, numbers, and creative drawing. Free, safe, and screen-smart for ages 3–8.',
+    description: 'Perfect for homeschool families! Draw in the Air offers no-download gesture activities for letters, numbers, and creative drawing. Free, safe, and screen-smart for ages 3–7.',
     keywords: ['homeschool activities preschool', 'homeschool learning games free', 'home education activities kids', 'preschool homeschool curriculum', 'interactive homeschool app'],
     canonical: '/for-homeschool',
   },
@@ -155,7 +155,7 @@ export const PAGE_META = {
   // ── Phase 1 Growth Engine, Use-Case Landing Pages ──
   gestureLearning: {
     title: 'Gesture-Based Learning Tools for Early Education, Free | Draw in the Air',
-    description: 'Gesture-controlled educational activities for children ages 3–8. Trace letters, sort objects, and play learning games using hand movements detected by webcam. No download, no accounts.',
+    description: 'Gesture-controlled educational activities for children ages 3–7. Trace letters, sort objects, and play learning games using hand movements detected by webcam. No download, no accounts.',
     keywords: ['gesture-based learning', 'gesture learning tools', 'gesture controlled educational games', 'hand gesture learning activities kids', 'embodied learning technology', 'hand tracking education'],
     canonical: '/gesture-learning',
   },
@@ -173,13 +173,13 @@ export const PAGE_META = {
   },
   homeschoolMovement: {
     title: 'Homeschool Movement Learning Games, Free Active Education | Draw in the Air',
-    description: 'Active, movement-based learning activities for homeschool families. Children trace letters, numbers, and shapes using hand gestures. Free, browser-based, no downloads. Ages 3–8.',
+    description: 'Active, movement-based learning activities for homeschool families. Children trace letters, numbers, and shapes using hand gestures. Free, browser-based, no downloads. Ages 3–7.',
     keywords: ['homeschool movement activities', 'homeschool learning games free', 'active homeschool activities', 'kinesthetic homeschool curriculum', 'movement learning homeschool', 'active learning games home education'],
     canonical: '/homeschool-movement-learning',
   },
   handEyeCoordination: {
     title: 'Hand-Eye Coordination Activities for Children, Free Games | Draw in the Air',
-    description: 'Fun hand-eye coordination activities for children ages 3–8. Trace letters, pop bubbles, and sort objects using hand gestures. Develops visual-motor skills through play. Free, browser-based.',
+    description: 'Fun hand-eye coordination activities for children ages 3–7. Trace letters, pop bubbles, and sort objects using hand gestures. Develops visual-motor skills through play. Free, browser-based.',
     keywords: ['hand-eye coordination activities for kids', 'hand-eye coordination games children', 'fine motor coordination activities', 'visual motor activities for children', 'coordination games preschool', 'motor skills activities early years'],
     canonical: '/hand-eye-coordination-activities',
   },
@@ -221,7 +221,7 @@ export const PAGE_META = {
   },
   backToSchool: {
     title: 'Back to School Activities, Free Digital Learning for Kids | Draw in the Air',
-    description: 'Start the school year right with free, browser-based learning activities! Practice letters, numbers, and shapes in the air. No download, no login needed. Perfect for ages 3–8.',
+    description: 'Start the school year right with free, browser-based learning activities! Practice letters, numbers, and shapes in the air. No download, no login needed. Perfect for ages 3–7.',
     keywords: ['back to school activities kids', 'back to school learning games', 'school readiness activities', 'kindergarten readiness games online'],
     canonical: '/activities/back-to-school',
   },
@@ -242,7 +242,7 @@ export const PAGE_META = {
 // ─── Shared FAQ for homepage ──────────────────────────────────────────────────
 export const HOMEPAGE_FAQ = [
   { q: 'What is Draw in the Air?', a: 'Draw in the Air is a free, browser-based learning platform for children that uses webcam hand tracking. Kids can draw in the air, trace alphabet letters A–Z and numbers 1–10, and play interactive games, no download needed.' },
-  { q: 'What age group is Draw in the Air for?', a: 'Draw in the Air is designed primarily for children aged 3–8 years old, covering preschool through early primary school. The activities support letter learning, motor skills, and coordination.' },
+  { q: 'What age group is Draw in the Air for?', a: 'Draw in the Air is designed primarily for children aged 3–7 years old, covering preschool through early primary school. The activities support letter learning, motor skills, and coordination.' },
   { q: 'Is Draw in the Air safe for children?', a: 'Yes. The webcam feed is processed locally in the browser using AI. We never record, store, or transmit your video. No personal data or account is required.' },
   { q: 'Do I need to download anything?', a: 'No. Draw in the Air runs entirely in your web browser. Just visit the site, allow camera access, and start playing. It works on Chrome, Edge, Firefox, and Safari.' },
   { q: 'What devices does Draw in the Air work on?', a: 'Any device with a webcam and modern browser, laptops, desktops, and compatible tablets. Particularly effective on school Chromebooks and interactive whiteboards.' },

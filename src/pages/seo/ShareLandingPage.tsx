@@ -97,12 +97,12 @@ const ACTIVITY_MAP: Record<string, ActivityMeta> = {
   },
   'gesture-learning': {
     title: 'Gesture Learning Activities | Draw in the Air',
-    description: 'Gesture-controlled learning activities for children ages 3–8. Trace letters, pop bubbles, sort objects, and more using hand movements. Free, browser-based.',
+    description: 'Gesture-controlled learning activities for children ages 3–7. Trace letters, pop bubbles, sort objects, and more using hand movements. Free, browser-based.',
     emoji: '✋',
     badge: 'Gesture Learning',
     playPath: SITE.appPath,
     heroTitle: 'Gesture Learning, Your Colleague Shared This Platform',
-    heroSub: 'Nine gesture-controlled learning activities for children ages 3–8. Everything runs in the browser, no installation, no accounts, no cost.',
+    heroSub: 'Nine gesture-controlled learning activities for children ages 3–7. Everything runs in the browser, no installation, no accounts, no cost.',
     whatItIs: 'Draw in the Air uses AI hand tracking to let children interact with learning activities through natural hand movements. Nine modes cover letters, numbers, shapes, sorting, colours, maths, and creative drawing. Works on any laptop or Chromebook with a webcam.',
     howToPlay: [
       'Open drawintheair.com on any device with a webcam',
@@ -123,7 +123,7 @@ const FALLBACK_META: ActivityMeta = {
   badge: 'Shared Activity',
   playPath: SITE.appPath,
   heroTitle: 'A Colleague Shared This Learning Activity',
-  heroSub: 'Draw in the Air offers gesture-controlled educational activities for children ages 3–8. Everything runs in the browser, no installation needed.',
+  heroSub: 'Draw in the Air offers gesture-controlled educational activities for children ages 3–7. Everything runs in the browser, no installation needed.',
   whatItIs: 'Draw in the Air uses AI hand tracking to let children interact with learning activities through natural hand movements. Nine modes cover letters, numbers, shapes, sorting, and creative drawing. Works on any Chromebook or laptop with a webcam.',
   howToPlay: [
     'Open drawintheair.com on any device with a webcam',
@@ -241,7 +241,7 @@ export default function ShareLandingPage({ slug }: { slug: string }) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
           {[
             { icon: '🔒', title: 'Privacy First', detail: 'Camera processing happens on the device. No video is recorded, transmitted, or stored.' },
-            { icon: '💸', title: 'Completely Free', detail: 'No premium tier, no payment wall, no trial limit. Every activity is free forever.' },
+            { icon: '💸', title: 'Free to Start', detail: 'Core activities are always free to play. A Family plan unlocks the full library, with a 7-day free trial.' },
             { icon: '💻', title: 'Chromebook Ready', detail: 'Runs in the browser with no installation. Works immediately on any school device.' },
             { icon: '⚡', title: 'No Setup', detail: 'No accounts, no student logins, no IT requests. Open the browser and start.' },
           ].map(item => (

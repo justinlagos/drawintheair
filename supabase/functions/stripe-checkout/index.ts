@@ -68,9 +68,25 @@ Deno.serve(async (req: Request) => {
     // after expiry charges immediately.
     const { data: sub } = await supabase
       .from('parent_subscriptions')
-      .select('status, trial_end')
+      .select('status, trial_end, stripe_subscription_id')
       .eq('parent_id', userId)
       .maybeSingle();
+
+    // Guard against duplicate subscriptions: if a LIVE Stripe subscription
+    // already exists for this parent, a new Checkout would create a second
+    // one (double billing). Plan changes for these customers must go through
+    // the Stripe Customer Portal instead. A local-only trial (no
+    // stripe_subscription_id yet) is allowed to convert via Checkout.
+    if (
+      sub?.stripe_subscription_id &&
+      ['trialing', 'active', 'past_due', 'unpaid'].includes(sub.status)
+    ) {
+      return new Response(
+        JSON.stringify({ error: 'already_subscribed' }),
+        { status: 409, headers },
+      );
+    }
+
     let trialDays = 0;
     if (sub?.status === 'trialing' && sub.trial_end) {
       const msLeft = new Date(sub.trial_end).getTime() - Date.now();

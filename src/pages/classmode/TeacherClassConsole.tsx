@@ -16,6 +16,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
     dbSelect, dbInsert, subscribeToTable,
@@ -26,6 +27,9 @@ import { MODE_LABELS, SCOREABLE_MODES } from '../../features/classmode/scoreMapp
 import type { GameModeId } from '../../features/classmode/scoreMapping';
 import { conductorApi } from '../../features/classmode/conductor/api';
 import { avatarFromSeed, avatarForStudent } from '../../features/classmode/conductor/avatars';
+import { featureFlags } from '../../core/featureFlags';
+import { PICTURE_TOKENS } from '../../features/classmode/tokens';
+import { listChildren, addChild, type ClassChild } from '../teacher/roster';
 import type {
     SessionRow,
     SessionActivityRow,
@@ -47,6 +51,22 @@ function formatElapsed(startedAt: string | null): string {
     const s = Math.floor((ms / 1000) % 60);
     if (m === 0) return `${s}s`;
     return `${m}m ${String(s).padStart(2, '0')}s`;
+}
+
+/** Friendly label for the authoritative learner readiness state (P3b / DM2). */
+function readinessLabel(state: string): string {
+    switch (state) {
+        case 'ready': return '✅ ready';
+        case 'playing': return '▶️ playing';
+        case 'camera_ready': return '📷 camera on';
+        case 'hand_detected': return '✋ hand seen';
+        case 'camera_permission_needed': return '📷 needs camera';
+        case 'tracking_lost': return '🔄 lost hand';
+        case 'needs_help': return '🆘 needs help';
+        case 'completed': return '🎉 done';
+        case 'disconnected': return '⚫ offline';
+        default: return 'joined';
+    }
 }
 
 /** Decide a student's engagement bucket from raw row data + timing.
@@ -224,6 +244,8 @@ export default function TeacherClassConsole() {
                             you're ready.
                         </p>
                         <p style={{ marginTop: 12 }}>
+                            <a href="/teacher/signup">Create a teacher account</a>
+                            {' · '}
                             <a href="/parent/dashboard">Back to my family dashboard</a>
                             {' · '}
                             <a href="/teachers">About Draw in the Air for teachers</a>
@@ -561,7 +583,10 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
                 <aside className="cd-roster">
                     <header className="cd-panel-h">
                         <h2>Class roster</h2>
-                        <span className="cd-panel-meta">{activeStudents.length} student{activeStudents.length === 1 ? '' : 's'}</span>
+                        <div className="cd-panel-h-right">
+                            <span className="cd-panel-meta">{activeStudents.length} student{activeStudents.length === 1 ? '' : 's'}</span>
+                            <TokenAssignControl sessionId={session.id} />
+                        </div>
                     </header>
                     {activeStudents.length === 0 ? (
                         <div className="cd-roster-empty">
@@ -677,11 +702,144 @@ function StudentRosterCard({ student, onClickStats, onKick }: {
                 <span className={`cd-eng-pill cd-eng-pill-${eng}`}>
                     {eng === 'engaged' ? '🟢 engaged' : eng === 'stuck' ? '🟡 stuck' : '⚫ offline'}
                 </span>
+                {student.readiness_state && (
+                    <span className="cd-readiness">{readinessLabel(student.readiness_state)}</span>
+                )}
             </button>
             <button className="cd-roster-card-kick" onClick={onKick} aria-label={`Remove ${student.name} from class`}>
                 ✕
             </button>
         </div>
+    );
+}
+
+// ── P3b: teacher picture-token assignment ──────────────────────────
+function TokenAssignControl({ sessionId }: { sessionId: string }) {
+    const [open, setOpen] = useState(false);
+    if (!featureFlags.getFlags().tokenJoinV1) return null;
+    return (
+        <>
+            <button type="button" className="cd-tok-open" onClick={() => setOpen(true)}>🖼️ Pictures</button>
+            {open && <TokenAssignModal sessionId={sessionId} onClose={() => setOpen(false)} />}
+        </>
+    );
+}
+
+function TokenAssignModal({ sessionId, onClose }: { sessionId: string; onClose: () => void }) {
+    const [children, setChildren] = useState<ClassChild[]>([]);
+    const [assigned, setAssigned] = useState<Record<string, string>>({});
+    const [loading, setLoading] = useState(true);
+    const [err, setErr] = useState<string | null>(null);
+    const [newName, setNewName] = useState('');
+    const [adding, setAdding] = useState(false);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            const list = await listChildren();
+            const { data } = await dbSelect<{ class_child_id: string; token: string }[]>(
+                'class_session_tokens', `session_id=eq.${sessionId}&select=class_child_id,token`,
+            );
+            if (cancelled) return;
+            const map: Record<string, string> = {};
+            (data ?? []).forEach((r) => { map[r.class_child_id] = r.token; });
+            setChildren(list);
+            setAssigned(map);
+            setLoading(false);
+        })();
+        return () => { cancelled = true; };
+    }, [sessionId]);
+
+    const usedTokens = useMemo(() => new Set(Object.values(assigned).filter(Boolean)), [assigned]);
+
+    const childName = (c: ClassChild) => c.nickname?.trim() || c.first_name || 'Learner';
+
+    const assign = useCallback(async (childId: string, token: string) => {
+        setErr(null);
+        const prev = assigned[childId];
+        setAssigned((a) => ({ ...a, [childId]: token }));
+        try {
+            await conductorApi.assignToken(sessionId, childId, token);
+        } catch {
+            setErr('Could not save that picture — each picture can only go to one child.');
+            setAssigned((a) => ({ ...a, [childId]: prev ?? '' }));
+        }
+    }, [assigned, sessionId]);
+
+    const handleAdd = useCallback(async () => {
+        const name = newName.trim();
+        if (!name || adding) return;
+        setAdding(true);
+        setErr(null);
+        const res = await addChild({ first_name: name });
+        setAdding(false);
+        if (!res.ok) { setErr(res.error || 'Could not add child'); return; }
+        setChildren((cs) => [...cs, res.child]);
+        setNewName('');
+    }, [newName, adding]);
+
+    // Rendered through a portal to document.body so it always sits above the
+    // console (the activity launcher etc.), never trapped behind it.
+    return createPortal(
+        <div className="cd-modal-backdrop" role="dialog" aria-modal="true" aria-label="Assign pictures" onClick={onClose}>
+            <div className="cd-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="cd-modal-header">
+                    <h2>Assign pictures</h2>
+                    <button type="button" className="cd-modal-close" onClick={onClose} aria-label="Close">✕</button>
+                </div>
+                <p className="cd-modal-sub">Add each child, give them a picture, then tell them which one is theirs. They pick it after entering the class code.</p>
+
+                <div className="cd-tok-add">
+                    <input
+                        className="cd-tok-add-input"
+                        type="text"
+                        placeholder="Add a child (first name or nickname)"
+                        value={newName}
+                        maxLength={40}
+                        onChange={(e) => setNewName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
+                        aria-label="Add a child"
+                    />
+                    <button type="button" className="cd-tok-add-btn" onClick={handleAdd} disabled={!newName.trim() || adding}>
+                        {adding ? 'Adding…' : 'Add'}
+                    </button>
+                </div>
+
+                {err && <div className="cd-error">{err}</div>}
+
+                {loading ? (
+                    <div className="cd-tok-loading">Loading your class…</div>
+                ) : children.length === 0 ? (
+                    <div className="cd-tok-loading">No children yet — add your first one above.</div>
+                ) : (
+                    <ul className="cd-tok-list">
+                        {children.map((c) => {
+                            const cur = assigned[c.id] ?? '';
+                            return (
+                                <li key={c.id} className="cd-tok-row">
+                                    <span className="cd-tok-name">{childName(c)}</span>
+                                    <select
+                                        className="cd-tok-select"
+                                        value={cur}
+                                        onChange={(e) => assign(c.id, e.target.value)}
+                                        aria-label={`Picture for ${childName(c)}`}
+                                    >
+                                        <option value="" disabled>Choose…</option>
+                                        {PICTURE_TOKENS.map((t) => (
+                                            <option key={t.id} value={t.id} disabled={usedTokens.has(t.id) && cur !== t.id}>
+                                                {t.emoji} {t.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                )}
+                <button type="button" className="cm-btn-primary" style={{ width: '100%', marginTop: 16 }} onClick={onClose}>Done</button>
+            </div>
+        </div>,
+        document.body,
     );
 }
 
