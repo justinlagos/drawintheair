@@ -16,7 +16,7 @@ const ACTIVITY_DATA: Record<ActivitySlug, {
 }> = {
   'bubble-pop': {
     meta: PAGE_META.bubblePop,
-    emoji: '🫧', badge: 'Game, Ages 3–8',
+    emoji: '🫧', badge: 'Game, Ages 3–7',
     heroTitle: 'Bubble Pop, Hand Tracking Game for Kids',
     heroSub: 'Pop bubbles by pointing in the air! A fun, gesture-controlled game that builds hand-eye coordination and reflexes. 30-second rounds, 20-pop milestones, and unlock rewards. Free, no download.',
     skills: [
@@ -34,7 +34,7 @@ const ACTIVITY_DATA: Record<ActivitySlug, {
       'Hit the 20-pop milestone to unlock a special reward!',
     ],
     faq: [
-      { q: 'What age is Bubble Pop suitable for?', a: 'Bubble Pop is designed for children aged 3–8. The gesture controls are simple enough for young children while still being engaging and fun for older kids.' },
+      { q: 'What age is Bubble Pop suitable for?', a: 'Bubble Pop is designed for children aged 3–7. The gesture controls are simple enough for young children while still being engaging and fun for older kids.' },
       { q: 'Do I need to download anything to play Bubble Pop?', a: 'No download is required. Bubble Pop runs entirely in your browser using your webcam. Just visit the page, allow camera access, and start playing.' },
       { q: 'Is Bubble Pop safe for children?', a: 'Yes. Draw in the Air does not record or store any video. The webcam feed is processed locally in the browser and never leaves your device. No personal data is collected.' },
       { q: 'What skills does Bubble Pop develop?', a: 'Bubble Pop develops hand-eye coordination, visual tracking, reaction speed, and sustained attention, all through fun, active gameplay. Research shows gesture-based interaction improves fine motor skill development in early childhood.' },

@@ -20,6 +20,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { type HandLandmarkerResult } from '@mediapipe/tasks-vision';
 import { useParentAccess } from '../parent/useParentAccess';
 import { PremiumLockModal } from '../parent/PremiumLockModal';
+import { evaluateModeGate } from './modeGate';
 import { Dita2Root, type Tone } from '../kid2/Kid2';
 
 export type GameMode = 'calibration' | 'free' | 'pre-writing' | 'sort-and-place' | 'word-search' | 'colour-builder' | 'balloon-math' | 'rainbow-bridge' | 'gesture-spelling' | 'building';
@@ -189,6 +190,40 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
         return () => clearInterval(interval);
     }, []);
 
+    /**
+     * Authoritative selection path. EVERY input source (mouse, touch,
+     * keyboard and hand-dwell) routes through here so the premium gate is
+     * applied identically and cannot be bypassed by switching input method.
+     *
+     * @param mode    the chosen mode.
+     * @param source  'pointer' for click/tap/keyboard, 'dwell' for hand hold.
+     */
+    const attemptModeSelection = useCallback((mode: ModeOption, source: 'pointer' | 'dwell') => {
+        if (selectedMode) return;
+        // Single source of truth for the free-vs-premium decision.
+        const { locked } = evaluateModeGate(mode.tier, hasAccess);
+        if (locked) {
+            // Paid game, no active subscription/trial → surface the upgrade
+            // prompt instead of starting. For hand-dwell we also reset the
+            // hover so the dwell ring clears and we don't immediately re-loop
+            // while the (adult) modal is open.
+            setLockedPrompt(mode);
+            if (source === 'dwell') {
+                hoverStartTime.current = null;
+                setHoverProgress(0);
+                setHoveredMode(null);
+            }
+            return;
+        }
+        setSelectedMode(mode.id);
+        setTimeout(() => onSelect(mode.id), source === 'dwell' ? 250 : 200);
+    }, [selectedMode, onSelect, hasAccess]);
+
+    // Click/tap/keyboard entry point — thin wrapper over the gate.
+    const handleSelect = useCallback((mode: ModeOption) => {
+        attemptModeSelection(mode, 'pointer');
+    }, [attemptModeSelection]);
+
     // Hand tracking: dwell-to-select (1.5s hover)
     // This effect synchronizes external hand-tracking data (MediaPipe results)
     // into React state, the legitimate "subscribe to external system" pattern
@@ -196,6 +231,17 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
     // they only fire on changes, not every frame.
     /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
+        // While the (adult) upgrade modal is open, suspend dwell processing so
+        // a hand resting over a locked card can't loop the prompt.
+        if (lockedPrompt) {
+            if (hoverStartTime.current) {
+                hoverStartTime.current = null;
+                setHoverProgress(0);
+                setHoveredMode(null);
+            }
+            return;
+        }
+
         if (!trackingResults?.landmarks?.length) {
             if (hoverStartTime.current) {
                 hoverStartTime.current = null;
@@ -227,25 +273,14 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
             const progress = Math.min(elapsed / 1500, 1);
             setHoverProgress(progress);
             if (progress >= 1 && !selectedMode) {
-                setSelectedMode(found);
-                setTimeout(() => onSelect(found!), 250);
+                // Route hand-dwell through the SAME gate as click/tap. This is
+                // the line that previously bypassed the premium check.
+                const mode = MODES.find(m => m.id === found);
+                if (mode) attemptModeSelection(mode, 'dwell');
             }
         }
-    }, [trackingResults, hoveredMode, selectedMode, onSelect]);
+    }, [trackingResults, hoveredMode, selectedMode, lockedPrompt, attemptModeSelection]);
     /* eslint-enable react-hooks/set-state-in-effect */
-
-    const handleSelect = useCallback((mode: ModeOption) => {
-        if (selectedMode) return;
-        // Premium gate: if this is a paid-tier game and the visitor has no
-        // active parent subscription/trial, surface the upgrade prompt
-        // instead of starting the game.
-        if (mode.tier === 'premium' && !hasAccess) {
-            setLockedPrompt(mode);
-            return;
-        }
-        setSelectedMode(mode.id);
-        setTimeout(() => onSelect(mode.id), 200);
-    }, [selectedMode, onSelect, hasAccess]);
 
     const galleryLayout = !isMobilePortrait;
 
@@ -296,7 +331,7 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
                             <AdventureCard
                                 key={mode.id}
                                 mode={mode}
-                                locked={mode.tier === 'premium' && !hasAccess}
+                                locked={evaluateModeGate(mode.tier, hasAccess).locked}
                                 isHovered={hoveredMode === mode.id}
                                 isSelected={selectedMode === mode.id}
                                 hoverProgress={hoveredMode === mode.id ? hoverProgress : 0}
@@ -312,7 +347,7 @@ export const ModeSelectionMenu = ({ onSelect, onBack, trackingResults }: ModeSel
                                 <AdventureCard
                                     mode={mode}
                                     compact
-                                    locked={mode.tier === 'premium' && !hasAccess}
+                                    locked={evaluateModeGate(mode.tier, hasAccess).locked}
                                     isHovered={hoveredMode === mode.id}
                                     isSelected={selectedMode === mode.id}
                                     hoverProgress={hoveredMode === mode.id ? hoverProgress : 0}

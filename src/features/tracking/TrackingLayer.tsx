@@ -27,6 +27,7 @@ import { CameraExplainer } from '../onboarding/CameraExplainer';
 import { CameraRecovery } from '../onboarding/CameraRecovery';
 import type { CameraCause } from '../../lib/cameraHelp';
 import { ParentTransparencyBanner } from './ParentTransparencyBanner';
+import { ChildSelfView, type CameraReassurance } from './ChildSelfView';
 
 // ---------------------------------------------------------------------------
 // Mirror helpers (front-facing camera, natural left/right orientation)
@@ -103,6 +104,10 @@ interface TrackingLayerProps {
         frameDataRef: React.MutableRefObject<TrackingFrameData>,
         diagnostics: TrackingDiagnostics,
     ) => React.ReactNode);
+    /** Parent camera-reassurance control: shows the child a small self-view.
+     *  Defaults to 'off' so callers that don't opt in (e.g. classroom mode)
+     *  are unchanged. */
+    cameraReassurance?: CameraReassurance;
 }
 
 // ---------------------------------------------------------------------------
@@ -125,7 +130,7 @@ const EMPTY_FRAME: TrackingFrameData = {
     pressValue: 0.5,
 };
 
-export const TrackingLayer = ({ onFrame, children, suppressNotifications }: TrackingLayerProps) => {
+export const TrackingLayer = ({ onFrame, children, suppressNotifications, cameraReassurance = 'off' }: TrackingLayerProps) => {
     const { videoRef, state: cameraState, startCamera, restartCamera, updateVisionMetrics } = useCameraController();
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -609,6 +614,14 @@ export const TrackingLayer = ({ onFrame, children, suppressNotifications }: Trac
             <ParentTransparencyBanner
                 videoRef={videoRef}
                 cameraActive={cameraState.status === 'running' && cameraState.streamActive}
+            />
+
+            {/* Child self-view, driven by the parent camera-reassurance control.
+                Reuses the same MediaStream — no extra getUserMedia. */}
+            <ChildSelfView
+                videoRef={videoRef}
+                cameraActive={cameraState.status === 'running' && cameraState.streamActive}
+                mode={cameraReassurance}
             />
 
             {/* DEBUG: active interaction bounds */}

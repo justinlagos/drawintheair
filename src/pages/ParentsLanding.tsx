@@ -8,9 +8,9 @@ import { KidButton } from '../components/kid-ui';
 import { tokens } from '../styles/tokens';
 
 const REASONS: { title: string; desc: string; icon: string; color: string; bg: string }[] = [
-  { title: 'No accounts, ever', desc: 'Your child never makes a profile. Nothing personal to set up or worry about.', icon: '🚫', color: tokens.colors.deepPlum, bg: '#EAE0FB' },
-  { title: 'No data leaves the device', desc: 'The camera processes locally. No frames sent to servers. No cloud storage.', icon: '🔒', color: tokens.colors.aqua, bg: '#D6F0FF' },
-  { title: 'No ads or tracking', desc: 'No advertisers. No third-party trackers. No commercial messages aimed at children.', icon: '✕', color: tokens.colors.coral, bg: '#FFE2EC' },
+  { title: 'No child accounts', desc: 'Your child never makes a profile or logs in. A grown-up sets things up.', icon: '🚫', color: tokens.colors.deepPlum, bg: '#EAE0FB' },
+  { title: 'Camera stays on the device', desc: 'The camera is processed locally in the browser. No video frames are ever uploaded, recorded, or stored.', icon: '🔒', color: tokens.colors.aqua, bg: '#D6F0FF' },
+  { title: 'No ads for your child', desc: 'Your child never sees advertising or commercial messages while they play.', icon: '✕', color: tokens.colors.coral, bg: '#FFE2EC' },
   { title: 'Movement-first design', desc: 'Replaces passive scrolling with reaching, pinching, and tracing. Real motor exercise.', icon: '🤸', color: tokens.colors.meadowGreen, bg: '#DCF5C9' },
 ];
 
@@ -35,7 +35,7 @@ export const ParentsLanding: React.FC = () => {
   return (
     <LegalPageLayout heroTitle="For families." eyebrow="For Families">
       <p style={{ fontSize: '1.15rem', textAlign: 'center', maxWidth: 640, margin: '0 auto 32px' }}>
-        Active screen time you don't have to feel guilty about. No accounts, no ads, no recordings, no tracking. Just movement and play.
+        Learning that gets them moving. No child accounts, no ads for your child, and the camera never leaves the device. Just movement and play.
       </p>
 
       <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>

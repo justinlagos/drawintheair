@@ -20,6 +20,7 @@ import {
   startStripeCheckout,
   reconcileSubscription,
   type BillingPreview,
+  type SubscriptionState,
 } from '../../lib/parentApi';
 import { clearParentAccessCache } from '../../features/parent/useParentAccess';
 import { logEvent } from '../../lib/analytics';
@@ -116,12 +117,18 @@ function BillingInner() {
     try {
       const metaEventId = newEventId();
       rememberCheckoutEventId(metaEventId);
-      const url = await startStripeCheckout(plan, metaEventId);
-      setBusy(false);
-      if (url) {
+      const result = await startStripeCheckout(plan, metaEventId);
+      if (result && 'url' in result) {
+        setBusy(false);
         logEvent('parent_checkout_started');
-        window.location.href = url;
+        window.location.href = result.url;
+      } else if (result && 'reason' in result && result.reason === 'already_subscribed') {
+        // Server refused a second subscription. Send them to the portal to
+        // change their existing plan (no duplicate, no double billing).
+        setBillingNote('You already have an active plan — opening your billing portal to make changes.');
+        await goPortal();
       } else {
+        setBusy(false);
         setBillingNote(
           "Stripe Checkout isn't available yet. Make sure STRIPE_SECRET_KEY, PARENT_APP_URL and the price IDs are configured in Supabase Edge Function secrets, then try again.",
         );
@@ -130,6 +137,23 @@ function BillingInner() {
       setBusy(false);
       console.error('[stripe-checkout] failed', e);
       setBillingNote("Couldn't reach Stripe. Please try again in a moment.");
+    }
+  }
+
+  // States where a LIVE Stripe subscription already exists. For these, a plan
+  // change must go through the Customer Portal (Stripe handles proration on the
+  // existing subscription) — never a new Checkout, which would duplicate it.
+  const LIVE_SUB_STATES: SubscriptionState[] = [
+    'active_monthly', 'active_annual', 'cancelled_active', 'payment_failed',
+  ];
+
+  // "Switch to this plan": route existing subscribers to the portal, and users
+  // still on a (local) trial / no live subscription to Checkout.
+  async function goSwitchPlan(plan: 'month' | 'year') {
+    if (LIVE_SUB_STATES.includes(subscriptionState)) {
+      await goPortal();
+    } else {
+      await goCheckout(plan);
     }
   }
 
@@ -363,7 +387,7 @@ function BillingInner() {
               <PlanSummary
                 preview={interval === 'month' ? previewMonth : previewYear}
                 cta="Switch to this plan"
-                onClick={() => goCheckout(interval)}
+                onClick={() => goSwitchPlan(interval)}
                 busy={busy}
                 featured
               />

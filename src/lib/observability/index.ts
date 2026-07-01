@@ -25,6 +25,7 @@
 import { initSentry, captureError, setObservabilityContext, clearObservabilityContext, isSentryActive } from './sentry';
 import { safeInvoke, safeInvokeAsync } from './safeInvoke';
 import { initPostHog, trackEvent, identifyPseudonymous, resetPostHog, isPostHogActive } from './posthog';
+import { hasAnalyticsConsent, onConsentChange } from '../analyticsConsent';
 import {
     initMetaPixel, trackMeta, trackMetaPageView, isMetaActive,
     newEventId, rememberCheckoutEventId, readCheckoutEventId, clearCheckoutEventId,
@@ -78,6 +79,13 @@ export type { SafeInvokeOptions } from './safeInvoke';
  * React mounts so we catch even the earliest render errors.
  */
 export function initObservability(): void {
+    // Sentry is error monitoring (operational, no marketing profiling) so it
+    // runs to keep the app debuggable. PostHog is non-essential product
+    // analytics and only starts once the visitor grants cookie consent.
     initSentry();
-    initPostHog();
+    if (hasAnalyticsConsent()) {
+        initPostHog();
+    } else {
+        onConsentChange((choice) => { if (choice === 'granted') initPostHog(); });
+    }
 }

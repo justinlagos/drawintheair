@@ -65,6 +65,14 @@ const NARRATOR_LINES: Record<NarratorEvent, NarratorLine[]> = {
 // Cooldown to prevent too many narrations
 const NARRATION_COOLDOWN_MS = 3000; // 3 seconds between narrations
 let lastNarrationTime = 0;
+
+// Parent "sound off" control. When true, all spoken narration is suppressed.
+// Set from the active learner's parent_controls.sound_enabled via applyParentSound().
+let narratorMuted = false;
+export const setNarratorMuted = (muted: boolean): void => {
+    narratorMuted = muted;
+    if (muted) stopNarrator();
+};
 let lastEventType: NarratorEvent | null = null;
 
 // ── Voice selection ─────────────────────────────────────────────────────
@@ -134,6 +142,7 @@ const pickVoice = (): SpeechSynthesisVoice | null => {
  * make the network-free privacy guarantee even cleaner.
  */
 const speak = (line: NarratorLine): void => {
+    if (narratorMuted) return; // parent sound-off control
     if (!featureFlags.getFlag('narrator')) return;
 
     const now = Date.now();

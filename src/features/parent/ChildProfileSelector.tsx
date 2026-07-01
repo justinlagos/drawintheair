@@ -15,13 +15,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { getParentOverview, type ChildSummary } from '../../lib/parentApi';
 import { logEvent } from '../../lib/analytics';
-
-const SELECTED_CHILD_KEY = 'dita-selected-child';
+import { hasValidSelection, setSelectedChild, subscribe } from './activeLearner';
 
 export function ChildProfileSelector({ onChosen }: { onChosen?: (childId: string) => void }) {
   const { user, loading } = useAuth();
   const [children, setChildren] = useState<ChildSummary[] | null>(null);
-  const [open, setOpen] = useState(true);
+  // Open whenever there is no valid (non-expired) selection. Manually
+  // dismissed ("skip") within this render is tracked separately.
+  const [open, setOpen] = useState(() => !hasValidSelection());
+  const [skipped, setSkipped] = useState(false);
 
   useEffect(() => {
     if (loading || !user) return;
@@ -33,18 +35,18 @@ export function ChildProfileSelector({ onChosen }: { onChosen?: (childId: string
     return () => { cancelled = true; };
   }, [loading, user]);
 
-  useEffect(() => {
-    try {
-      const existing = sessionStorage.getItem(SELECTED_CHILD_KEY);
-      if (existing) setOpen(false);
-    } catch { /* noop */ }
-  }, []);
+  // React to selection changes (e.g. "Switch learner" clears it → re-open).
+  useEffect(() => subscribe(() => {
+    const valid = hasValidSelection();
+    setOpen(!valid);
+    if (!valid) setSkipped(false);
+  }), []);
 
-  if (loading || !user || !open) return null;
+  if (loading || !user || !open || skipped) return null;
   if (children && children.length === 0) return null;
 
   function choose(id: string) {
-    try { sessionStorage.setItem(SELECTED_CHILD_KEY, id); } catch { /* noop */ }
+    setSelectedChild(id);
     logEvent('parent_child_session_saved');
     setOpen(false);
     onChosen?.(id);
@@ -129,7 +131,7 @@ export function ChildProfileSelector({ onChosen }: { onChosen?: (childId: string
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
             <button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={() => { setSkipped(true); setOpen(false); }}
               style={{
                 background: 'transparent', border: 'none', color: '#6B6F84',
                 cursor: 'pointer', font: 'inherit', padding: '4px 0',
