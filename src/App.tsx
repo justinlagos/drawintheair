@@ -208,12 +208,15 @@ function App() {
   }, []);
 
   const handleWake = useCallback(() => {
-    // First-time devices get the optional balloon warm-up (learn-by-doing,
-    // guaranteed first success = activation). Returning devices skip it.
-    if (!warmupDone()) {
-      setAppState('tutorial');
-      return;
-    }
+    // 2026-07-02 product decision: the "Quick warm-up?" offer interstitial
+    // is removed from the entry path — the child goes straight to the menu
+    // after waving. It was a reading-dependent choice modal shown before
+    // any play (conflicts with "gameplay unobstructed" / minimal reading).
+    // The WarmupTutorial component and the 'tutorial' appState remain
+    // wired; restore by re-adding the `if (!warmupDone()) setAppState('tutorial')`
+    // gate here. warmupDone() is still consulted so a device that somehow
+    // lands in the tutorial state is not re-offered.
+    void warmupDone;
     goToMenu();
   }, [goToMenu]);
 
