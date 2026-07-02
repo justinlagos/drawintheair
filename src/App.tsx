@@ -29,6 +29,7 @@ import { BuildingMode } from './features/modes/building/BuildingMode';
 import { buildingLogic } from './features/modes/building/buildingLogic';
 import { WaveToWake } from './features/onboarding/WaveToWake';
 import { WarmupTutorial } from './features/onboarding/WarmupTutorial';
+import { AmbientWarmup } from './features/onboarding/AmbientWarmup';
 import { InAppBrowserNotice } from './features/onboarding/InAppBrowserNotice';
 import { shouldShowInAppNotice } from './features/onboarding/inAppDetection';
 import { AudiencePrompt } from './features/onboarding/AudiencePrompt';
@@ -210,15 +211,27 @@ function App() {
   const handleWake = useCallback(() => {
     // 2026-07-02 product decision: the "Quick warm-up?" offer interstitial
     // is removed from the entry path — the child goes straight to the menu
-    // after waving. It was a reading-dependent choice modal shown before
-    // any play (conflicts with "gameplay unobstructed" / minimal reading).
-    // The WarmupTutorial component and the 'tutorial' appState remain
-    // wired; restore by re-adding the `if (!warmupDone()) setAppState('tutorial')`
-    // gate here. warmupDone() is still consulted so a device that somehow
-    // lands in the tutorial state is not re-offered.
-    void warmupDone;
+    // after waving. Its replacement is the AMBIENT warm-up (three poppable
+    // balloons drifting over the menu, flag: ambientWarmupV1) rendered in
+    // the menu block below — guaranteed first success without a modal.
     goToMenu();
   }, [goToMenu]);
+
+  // Ambient warm-up visibility: first-time devices only, and only until the
+  // child has a first success from ANY source (balloons or a real activity).
+  const [ambientWarmupOpen, setAmbientWarmupOpen] = useState(() => !warmupDone());
+  const handleAmbientWarmupComplete = useCallback(() => {
+    markWarmupDone();
+    setAmbientWarmupOpen(false);
+  }, []);
+  useEffect(() => {
+    // A completed real activity IS the first success — the balloons have
+    // nothing left to guarantee, so they never come back.
+    if (activityCount > 0 && ambientWarmupOpen) {
+      markWarmupDone();
+      setAmbientWarmupOpen(false);
+    }
+  }, [activityCount, ambientWarmupOpen]);
 
   const handleTutorialComplete = useCallback(() => {
     markWarmupDone();
@@ -565,6 +578,17 @@ function App() {
                     onBack={handleExitIntent}
                     trackingResults={frameRef.current.results}
                   />
+                  {/* Ambient warm-up: three poppable balloons over the menu
+                       for first-time devices. Non-blocking (container is
+                       pointer-events:none), zero reading. Popping all three
+                       fires the activation events that trigger
+                       SaveProgressNudge. */}
+                  {flags.ambientWarmupV1 && ambientWarmupOpen && (
+                    <AmbientWarmup
+                      frameRef={frameRef}
+                      onComplete={handleAmbientWarmupComplete}
+                    />
+                  )}
                 </>
               )}
 

@@ -51,6 +51,14 @@ export interface FeatureFlags {
     // readiness shows on the console. When OFF, the legacy name-typing join is
     // used unchanged. Kill switch: featureFlags.setFlags({ tokenJoinV1: false }).
     tokenJoinV1: boolean;
+
+    // Ambient warm-up (no-modal replacement for the removed "Quick warm-up?"
+    // offer interstitial). When ON, first-time devices see three balloons
+    // drift over the activity menu after the wave gate; popping all three is
+    // the guaranteed first success (activation + SaveProgressNudge trigger).
+    // Nothing blocks the menu, nothing needs reading. Kill switch:
+    // featureFlags.setFlags({ ambientWarmupV1: false }) or ?flags=!ambientWarmupV1.
+    ambientWarmupV1: boolean;
 }
 
 const DEFAULT_FLAGS: FeatureFlags = {
@@ -85,6 +93,9 @@ const DEFAULT_FLAGS: FeatureFlags = {
     selectionEnabled: false, // Selection tools, default OFF
     // Persistent classroom token-join (P3b) — default OFF until staged + legal sign-off.
     tokenJoinV1: false,
+    // Ambient warm-up — LIVE (no-modal replacement for the removed offer
+    // interstitial, f2defb5). Kill switch: ?flags=!ambientWarmupV1.
+    ambientWarmupV1: true,
 };
 
 const STORAGE_KEY = 'feature-flags';
