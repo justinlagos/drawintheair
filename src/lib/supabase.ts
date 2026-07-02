@@ -993,27 +993,43 @@ let realtimeSocket: WebSocket | null = null;
 let realtimeRef = 0;
 const channels = new Map<string, RealtimeChannel>();
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+let reconnectAttempts = 0;
 
 function connectRealtime() {
-  if (realtimeSocket?.readyState === WebSocket.OPEN) return;
+  // Guard BOTH open and connecting sockets. Previously only OPEN was
+  // checked, so a second subscribe while the socket was still CONNECTING
+  // created a duplicate WebSocket; the first socket's onopen then called
+  // sendPhxJoin() against the replaced (still-connecting) socket, producing
+  // the production error "failed to execute 'send' on 'WebSocket': still
+  // in CONNECTING state" and silently dropping channel joins.
+  if (
+    realtimeSocket?.readyState === WebSocket.OPEN ||
+    realtimeSocket?.readyState === WebSocket.CONNECTING
+  ) return;
 
   const wsUrl = SUPABASE_URL.replace('https://', 'wss://').replace('http://', 'ws://');
-  realtimeSocket = new WebSocket(
+  const socket = new WebSocket(
     `${wsUrl}/realtime/v1/websocket?apikey=${SUPABASE_ANON_KEY}&vsn=1.0.0`
   );
+  realtimeSocket = socket;
 
-  realtimeSocket.onopen = () => {
-    // Re-subscribe all channels
+  socket.onopen = () => {
+    if (realtimeSocket !== socket) return; // superseded while connecting
+    reconnectAttempts = 0;
+    // (Re-)subscribe all channels. The `channels` map is the durable
+    // source of truth, so joins requested while CONNECTING are never
+    // lost — they are all replayed here.
     channels.forEach((_ch, topic) => {
       sendPhxJoin(topic);
     });
     // Heartbeat every 30s
+    if (heartbeatInterval) clearInterval(heartbeatInterval);
     heartbeatInterval = setInterval(() => {
       sendPhx('heartbeat', 'phoenix', {});
     }, 30000);
   };
 
-  realtimeSocket.onmessage = (event) => {
+  socket.onmessage = (event) => {
     try {
       const msg = JSON.parse(event.data);
       const [_joinRef, _ref, topic, eventName, payload] = [
@@ -1038,10 +1054,18 @@ function connectRealtime() {
     } catch { /* ignore parse errors */ }
   };
 
-  realtimeSocket.onclose = () => {
-    if (heartbeatInterval) clearInterval(heartbeatInterval);
-    // Reconnect after 2s
-    setTimeout(connectRealtime, 2000);
+  socket.onclose = () => {
+    if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
+    // Only the CURRENT socket may schedule a reconnect — a superseded
+    // socket closing must not spawn parallel reconnect loops.
+    if (realtimeSocket !== socket) return;
+    // Bounded exponential backoff: 2s, 4s, 8s … capped at 30s.
+    reconnectAttempts++;
+    const delay = Math.min(2000 * 2 ** (reconnectAttempts - 1), 30000);
+    setTimeout(() => {
+      // Skip if nobody is subscribed any more.
+      if (channels.size > 0) connectRealtime();
+    }, delay);
   };
 }
 
@@ -1066,6 +1090,9 @@ function sendPhx(event: string, topic: string, payload: Record<string, unknown>)
 }
 
 function sendPhxJoin(topic: string) {
+  // Never send while CONNECTING/CLOSING — dropping is safe because
+  // onopen replays joins for every entry in `channels`.
+  if (realtimeSocket?.readyState !== WebSocket.OPEN) return;
   const channel = channels.get(topic);
   if (!channel) return;
 
