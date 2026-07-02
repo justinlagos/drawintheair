@@ -25,6 +25,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { HeaderNav } from '../components/landing/HeaderNav';
 import { BrandLogo } from '../components/BrandLogo';
+import { logEvent } from '../lib/analytics';
 import '../components/landing/landing-calm.css';
 
 /* =====================================================================
@@ -291,7 +292,7 @@ export function CalmFooter() {
               Movement-first learning for children aged 3 to 7. Built for the browser. Built for families and classrooms.
             </p>
             <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
-              <Link to="/parent/signup" className="btn btn-primary sm">Try free</Link>
+              <Link to="/play" className="btn btn-primary sm">Try free</Link>
             </div>
           </div>
           <div>
@@ -374,12 +375,20 @@ export const Landing: React.FC = () => {
                   Watch your child practise letters, numbers, and creativity using just their hands. No touchscreen. No controller. Just natural movement and imagination.
                 </p>
                 <div className="hero-actions reveal d3">
+                  {/* Primary CTA goes straight to anonymous /play — the
+                      product contract is "no account before the first value
+                      moment" (SaveProgressNudge handles conversion AFTER the
+                      child's first success). Signup remains the explicit
+                      trial CTA in the banner below. */}
                   <button
                     type="button"
                     className="btn btn-primary hero-cta lg"
-                    onClick={() => go('/parent/signup')}
+                    onClick={() => {
+                      logEvent('cta_click', { meta: { source: 'hero', dest: '/play' } });
+                      go('/play');
+                    }}
                   >
-                    <Icon name="play" size={18} />Try free now
+                    <Icon name="play" size={18} />Try it now — no sign-up
                   </button>
                   <button
                     type="button"

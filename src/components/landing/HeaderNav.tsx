@@ -72,7 +72,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ onTryFree }) => {
   // "Try free" must respect context: on the teacher pages it should lead to
   // the teacher pilot signup, not parent signup. Elsewhere it opens the play
   // demo (when provided) or falls back to family signup.
-  const tryFreeHref = activeId === 'teachers' ? '/teacher/signup' : '/parent/signup';
+  const tryFreeHref = activeId === 'teachers' ? '/teacher/signup' : '/play';
   const onTryFreeClick = (e: React.MouseEvent) => {
     e.preventDefault();
     if (activeId === 'teachers') {
@@ -83,7 +83,9 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ onTryFree }) => {
       onTryFree();
       return;
     }
-    navigate('/parent/signup');
+    // Anonymous play first — account comes after the first value moment
+    // (SaveProgressNudge). Signup stays reachable via login/pricing CTAs.
+    navigate('/play');
   };
 
   // Context-aware login: teacher page -> Teacher login, parent page -> Family
