@@ -1546,15 +1546,22 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
         // school/anonymous attribution.
         if (childProfileId) {
             const m = opts.meta ?? {};
-            const itemKey =
+            const contentKey =
                 (m.itemKey as string | undefined) ??
                 (m.item_key as string | undefined) ??
                 (m.stage_id as string | undefined) ??
                 (m.piece_id as string | undefined) ??
                 (m.word as string | undefined) ??
                 (m.letter as string | undefined) ??
-                (m.balloon_id as string | undefined) ??
-                name; // last resort: event name itself
+                (m.balloon_id as string | undefined);
+            // Last resort: the event name itself. Rows carrying an event
+            // name as item_key are ENGAGEMENT evidence, not curriculum
+            // skills — they must never feed mastery. _item_kind lets the
+            // mastery pipeline (lios_is_technical_item_key + this flag)
+            // separate them without guessing from the key string.
+            const itemKey = contentKey ?? name;
+            const itemKind: 'content' | 'technical' =
+                contentKey !== undefined ? 'content' : 'technical';
             const ctx = getOrCreateSession();
             learningQueue.push({
                 occurred_at: row.occurred_at,
@@ -1576,6 +1583,7 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
                 meta: {
                     ...(m as Record<string, unknown>),
                     _mirror_source: name,
+                    _item_kind: itemKind,
                     attempt_id: (row.meta as Record<string, unknown>).attempt_id ?? null,
                 },
                 event_uid: row.event_uid,
