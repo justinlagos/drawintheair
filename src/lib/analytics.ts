@@ -22,7 +22,7 @@
  *   analytics.endSession('back_to_landing');
  */
 
-import { dbInsert } from './supabase';
+import { dbInsert, callRpc } from './supabase';
 import {
     classifyEnvironment,
     classifyTrafficType,
@@ -462,7 +462,14 @@ function computeFatigueScore(): number | null {
     if (f <= 0) return null;
     return Math.round((l / f) * 100) / 100;
 }
-function resetActionTimings(): void { actionTimings.length = 0; }
+function resetActionTimings(): void { actionTimings.length = 0; productiveActionCount = 0; }
+
+// Count of ALL productive actions this session (grab/drop/pop/hit/trace),
+// independent of whether the event carried a duration_ms. session_ended
+// previously reported action_count from actionTimings.length, which only
+// grows for duration-carrying events — so real sessions full of activity
+// ended with action_count: 0 in the dashboard.
+let productiveActionCount = 0;
 
 // ── Per-flag exposure dedupe ─────────────────────────────────────
 // feature_flag_exposed should fire at most once per session per flag.
@@ -476,6 +483,12 @@ const exposedFlags = new Set<string>();
 // every 60s if they keep idling). Resets on next action.
 const STUCK_THRESHOLD_MS = 30_000;
 const STUCK_REPEAT_MS = 60_000;
+// Hard cap per armed context: a tab parked overnight used to emit
+// stuck_detected roughly once a minute for hours (388 events in one
+// session on 2026-06-20). Five fires (~4 minutes of silence) already
+// says everything "stuck" can say; past that the idle-timeout abandon
+// path owns the outcome.
+const STUCK_MAX_FIRES = 5;
 let stuckCtx: { gameMode: string | null; stageId: string | null; lastActionAt: number; firedCount: number } | null = null;
 let stuckTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -494,6 +507,9 @@ function startStuckWatcher(): void {
                 value_number: idle,
                 meta: { idle_ms: idle, fired_count: c.firedCount },
             });
+            if (c.firedCount >= STUCK_MAX_FIRES) {
+                stuckCtx = null;  // disarm; idle-timeout handles the rest
+            }
         }
     }, 5_000);
 }
@@ -505,6 +521,7 @@ function startStuckWatcher(): void {
  * so the resulting event has context.
  */
 export function noteProductiveAction(gameMode: string, stageId?: string): void {
+    productiveActionCount += 1;
     stuckCtx = {
         gameMode,
         stageId: stageId ?? null,
@@ -1076,38 +1093,135 @@ function persistQueue(): void {
     }
 }
 
+// ── Idempotent ingest (2026-07-09 pipeline repair) ───────────────────
+//
+// ROOT CAUSE of the silent 26-Jun → 9-Jul outage: the flush used
+// `Prefer: resolution=ignore-duplicates` (INSERT ... ON CONFLICT DO
+// NOTHING). Postgres needs to SEE conflicting rows to arbitrate, and
+// the anon role has no SELECT policy on these tables (by design), so
+// EVERY flush failed with 42501 and re-queued forever. The only rows
+// that ever landed came from the unload beacon (a plain insert) —
+// minus whatever batch a failed flush had in flight, which is why
+// stored sessions began mid-flow (first row at client_seq 21).
+//
+// The fix moves idempotency server-side: SECURITY DEFINER RPCs
+// (migration 20260709000001) do the ON CONFLICT DO NOTHING with no
+// read access granted to the caller. If the RPC is missing (staging /
+// un-migrated DB) we fall back to a plain insert and treat a 23505
+// duplicate-key response as "already delivered".
+let ingestRpcAvailable = true;
+let learningIngestRpcAvailable = true;
+// The batch a flush currently has in flight. The unload beacon must
+// include it: if the page dies mid-flight the requeue never runs, and
+// this batch — always the FRONT of the queue — is exactly what
+// production lost for two weeks.
+let inFlightBatch: EventRow[] = [];
+let inFlightLearningBatch: LearningRow[] = [];
+
+/** True when the error means the ingest RPC doesn't exist on this DB.
+ *  Exported for unit tests. */
+export function isMissingRpc(code: string | undefined): boolean {
+    return code === 'PGRST202' || code === '404';
+}
+
+/**
+ * Decide whether a batch is SETTLED after a plain (non-RPC) insert.
+ * Settled means: do not requeue. A 23505 duplicate-key response proves
+ * the rows already exist server-side (the unique event_uid index), so
+ * retrying would collide forever — the poison-batch failure mode the
+ * old ignore-duplicates header tried (and failed) to prevent.
+ * Exported for unit tests.
+ */
+export function plainInsertSettled(error: { code?: string } | null): boolean {
+    return error === null || error.code === '23505';
+}
+
+/**
+ * Deliver one batch. Returns true when the batch is settled (inserted,
+ * or provably already present) and must NOT be requeued.
+ */
+async function deliverEventBatch(batch: EventRow[]): Promise<boolean> {
+    if (ingestRpcAvailable) {
+        const { error } = await callRpc('ingest_analytics_events', { in_events: batch });
+        if (!error) return true;
+        if (!isMissingRpc(error.code)) {
+             
+            console.warn('[analytics] ingest rpc failed:', error.code, error.message);
+            return false;
+        }
+        ingestRpcAvailable = false; // fall through to plain insert
+         
+        console.warn('[analytics] ingest rpc missing, falling back to plain insert');
+    }
+    // Plain insert (NO ignore-duplicates: with no anon SELECT policy the
+    // ON CONFLICT arbitration is rejected by RLS with 42501 — the exact
+    // bug this rewrite removes). A 23505 means every retry would collide
+    // on event_uid forever: the rows are already in the table, so the
+    // batch is settled, not poison.
+    const { error } = await dbInsert(
+        'analytics_events',
+        batch as unknown as Record<string, unknown>,
+        { returning: false },
+    );
+    if (plainInsertSettled(error)) {
+        if (error) {
+             
+            console.warn('[analytics] duplicate batch already delivered, dropping', batch.length, 'events');
+        }
+        return true;
+    }
+     
+    console.warn('[analytics] flush failed:', error?.code, error?.message);
+    return false;
+}
+
+/** Same contract as deliverEventBatch, for the learning mirror. */
+async function deliverLearningBatch(batch: LearningRow[]): Promise<boolean> {
+    if (learningIngestRpcAvailable) {
+        const { error } = await callRpc('ingest_learning_attempts', { in_attempts: batch });
+        if (!error) return true;
+        if (!isMissingRpc(error.code)) {
+             
+            console.warn('[analytics] learning ingest rpc failed:', error.code, error.message);
+            return false;
+        }
+        learningIngestRpcAvailable = false;
+         
+        console.warn('[analytics] learning ingest rpc missing, falling back to plain insert');
+    }
+    const { error } = await dbInsert(
+        'learning_attempts',
+        batch as unknown as Record<string, unknown>,
+        { returning: false },
+    );
+    if (plainInsertSettled(error)) return true;
+     
+    console.warn('[analytics] learning flush failed:', error?.code, error?.message);
+    return false;
+}
+
 async function flush(): Promise<void> {
     if (flushing) return;
     if (eventQueue.length === 0 && learningQueue.length === 0) return;
     flushing = true;
 
-    // Mirror flush of learning_attempts. Same return=minimal trick as
-    // analytics_events to dodge the SELECT-after-INSERT RLS rollback.
-    //
-    // LIOS: ignoreDuplicates makes the bulk insert tolerant of
-    // event_uid collisions, when an offline-queue retry races a
-    // partial-success flush, the duplicate rows are silently
-    // skipped instead of aborting the whole batch.
     if (learningQueue.length > 0) {
         const learningBatch = learningQueue.splice(0, FLUSH_BATCH_SIZE);
+        inFlightLearningBatch = learningBatch;
         persistLearningQueue();
         try {
-            const { error } = await dbInsert(
-                'learning_attempts',
-                learningBatch as unknown as Record<string, unknown>,
-                { returning: false, ignoreDuplicates: true },
-            );
-            if (error) {
+            const settled = await deliverLearningBatch(learningBatch);
+            if (!settled) {
                 learningQueue = [...learningBatch, ...learningQueue];
                 persistLearningQueue();
-                // eslint-disable-next-line no-console
-                console.warn('[analytics] learning flush failed:', error.code, error.message);
             }
         } catch (e) {
             learningQueue = [...learningBatch, ...learningQueue];
             persistLearningQueue();
-            // eslint-disable-next-line no-console
+             
             console.warn('[analytics] learning flush threw:', (e as Error).message);
+        } finally {
+            inFlightLearningBatch = [];
         }
     }
     if (eventQueue.length === 0) {
@@ -1118,44 +1232,27 @@ async function flush(): Promise<void> {
     // Take a snapshot, anything that arrives during the network call
     // remains in eventQueue and flushes on the next tick.
     const batch = eventQueue.splice(0, FLUSH_BATCH_SIZE);
+    inFlightBatch = batch;
     persistQueue();
 
     try {
-        // dbInsert accepts a single row OR an array. PostgREST does bulk
-        // insert when the body is a JSON array.
-        //
-        // CRITICAL: returning: false sends `Prefer: return=minimal`. With
-        // the default (return=representation) PostgREST executes an
-        // implicit SELECT after the INSERT to return the new rows, and
-        // the SELECT side runs under RLS. Our SELECT policy only allows
-        // the `authenticated` role, so anon-role inserts get rolled back
-        // with 42501 even though the INSERT policy is wide open. We
-        // don't need the inserted rows back, fire-and-forget telemetry.
-        const { error } = await dbInsert(
-            'analytics_events',
-            batch as unknown as Record<string, unknown>,
-            { returning: false, ignoreDuplicates: true },
-        );
-        if (error) {
+        const settled = await deliverEventBatch(batch);
+        if (!settled) {
             // Put the batch back at the front of the queue and retry next tick
             eventQueue = [...batch, ...eventQueue];
             persistQueue();
-            // Surface the failure, analytics has been silently broken
-            // for too long. We can quiet this back down once the pipeline
-            // is stable.
-            // eslint-disable-next-line no-console
-            console.warn('[analytics] flush failed:', error.code, error.message, '| queued:', eventQueue.length);
         } else {
-            // eslint-disable-next-line no-console
+             
             console.debug('[analytics] flushed', batch.length, 'events; remaining:', eventQueue.length);
         }
     } catch (e) {
         // Network down or Supabase unreachable, keep events for retry
         eventQueue = [...batch, ...eventQueue];
         persistQueue();
-        // eslint-disable-next-line no-console
+         
         console.warn('[analytics] flush threw:', (e as Error).message, '| queued:', eventQueue.length);
     } finally {
+        inFlightBatch = [];
         flushing = false;
     }
 }
@@ -1192,22 +1289,53 @@ function setupBeforeUnload(): void {
             // Use sendBeacon for reliable last-gasp delivery during page unload.
             // dbInsert won't work here because the page is being torn down.
             //
-            // LIOS: sendBeacon doesn't expose the Prefer header (the body
-            // is a Blob and the browser sets Content-Type only). We append
-            // the resolution preference as a URL hint that PostgREST also
-            // accepts on the query string, same effect, duplicate
-            // event_uids are silently ignored instead of failing the batch.
-            if (eventQueue.length === 0) return;
+            // Target the idempotent ingest RPC (20260709000001), NOT the
+            // table endpoint: the RPC dedupes on event_uid server-side, so
+            // a beacon racing an in-flight flush can't 409 the whole batch.
+            // (The old `on_conflict=event_uid` query hint did nothing
+            // without a Prefer: resolution header, which sendBeacon can't
+            // send — a duplicate row failed the entire beacon batch.)
+            //
+            // Include the batch a flush currently has in flight: if the
+            // page dies before that fetch settles, its requeue never runs.
+            // That in-flight batch is always the FRONT of the queue, which
+            // is exactly the chunk production lost (sessions whose first
+            // stored row was client_seq 21).
+            const pending = [...inFlightBatch, ...eventQueue];
+            if (pending.length === 0) return;
             const url = (import.meta.env.VITE_SUPABASE_URL as string) || '';
             const key = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || '';
             if (!url || !key) return;
-            const body = new Blob([JSON.stringify(eventQueue)], { type: 'application/json' });
-            navigator.sendBeacon(
-                `${url}/rest/v1/analytics_events?apikey=${encodeURIComponent(key)}&on_conflict=event_uid`,
+            const body = new Blob(
+                [JSON.stringify({ in_events: pending })],
+                { type: 'application/json' },
+            );
+            const accepted = navigator.sendBeacon(
+                `${url}/rest/v1/rpc/ingest_analytics_events?apikey=${encodeURIComponent(key)}`,
                 body,
             );
-            eventQueue = [];
-            persistQueue();
+            // Only clear what the browser actually accepted for delivery.
+            // The old handler cleared unconditionally, so a rejected beacon
+            // (payload too large, transport unavailable) silently destroyed
+            // the whole session's remaining telemetry.
+            if (accepted) {
+                eventQueue = [];
+                persistQueue();
+            }
+
+            // Last-gasp for the learning mirror too (was never beaconed:
+            // any learning rows still queued at unload were simply lost).
+            const pendingLearning = [...inFlightLearningBatch, ...learningQueue];
+            if (pendingLearning.length > 0) {
+                const learningAccepted = navigator.sendBeacon(
+                    `${url}/rest/v1/rpc/ingest_learning_attempts?apikey=${encodeURIComponent(key)}`,
+                    new Blob([JSON.stringify({ in_attempts: pendingLearning })], { type: 'application/json' }),
+                );
+                if (learningAccepted) {
+                    learningQueue = [];
+                    persistLearningQueue();
+                }
+            }
         }, {
             label: 'analytics.beforeunload',
             // Feature-detect sendBeacon (and the window) before touching it; an
@@ -1221,9 +1349,22 @@ function setupBeforeUnload(): void {
 // CSP-violation listener (catches bugs like the May 2026 regression)
 // ════════════════════════════════════════════════════════════════════
 
+// Dedupe key → send count. A blocked third-party tag retries forever
+// (capig.stape.be alone produced 1,621 csp_violation rows in 30 days),
+// so each (directive, origin) pair is reported at most 3× per session —
+// enough to see the problem, without drowning the event table.
+const cspViolationCounts = new Map<string, number>();
+const CSP_MAX_PER_KEY = 3;
+
 function setupCSPListener(): void {
     if (typeof document === 'undefined') return;
     document.addEventListener('securitypolicyviolation', (e) => {
+        let origin = e.blockedURI;
+        try { origin = new URL(e.blockedURI).origin; } catch { /* keep raw (e.g. 'inline', 'eval') */ }
+        const key = `${e.violatedDirective}|${origin}`;
+        const n = (cspViolationCounts.get(key) ?? 0) + 1;
+        cspViolationCounts.set(key, n);
+        if (n > CSP_MAX_PER_KEY) return;
         logEvent('csp_violation', {
             meta: {
                 blocked_uri: e.blockedURI,
@@ -1754,8 +1895,8 @@ export function endSession(reason: string = 'unspecified'): void {
     logEvent('session_ended', {
         meta: {
             reason,
-            fatigue_score: fatigueScore,            // null if <8 actions
-            action_count: actionTimings.length,
+            fatigue_score: fatigueScore,            // null if <8 timed actions
+            action_count: productiveActionCount,    // ALL productive actions (was timed-only, hence always 0)
         },
         value_number: durationMs,
     });
@@ -1797,9 +1938,18 @@ export function initAnalytics(): void {
     // Restore a session from sessionStorage if one survived a navigation.
     session = loadSession();
 
-    // Restore any unsent events from a prior tab.
-    eventQueue = loadQueueFromStorage();
-    learningQueue = loadLearningQueueFromStorage();
+    // Restore any unsent events from a prior tab, MERGED with anything
+    // already logged this boot. initAnalytics runs in a React effect, so
+    // child-component events (camera, tracker, wave gate) can precede it;
+    // a plain overwrite silently destroyed those when localStorage was
+    // unavailable (in-app webviews, blocked storage). Dedupe on event_uid
+    // because a working localStorage already contains this boot's events.
+    const persisted = loadQueueFromStorage();
+    const seen = new Set(persisted.map((r) => r.event_uid));
+    eventQueue = [...persisted, ...eventQueue.filter((r) => !seen.has(r.event_uid))];
+    const persistedLearning = loadLearningQueueFromStorage();
+    const seenLearning = new Set(persistedLearning.map((r) => r.event_uid));
+    learningQueue = [...persistedLearning, ...learningQueue.filter((r) => !seenLearning.has(r.event_uid))];
 
     startFlushTimer();
     if (session) startHeartbeat();
