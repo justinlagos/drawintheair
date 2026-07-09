@@ -69,7 +69,7 @@ import { type GameMode as FeatureGameMode } from './core/featureFlags';
 import { interactionStateManager } from './core/InteractionState';
 import { getTrackingFlag, isDebugModeEnabled } from './core/flags/TrackingFlags';
 import type { FilterProfileMode } from './core/filters/OneEuroFilter';
-import { logEvent, hasActiveSession, endSession } from './lib/analytics';
+import { logEvent, hasActiveSession, endSession, getCurrentAttemptId } from './lib/analytics';
 import './App.css';
 import { startCountdown } from './core/countdownService';
 
@@ -334,16 +334,20 @@ function App() {
   const handleExitToMenu = useCallback(() => {
     setAppState('menu');
     drawingEngine.clear();
-    // Fire events for pilot analytics. We treat every menu-button exit
-    // as `mode_abandoned` . the per-stage `mode_completed` events from
-    // inside the game logic are the source of truth for "actually
-    // finished a stage". Using mode_completed here was a lie that made
-    // every exit look like a win.
+    // Fire events for pilot analytics. A menu-button exit is only an
+    // abandonment when the current attempt is still OPEN (no completion
+    // yet). mode_completed closes the attempt (analytics.ts terminal
+    // handler), so exiting after finishing a letter/painting/round must
+    // not be recorded as mode_abandoned — that was the inverse of the
+    // old lie: it made every win that ended at the menu look like a
+    // quit and inflated abandonment in the executive dashboard.
     if (hasActiveSession()) {
-      logEvent('mode_abandoned', {
-        game_mode: gameMode,
-        meta: { reason: 'exit_to_menu' },
-      });
+      if (getCurrentAttemptId()) {
+        logEvent('mode_abandoned', {
+          game_mode: gameMode,
+          meta: { reason: 'exit_to_menu' },
+        });
+      }
       logEvent('menu_opened');
     }
   }, [gameMode]);

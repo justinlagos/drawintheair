@@ -91,6 +91,26 @@ export const TracingModePlayful = ({ onExit }: Props = {}) => {
             celebratingRef.current = true;
             setShowCelebration(true);
             const snap = getPlayfulSnapshot();
+            // Restore the legacy analytics contract (preWritingLogic.ts):
+            // a traced path emits mode_completed + stage_completed +
+            // tracing_letter_completed. The playful_v1 engine shipped with
+            // only the last of the three, which made every child on the new
+            // engine invisible to the activation funnel and stage panels
+            // (dashboard_executive_summary counts mode_completed).
+            logEvent('mode_completed', {
+                game_mode: 'pre-writing',
+                stage_id: snap?.activityId,
+                meta: { tracing_engine: 'playful_v1' },
+            });
+            logEvent('stage_completed', {
+                game_mode: 'pre-writing',
+                stage_id: snap?.activityId,
+                meta: {
+                    type: snap?.type,
+                    strokes: snap?.totalStrokes,
+                    tracing_engine: 'playful_v1',
+                },
+            });
             logEvent('tracing_letter_completed', {
                 game_mode: 'pre-writing',
                 stage_id: snap?.activityId,

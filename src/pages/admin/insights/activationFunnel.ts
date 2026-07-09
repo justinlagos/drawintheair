@@ -15,6 +15,12 @@ export interface ActivationMetrics {
     cam_granted: number;
     tracker_ok: number;
     mode_starts?: number;
+    /** Distinct SESSIONS with at least one `mode_started`. Preferred for
+     *  the funnel ladder: `mode_starts` is a raw EVENT count (a child
+     *  replaying fires several), which made the "Activity started" bar
+     *  exceed "Camera granted" (8 > 3). Returned by
+     *  dashboard_executive_summary since 20260703000001. */
+    mode_start_sessions?: number;
     /** Count of `mode_completed` EVENTS (fires per stage/letter, so it
      *  can exceed the number of sessions). Use only for raw volume — NOT
      *  as an activation numerator. */
@@ -46,7 +52,10 @@ export function buildActivationFunnel(m: ActivationMetrics): ActivationStep[] {
         { label: 'Sessions started', n: m.sessions_started },
         { label: 'Camera granted', n: m.cam_granted },
         { label: 'Tracker ready', n: m.tracker_ok },
-        { label: 'Activity started', n: m.mode_starts ?? m.mode_completions },
+        // Distinct sessions, falling back to the raw event count for
+        // pre-20260703 RPC payloads. Every rung of the ladder is now a
+        // session count, so a lower step can never exceed a higher one.
+        { label: 'Activity started', n: m.mode_start_sessions ?? m.mode_starts ?? m.mode_completions },
         {
             label: '★ First activity completed',
             // Distinct activated sessions, so the activation step can never
