@@ -9,8 +9,10 @@ import { getScore as getSortScore } from '../modes/sortAndPlace/sortAndPlaceLogi
 import { getScore as getColourScore } from '../modes/colourBuilder/colourBuilderLogic';
 import { getBalloonMathScore } from '../modes/balloonMath/balloonMathLogic';
 import { getProgress as getPreWritingProgress } from '../modes/preWriting/preWritingLogic';
+import { getPlayfulClassScore } from '../modes/tracing/tracingPlayfulFrame';
 import { getRainbowTotalCompleted } from '../modes/rainbowBridge/rainbowBridgeLogic';
 import { getSpellingWordsSpelled } from '../modes/gestureSpelling/gestureSpellingLogic';
+import { featureFlags } from '../../core/featureFlags';
 
 // Word Search uses a different state pattern, we'll handle it separately
 // Free Paint has no score (creative mode)
@@ -41,7 +43,13 @@ export function getRawScore(mode: GameModeId): number {
     case 'balloon-math':
       return getBalloonMathScore();
     case 'pre-writing':
-      return Math.round(getPreWritingProgress() * 100); // 0-100 scale
+      // Class Mode plays the same tracing experience as /play: playful
+      // tracing when tracingPlayfulUiV1 is on (default), legacy otherwise.
+      // Both report on the 0-100 progress scale the thresholds expect
+      // (playful adds +100 per fully completed letter this round).
+      return featureFlags.getFlag('tracingPlayfulUiV1')
+        ? getPlayfulClassScore()
+        : Math.round(getPreWritingProgress() * 100);
     case 'rainbow-bridge':
       return getRainbowTotalCompleted();
     case 'gesture-spelling':

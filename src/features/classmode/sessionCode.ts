@@ -24,3 +24,13 @@ export function generateSessionCode(): string {
 export function isValidCode(code: string): boolean {
   return /^\d{4}$/.test(code.trim());
 }
+
+/**
+ * Sanitise raw code-entry input (P0 2026-07-09): keep digits only, cap at
+ * four. Makes paste ("12 34", "code: 1234"), overtyping and fast typing
+ * all collapse to the intended digits — the code screen is used by 3-7
+ * year olds who cannot recover from a jammed input.
+ */
+export function sanitizeCodeInput(raw: string): string {
+  return raw.replace(/\D/g, '').slice(0, 4);
+}

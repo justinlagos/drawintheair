@@ -16,27 +16,23 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
-    dbSelect, dbInsert, subscribeToTable,
+    dbSelect, dbInsert, subscribeToTable, onRealtimeReconnect,
     getAccountRoles, registerTeacherAccount, consumeRoleIntent,
 } from '../../lib/supabase';
+import { engagementOf } from '../../features/classmode/reconcile';
 import { generateSessionCode } from '../../features/classmode/sessionCode';
 import { MODE_LABELS, SCOREABLE_MODES } from '../../features/classmode/scoreMapping';
 import type { GameModeId } from '../../features/classmode/scoreMapping';
 import { conductorApi } from '../../features/classmode/conductor/api';
 import { avatarFromSeed, avatarForStudent } from '../../features/classmode/conductor/avatars';
-import { featureFlags } from '../../core/featureFlags';
-import { PICTURE_TOKENS } from '../../features/classmode/tokens';
-import { listChildren, addChild, type ClassChild } from '../teacher/roster';
 import type {
     SessionRow,
     SessionActivityRow,
     StudentRow,
     StudentStats,
     ClassSummary,
-    EngagementStatus,
 } from '../../features/classmode/conductor/types';
 import './classmode.css';
 import './conductor.css';
@@ -47,35 +43,20 @@ const FREE_TIER_CLASSROOM_CAP = 1;
 function formatElapsed(startedAt: string | null): string {
     if (!startedAt) return '-';
     const ms = Date.now() - new Date(startedAt).getTime();
-    const m = Math.floor(ms / 60000);
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms / 60000) % 60);
     const s = Math.floor((ms / 1000) % 60);
+    if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`;
     if (m === 0) return `${s}s`;
     return `${m}m ${String(s).padStart(2, '0')}s`;
 }
 
-/** Friendly label for the authoritative learner readiness state (P3b / DM2). */
-function readinessLabel(state: string): string {
-    switch (state) {
-        case 'ready': return '✅ ready';
-        case 'playing': return '▶️ playing';
-        case 'camera_ready': return '📷 camera on';
-        case 'hand_detected': return '✋ hand seen';
-        case 'camera_permission_needed': return '📷 needs camera';
-        case 'tracking_lost': return '🔄 lost hand';
-        case 'needs_help': return '🆘 needs help';
-        case 'completed': return '🎉 done';
-        case 'disconnected': return '⚫ offline';
-        default: return 'joined';
-    }
-}
 
-/** Decide a student's engagement bucket from raw row data + timing.
- *  Calm intelligence, just three states the teacher acts on. */
-function engagementOf(student: StudentRow): EngagementStatus {
-    if (student.kicked_at) return 'offline';
-    if (!student.is_active || !student.is_connected) return 'offline';
-    return 'engaged'; // 'stuck' is set externally via stuck_detected events
-}
+// Presence truth (P0 2026-07-09): is_active / is_connected are set once
+// at join and were never unset, so closed tabs showed "engaged" forever.
+// The student client now heartbeats session_students.updated_at every ~5s
+// while visible (class_student_heartbeat RPC) and engagementOf (imported
+// from reconcile.ts, unit-tested there) derives the bucket from staleness.
 
 // ── Top page ────────────────────────────────────────────────────────
 export default function TeacherClassConsole() {
@@ -265,7 +246,11 @@ export default function TeacherClassConsole() {
     }
 
     // ── Active session, the conductor lives here ──────────────────
-    if (activeSession && activeSession.class_state !== 'ended') {
+    // NOTE: an 'ended' class_state must NOT unmount the console — the
+    // ConductorScreen itself switches to the class summary. (Previously,
+    // the ended echo bounced the teacher straight to the Start screen,
+    // skipping the summary; it only "worked" while realtime was down.)
+    if (activeSession) {
         return (
             <ConductorScreen
                 session={activeSession}
@@ -377,23 +362,43 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
         return () => clearInterval(id);
     }, []);
 
-    // Load + subscribe: students
-    useEffect(() => {
-        let cancelled = false;
-        (async () => {
-            const { data } = await dbSelect<StudentRow[]>(
-                'session_students',
-                `session_id=eq.${session.id}&order=joined_at.asc`,
-            );
-            if (!cancelled && data) setStudents(data);
-        })();
+    // Authoritative re-fetchers (P0 2026-07-09). Realtime is the fast
+    // path, but events can drop during connect/join windows or reconnect
+    // gaps. These reload the canonical roster + activity state and are
+    // driven on mount and by the reconciliation fallback below, so a
+    // missed INSERT/UPDATE no longer leaves the teacher staring at a
+    // stale screen until a manual refresh.
+    const reloadStudents = useCallback(async () => {
+        const { data } = await dbSelect<StudentRow[]>(
+            'session_students',
+            `session_id=eq.${session.id}&order=joined_at.asc`,
+        );
+        if (data) setStudents(data);
+    }, [session.id]);
 
+    const reloadActivities = useCallback(async () => {
+        const { data } = await dbSelect<SessionActivityRow[]>(
+            'session_activities',
+            `session_id=eq.${session.id}&order=ordinal.asc`,
+        );
+        if (!data) return;
+        const open = data.find((a) => a.state !== 'ended');
+        const closed = data.filter((a) => a.state === 'ended');
+        setCurrentActivity(open ?? null);
+        setPastActivities(closed);
+    }, [session.id]);
+
+    // Load + subscribe: students. Subscribe FIRST, then load, so an INSERT
+    // that lands while the initial select is in flight is still applied
+    // (the dedup below keeps it from doubling up).
+    useEffect(() => {
         const unsubInsert = subscribeToTable(
             `session-students-${session.id}`,
             'session_students', 'INSERT',
             (payload) => {
                 const row = payload.new as unknown as StudentRow;
-                if (row.session_id === session.id) setStudents((cur) => [...cur, row]);
+                if (row.session_id !== session.id) return;
+                setStudents((cur) => (cur.some((s) => s.id === row.id) ? cur : [...cur, row]));
             },
             `session_id=eq.${session.id}`,
         );
@@ -402,29 +407,21 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
             'session_students', 'UPDATE',
             (payload) => {
                 const row = payload.new as unknown as StudentRow;
-                setStudents((cur) => cur.map((s) => (s.id === row.id ? row : s)));
+                if (row.session_id !== session.id) return;
+                setStudents((cur) => (cur.some((s) => s.id === row.id)
+                    ? cur.map((s) => (s.id === row.id ? row : s))
+                    : [...cur, row]));
             },
             `session_id=eq.${session.id}`,
         );
 
-        return () => { cancelled = true; unsubInsert(); unsubUpdate(); };
-    }, [session.id]);
+        void reloadStudents();
+
+        return () => { unsubInsert(); unsubUpdate(); };
+    }, [session.id, reloadStudents]);
 
     // Load + subscribe: session activities
     useEffect(() => {
-        let cancelled = false;
-        (async () => {
-            const { data } = await dbSelect<SessionActivityRow[]>(
-                'session_activities',
-                `session_id=eq.${session.id}&order=ordinal.asc`,
-            );
-            if (cancelled || !data) return;
-            const open = data.find((a) => a.state !== 'ended');
-            const closed = data.filter((a) => a.state === 'ended');
-            setCurrentActivity(open ?? null);
-            setPastActivities(closed);
-        })();
-
         const unsubInsert = subscribeToTable(
             `session-activities-${session.id}`,
             'session_activities', 'INSERT',
@@ -439,6 +436,7 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
             'session_activities', 'UPDATE',
             (payload) => {
                 const row = payload.new as unknown as SessionActivityRow;
+                if (row.session_id !== session.id) return;
                 if (row.state === 'ended') {
                     setCurrentActivity((c) => (c?.id === row.id ? null : c));
                     setPastActivities((p) => {
@@ -452,8 +450,34 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
             `session_id=eq.${session.id}`,
         );
 
-        return () => { cancelled = true; unsubInsert(); unsubUpdate(); };
-    }, [session.id]);
+        void reloadActivities();
+
+        return () => { unsubInsert(); unsubUpdate(); };
+    }, [session.id, reloadActivities]);
+
+    // ── Reconciliation fallback ─────────────────────────────────────
+    // Belt-and-braces for Realtime gaps: poll the authoritative state on a
+    // gentle interval, when the tab regains focus, and whenever the
+    // Realtime socket reconnects. This is what makes a join show up for
+    // the teacher without a manual refresh even if the INSERT was dropped.
+    useEffect(() => {
+        const reloadBoth = () => {
+            if (document.visibilityState !== 'visible') return;
+            void reloadStudents();
+            void reloadActivities();
+        };
+        const id = window.setInterval(reloadBoth, 5000);
+        const onVis = () => { if (document.visibilityState === 'visible') reloadBoth(); };
+        document.addEventListener('visibilitychange', onVis);
+        window.addEventListener('focus', onVis);
+        const unsubReconnect = onRealtimeReconnect(reloadBoth);
+        return () => {
+            window.clearInterval(id);
+            document.removeEventListener('visibilitychange', onVis);
+            window.removeEventListener('focus', onVis);
+            unsubReconnect();
+        };
+    }, [reloadStudents, reloadActivities]);
 
     // Subscribe to session row updates (class_state, current_activity_id)
     useEffect(() => {
@@ -470,10 +494,37 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
     }, [session.id, onSessionUpdate]);
 
     // ── Actions ────────────────────────────────────────────────────
+    // Every action applies its successful RPC result to local state
+    // IMMEDIATELY (P0 2026-07-09). Realtime remains the fast path for
+    // changes made by others, but the console must never depend on its
+    // own echo coming back over a websocket to reflect what the server
+    // just confirmed — when realtime was down, Pause left the teacher
+    // staring at a "playing" panel with no Resume button.
     const handleStartActivity = useCallback(async (activity: GameModeId) => {
-        try { setError(null); await conductorApi.startActivity(session.id, activity); }
-        catch (e) { setError((e as Error).message); }
-    }, [session.id]);
+        try {
+            setError(null);
+            const res = await conductorApi.startActivity(session.id, activity);
+            const nowIso = new Date().toISOString();
+            const started: SessionActivityRow = {
+                id: res.session_activity_id,
+                session_id: session.id,
+                activity: res.activity as GameModeId,
+                state: 'playing',
+                ordinal: res.ordinal,
+                started_at: nowIso,
+                ended_at: null,
+                metadata: {},
+            };
+            setCurrentActivity(started);
+            onSessionUpdate({
+                ...session,
+                class_state: 'in_activity',
+                current_activity_id: res.session_activity_id,
+                activity: res.activity,
+                started_at: session.started_at ?? nowIso,
+            });
+        } catch (e) { setError((e as Error).message); }
+    }, [session, onSessionUpdate]);
 
     // If pause/resume errors with "no active activity" the server has
     // already lost the active row, clear it client-side so the UI flips
@@ -488,22 +539,54 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
     }, []);
 
     const handlePause = useCallback(async () => {
-        try { await conductorApi.pauseActivity(session.id); }
+        try {
+            await conductorApi.pauseActivity(session.id);
+            // Trust the confirmed result: flip to paused locally now.
+            setCurrentActivity((c) => (c ? { ...c, state: 'paused' } : c));
+        }
         catch (e) { clearStaleOnNoActive(e as Error); }
     }, [session.id, clearStaleOnNoActive]);
 
     const handleResume = useCallback(async () => {
-        try { await conductorApi.resumeActivity(session.id); }
+        try {
+            await conductorApi.resumeActivity(session.id);
+            setCurrentActivity((c) => (c ? { ...c, state: 'playing' } : c));
+        }
         catch (e) { clearStaleOnNoActive(e as Error); }
     }, [session.id, clearStaleOnNoActive]);
 
     const handleEndActivity = useCallback(async () => {
-        try { await conductorApi.endActivity(session.id); } catch (e) { setError((e as Error).message); }
-    }, [session.id]);
+        try {
+            const res = await conductorApi.endActivity(session.id);
+            const endedIso = new Date().toISOString();
+            // Move the live card into the timeline and reopen the launcher.
+            if (currentActivity) {
+                const endedRow: SessionActivityRow = {
+                    ...currentActivity,
+                    state: 'ended',
+                    ended_at: currentActivity.ended_at ?? endedIso,
+                };
+                setPastActivities((p) => (p.some((x) => x.id === endedRow.id)
+                    ? p.map((x) => (x.id === endedRow.id ? endedRow : x))
+                    : [...p, endedRow]));
+            }
+            setCurrentActivity(null);
+            onSessionUpdate({
+                ...session,
+                class_state: res.class_state ?? 'between_activities',
+                current_activity_id: null,
+                activity: null,
+            });
+        } catch (e) { setError((e as Error).message); }
+    }, [session, currentActivity, onSessionUpdate]);
 
     const handleKick = useCallback(async (student: StudentRow) => {
         try {
-            await conductorApi.kickStudent(session.id, student.id, 'removed_by_teacher');
+            const res = await conductorApi.kickStudent(session.id, student.id, 'removed_by_teacher');
+            // Reflect the confirmed kick in the roster immediately.
+            setStudents((cur) => cur.map((s) => (s.id === student.id
+                ? { ...s, kicked_at: res.kicked_at ?? new Date().toISOString(), is_active: false, is_connected: false }
+                : s)));
         } catch (e) {
             setError((e as Error).message);
         }
@@ -513,23 +596,31 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
         try {
             await conductorApi.endSession(session.id);
             setSummaryOpen(true);
+            onSessionUpdate({
+                ...session,
+                class_state: 'ended',
+                current_activity_id: null,
+                ended_at: session.ended_at ?? new Date().toISOString(),
+            });
         } catch (e) {
             setError((e as Error).message);
         }
-    }, [session.id]);
+    }, [session, onSessionUpdate]);
 
-    // Engagement counts (only the three buckets the teacher acts on)
+    // Engagement counts (only the three buckets the teacher acts on).
+    // `now` is a dependency on purpose: presence is staleness-based, so a
+    // student flips to offline as the clock advances even with no new row.
     const counts = useMemo(() => {
         let engaged = 0, offline = 0;
         for (const s of students) {
-            const e = engagementOf(s);
+            const e = engagementOf(s, now);
             if (e === 'engaged') engaged++;
             else if (e === 'offline') offline++;
         }
         return { engaged, offline, total: students.length };
-    }, [students]);
+    }, [students, now]);
 
-    void now; // referenced to force re-renders for elapsed pill
+
 
     if (summaryOpen || session.class_state === 'ended') {
         return (
@@ -583,10 +674,7 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
                 <aside className="cd-roster">
                     <header className="cd-panel-h">
                         <h2>Class roster</h2>
-                        <div className="cd-panel-h-right">
-                            <span className="cd-panel-meta">{activeStudents.length} student{activeStudents.length === 1 ? '' : 's'}</span>
-                            <TokenAssignControl sessionId={session.id} />
-                        </div>
+                        <span className="cd-panel-meta">{activeStudents.length} student{activeStudents.length === 1 ? '' : 's'}</span>
                     </header>
                     {activeStudents.length === 0 ? (
                         <div className="cd-roster-empty">
@@ -702,9 +790,6 @@ function StudentRosterCard({ student, onClickStats, onKick }: {
                 <span className={`cd-eng-pill cd-eng-pill-${eng}`}>
                     {eng === 'engaged' ? '🟢 engaged' : eng === 'stuck' ? '🟡 stuck' : '⚫ offline'}
                 </span>
-                {student.readiness_state && (
-                    <span className="cd-readiness">{readinessLabel(student.readiness_state)}</span>
-                )}
             </button>
             <button className="cd-roster-card-kick" onClick={onKick} aria-label={`Remove ${student.name} from class`}>
                 ✕
@@ -713,135 +798,6 @@ function StudentRosterCard({ student, onClickStats, onKick }: {
     );
 }
 
-// ── P3b: teacher picture-token assignment ──────────────────────────
-function TokenAssignControl({ sessionId }: { sessionId: string }) {
-    const [open, setOpen] = useState(false);
-    if (!featureFlags.getFlags().tokenJoinV1) return null;
-    return (
-        <>
-            <button type="button" className="cd-tok-open" onClick={() => setOpen(true)}>🖼️ Pictures</button>
-            {open && <TokenAssignModal sessionId={sessionId} onClose={() => setOpen(false)} />}
-        </>
-    );
-}
-
-function TokenAssignModal({ sessionId, onClose }: { sessionId: string; onClose: () => void }) {
-    const [children, setChildren] = useState<ClassChild[]>([]);
-    const [assigned, setAssigned] = useState<Record<string, string>>({});
-    const [loading, setLoading] = useState(true);
-    const [err, setErr] = useState<string | null>(null);
-    const [newName, setNewName] = useState('');
-    const [adding, setAdding] = useState(false);
-
-    useEffect(() => {
-        let cancelled = false;
-        (async () => {
-            const list = await listChildren();
-            const { data } = await dbSelect<{ class_child_id: string; token: string }[]>(
-                'class_session_tokens', `session_id=eq.${sessionId}&select=class_child_id,token`,
-            );
-            if (cancelled) return;
-            const map: Record<string, string> = {};
-            (data ?? []).forEach((r) => { map[r.class_child_id] = r.token; });
-            setChildren(list);
-            setAssigned(map);
-            setLoading(false);
-        })();
-        return () => { cancelled = true; };
-    }, [sessionId]);
-
-    const usedTokens = useMemo(() => new Set(Object.values(assigned).filter(Boolean)), [assigned]);
-
-    const childName = (c: ClassChild) => c.nickname?.trim() || c.first_name || 'Learner';
-
-    const assign = useCallback(async (childId: string, token: string) => {
-        setErr(null);
-        const prev = assigned[childId];
-        setAssigned((a) => ({ ...a, [childId]: token }));
-        try {
-            await conductorApi.assignToken(sessionId, childId, token);
-        } catch {
-            setErr('Could not save that picture — each picture can only go to one child.');
-            setAssigned((a) => ({ ...a, [childId]: prev ?? '' }));
-        }
-    }, [assigned, sessionId]);
-
-    const handleAdd = useCallback(async () => {
-        const name = newName.trim();
-        if (!name || adding) return;
-        setAdding(true);
-        setErr(null);
-        const res = await addChild({ first_name: name });
-        setAdding(false);
-        if (!res.ok) { setErr(res.error || 'Could not add child'); return; }
-        setChildren((cs) => [...cs, res.child]);
-        setNewName('');
-    }, [newName, adding]);
-
-    // Rendered through a portal to document.body so it always sits above the
-    // console (the activity launcher etc.), never trapped behind it.
-    return createPortal(
-        <div className="cd-modal-backdrop" role="dialog" aria-modal="true" aria-label="Assign pictures" onClick={onClose}>
-            <div className="cd-modal" onClick={(e) => e.stopPropagation()}>
-                <div className="cd-modal-header">
-                    <h2>Assign pictures</h2>
-                    <button type="button" className="cd-modal-close" onClick={onClose} aria-label="Close">✕</button>
-                </div>
-                <p className="cd-modal-sub">Add each child, give them a picture, then tell them which one is theirs. They pick it after entering the class code.</p>
-
-                <div className="cd-tok-add">
-                    <input
-                        className="cd-tok-add-input"
-                        type="text"
-                        placeholder="Add a child (first name or nickname)"
-                        value={newName}
-                        maxLength={40}
-                        onChange={(e) => setNewName(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
-                        aria-label="Add a child"
-                    />
-                    <button type="button" className="cd-tok-add-btn" onClick={handleAdd} disabled={!newName.trim() || adding}>
-                        {adding ? 'Adding…' : 'Add'}
-                    </button>
-                </div>
-
-                {err && <div className="cd-error">{err}</div>}
-
-                {loading ? (
-                    <div className="cd-tok-loading">Loading your class…</div>
-                ) : children.length === 0 ? (
-                    <div className="cd-tok-loading">No children yet — add your first one above.</div>
-                ) : (
-                    <ul className="cd-tok-list">
-                        {children.map((c) => {
-                            const cur = assigned[c.id] ?? '';
-                            return (
-                                <li key={c.id} className="cd-tok-row">
-                                    <span className="cd-tok-name">{childName(c)}</span>
-                                    <select
-                                        className="cd-tok-select"
-                                        value={cur}
-                                        onChange={(e) => assign(c.id, e.target.value)}
-                                        aria-label={`Picture for ${childName(c)}`}
-                                    >
-                                        <option value="" disabled>Choose…</option>
-                                        {PICTURE_TOKENS.map((t) => (
-                                            <option key={t.id} value={t.id} disabled={usedTokens.has(t.id) && cur !== t.id}>
-                                                {t.emoji} {t.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                )}
-                <button type="button" className="cm-btn-primary" style={{ width: '100%', marginTop: 16 }} onClick={onClose}>Done</button>
-            </div>
-        </div>,
-        document.body,
-    );
-}
 
 function ActivityNowPlaying({ activity, onPause, onResume, onEnd }: {
     activity: SessionActivityRow;

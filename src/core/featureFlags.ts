@@ -44,13 +44,6 @@ export interface FeatureFlags {
     shapesEnabled: boolean;          // Enable shape tools (line, rect, circle)
     selectionEnabled: boolean;       // Enable selection tools (rect select, move, delete)
 
-    // Persistent classroom token-join (P3b). When ON, the classroom join flow
-    // becomes: enter code → pick the teacher-given picture (token) → join, which
-    // links the child to their persistent class_children record and reports
-    // readiness. The teacher gets a picture-token assign control and learner
-    // readiness shows on the console. When OFF, the legacy name-typing join is
-    // used unchanged. Kill switch: featureFlags.setFlags({ tokenJoinV1: false }).
-    tokenJoinV1: boolean;
 
     // Ambient warm-up (no-modal replacement for the removed "Quick warm-up?"
     // offer interstitial). When ON, first-time devices see three balloons
@@ -91,8 +84,6 @@ const DEFAULT_FLAGS: FeatureFlags = {
     fillEnabled: false,      // Fill bucket tool, default OFF
     shapesEnabled: false,    // Shape tools, default OFF
     selectionEnabled: false, // Selection tools, default OFF
-    // Persistent classroom token-join (P3b) — default OFF until staged + legal sign-off.
-    tokenJoinV1: false,
     // Ambient warm-up — LIVE (no-modal replacement for the removed offer
     // interstitial, f2defb5). Kill switch: ?flags=!ambientWarmupV1.
     ambientWarmupV1: true,

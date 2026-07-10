@@ -995,6 +995,27 @@ const channels = new Map<string, RealtimeChannel>();
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 let reconnectAttempts = 0;
 
+// Reconnect reconciliation (P0 2026-07-09). The hand-rolled Realtime client
+// has no WAL replay, so any postgres_changes fired while the socket was down
+// is lost forever. Subscribers register here and re-fetch their
+// authoritative state whenever the socket (re)connects, closing the gap
+// that previously left teacher rosters and student screens stale until a
+// manual refresh.
+const reconnectListeners = new Set<() => void>();
+// The very first open is a normal connect (callers already do an initial
+// fetch), so listeners only fire on subsequent opens.
+let hasConnectedBefore = false;
+
+/**
+ * Run `cb` every time the Realtime socket (re)connects after the initial
+ * connection. Use it to re-hydrate state that depends on Realtime so a
+ * dropped event never strands the UI. Returns an unsubscribe function.
+ */
+export function onRealtimeReconnect(cb: () => void): () => void {
+  reconnectListeners.add(cb);
+  return () => { reconnectListeners.delete(cb); };
+}
+
 function connectRealtime() {
   // Guard BOTH open and connecting sockets. Previously only OPEN was
   // checked, so a second subscribe while the socket was still CONNECTING
@@ -1027,6 +1048,13 @@ function connectRealtime() {
     heartbeatInterval = setInterval(() => {
       sendPhx('heartbeat', 'phoenix', {});
     }, 30000);
+    // Tell subscribers to reconcile after a reconnect (not the first open):
+    // events fired during the outage are unrecoverable, so state must be
+    // re-fetched from the source of truth.
+    if (hasConnectedBefore) {
+      reconnectListeners.forEach((fn) => { try { fn(); } catch { /* ignore */ } });
+    }
+    hasConnectedBefore = true;
   };
 
   socket.onmessage = (event) => {

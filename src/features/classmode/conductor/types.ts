@@ -35,6 +35,12 @@ export interface SessionRow {
     ended_at: string | null;
     created_at: string;
     updated_at: string | null;
+    /** Legacy lifecycle column, still written by every conductor RPC
+     *  (lobby | playing | paused | results | ended). Optional because some
+     *  scoped RPC projections omit it. */
+    status?: string;
+    /** Legacy round counter, kept for wire compatibility. */
+    round?: number;
 }
 
 /** Row in public.session_activities. */
@@ -61,12 +67,17 @@ export interface StudentRow {
     is_connected: boolean;
     kicked_at: string | null;
     kicked_reason: string | null;
-    /** Persistent-learner link + authoritative readiness (P2/P3b). Optional:
-     *  only populated once the token-join + readiness migrations are live and
-     *  the tokenJoinV1 flag is on. */
+    /** Persistent-learner link + authoritative readiness (P2/P3b DB columns).
+     *  The picture-join UI was removed (2026-07-10); these stay optional to
+     *  mirror the live session_students schema. */
     class_child_id?: string | null;
     readiness_state?: ReadinessState | null;
     readiness_changed_at?: string | null;
+    /** Presence heartbeat timestamp (class_student_heartbeat RPC bumps it
+     *  every ~5s while the student tab is visible). Teacher engagement is
+     *  derived from its staleness. Optional: scoped RPC projections and
+     *  pre-heartbeat rows may omit it. */
+    updated_at?: string | null;
 }
 
 /** Authoritative learner readiness (Decision DM2), separate from learning

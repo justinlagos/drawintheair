@@ -34,6 +34,14 @@ export const CameraExplainer: React.FC<CameraExplainerProps> = ({
     onSkip,
     isCompact = false,
 }) => {
+    // Class Mode shows this screen to the CHILD on a school device, where
+    // "your kid" reads wrong (that copy is written for parents at home).
+    // The /join route is the student classroom client, so switch to
+    // child-facing copy there without threading a prop through
+    // TrackingLayer's camera pipeline.
+    const isClassroom = typeof window !== 'undefined'
+        && (window.location.pathname === '/join' || window.location.pathname.startsWith('/join/'));
+
     const hasLoggedView = useRef(false);
     useEffect(() => {
         if (hasLoggedView.current) return;
@@ -108,7 +116,9 @@ export const CameraExplainer: React.FC<CameraExplainerProps> = ({
                         textAlign: 'center',
                     }}
                 >
-                    We use your camera so your kid can wave hello.
+                    {isClassroom
+                        ? 'Allow the camera so you can wave, pinch and play.'
+                        : 'We use your camera so your kid can wave hello.'}
                 </h1>
 
                 <p style={{

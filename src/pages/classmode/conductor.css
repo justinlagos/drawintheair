@@ -623,12 +623,17 @@
 }
 @keyframes cd-spin { to { transform: rotate(360deg); } }
 
-/* Persistent name pip during gameplay (top-right) */
+/* Persistent name pip during gameplay.
+   Top-LEFT (P0 2026-07-09): it previously sat top-right where the round
+   timer (ClassModeGameWrapper, fixed top:12 right:16, z-500) rendered
+   directly on top of it. The Menu button that used to occupy the top-left
+   corner is hidden in class mode (.cd-locked below), so the pip takes
+   that slot and the two HUD elements can never collide. */
 .cd-student-pip {
   position: fixed;
   top: 16px;
-  right: 16px;
-  z-index: 100;
+  left: 16px;
+  z-index: 950;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -642,6 +647,35 @@
   color: var(--cd-ink);
   box-shadow: 0 4px 14px rgba(108, 63, 164, 0.10);
   pointer-events: none;
+}
+
+/* ── Locked class play (P0 2026-07-09) ──────────────────────────────
+   During a teacher-led activity the child must have NO route out of the
+   classroom. The shared game components render a "← Menu" back button
+   (GameTopBar and friends, aria-label="Back to menu"); inside the locked
+   shell we remove it entirely. The teacher is the only exit. */
+.cd-locked [aria-label="Back to menu"],
+.cd-locked [aria-label="Back to Menu"],
+.cd-locked [aria-label="Exit to menu"] {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* Teacher-paused overlay. Sits ON TOP of the still-mounted game (the game
+   is not unmounted on pause any more — unmounting reset the round timer
+   and re-acquired the camera on every resume). Opaque enough to hide the
+   play field; pointer events stop here; frame logic is a no-op while
+   paused so nothing can be scored behind it. Below the name pip (z-950)
+   so the teacher can still identify the screen. */
+.cd-pause-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(222, 236, 255, 0.97) 0%, rgba(244, 239, 255, 0.97) 100%);
+  backdrop-filter: blur(6px);
 }
 
 /* Join card refinements (overrides cm-join-card spacing) */
@@ -668,88 +702,3 @@
   align-items: center;
   gap: 10px;
 }
-.cd-tok-open {
-  background: var(--cd-plum-bg, rgba(138, 102, 240, 0.10));
-  color: var(--cd-plum);
-  border: 1px solid var(--cd-line);
-  font-family: var(--cd-display);
-  font-weight: 700;
-  font-size: 12px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.cd-tok-open:hover { background: rgba(138, 102, 240, 0.18); }
-
-/* Small readiness chip on a roster card; sits under the engagement pill. */
-.cd-readiness {
-  display: inline-flex;
-  align-items: center;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--cd-ink-soft);
-  background: rgba(63, 64, 82, 0.06);
-  padding: 2px 8px;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-
-.cd-tok-loading { color: var(--cd-ink-soft); padding: 18px 4px; text-align: center; }
-.cd-tok-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.cd-tok-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 10px;
-  border: 1px solid var(--cd-line);
-  border-radius: 12px;
-  background: #FBFCFF;
-}
-.cd-tok-name { font-weight: 700; color: var(--cd-ink); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cd-tok-select {
-  font-family: var(--cd-body);
-  font-size: 14px;
-  padding: 7px 10px;
-  border: 1.5px solid var(--cd-line);
-  border-radius: 10px;
-  background: #fff;
-  color: var(--cd-ink);
-  cursor: pointer;
-  min-width: 150px;
-}
-.cd-tok-select:focus { outline: none; border-color: var(--cd-plum); }
-
-/* Add-a-child row inside the assign-pictures panel */
-.cd-tok-add {
-  display: flex;
-  gap: 8px;
-  margin: 14px 0 4px;
-}
-.cd-tok-add-input {
-  flex: 1;
-  min-width: 0;
-  font-family: var(--cd-body);
-  font-size: 14px;
-  padding: 9px 12px;
-  border: 1.5px solid var(--cd-line);
-  border-radius: 10px;
-  background: #fff;
-  color: var(--cd-ink);
-}
-.cd-tok-add-input:focus { outline: none; border-color: var(--cd-plum); }
-.cd-tok-add-btn {
-  flex: 0 0 auto;
-  font-family: var(--cd-display);
-  font-weight: 700;
-  font-size: 14px;
-  padding: 9px 18px;
-  border: 0;
-  border-radius: 10px;
-  background: var(--cd-plum);
-  color: #fff;
-  cursor: pointer;
-}
-.cd-tok-add-btn:disabled { opacity: 0.5; cursor: default; }
-.cd-tok-add-btn:hover:not(:disabled) { background: var(--cd-plum-active, #5C3FB0); }

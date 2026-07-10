@@ -8,26 +8,36 @@
  * State machine:
  *   code           → enter 4-digit class code
  *   name           → enter first name
- *   classroom      → locked-in space (waiting / paused / between)
- *   playing        → renders the actual game
- *   kicked         → gentle goodbye, redirects to landing
- *   ended          → class summary, redirects to landing
+ *   classroom      → locked-in space (waiting / playing / paused / between)
+ *   kicked         → gentle goodbye (static, no redirect)
+ *   ended          → class summary (static, no redirect)
  *
  * Reconnect: sessionStorage keeps session_id + student_id + name +
  * avatar_seed for 15 minutes. If the tablet sleeps and wakes, we
  * auto-rejoin without re-entering anything.
+ *
+ * Sync model (P0 incident 2026-07-09):
+ *   - Realtime postgres_changes is the FAST path only.
+ *   - A 5s reconciliation poll is the RELIABLE path. It applies
+ *     everything it fetches — session state, activity state
+ *     (including pause/resume where the activity id does not change),
+ *     kicks and class end — so a dropped websocket event can never
+ *     strand this screen for more than one poll tick.
+ *   - The same check runs on visibilitychange and realtime reconnect.
+ *   - While visible, each tick also sends a presence heartbeat so the
+ *     teacher roster reflects reality.
  */
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { callRpc, subscribeToTable } from '../../lib/supabase';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { callRpc, subscribeToTable, onRealtimeReconnect } from '../../lib/supabase';
 import { analytics } from '../../lib/analytics';
-import { isValidCode } from '../../features/classmode/sessionCode';
+import { isValidCode, sanitizeCodeInput } from '../../features/classmode/sessionCode';
+import { classroomStateChanged } from '../../features/classmode/reconcile';
 import { MODE_LABELS } from '../../features/classmode/scoreMapping';
 import type { GameModeId } from '../../features/classmode/scoreMapping';
 import { avatarFromSeed } from '../../features/classmode/conductor/avatars';
-import type { SessionRow, SessionActivityRow, StudentRow, ReadinessState } from '../../features/classmode/conductor/types';
+import type { SessionRow, SessionActivityRow, StudentRow } from '../../features/classmode/conductor/types';
 import { featureFlags } from '../../core/featureFlags';
-import { PICTURE_TOKENS } from '../../features/classmode/tokens';
 
 import { TrackingLayer } from '../../features/tracking/TrackingLayer';
 import { ModeBackground } from '../../components/ModeBackground';
@@ -39,6 +49,7 @@ import ClassModeGameWrapper from '../../features/classmode/ClassModeGameWrapper'
 import { BubbleCalibration } from '../../features/modes/calibration/BubbleCalibration';
 import { FreePaintMode } from '../../features/modes/FreePaintMode';
 import { PreWritingMode } from '../../features/modes/PreWritingMode';
+import { TracingModePlayful } from '../../features/modes/tracing/TracingModePlayful';
 import { SortAndPlaceMode } from '../../features/modes/sortAndPlace/SortAndPlaceMode';
 import { WordSearchMode } from '../../features/modes/wordSearch/WordSearchMode';
 import { ColourBuilderMode } from '../../features/modes/colourBuilder/ColourBuilderMode';
@@ -49,6 +60,7 @@ import { GestureSpellingMode } from '../../features/modes/gestureSpelling/Gestur
 // Per-frame logic functions
 import { freePaintLogic } from '../../features/modes/freePaintLogic';
 import { preWritingLogic } from '../../features/modes/preWriting/preWritingLogic';
+import { playfulTracingFrame, resetPlayfulClassScore } from '../../features/modes/tracing/tracingPlayfulFrame';
 import { bubbleCalibrationLogic } from '../../features/modes/calibration/bubbleCalibrationLogic';
 import { sortAndPlaceLogic } from '../../features/modes/sortAndPlace/sortAndPlaceLogic';
 import { wordSearchLogic } from '../../features/modes/wordSearch/wordSearchLogic';
@@ -64,9 +76,16 @@ const RECONNECT_KEY = 'cd_reconnect_v1';
 const RECONNECT_TTL_MS = 15 * 60 * 1000;
 type ReconnectMemo = { sessionId: string; studentId: string; name: string; avatarSeed: string; ts: number };
 
+/** Frame no-op used while the teacher has paused the activity: the game
+ *  stays mounted (camera keeps running, timer state survives) but no
+ *  gameplay logic executes, so nothing can be scored behind the overlay. */
+const pausedFrameLogic = () => { /* teacher paused — game frozen */ };
+
 const LOGIC_MAP: Record<GameModeId, unknown> = {
     'calibration': bubbleCalibrationLogic,
     'free': freePaintLogic,
+    // 'pre-writing' is resolved dynamically in ClassroomGame so Class Mode
+    // uses the same playful tracing experience as /play (tracingPlayfulUiV1).
     'pre-writing': preWritingLogic,
     'sort-and-place': sortAndPlaceLogic,
     'word-search': wordSearchLogic,
@@ -79,7 +98,6 @@ const LOGIC_MAP: Record<GameModeId, unknown> = {
 type UiState =
     | { kind: 'code' }
     | { kind: 'name'; session: SessionRow }
-    | { kind: 'pick'; session: SessionRow }
     | { kind: 'classroom'; session: SessionRow; student: StudentRow; activity: SessionActivityRow | null }
     | { kind: 'kicked'; reason: string | null }
     | { kind: 'ended'; sessionId: string };
@@ -120,6 +138,8 @@ export default function StudentClassClient() {
                     setUi({ kind: 'kicked', reason: student.kicked_reason });
                     return;
                 }
+                // Presence: announce we're back before the first poll tick.
+                void callRpc('class_student_heartbeat', { in_student_id: memo.studentId });
                 let activity: SessionActivityRow | null = null;
                 if (session.current_activity_id) {
                     const { data: act } = await callRpc<SessionActivityRow | null>(
@@ -134,7 +154,7 @@ export default function StudentClassClient() {
         }
     }, []);
 
-    // ── Subscribe once we're in the classroom ──────────────────────
+    // ── Subscribe once we're in the classroom (fast path) ──────────
     useEffect(() => {
         if (ui.kind !== 'classroom') return;
         const sessionId = ui.session.id;
@@ -152,7 +172,9 @@ export default function StudentClassClient() {
                     return;
                 }
                 setUi((prev) => prev.kind === 'classroom' ? { ...prev, session: row } : prev);
-                // If current_activity_id changed, fetch the new activity row.
+                // Fetch the (possibly new) activity row for the session's
+                // current pointer; pause/resume also lands here via the
+                // session UPDATE that accompanies every conductor RPC.
                 if (row.current_activity_id) {
                     callRpc<SessionActivityRow | null>('class_get_activity', { in_activity_id: row.current_activity_id })
                         .then(({ data }) => {
@@ -199,32 +221,32 @@ export default function StudentClassClient() {
         return () => { unsubSession(); unsubMyRow(); unsubActivity(); };
     }, [ui.kind, ui.kind === 'classroom' ? ui.session.id : null, ui.kind === 'classroom' ? ui.student.id : null]);
 
-    // ── Defensive session heartbeat ────────────────────────────────
-    // The PRD "Teacher ended class but student continued" bug class.
-    // The Realtime subscription above is the primary path for state
-    // changes, but websockets are not reliable: load balancers kill
-    // idle connections, tabs get suspended on mobile, Supabase
-    // reconnects can lose events fired during the gap. When that
-    // happens the teacher sets class_state='ended' but the student
-    // never sees the UPDATE and the experience stays live.
-    //
-    // This effect adds a 10s safety-net poll. It re-fetches the
-    // session row directly. If class_state is 'ended', or the row
-    // is gone entirely, we transition out immediately. We also
-    // re-check on tab visibility-change so a student who tabbed
-    // away and back catches up at once instead of waiting for the
-    // next tick.
+    // ── Reconciliation poll (reliable path) ────────────────────────
+    // Realtime can drop events (socket races, suspended tabs, LB resets,
+    // and the 2026-07-09 server-side apply_rls outage). Every 5s — and on
+    // visibilitychange / realtime reconnect — fetch the authoritative
+    // state and APPLY it: session fields, activity state (including
+    // pause/resume where the activity id is unchanged), kicks, class end.
+    // The previous poll only reacted to ended/kicked and threw the rest
+    // away, which left children playing through a teacher's Pause whenever
+    // a websocket event went missing. The same tick carries the presence
+    // heartbeat that feeds the teacher's engaged/offline pills.
     useEffect(() => {
         if (ui.kind !== 'classroom') return;
         const sessionId = ui.session.id;
         const studentId = ui.student.id;
         let cancelled = false;
+
         const check = async () => {
             if (cancelled || document.visibilityState !== 'visible') return;
             try {
-                const { data: session } = await callRpc<SessionRow | null>(
-                    'class_get_session', { in_session_id: sessionId },
-                );
+                // Presence heartbeat: fire-and-forget, never blocks the poll.
+                void callRpc('class_student_heartbeat', { in_student_id: studentId });
+
+                const [{ data: session }, { data: student }] = await Promise.all([
+                    callRpc<SessionRow | null>('class_get_session', { in_session_id: sessionId }),
+                    callRpc<StudentRow | null>('class_get_self', { in_student_id: studentId }),
+                ]);
                 if (cancelled) return;
                 if (!session) {
                     // null ⇒ session ended or gone.
@@ -232,30 +254,54 @@ export default function StudentClassClient() {
                     setUi({ kind: 'ended', sessionId });
                     return;
                 }
-                // Also catch kicks that Realtime missed.
-                const { data: student } = await callRpc<StudentRow | null>(
-                    'class_get_self', { in_student_id: studentId },
-                );
-                if (cancelled) return;
                 if (student?.kicked_at) {
                     sessionStorage.removeItem(RECONNECT_KEY);
                     setUi({ kind: 'kicked', reason: student.kicked_reason });
+                    return;
                 }
+                // Always resolve the activity the session points at. Pause and
+                // resume change session_activities.state WITHOUT changing the
+                // id, so "same id" must not short-circuit the fetch.
+                const targetActivityId = session.current_activity_id ?? null;
+                let activity: SessionActivityRow | null = null;
+                if (targetActivityId) {
+                    const { data: act } = await callRpc<SessionActivityRow | null>(
+                        'class_get_activity', { in_activity_id: targetActivityId },
+                    );
+                    if (cancelled) return;
+                    activity = act ?? null;
+                }
+                setUi((prev) => {
+                    if (prev.kind !== 'classroom') return prev;
+                    if (!classroomStateChanged(prev.session, prev.activity, session, activity)) {
+                        return prev; // no churn inside the camera frame loop
+                    }
+                    return {
+                        ...prev,
+                        session,
+                        student: student ?? prev.student,
+                        activity,
+                    };
+                });
             } catch {
                 /* network blip, next tick will retry */
             }
         };
-        const id = window.setInterval(check, 10_000);
-        const onVis = () => { if (document.visibilityState === 'visible') check(); };
+
+        void check(); // immediate reconcile + heartbeat on entering classroom
+        const id = window.setInterval(check, 5_000);
+        const onVis = () => { if (document.visibilityState === 'visible') void check(); };
         document.addEventListener('visibilitychange', onVis);
+        const unsubReconnect = onRealtimeReconnect(check);
         return () => {
             cancelled = true;
             window.clearInterval(id);
             document.removeEventListener('visibilitychange', onVis);
+            unsubReconnect();
         };
     }, [ui.kind, ui.kind === 'classroom' ? ui.session.id : null, ui.kind === 'classroom' ? ui.student.id : null]);
 
-    // ── Auto-redirect after kicked / ended ─────────────────────────
+    // ── Terminal states ────────────────────────────────────────────
     useEffect(() => {
         if (ui.kind !== 'kicked' && ui.kind !== 'ended') return;
         // Teacher authority: ending the session or removing the student is a
@@ -274,18 +320,20 @@ export default function StudentClassClient() {
         if (!isValidCode(code)) { setError('Enter a 4-digit code'); return; }
         // H1: resolve the code through the anon-callable SECURITY DEFINER RPC,
         // which returns a tightly-scoped projection only for active sessions.
-        const { data } = await callRpc<SessionRow | null>(
+        const { data, error: lookupErr } = await callRpc<SessionRow | null>(
             'session_lookup_by_code', { in_code: code },
         );
-        if (!data) { setError('No active class with that code'); return; }
-        // P3b: token-join sends the child to the picture-pick step; the legacy
-        // flow types a first name. Flag-gated, default OFF.
-        if (featureFlags.getFlags().tokenJoinV1) {
-            setUi({ kind: 'pick', session: data });
-        } else {
-            setUi({ kind: 'name', session: data });
+        if (lookupErr) {
+            // Network / server failure is NOT "wrong code" — say so honestly
+            // instead of sending the child back to re-type a correct code.
+            setError('Hmm, we can’t connect right now. Check the internet and try again.');
+            return;
         }
+        if (!data) { setError('No active class with that code'); return; }
+        setUi({ kind: 'name', session: data });
     }, []);
+
+    const clearError = useCallback(() => setError(null), []);
 
     // Shared post-join transition (used by both name-join and token-join).
     // Marks this device's session as a CLASSROOM session for analytics so every
@@ -298,6 +346,8 @@ export default function StudentClassClient() {
             avatarSeed: student.avatar_seed ?? '', ts: Date.now(),
         };
         try { sessionStorage.setItem(RECONNECT_KEY, JSON.stringify(memo)); } catch { /* ignore */ }
+        // Presence: first heartbeat immediately so the roster shows us live.
+        void callRpc('class_student_heartbeat', { in_student_id: student.id });
         const { data: fullSession } = await callRpc<SessionRow | null>(
             'class_get_session', { in_session_id: joinSession.id },
         );
@@ -329,30 +379,13 @@ export default function StudentClassClient() {
         await enterClassroom(ui.session, data);
     }, [ui, enterClassroom]);
 
-    // P3b: token-join — the child confirms the teacher-given picture. The roster
-    // is never exposed; the server maps (session, token) → the persistent learner.
-    const handlePickToken = useCallback(async (token: string) => {
-        if (ui.kind !== 'pick') return;
-        setError(null);
-        const { data, error: joinErr } = await callRpc<StudentRow | null>(
-            'class_join_with_token', { in_session_id: ui.session.id, in_token: token },
-        );
-        if (joinErr || !data) {
-            setError('That picture didn’t match. Ask your teacher which picture is yours.');
-            return;
-        }
-        await enterClassroom(ui.session, data);
-    }, [ui, enterClassroom]);
 
     // ── Render ─────────────────────────────────────────────────────
     if (ui.kind === 'code') {
-        return <CodeEntry error={error} onSubmit={handleCode} />;
-    }
-    if (ui.kind === 'pick') {
-        return <PicturePick error={error} onSubmit={handlePickToken} />;
+        return <CodeEntry error={error} onSubmit={handleCode} onEdit={clearError} />;
     }
     if (ui.kind === 'name') {
-        return <NameEntry session={ui.session} error={error} onSubmit={handleName} />;
+        return <NameEntry session={ui.session} error={error} onSubmit={handleName} onEdit={clearError} />;
     }
     if (ui.kind === 'kicked') {
         return <KickedScreen reason={ui.reason} />;
@@ -365,20 +398,24 @@ export default function StudentClassClient() {
 }
 
 // ── Step 1: Code entry ─────────────────────────────────────────────
-function CodeEntry({ error, onSubmit }: { error: string | null; onSubmit: (code: string) => void }) {
-    const [digits, setDigits] = useState(['', '', '', '']);
-    const refs = useRef<(HTMLInputElement | null)[]>([]);
+// One real (visually hidden) input drives four display boxes. This makes
+// paste, overtype, fast typing, backspace and Enter all behave like a
+// normal text field — the previous four-separate-inputs version trapped
+// children after a typo (filled maxLength=1 boxes swallowed keystrokes).
+export function CodeEntry({ error, onSubmit, onEdit }: {
+    error: string | null;
+    onSubmit: (code: string) => void;
+    onEdit: () => void;
+}) {
+    const [code, setCode] = useState('');
+    const inputRef = useRef<HTMLInputElement | null>(null);
 
-    const onChange = (i: number, v: string) => {
-        if (!/^\d*$/.test(v)) return;
-        const d = [...digits]; d[i] = v.slice(-1); setDigits(d);
-        if (v && i < 3) refs.current[i + 1]?.focus();
-    };
-    const onKey = (i: number, e: React.KeyboardEvent) => {
-        if (e.key === 'Backspace' && !digits[i] && i > 0) refs.current[i - 1]?.focus();
+    const handleChange = (raw: string) => {
+        setCode(sanitizeCodeInput(raw));
+        if (error) onEdit(); // typing clears the previous error immediately
     };
 
-    const ready = digits.every((d) => d.length === 1);
+    const ready = code.length === 4;
 
     return (
         <div className="cm-page">
@@ -386,27 +423,39 @@ function CodeEntry({ error, onSubmit }: { error: string | null; onSubmit: (code:
                 <div className="cm-join-card cd-join-card">
                     <h2>Join class</h2>
                     <p style={{ color: '#94a3b8', marginBottom: 20 }}>Type the four-digit code from your teacher</p>
-                    <div className="cm-code-inputs">
-                        {digits.map((d, i) => (
-                            <input
+                    <div
+                        className="cm-code-inputs"
+                        onClick={() => inputRef.current?.focus()}
+                    >
+                        {/* The real input: invisible but focused, stretched
+                            across the boxes so tapping anywhere focuses it. */}
+                        <input
+                            ref={inputRef}
+                            className="cm-code-real-input"
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            aria-label="Four digit class code"
+                            value={code}
+                            onChange={(e) => handleChange(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' && ready) onSubmit(code); }}
+                            autoFocus
+                        />
+                        {[0, 1, 2, 3].map((i) => (
+                            <div
                                 key={i}
-                                ref={(el) => { refs.current[i] = el; }}
-                                className="cm-code-input"
-                                type="text"
-                                inputMode="numeric"
-                                maxLength={1}
-                                value={d}
-                                onChange={(e) => onChange(i, e.target.value)}
-                                onKeyDown={(e) => onKey(i, e)}
-                                autoFocus={i === 0}
-                            />
+                                aria-hidden
+                                className={`cm-code-input cm-code-box${i === Math.min(code.length, 3) ? ' cm-code-box-active' : ''}`}
+                            >
+                                {code[i] ?? ''}
+                            </div>
                         ))}
                     </div>
                     {error && <div className="cm-error">{error}</div>}
                     <button
                         className="cm-btn-primary"
                         style={{ width: '100%' }}
-                        onClick={() => onSubmit(digits.join(''))}
+                        onClick={() => onSubmit(code)}
                         disabled={!ready}
                     >Next</button>
                 </div>
@@ -416,7 +465,12 @@ function CodeEntry({ error, onSubmit }: { error: string | null; onSubmit: (code:
 }
 
 // ── Step 2: Name entry ─────────────────────────────────────────────
-function NameEntry({ session, error, onSubmit }: { session: SessionRow; error: string | null; onSubmit: (name: string) => void }) {
+function NameEntry({ session, error, onSubmit, onEdit }: {
+    session: SessionRow;
+    error: string | null;
+    onSubmit: (name: string) => void;
+    onEdit: () => void;
+}) {
     const [name, setName] = useState('');
     const label = session.activity ? MODE_LABELS[session.activity as GameModeId] : null;
     return (
@@ -434,7 +488,7 @@ function NameEntry({ session, error, onSubmit }: { session: SessionRow; error: s
                         type="text"
                         placeholder="First name"
                         value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        onChange={(e) => { setName(e.target.value); if (error) onEdit(); }}
                         onKeyDown={(e) => e.key === 'Enter' && name.trim() && onSubmit(name)}
                         maxLength={20}
                         autoFocus
@@ -452,106 +506,34 @@ function NameEntry({ session, error, onSubmit }: { session: SessionRow; error: s
     );
 }
 
-// ── Step 1b: Pick your picture (token join, P3b) ───────────────────
-function PicturePick({ error, onSubmit }: { error: string | null; onSubmit: (token: string) => void }) {
-    const [selected, setSelected] = useState<string | null>(null);
-    return (
-        <div className="cm-page">
-            <div className="cm-student-page">
-                <div className="cm-join-card cd-join-card">
-                    <h2>Find your picture</h2>
-                    <p className="cm-join-sub">Tap the picture your teacher gave you</p>
-                    <div className="cm-pick-grid" role="listbox" aria-label="Pictures">
-                        {PICTURE_TOKENS.map((t) => (
-                            <button
-                                key={t.id}
-                                type="button"
-                                role="option"
-                                aria-selected={selected === t.id}
-                                aria-label={t.label}
-                                className={`cm-pick-card${selected === t.id ? ' cm-pick-card-on' : ''}`}
-                                style={{ '--cm-pick-bg': t.color } as React.CSSProperties}
-                                onClick={() => setSelected(t.id)}
-                            >
-                                <span className="cm-pick-emoji" aria-hidden="true">{t.emoji}</span>
-                                <span className="cm-pick-label">{t.label}</span>
-                            </button>
-                        ))}
-                    </div>
-                    {error && <div className="cm-error">{error}</div>}
-                    <button
-                        className="cm-btn-primary"
-                        style={{ width: '100%' }}
-                        onClick={() => selected && onSubmit(selected)}
-                        disabled={!selected}
-                    >That&rsquo;s me!</button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
 // ── Locked-in classroom shell ──────────────────────────────────────
 function ClassroomShell({ ui }: { ui: { kind: 'classroom'; session: SessionRow; student: StudentRow; activity: SessionActivityRow | null } }) {
     const { session, student, activity } = ui;
     const avatar = avatarFromSeed(student.avatar_seed ?? `${session.id}:${student.name.toLowerCase()}`);
 
-    // No activity loaded → waiting room
-    if (!activity || session.class_state === 'lobby' || session.class_state === 'between_activities') {
-        const between = session.class_state === 'between_activities';
+    // Live activity (playing OR paused) → keep the game MOUNTED.
+    // Pausing must not unmount the game: unmounting reset the round timer
+    // and restarted camera acquisition on every resume. Instead we render
+    // a full-screen overlay and freeze both the countdown and the
+    // per-frame game logic (see ClassroomGame).
+    const activityLive = activity
+        && (activity.state === 'playing' || activity.state === 'starting' || activity.state === 'paused')
+        && session.class_state === 'in_activity';
+
+    if (activityLive) {
         return (
-            <div className="cd-student-shell">
-                <header className="cd-student-header">
-                    <span className="cd-avatar cd-avatar-lg" style={{ background: avatar.color }}>{avatar.emoji}</span>
-                    <h1 className="cd-student-name">{student.name}</h1>
-                </header>
-                <main className="cd-student-main">
-                    <div className="cd-student-bigcard">
-                        {between ? (
-                            <>
-                                <div className="cd-student-emoji">⭐</div>
-                                <h2>Great job!</h2>
-                                <p>Your teacher is picking the next activity…</p>
-                            </>
-                        ) : (
-                            <>
-                                <div className="cd-student-emoji">🎒</div>
-                                <h2>You're in!</h2>
-                                <p>Waiting for your teacher to start.</p>
-                            </>
-                        )}
-                        <div className="cd-student-spinner" />
-                    </div>
-                </main>
-            </div>
+            <ClassroomGame
+                student={student}
+                avatar={avatar}
+                session={session}
+                activity={activity!}
+                paused={activity!.state === 'paused'}
+            />
         );
     }
 
-    // Activity paused → pause overlay over a dimmed game canvas
-    if (activity.state === 'paused') {
-        return (
-            <div className="cd-student-shell cd-student-paused">
-                <header className="cd-student-header">
-                    <span className="cd-avatar cd-avatar-lg" style={{ background: avatar.color }}>{avatar.emoji}</span>
-                    <h1 className="cd-student-name">{student.name}</h1>
-                </header>
-                <main className="cd-student-main">
-                    <div className="cd-student-bigcard">
-                        <div className="cd-student-emoji">⏸</div>
-                        <h2>Paused</h2>
-                        <p>Your teacher will continue in a moment.</p>
-                    </div>
-                </main>
-            </div>
-        );
-    }
-
-    // Activity playing → render the game
-    if (activity.state === 'playing' || activity.state === 'starting') {
-        return <ClassroomGame student={student} avatar={avatar} session={session} activity={activity} />;
-    }
-
-    // Activity ended (waiting for next or end-of-class)
+    // No live activity → waiting / between-activities room.
+    const between = session.class_state === 'between_activities' || activity?.state === 'ended';
     return (
         <div className="cd-student-shell">
             <header className="cd-student-header">
@@ -560,9 +542,19 @@ function ClassroomShell({ ui }: { ui: { kind: 'classroom'; session: SessionRow; 
             </header>
             <main className="cd-student-main">
                 <div className="cd-student-bigcard">
-                    <div className="cd-student-emoji">⭐</div>
-                    <h2>Great job!</h2>
-                    <p>Your teacher is picking the next activity…</p>
+                    {between ? (
+                        <>
+                            <div className="cd-student-emoji">⭐</div>
+                            <h2>Great job!</h2>
+                            <p>Your teacher is picking the next activity…</p>
+                        </>
+                    ) : (
+                        <>
+                            <div className="cd-student-emoji">🎒</div>
+                            <h2>You're in!</h2>
+                            <p>Waiting for your teacher to start.</p>
+                        </>
+                    )}
                     <div className="cd-student-spinner" />
                 </div>
             </main>
@@ -570,43 +562,39 @@ function ClassroomShell({ ui }: { ui: { kind: 'classroom'; session: SessionRow; 
     );
 }
 
-// ── Readiness reporter (P3b): reports learner readiness to the server as the
-//    camera / tracker come up and the activity starts. No per-frame churn —
-//    only fires on a state change. ────────────────────────────────────────
-function ReadinessReporter({ studentId, cameraRunning, trackerReady, playing }: {
-    studentId: string; cameraRunning: boolean; trackerReady: boolean; playing: boolean;
-}) {
-    const last = useRef<ReadinessState | ''>('');
-    useEffect(() => {
-        const state: ReadinessState = playing
-            ? 'playing'
-            : cameraRunning && trackerReady
-                ? 'ready'
-                : cameraRunning
-                    ? 'camera_ready'
-                    : 'camera_permission_needed';
-        if (state !== last.current) {
-            last.current = state;
-            void callRpc('class_set_readiness', { in_student_id: studentId, in_state: state });
-        }
-    }, [studentId, cameraRunning, trackerReady, playing]);
-    return null;
-}
 
 // ── The actual game render ─────────────────────────────────────────
-function ClassroomGame({ student, avatar, session, activity }: {
+function ClassroomGame({ student, avatar, session, activity, paused }: {
     student: StudentRow;
     avatar: { emoji: string; color: string };
     session: SessionRow;
     activity: SessionActivityRow;
+    paused: boolean;
 }) {
-    const activeLogic = useMemo(() => LOGIC_MAP[activity.activity], [activity.activity]) as never;
+    // Class Mode must play the same tracing experience as /play: the
+    // playful tracing UI behind tracingPlayfulUiV1 (default ON), falling
+    // back to the legacy PreWritingMode only when the flag is off.
+    const playfulTracing = featureFlags.getFlag('tracingPlayfulUiV1');
+
+    const activeLogic = useMemo(() => {
+        if (paused) return pausedFrameLogic;
+        if (activity.activity === 'pre-writing' && playfulTracing) return playfulTracingFrame;
+        return LOGIC_MAP[activity.activity];
+    }, [activity.activity, paused, playfulTracing]) as never;
+
     // Stub onExit, we never let the kid exit; only the teacher does.
     const noop = useCallback(() => { /* locked-in: teacher controls */ }, []);
-    const tokenJoin = featureFlags.getFlags().tokenJoinV1;
+
+    // Fresh per-round tracing tally: each new session_activity starts the
+    // playful-tracing class score from zero.
+    useEffect(() => {
+        if (activity.activity === 'pre-writing') resetPlayfulClassScore();
+    }, [activity.id, activity.activity]);
 
     return (
-        <div className="App">
+        /* cd-locked hides every back-to-menu escape hatch the shared game
+           components render — in class mode the teacher is the only exit. */
+        <div className="App cd-locked">
             <TrackingLayer onFrame={activeLogic}>
                 {(frameRef, diagnostics) => (
                     <>
@@ -616,39 +604,37 @@ function ClassroomGame({ student, avatar, session, activity }: {
                             getPenDown={() => activity.activity === 'free' ? drawingEngine.getPenState() === PenState.DOWN : false}
                             mode={activity.activity}
                         />
-                        {tokenJoin && (
-                            <ReadinessReporter
-                                studentId={student.id}
-                                cameraRunning={diagnostics.cameraStatus === 'running'}
-                                trackerReady={diagnostics.trackerReady}
-                                playing={activity.state === 'playing'}
-                            />
-                        )}
-                        {/* Persistent name + avatar pip, top-right so a teacher
-                            walking by can spot the kid on a projector. */}
+                        {/* Persistent name + avatar pip. Top-LEFT (the Menu
+                            button it replaces is hidden in class mode) so it
+                            can never collide with the round timer top-right. */}
                         <div className="cd-student-pip">
                             <span className="cd-avatar" style={{ background: avatar.color }}>{avatar.emoji}</span>
                             <span>{student.name}</span>
                         </div>
 
                         {/* Freeze the round timer until the kid's camera is
-                         *  actually running. The Phase B camera explainer can
-                         *  sit on screen for 10–30 s before they tap Allow,
-                         *  and during that time we shouldn't be burning round
-                         *  time on them, surfaced by the 2026-05-11 test
-                         *  where Balloon Math read 0:21 on the explainer.   */}
+                         *  actually running (camera explainer can sit on
+                         *  screen 10–30s) and while the teacher has paused.
+                         *  The game stays mounted through pause so the timer
+                         *  and camera survive resume. */}
                         <ClassModeGameWrapper
                             sessionId={session.id}
                             studentId={student.id}
+                            sessionActivityId={activity.id}
+                            activityState={activity.state}
                             activity={activity.activity}
-                            round={1}
+                            round={activity.ordinal || 1}
                             timerSeconds={session.timer_seconds}
-                            freeze={diagnostics.cameraStatus !== 'running'}
+                            freeze={paused || diagnostics.cameraStatus !== 'running'}
                             onRoundEnd={noop}
                         >
                             {activity.activity === 'calibration' && <BubbleCalibration onComplete={noop} onExit={noop} />}
                             {activity.activity === 'free' && <FreePaintMode frameRef={frameRef} onExit={noop} />}
-                            {activity.activity === 'pre-writing' && <PreWritingMode onExit={noop} />}
+                            {activity.activity === 'pre-writing' && (
+                                playfulTracing
+                                    ? <TracingModePlayful onExit={noop} />
+                                    : <PreWritingMode onExit={noop} />
+                            )}
                             {activity.activity === 'sort-and-place' && <SortAndPlaceMode onExit={noop} />}
                             {activity.activity === 'word-search' && (
                                 <WordSearchMode frameRef={frameRef} showSettings={false} onCloseSettings={noop} onExit={noop} />
@@ -658,6 +644,19 @@ function ClassroomGame({ student, avatar, session, activity }: {
                             {activity.activity === 'rainbow-bridge' && <RainbowBridgeMode onExit={noop} />}
                             {activity.activity === 'gesture-spelling' && <GestureSpellingMode onExit={noop} />}
                         </ClassModeGameWrapper>
+
+                        {/* Teacher-paused overlay ON TOP of the mounted game.
+                            Fully opaque interaction shield: logic is frozen
+                            (pausedFrameLogic) and pointer events stop here. */}
+                        {paused && (
+                            <div className="cd-pause-overlay" role="status">
+                                <div className="cd-student-bigcard">
+                                    <div className="cd-student-emoji">⏸</div>
+                                    <h2>Paused</h2>
+                                    <p>Your teacher will continue in a moment.</p>
+                                </div>
+                            </div>
+                        )}
                     </>
                 )}
             </TrackingLayer>

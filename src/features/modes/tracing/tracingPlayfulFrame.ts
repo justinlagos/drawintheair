@@ -24,6 +24,25 @@ let completionCb: (() => void) | null = null;
 let lastSnapshot: EngineSnapshot | null = null;
 let initFailed = false;
 
+// ── Class Mode round score ──────────────────────────────────────────
+// Class Mode needs a raw score compatible with scoreMapping's
+// 'pre-writing' thresholds (progress %, [20,40,65,85]). Each completed
+// letter counts 100 and the letter currently being traced contributes its
+// live progress, so finishing any letter in the round earns 5 stars and a
+// part-traced letter maps onto the old progress-percent scale.
+let roundCompletions = 0;
+
+/** Reset the per-round tally; the classroom client calls this when a new
+ *  session_activity starts. */
+export const resetPlayfulClassScore = (): void => {
+    roundCompletions = 0;
+};
+
+/** Raw class-mode score: 100 per completed letter this round + live
+ *  progress (0-100) on the current letter. */
+export const getPlayfulClassScore = (): number =>
+    roundCompletions * 100 + Math.round((lastSnapshot?.overallProgress ?? 0) * 100);
+
 const reducedMotion = (): boolean => {
     try {
         return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
@@ -50,6 +69,7 @@ const buildEngine = (w: number, h: number): PlayfulTracingEngine | null => {
         reducedMotion: reducedMotion(),
     });
     e.setCompletionCallback(() => {
+        roundCompletions += 1; // class-mode tally, no-op for /play
         completeCurrent();
         if (completionCb) completionCb();
     });
