@@ -37,7 +37,6 @@ import { MODE_LABELS } from '../../features/classmode/scoreMapping';
 import type { GameModeId } from '../../features/classmode/scoreMapping';
 import { avatarFromSeed } from '../../features/classmode/conductor/avatars';
 import type { SessionRow, SessionActivityRow, StudentRow } from '../../features/classmode/conductor/types';
-import { featureFlags } from '../../core/featureFlags';
 
 import { TrackingLayer } from '../../features/tracking/TrackingLayer';
 import { ModeBackground } from '../../components/ModeBackground';
@@ -84,8 +83,11 @@ const pausedFrameLogic = () => { /* teacher paused — game frozen */ };
 const LOGIC_MAP: Record<GameModeId, unknown> = {
     'calibration': bubbleCalibrationLogic,
     'free': freePaintLogic,
-    // 'pre-writing' is resolved dynamically in ClassroomGame so Class Mode
-    // uses the same playful tracing experience as /play (tracingPlayfulUiV1).
+    // 'pre-writing' is resolved dynamically in ClassroomGame: Class Mode
+    // ALWAYS uses the playful tracing experience (2026-07-10 decision) and
+    // never reads the device-persisted tracingPlayfulUiV1 flag — a single
+    // engine-init failure used to poison that flag OFF forever, silently
+    // downgrading a school device to the legacy tracing UI.
     'pre-writing': preWritingLogic,
     'sort-and-place': sortAndPlaceLogic,
     'word-search': wordSearchLogic,
@@ -571,16 +573,18 @@ function ClassroomGame({ student, avatar, session, activity, paused }: {
     activity: SessionActivityRow;
     paused: boolean;
 }) {
-    // Class Mode must play the same tracing experience as /play: the
-    // playful tracing UI behind tracingPlayfulUiV1 (default ON), falling
-    // back to the legacy PreWritingMode only when the flag is off.
-    const playfulTracing = featureFlags.getFlag('tracingPlayfulUiV1');
+    // Class Mode ALWAYS plays the playful tracing experience. The only
+    // fallback is a real engine-init failure in THIS session (never the
+    // device-persisted flag, which one bad init used to poison forever).
+    const [playfulFailed, setPlayfulFailed] = useState(false);
 
     const activeLogic = useMemo(() => {
         if (paused) return pausedFrameLogic;
-        if (activity.activity === 'pre-writing' && playfulTracing) return playfulTracingFrame;
+        if (activity.activity === 'pre-writing') {
+            return playfulFailed ? preWritingLogic : playfulTracingFrame;
+        }
         return LOGIC_MAP[activity.activity];
-    }, [activity.activity, paused, playfulTracing]) as never;
+    }, [activity.activity, paused, playfulFailed]) as never;
 
     // Stub onExit, we never let the kid exit; only the teacher does.
     const noop = useCallback(() => { /* locked-in: teacher controls */ }, []);
@@ -631,9 +635,9 @@ function ClassroomGame({ student, avatar, session, activity, paused }: {
                             {activity.activity === 'calibration' && <BubbleCalibration onComplete={noop} onExit={noop} />}
                             {activity.activity === 'free' && <FreePaintMode frameRef={frameRef} onExit={noop} />}
                             {activity.activity === 'pre-writing' && (
-                                playfulTracing
-                                    ? <TracingModePlayful onExit={noop} />
-                                    : <PreWritingMode onExit={noop} />
+                                playfulFailed
+                                    ? <PreWritingMode onExit={noop} />
+                                    : <TracingModePlayful onExit={noop} onInitFailed={() => setPlayfulFailed(true)} />
                             )}
                             {activity.activity === 'sort-and-place' && <SortAndPlaceMode onExit={noop} />}
                             {activity.activity === 'word-search' && (

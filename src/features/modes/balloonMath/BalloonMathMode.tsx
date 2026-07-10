@@ -100,9 +100,17 @@ export const BalloonMathMode = ({ onExit }: BalloonMathModeProps) => {
                 pointerEvents: 'none',
                 maxWidth: 'min(640px, 90vw)',
             }}>
+                {/* Frosted, not solid (2026-07-10): balloons float up from the
+                    bottom and pass BEHIND this card on their way off-screen —
+                    with an opaque panel the target balloon could vanish
+                    completely mid-flight. Translucency keeps its silhouette
+                    readable through the card without moving the prompt. */}
                 <KidPanel size="md" tone="white" style={{
                     textAlign: 'center',
                     padding: `${tokens.spacing.md} ${tokens.spacing.xxl}`,
+                    background: 'rgba(255, 255, 255, 0.72)',
+                    backdropFilter: 'blur(2px)',
+                    WebkitBackdropFilter: 'blur(2px)',
                 }}>
                     <div style={{
                         fontFamily: tokens.fontFamily.body,

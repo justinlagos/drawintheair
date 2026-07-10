@@ -120,6 +120,20 @@ export const setPlayfulSection = (pack: number, index = 0): void => {
 
 export const getPlayfulSnapshot = (): EngineSnapshot | null => lastSnapshot;
 
+// ── Section-picker gate (2026-07-10) ────────────────────────────────
+// While the "Choose what to trace" picker is on screen the tracing scene
+// must be fully suspended: previously the engine kept rendering the track
+// and vehicle BEHIND the picker cards and kept accepting pinch input, so a
+// child could trace (and even complete) the shape without seeing it.
+// The hand pointer stays published so the picker cards remain
+// air-selectable via the GestureLayer.
+let pickerOpen = false;
+
+/** TracingModePlayful toggles this when entering/leaving the picker. */
+export const setPlayfulPickerOpen = (open: boolean): void => {
+    pickerOpen = open;
+};
+
 /**
  * onFrame callback for TrackingLayer. Maps the shared filtered interaction
  * point + pinch into the engine and renders. No analytics here — telemetry is
@@ -144,6 +158,14 @@ export const playfulTracingFrame = (
 
     // Publish the hand point so the section picker can be selected in the air.
     setGesturePointer(frameData.filteredPoint, frameData.pinchActive, frameData.hasHand);
+
+    // Picker open → suspend the scene entirely: no input, no track/vehicle
+    // drawn behind the cards. Clear the canvas so the last frame doesn't
+    // linger as a frozen ghost under the picker.
+    if (pickerOpen) {
+        ctx.clearRect(0, 0, width, height);
+        return;
+    }
 
     lastSnapshot = engine.update({
         pointer: frameData.filteredPoint,

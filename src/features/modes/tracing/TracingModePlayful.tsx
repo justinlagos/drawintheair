@@ -23,6 +23,7 @@ import {
     getPlayfulSnapshot,
     playfulInitFailed,
     setPlayfulSection,
+    setPlayfulPickerOpen,
 } from './tracingPlayfulFrame';
 import { featureFlags } from '../../../core/featureFlags';
 import { logEvent } from '../../../lib/analytics';
@@ -30,6 +31,12 @@ import { GestureLayer } from '../../../components/GestureLayer';
 
 interface Props {
     onExit?: () => void;
+    /** Engine-init failure handler. When provided (Class Mode), the caller
+     *  swaps to the legacy experience for THIS SESSION ONLY. When omitted
+     *  (/play), the legacy behaviour persists the tracingPlayfulUiV1 kill
+     *  switch on the device — which is also why class mode must never rely
+     *  on that device flag: one bad init permanently downgraded a device. */
+    onInitFailed?: () => void;
 }
 
 const CATEGORY: Record<string, string> = {
@@ -46,7 +53,7 @@ const RESTART_LABEL: Record<string, string> = {
     number: 'Restart Number',
 };
 
-export const TracingModePlayful = ({ onExit }: Props = {}) => {
+export const TracingModePlayful = ({ onExit, onInitFailed }: Props = {}) => {
     const [progress, setProgress] = useState(0);
     const [label, setLabel] = useState('');
     const [type, setType] = useState<string>('letter');
@@ -72,11 +79,16 @@ export const TracingModePlayful = ({ onExit }: Props = {}) => {
         initPlayfulTracing(window.innerWidth, window.innerHeight);
 
         // Init-failure fallback: if the V2 engine could not initialise, log it
-        // and disable the flag so App swaps back to the legacy experience
-        // BEFORE gameplay begins (no code rollback needed).
+        // and swap back to the legacy experience BEFORE gameplay begins.
+        // Class Mode passes onInitFailed and falls back for this session
+        // only; /play keeps the persisted device kill switch.
         if (playfulInitFailed()) {
             console.error('[TracingModePlayful] V2 init failed — falling back to legacy PreWritingMode');
-            featureFlags.setFlags({ tracingPlayfulUiV1: false });
+            if (onInitFailed) {
+                onInitFailed();
+            } else {
+                featureFlags.setFlags({ tracingPlayfulUiV1: false });
+            }
             return;
         }
 
@@ -130,6 +142,15 @@ export const TracingModePlayful = ({ onExit }: Props = {}) => {
         window.addEventListener('resize', onResize);
         return () => window.removeEventListener('resize', onResize);
     }, []);
+
+    // Suspend the tracing scene while the section picker is up: the engine
+    // stops rendering and accepting pinches (a child could previously trace
+    // the shape invisibly BEHIND the picker cards). Always released on
+    // unmount so the next mount never starts frozen.
+    useEffect(() => {
+        setPlayfulPickerOpen(phase === 'sections');
+        return () => setPlayfulPickerOpen(false);
+    }, [phase]);
 
     // Poll the engine snapshot for the HUD (not per animation frame).
     useEffect(() => {
@@ -297,7 +318,11 @@ function SectionPicker({ sections, onPick, onExit }: { sections: SectionInfo[]; 
         <>
             <GestureLayer />
             {onExit && <GameTopBar onBack={onExit} />}
-            <div style={{ position: 'absolute', inset: 0, zIndex: tokens.zIndex.hud, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing.xl, padding: tokens.spacing.lg }}>
+            {/* Opaque-ish backdrop: the picker is a decision screen, so the
+                (suspended) tracing scene must not show through between the
+                cards — floating paths/vehicles behind the choices read as
+                "the game is still going" and pull children off the decision. */}
+            <div style={{ position: 'absolute', inset: 0, zIndex: tokens.zIndex.hud, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing.xl, padding: tokens.spacing.lg, background: 'linear-gradient(180deg, rgba(238,246,255,0.96) 0%, rgba(244,239,255,0.96) 100%)', backdropFilter: 'blur(4px)' }}>
                 <h1 style={{ fontFamily: tokens.fontFamily.heading, fontWeight: tokens.fontWeight.extrabold, fontSize: tokens.fontSize.heading, color: tokens.semantic.primary, textAlign: 'center', margin: 0 }}>
                     Choose what to trace
                 </h1>
