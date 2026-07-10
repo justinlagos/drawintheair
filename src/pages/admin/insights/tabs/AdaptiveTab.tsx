@@ -79,9 +79,12 @@ export const AdaptiveTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
     if (!ad.data || ad.data.total === 0) {
         return <div className="iv-col-12">
             <Empty message={<>
-                No adaptive decisions yet in the selected window.
-                Wire <code>lios_recommend_next(...)</code> into a game mode
-                or invoke it directly to start the audit log.
+                <strong>Not enabled in production.</strong> The adaptive engine
+                is built but no game mode calls it yet, and the flag defaults
+                to <code>off</code> — so zero here means <em>not deployed</em>,
+                not "no learners needed adaptation". Wire{' '}
+                <code>lios_recommend_next(...)</code> into a game mode (or set{' '}
+                <code>?lios_adaptive=shadow</code>) to start the audit log.
             </>} />
         </div>;
     }

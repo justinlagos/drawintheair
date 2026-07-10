@@ -27,7 +27,7 @@ export default function ParentAccess() {
     <>
       <Helmet>
         <title>Free Home Trial | Draw in the Air</title>
-        <meta name="description" content="Try Draw in the Air free at home. Gesture-based learning for children aged 3–8, no apps, no downloads needed." />
+        <meta name="description" content="Try Draw in the Air free at home. Gesture-based learning for children aged 3–7, no apps, no downloads needed." />
       </Helmet>
       <LegalPageLayout heroTitle="Free Home Trial for Parents">
         <div className="max-w-2xl">
@@ -50,7 +50,7 @@ export default function ParentAccess() {
                   </li>
                   <li className="flex items-center gap-3">
                     <span className="text-teal-400">✓</span>
-                    A child aged 3–8 ready to draw in the air!
+                    A child aged 3–7 ready to draw in the air!
                   </li>
                 </ul>
               </div>

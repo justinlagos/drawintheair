@@ -18,7 +18,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGetSchoolPack, onTry
             <span className="badge-icon">✓</span>
             <span>EYFS Aligned</span>
             <span className="badge-separator">•</span>
-            <span>Free for Families</span>
+            <span>Free to Start</span>
           </div>
 
           {/* Main Headline */}

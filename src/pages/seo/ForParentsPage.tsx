@@ -6,8 +6,8 @@ import { logEvent } from '../../lib/analytics';
 
 const FAQ = [
   { q: 'Is Draw in the Air safe for my child?', a: 'Yes. The webcam feed is processed locally in the browser using Google\'s MediaPipe AI. No video is ever recorded, stored, or transmitted to any server. No personal data or accounts are required. Your child\'s safety and privacy are our absolute top priority.' },
-  { q: 'What age is Draw in the Air suitable for?', a: 'Draw in the Air is designed for children aged 3–8 years. The activities span preschool letter and number tracing through early primary school games. The pinch-to-draw gesture is simple enough for 3-year-olds and engaging enough for 8-year-olds.' },
-  { q: 'Is there any cost?', a: 'Draw in the Air is completely free. There are no subscriptions, ads, in-app purchases, or hidden costs. The full platform is available at no charge, forever.' },
+  { q: 'What age is Draw in the Air suitable for?', a: 'Draw in the Air is designed for children aged 3–7 years. The activities span preschool letter and number tracing through early primary school games. The pinch-to-draw gesture is simple enough for 3-year-olds and engaging enough for 7-year-olds.' },
+  { q: 'Is there any cost?', a: 'You can start for free — core activities are always free to play, with no ads shown to your child. A Family plan (with a 7-day free trial) unlocks the full activity library, progress reports, and parental controls.' },
   { q: 'Can my child use it independently?', a: 'Children aged 5+ can typically use Draw in the Air independently once they\'ve been introduced to the gesture controls. For younger children (3–4), sitting alongside them for the first few sessions helps them learn the pinch gesture quickly.' },
   { q: 'Does it work on a tablet?', a: 'Draw in the Air works best on laptops and desktops with a standard webcam. Most tablets support it through the front-facing camera, though performance is best on a computer. It requires a modern browser with WebRTC support (Chrome, Edge, Firefox, Safari).' },
   { q: 'What happens to the webcam footage?', a: 'Nothing, because we never receive it. All camera processing happens entirely within your browser using client-side AI. The video never leaves your device, is never uploaded, and is never stored. It\'s technically impossible for us to access your child\'s camera feed.' },
@@ -16,11 +16,11 @@ const FAQ = [
 ];
 
 const BENEFITS = [
-  { icon: '🛡️', title: 'Zero data collection', desc: 'No video stored. No personal data. No accounts required. Your family\'s privacy is completely protected.' },
+  { icon: '🛡️', title: 'Camera stays on device', desc: 'No video is ever uploaded, recorded, or stored. Children never log in; a grown-up manages the account and any saved progress.' },
   { icon: '🚫', title: 'No ads, ever', desc: 'Draw in the Air contains no advertising, no sponsored content, and no promotional material of any kind. Your child\'s learning environment is completely clean.' },
   { icon: '📱', title: 'No download needed', desc: 'Open the browser, visit the site, and play, instantly. No app store, no installation, no waiting for updates.' },
   { icon: '🧠', title: 'Develops real skills', desc: 'Letter recognition, number formation, hand-eye coordination, fine motor control, and phonics, built through genuine play.' },
-  { icon: '💰', title: 'Completely free', desc: 'No freemium, no trial periods, no premium tiers. Every activity, letter, number, and game is fully free, always.' },
+  { icon: '💰', title: 'Free to start', desc: 'Core activities are always free to play. A Family plan (with a 7-day free trial) unlocks the full library, progress reports, and parental controls.' },
   { icon: '🎓', title: 'Curriculum-aligned', desc: 'Activities align with preschool and primary school early learning frameworks, including EYFS (UK) and Common Core (US) readiness standards.' },
 ];
 

@@ -116,7 +116,7 @@ export default function ParentsLandingV2() {
                   <Link to="/pricing" className="btn btn-secondary lg">See pricing</Link>
                 </div>
                 <div className="hero-trust reveal d4">
-                  <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{1F512}'}</span> No data stored</span>
+                  <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{1F512}'}</span> Camera stays on device</span>
                   <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{2728}'}</span> 7 days free</span>
                   <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{1F476}'}</span> Ages 3 to 7</span>
                 </div>

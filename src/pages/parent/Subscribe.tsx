@@ -29,10 +29,12 @@ export default function ParentSubscribe() {
       // Shared dedup id for Subscribe (Pixel mirror ↔ server CAPI).
       const metaEventId = newEventId();
       rememberCheckoutEventId(metaEventId);
-      const url = await startStripeCheckout(plan, metaEventId);
-      if (url) {
-        window.location.href = url;
+      const result = await startStripeCheckout(plan, metaEventId);
+      if (result && 'url' in result) {
+        window.location.href = result.url;
       } else {
+        // Already subscribed or checkout unavailable → send them to Billing,
+        // where plan changes route through the Stripe portal.
         navigate('/parent/billing');
       }
     })();

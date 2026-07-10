@@ -1,3 +1,10 @@
+> **⚠️ SUPERSEDED (2026-06-25).** This is a dated, task-specific guide from 2026-05-27.
+> The verified production branch is **`master`** (GitHub + Vercel Production Branch =
+> `master`, current production commit `d355bbf`) — **not `main`**. Do not publish by
+> pushing to `master` (or `main`) directly. Use the current workflow instead:
+> see **`docs/DEPLOYMENT_WORKFLOW.md`** and **`CONTRIBUTING.md`** (task branch → PR →
+> CI → Vercel Preview → founder acceptance → merge to `master`). Kept for history only.
+
 # How to publish the Nigeria reliability fixes
 
 These steps publish the code changes made on 2026-05-27 so Vercel deploys them.

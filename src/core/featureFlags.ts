@@ -43,6 +43,15 @@ export interface FeatureFlags {
     fillEnabled: boolean;             // Enable fill bucket tool
     shapesEnabled: boolean;          // Enable shape tools (line, rect, circle)
     selectionEnabled: boolean;       // Enable selection tools (rect select, move, delete)
+
+
+    // Ambient warm-up (no-modal replacement for the removed "Quick warm-up?"
+    // offer interstitial). When ON, first-time devices see three balloons
+    // drift over the activity menu after the wave gate; popping all three is
+    // the guaranteed first success (activation + SaveProgressNudge trigger).
+    // Nothing blocks the menu, nothing needs reading. Kill switch:
+    // featureFlags.setFlags({ ambientWarmupV1: false }) or ?flags=!ambientWarmupV1.
+    ambientWarmupV1: boolean;
 }
 
 const DEFAULT_FLAGS: FeatureFlags = {
@@ -75,6 +84,9 @@ const DEFAULT_FLAGS: FeatureFlags = {
     fillEnabled: false,      // Fill bucket tool, default OFF
     shapesEnabled: false,    // Shape tools, default OFF
     selectionEnabled: false, // Selection tools, default OFF
+    // Ambient warm-up — LIVE (no-modal replacement for the removed offer
+    // interstitial, f2defb5). Kill switch: ?flags=!ambientWarmupV1.
+    ambientWarmupV1: true,
 };
 
 const STORAGE_KEY = 'feature-flags';

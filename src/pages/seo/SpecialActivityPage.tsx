@@ -58,7 +58,7 @@ const SPECIAL_DATA: Record<SpecialSlug, {
     'back-to-school-activities': {
         meta: {
             title: 'Back to School Activities, Free Digital Learning for Kids | Draw in the Air',
-            description: 'Start the school year right with free, browser-based learning activities! Practice letters, numbers, and shapes in the air. No download, no login needed. Perfect for ages 3–8.',
+            description: 'Start the school year right with free, browser-based learning activities! Practice letters, numbers, and shapes in the air. No download, no login needed. Perfect for ages 3–7.',
             keywords: ['back to school activities kids', 'back to school learning games', 'school readiness activities', 'kindergarten readiness games online'],
             canonical: '/activities/back-to-school-activities'
         },

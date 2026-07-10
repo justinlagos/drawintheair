@@ -917,6 +917,43 @@
   transform: translateY(-2px);
 }
 
+/* ── One-real-input code entry (P0 2026-07-09) ─────────────────────
+   The four visible boxes are now display-only divs driven by a single
+   real input stretched invisibly across them. Paste, overtype, fast
+   typing, backspace and Enter all behave like a normal text field —
+   the previous four-separate-inputs version trapped children after a
+   typo (filled maxLength=1 boxes swallowed keystrokes). */
+.cm-code-inputs { cursor: text; }
+
+.cm-code-real-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  border: none;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  z-index: 2;
+  font-size: 1rem; /* >=16px so iOS doesn't zoom on focus */
+}
+
+.cm-code-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+/* The box the next digit will land in, shown while the hidden input has
+   focus, mirrors the old per-input focus ring. */
+.cm-code-real-input:focus ~ .cm-code-box-active {
+  border-color: var(--cm-deep-plum);
+  box-shadow: 0 0 0 4px rgba(138, 102, 240, 0.18);
+  transform: translateY(-2px);
+}
+
 .cm-name-input {
   width: 100%;
   padding: 14px 18px;
@@ -1052,3 +1089,20 @@
     transition: none !important;
   }
 }
+
+
+/* ── Viewport fill (P0 2026-07-09) ─────────────────────────────────
+   Join and student screens must fill the whole viewport: the app-wide
+   dark backdrop must never show as black bands to the right/below the
+   class pages on odd viewport/zoom combinations. dvh handles mobile
+   URL-bar collapse better than vh. */
+html:has(.cm-page),
+body:has(.cm-page),
+html:has(.cd-student-shell),
+body:has(.cd-student-shell) {
+  background: #EEF6FF;
+  min-height: 100%;
+}
+
+.cm-page { min-height: 100dvh; }
+.cd-student-shell { min-height: 100dvh; }

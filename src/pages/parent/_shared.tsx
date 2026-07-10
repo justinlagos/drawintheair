@@ -302,10 +302,10 @@ function LoadingShell() {
 // ── Paywall ───────────────────────────────────────────────────────────────
 
 const PAYWALL_COPY: Record<string, { title: string; sub: string }> = {
-  save_progress: { title: "Save what they've built so far.", sub: "Keep your child's learning journey going. Start a 7-day free trial. No card required." },
-  dashboard:     { title: 'Unlock the parent dashboard.', sub: 'See progress in plain English, set gentle limits, and get one clear next step.' },
-  trial_ended:   { title: 'Your free trial wrapped up.', sub: "Pick up where you left off. Your child's progress is still safely saved." },
-  premium_mode:  { title: 'This activity is part of your family plan.', sub: 'Start the 7-day trial to unlock the full activity library.' },
+  save_progress: { title: "Save what they've built so far.", sub: "Keep your child's learning journey going with a 7-day free trial. No card required today." },
+  dashboard:     { title: 'Follow their learning, step by step.', sub: 'Plain-English progress, gentle daily limits, and one clear next activity — all in your parent dashboard.' },
+  trial_ended:   { title: 'Your free trial has ended.', sub: "Everything your child has done is still safely saved. Continue any time to pick up where you left off." },
+  premium_mode:  { title: 'This activity is part of the Family plan.', sub: 'Start your 7-day free trial to unlock the full activity library. No card required today.' },
 };
 
 export function Paywall({ reason, state }: { reason: keyof typeof PAYWALL_COPY; state: SubscriptionState }) {
@@ -350,8 +350,16 @@ export function Paywall({ reason, state }: { reason: keyof typeof PAYWALL_COPY; 
           <span className="row gap-2"><I.Users size={16} /> Up to 2 learners included</span>
         </div>
 
-        <p className="muted text-center" style={{ marginTop: 14, fontSize: 'var(--text-sm)' }}>
-          Current status: {describeSubscriptionState(state)}
+        {/* Escape hatch — the paywall must never feel like a dead-end. Free
+            activities stay open, so offer a clear way back to play. */}
+        <div className="text-center" style={{ marginTop: 24 }}>
+          <a href="/play" className="btn btn-ghost sm" style={{ color: 'var(--fg-2)' }}>
+            Not now — keep exploring free activities
+          </a>
+        </div>
+
+        <p className="muted text-center" style={{ marginTop: 12, fontSize: 'var(--text-sm)' }}>
+          {describeSubscriptionState(state)}
         </p>
       </div>
     </ParentShell>

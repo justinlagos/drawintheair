@@ -1,0 +1,97 @@
+-- ════════════════════════════════════════════════════════════════════
+-- Persistent learner — P5: structure consolidation (DM1 reconciliation)
+-- ════════════════════════════════════════════════════════════════════
+-- STATUS: P5a (below) validated on STAGING (dcivdrhxeaiulbbhsgfv). P5b drops are
+-- AUTHORED BUT NOT APPLIED — they break deployed clients and must wait for an
+-- app-code migration (see gating note). Production apply of P5a permitted after
+-- the §0 sign-off + a deliberate deploy step.
+--
+-- Canonical decisions (Founder Decision Pack §DM1):
+--   teacher identity → `teachers` is the APPROVED CANONICAL TARGET, while
+--     `teacher_profiles` REMAINS A COMPATIBILITY SOURCE until the application is
+--     migrated. `teachers` is NOT yet the single source of truth — the live app
+--     still reads/writes teacher_profiles (signup + role checks). The real switch
+--     happens only after signup writes to `teachers`, role/profile reads use
+--     `teachers`, and all triggers/RPCs/clients no longer depend on teacher_profiles.
+--   org/school → `schools` + `school_teachers`, mapped onto `tenants`.
+--
+-- ── P5a — SAFE consolidation (additive, idempotent) ──
+-- Ensure every teacher_profiles has a `teachers` row. Sources email from
+-- auth.users (teacher_profiles has none), name from full_name.
+--
+-- PROD PROVENANCE (applied 2026-06-29): the insert below matched 0 rows on
+-- production — all 6 teacher_profiles already had a `teachers` row (auto-created
+-- at signup), so P5a was a NO-OP and inserted nothing. (1 pre-existing teacher
+-- has a blank name; unrelated to P5a — clean separately.)
+--
+-- REQUIRED HARDENING BEFORE ANY RE-RUN / FUTURE BACKFILL (per founder review):
+--   1. PREFLIGHT REPORT: profiles, already-represented, missing, profiles w/o
+--      auth user, auth users w/o email, tenant/email/name conflicts, duplicate
+--      emails, blank names. Do NOT treat "row exists" as "row is correct" —
+--      REPORT existing-but-conflicting rows, never silently skip them.
+--   2. TRANSACTION: run inside begin/commit; print expected count; validate
+--      counts + conflicts; commit only if clean, else rollback.
+--   3. PROVENANCE: record the EXACT inserted teacher ids (e.g. a migration audit
+--      table) so rollback removes ONLY those ids, after re-checking for new
+--      dependencies. Do NOT infer rollback from "has no sessions" — that would
+--      delete legitimate brand-new / invited / created-but-not-yet-run teachers.
+--   4. BLANK NAMES: do not turn missing full_name into '' silently — keep
+--      nullable, fall back to email, or flag the record for profile completion.
+--   POSTFLIGHT: confirm inserted count, no duplicate ids, no cross-tenant
+--      mismatch, role checks still work, signup still works, existing teachers
+--      can reach /teacher + /class, parent accounts stay blocked.
+insert into public.teachers (id, email, name, tenant_id)
+select tp.auth_user_id, u.email, coalesce(tp.full_name, ''), tp.tenant_id
+from public.teacher_profiles tp
+join auth.users u on u.id = tp.auth_user_id
+where u.email is not null
+  and not exists (select 1 from public.teachers t where t.id = tp.auth_user_id);
+
+-- ════════════════════════════════════════════════════════════════════
+-- ── P5b — DESTRUCTIVE drops: FULLY BLOCKED (authored, NOT applied) ─────
+-- P5b is NOT merely "waiting for frontend changes." It requires a COMPLETE
+-- dependency audit across BOTH the database and every client contract before a
+-- single drop. Checking frontend references is necessary but NOT sufficient.
+--
+-- DEPENDENCY AUDIT (for EVERY proposed drop, produce a report covering):
+--   database functions · RPCs · views · materialised views · triggers ·
+--   RLS policies · generated-column expressions · tests · analytics queries ·
+--   scripts · admin tools · and any previous production clients still in use.
+-- Confirmed app references already found (so already blocking):
+--   • teacher_profiles — src/lib/teacherApi.ts (signup + getAccountRoles role check)
+--   • session_students.is_active — StudentRow + engagementOf() in TeacherClassConsole
+--
+-- RETIREMENT RULES:
+--   • NO `cascade`. List every dependency, migrate each deliberately, remove
+--     dependencies explicitly, THEN drop without cascade. A blocked drop is
+--     PROTECTION, not an inconvenience.
+--   • Drop ONE object at a time; run the full test suite after each.
+--   • Keep old objects through a compatibility period with logging/tests that
+--     PROVE they are no longer used before removal.
+--
+-- PER-OBJECT NOTES (decide meaning before consolidating, do not assume):
+--   -- teacher_profiles: retire only after signup + getAccountRoles + profile
+--   --   reads + triggers move to `teachers`. Drop WITHOUT cascade.
+--   -- session_students.is_active vs is_connected: these are CONCEPTUALLY
+--   --   distinct (is_connected = live connection; is_active = allowed to take
+--   --   part / not removed). They are identical today only because is_active is
+--   --   generated from is_connected. Decide the intended future model BEFORE
+--   --   removing either — a disconnected learner may still be "active".
+--   -- sessions.session_code (=code): check join RPCs, analytics, admin exports,
+--   --   old clients, DB functions, any URL/QR generation.
+--   -- schools.admin_teacher_id (=admin_user_id): confirm which table each refers
+--   --   to and whether a school admin must always be a teacher.
+--   -- client_errors.error_message (=message): check observability exports,
+--   --   dashboards, retention jobs.
+--   -- round_scores duplicates (session_student_id/round_number/gesture_name/
+--   --   accuracy/score): review EACH column separately — a generated duplicate
+--   --   may still be in a public RPC contract, report, older payload, index, view
+--   --   or export.
+--   -- membership: standardise school staff on school_teachers, keep tenant_members
+--   --   for isolation; reconcile role vocab. Define precisely before any drop.
+-- ════════════════════════════════════════════════════════════════════
+
+-- ── ROLLBACK (P5a) ────────────────────────────────────────────────────
+-- P5a is additive (inserts only missing rows); to undo a specific backfill,
+-- delete the teachers rows that have no corresponding session/activity, scoped
+-- to the ids inserted. No automatic rollback statement (data migration).

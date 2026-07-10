@@ -24,6 +24,25 @@ let completionCb: (() => void) | null = null;
 let lastSnapshot: EngineSnapshot | null = null;
 let initFailed = false;
 
+// ── Class Mode round score ──────────────────────────────────────────
+// Class Mode needs a raw score compatible with scoreMapping's
+// 'pre-writing' thresholds (progress %, [20,40,65,85]). Each completed
+// letter counts 100 and the letter currently being traced contributes its
+// live progress, so finishing any letter in the round earns 5 stars and a
+// part-traced letter maps onto the old progress-percent scale.
+let roundCompletions = 0;
+
+/** Reset the per-round tally; the classroom client calls this when a new
+ *  session_activity starts. */
+export const resetPlayfulClassScore = (): void => {
+    roundCompletions = 0;
+};
+
+/** Raw class-mode score: 100 per completed letter this round + live
+ *  progress (0-100) on the current letter. */
+export const getPlayfulClassScore = (): number =>
+    roundCompletions * 100 + Math.round((lastSnapshot?.overallProgress ?? 0) * 100);
+
 const reducedMotion = (): boolean => {
     try {
         return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
@@ -50,6 +69,7 @@ const buildEngine = (w: number, h: number): PlayfulTracingEngine | null => {
         reducedMotion: reducedMotion(),
     });
     e.setCompletionCallback(() => {
+        roundCompletions += 1; // class-mode tally, no-op for /play
         completeCurrent();
         if (completionCb) completionCb();
     });
@@ -100,6 +120,20 @@ export const setPlayfulSection = (pack: number, index = 0): void => {
 
 export const getPlayfulSnapshot = (): EngineSnapshot | null => lastSnapshot;
 
+// ── Section-picker gate (2026-07-10) ────────────────────────────────
+// While the "Choose what to trace" picker is on screen the tracing scene
+// must be fully suspended: previously the engine kept rendering the track
+// and vehicle BEHIND the picker cards and kept accepting pinch input, so a
+// child could trace (and even complete) the shape without seeing it.
+// The hand pointer stays published so the picker cards remain
+// air-selectable via the GestureLayer.
+let pickerOpen = false;
+
+/** TracingModePlayful toggles this when entering/leaving the picker. */
+export const setPlayfulPickerOpen = (open: boolean): void => {
+    pickerOpen = open;
+};
+
 /**
  * onFrame callback for TrackingLayer. Maps the shared filtered interaction
  * point + pinch into the engine and renders. No analytics here — telemetry is
@@ -124,6 +158,14 @@ export const playfulTracingFrame = (
 
     // Publish the hand point so the section picker can be selected in the air.
     setGesturePointer(frameData.filteredPoint, frameData.pinchActive, frameData.hasHand);
+
+    // Picker open → suspend the scene entirely: no input, no track/vehicle
+    // drawn behind the cards. Clear the canvas so the last frame doesn't
+    // linger as a frozen ghost under the picker.
+    if (pickerOpen) {
+        ctx.clearRect(0, 0, width, height);
+        return;
+    }
 
     lastSnapshot = engine.update({
         pointer: frameData.filteredPoint,

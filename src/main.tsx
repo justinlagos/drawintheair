@@ -33,6 +33,8 @@ import { ParentProvider } from './context/ParentContext.tsx'
 import { KidStyles } from './styles/KidStyles.tsx'
 import { lazyWithRetry } from './lib/lazyWithRetry.tsx'
 import { BrowserRouter } from 'react-router-dom'
+import { CookieConsentBanner } from './components/CookieConsentBanner.tsx'
+import { hasAnalyticsConsent, onConsentChange } from './lib/analyticsConsent.ts'
 
 // ── Observability bootstrap ────────────────────────────────────────────────
 // Initialise Sentry + PostHog BEFORE React mounts so even the very first
@@ -792,6 +794,9 @@ createRoot(document.getElementById('root')!).render(
             <Root />
           </React.Suspense>
         </ErrorBoundary>
+        {/* Opt-in cookie consent for non-essential analytics (GA4, Clarity,
+            Meta Pixel, PostHog). Shows once until a choice is made. */}
+        <CookieConsentBanner />
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
@@ -813,9 +818,29 @@ try {
 // so they can never block or delay first render. Both are wrapped so a failure
 // to load (e.g. the tag host is unreachable from a given ISP) never affects the
 // app itself.
+// Third-party analytics (GA4, Clarity, Meta Pixel) must only ever record
+// real production traffic. localhost, Vercel previews and any staging host
+// previously loaded the SAME production Clarity/GA4 IDs, polluting the
+// production dashboards with founder/dev/QA sessions. First-party analytics
+// (Supabase events) are unaffected — they carry environment/traffic_type
+// stamps and remain available in every environment.
+const THIRD_PARTY_ANALYTICS_HOSTS = new Set([
+  'drawintheair.com',
+  'www.drawintheair.com',
+]);
+
+function isThirdPartyAnalyticsHost(): boolean {
+  try {
+    return THIRD_PARTY_ANALYTICS_HOSTS.has(window.location.hostname);
+  } catch {
+    return false;
+  }
+}
+
 function loadDeferredAnalytics(): void {
   const w = window as unknown as Record<string, unknown>;
   if (w.__diaAnalyticsLoaded) return;
+  if (!isThirdPartyAnalyticsHost()) return;
   w.__diaAnalyticsLoaded = true;
 
   // Meta Pixel base code — loaded post-interactive alongside GA4/Clarity so it
@@ -862,6 +887,9 @@ function loadDeferredAnalytics(): void {
 
 if (typeof window !== 'undefined') {
   const schedule = () => {
+    // Non-essential third-party analytics/marketing (GA4, Clarity, Meta Pixel)
+    // only load once the visitor has granted cookie consent.
+    if (!hasAnalyticsConsent()) return;
     const ric = (window as unknown as Record<string, any>).requestIdleCallback;
     if (typeof ric === 'function') {
       ric(loadDeferredAnalytics, { timeout: 4000 });
@@ -871,6 +899,8 @@ if (typeof window !== 'undefined') {
   };
   if (document.readyState === 'complete') schedule();
   else window.addEventListener('load', schedule);
+  // If consent is granted later via the cookie banner, load immediately.
+  onConsentChange((choice) => { if (choice === 'granted') loadDeferredAnalytics(); });
 }
 
 // ---------- Service Worker Registration ----------

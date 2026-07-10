@@ -39,7 +39,7 @@ npm run validate
 ## CI/CD
 
 GitHub Actions will automatically:
-- Run type checking on every push to `main`
+- Run type checking on every push to `master` (production) and on PRs into `master` — see `.github/workflows/ci.yml`
 - Run linting on every push
 - Block merging PRs with errors
 

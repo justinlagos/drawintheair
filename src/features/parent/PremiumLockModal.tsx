@@ -81,17 +81,24 @@ export function PremiumLockModal({
             </span>
           </div>
 
-          <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: '#6C3FA4', letterSpacing: 0.1, textTransform: 'uppercase' }}>
-            A grown-up unlocks this
+          {/* Kid-facing: short, warm, minimal reading. */}
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: '#6C3FA4', letterSpacing: 0.1, textTransform: 'uppercase' }}>
+            Ask a grown-up ✨
           </p>
           <h2 style={{ margin: '8px 0 6px', fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em' }}>
             {gameTitle}
           </h2>
-          <p style={{ margin: 0, color: '#4A4D6B', fontSize: 15, lineHeight: 1.55 }}>
-            This game is part of the family plan. A grown-up can start a 7-day free trial. No card needed today.
+          <p style={{ margin: 0, color: '#4A4D6B', fontSize: 16, lineHeight: 1.5 }}>
+            A grown-up can open this one for you.
           </p>
 
           <div style={{ display: 'grid', gap: 8, marginTop: 22 }}>
+            {/* Adult-facing detail, kept small and clearly labelled so a child
+                isn't asked to parse plan/pricing copy. */}
+            <p style={{ margin: '0 0 4px', fontSize: 12.5, color: '#6B6F84', lineHeight: 1.5 }}>
+              <strong style={{ color: '#4A4D6B' }}>For a grown-up:</strong> unlock the full activity
+              library with a 7-day free trial. No card needed today.
+            </p>
             <a
               href="/parent/signup?next=/play"
               target="_blank"
@@ -116,17 +123,13 @@ export function PremiumLockModal({
                 borderRadius: 999,
                 background: 'rgba(255, 255, 255, 0.7)',
                 border: '1.5px solid rgba(63, 64, 82, 0.16)',
-                color: '#1A1B2E', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                color: '#1A1B2E', fontWeight: 700, fontSize: 15, cursor: 'pointer',
                 fontFamily: 'inherit',
               }}
             >
-              Maybe later, pick another game
+              Pick another game
             </button>
           </div>
-
-          <p style={{ margin: '14px 0 0', fontSize: 12, color: '#6B6F84' }}>
-            Tap "Show a grown-up" to open the parent page in a new tab.
-          </p>
         </motion.div>
       </motion.div>
     </AnimatePresence>
