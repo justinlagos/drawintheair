@@ -15,7 +15,7 @@ import type {
     TrustStripData, FrictionEngineeringData, MasteryV2Data, ContextSplitData,
     ProgressionTopLearners, ProgressionLearnerData,
     AdaptiveDecisionsData, ObservationsData, ExportHeadline,
-    ObservabilityData, TransparencyReportData,
+    ObservabilityData, TransparencyReportData, GrowthData,
 } from './types';
 
 async function callRpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T> {
@@ -37,6 +37,11 @@ async function callRpc<T>(fn: string, args: Record<string, unknown> = {}): Promi
 }
 
 // New v2 RPCs ────────────────────────────────────────────────────────────
+// Growth (July 2026): signups, subscriptions and engagement in one payload.
+// Server-side gated on is_platform_admin() (42501 for everyone else).
+export const fetchGrowth = (days: number) =>
+    callRpc<GrowthData>('dashboard_growth', { in_days: days });
+
 export const fetchExecutive  = (days: number) =>
     callRpc<ExecutiveData>('dashboard_executive_summary', { in_days: days });
 

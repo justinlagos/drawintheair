@@ -102,8 +102,8 @@ export const ObservationsTab: React.FC<{ filter: FilterState }> = ({ filter }) =
             <div className="iv-col-12">
                 <div style={{
                     display: 'flex', gap: 24, padding: '12px 16px',
-                    background: 'rgba(108, 63, 164, 0.04)',
-                    border: '1px solid rgba(108, 63, 164, 0.12)',
+                    background: 'rgba(138, 102, 240, 0.04)',
+                    border: '1px solid rgba(138, 102, 240, 0.12)',
                     borderRadius: 12, marginBottom: 12,
                     font: '13px/1.4 Nunito, system-ui, sans-serif',
                     flexWrap: 'wrap',
@@ -294,7 +294,7 @@ const EngVsMastScatter: React.FC<{
             {data.map(d => (
                 <circle key={d.device_id}
                         cx={xOf(d.n_attempts)} cy={yOf(d.n_mastered)} r={5}
-                        fill={ofConcern(d) ? '#FF6B6B' : '#7ED957'}
+                        fill={ofConcern(d) ? '#F07A5E' : '#5BCE9A'}
                         opacity={0.75}>
                     <title>{`${d.device_id.slice(0, 8)}, ${d.n_attempts} attempts, ${d.n_mastered} mastered`}</title>
                 </circle>

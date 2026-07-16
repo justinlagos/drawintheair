@@ -7,7 +7,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { RANGE_DAYS, type FilterState, type Range, type TabKey } from './types';
+import { RANGE_DAYS, TAB_KEYS, type FilterState, type Range, type TabKey } from './types';
 
 // ── Format helpers ────────────────────────────────────────────────────
 export const fmtNum = (n: number | null | undefined): string =>
@@ -63,7 +63,7 @@ export const deltaTone = (n: number | null | undefined, goodIfUp = true):
 
 // ── URL-state filter ──────────────────────────────────────────────────
 const DEFAULT_FILTER: FilterState = {
-    range: '7d', tab: 'executive', deviceType: 'all', ageBand: 'all',
+    range: '7d', tab: 'growth', deviceType: 'all', ageBand: 'all',
 };
 
 function readFilterFromUrl(): FilterState {
@@ -73,9 +73,7 @@ function readFilterFromUrl(): FilterState {
         (x && (allowed as readonly string[]).includes(x)) ? x as T : fallback;
     return {
         range: valid<Range>(p.get('range'), ['24h', '7d', '30d', '90d'], '7d'),
-        tab: valid<TabKey>(p.get('tab'),
-            ['executive', 'engagement', 'learning', 'retention', 'sessions', 'errors', 'friction', 'progression', 'adaptive', 'observations', 'observability'],
-            'executive'),
+        tab: valid<TabKey>(p.get('tab'), TAB_KEYS, 'growth'),
         deviceType: valid(p.get('device'), ['all', 'desktop', 'tablet', 'mobile'] as const, 'all'),
         ageBand: valid(p.get('age'), ['all', '4-5', '6-7', '8-9', '10-11'] as const, 'all'),
     };
@@ -85,7 +83,7 @@ function writeFilterToUrl(f: FilterState): void {
     if (typeof window === 'undefined') return;
     const p = new URLSearchParams();
     if (f.range !== '7d')           p.set('range', f.range);
-    if (f.tab !== 'executive')      p.set('tab', f.tab);
+    if (f.tab !== 'growth')         p.set('tab', f.tab);
     if (f.deviceType !== 'all')     p.set('device', f.deviceType);
     if (f.ageBand !== 'all')        p.set('age', f.ageBand);
     const qs = p.toString();
@@ -202,13 +200,13 @@ export function copyShareLink(filter: FilterState): void {
     alert(`Shareable link copied. It still requires sign-in but routes anyone with admin access directly to the Executive view at ${filter.range}.`);
 }
 
-// ── Color palette for charts ──────────────────────────────────────────
+// ── Color palette for charts — Calm 2.0 categorical ramp ─────────────
 export const CHART_COLORS = [
-    '#6C3FA4', // deep plum
-    '#55DDE0', // aqua
-    '#FFB14D', // warm orange
-    '#7ED957', // meadow green
-    '#FF6B6B', // coral
-    '#FFD84D', // sunshine
-    '#3FA8AC', // teal
+    '#8A66F0', // lavender (primary)
+    '#5BCE9A', // mint
+    '#7BB6FF', // sky
+    '#FFC83D', // sun
+    '#FF9B7E', // peach
+    '#5C3FB0', // deep lavender
+    '#2B8A5E', // deep mint
 ];

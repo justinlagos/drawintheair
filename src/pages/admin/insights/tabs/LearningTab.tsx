@@ -126,7 +126,7 @@ export const LearningTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                         </TableWrap>
                         {ctxSplit.data.class_codes.length > 0 && (
                             <details style={{ marginTop: 12 }}>
-                                <summary style={{ cursor: 'pointer', color: '#6C3FA4', fontSize: 13 }}>
+                                <summary style={{ cursor: 'pointer', color: '#8A66F0', fontSize: 13 }}>
                                     Per-classroom drilldown ({ctxSplit.data.class_codes.length})
                                 </summary>
                                 <TableWrap>

@@ -112,7 +112,7 @@ export const EngagementTab: React.FC<{ filter: FilterState }> = ({ filter }) => 
                             }}>
                                 <span style={{ font: '600 12.5px Nunito' }}>{label(m.game_mode)}</span>
                                 <InlineBar pct={pct} />
-                                <span style={{ font: '700 12px Fredoka', textAlign: 'right' }}>{fmtDuration(m.median_seconds)}</span>
+                                <span style={{ font: '700 12px Outfit', textAlign: 'right' }}>{fmtDuration(m.median_seconds)}</span>
                                 <span style={{ font: '600 10.5px Nunito', color: 'var(--flat)', textAlign: 'right' }}>p90 {fmtDuration(m.p90_seconds)}</span>
                             </div>
                         );

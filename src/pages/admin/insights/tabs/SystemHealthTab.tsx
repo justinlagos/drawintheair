@@ -50,18 +50,18 @@ function rateTone(v: number | null, warnBelow: number, badBelow: number): 'ok' |
 }
 
 const TONE: Record<'ok' | 'warn' | 'bad' | 'none', { bg: string; fg: string; label: string }> = {
-    ok:   { bg: '#1a3d1a', fg: '#7ED957', label: 'Healthy' },
-    warn: { bg: '#3d2a14', fg: '#FFB14D', label: 'Watch'   },
-    bad:  { bg: '#3d1a1a', fg: '#FF6B6B', label: 'Alert'   },
+    ok:   { bg: '#1a3d1a', fg: '#5BCE9A', label: 'Healthy' },
+    warn: { bg: '#3d2a14', fg: '#FFC83D', label: 'Watch'   },
+    bad:  { bg: '#3d1a1a', fg: '#F07A5E', label: 'Alert'   },
     none: { bg: '#23263a', fg: '#9094B0', label: 'No data' },
 };
 
 function SeverityDot({ level }: { level: HealthIncident['level'] }) {
     const colour =
-        level === 'fatal'   ? '#FF6B6B' :
-        level === 'error'   ? '#FF6B6B' :
-        level === 'warning' ? '#FFB14D' :
-                              '#55DDE0';
+        level === 'fatal'   ? '#F07A5E' :
+        level === 'error'   ? '#F07A5E' :
+        level === 'warning' ? '#FFC83D' :
+                              '#5BCE9A';
     return (
         <span
             aria-hidden
