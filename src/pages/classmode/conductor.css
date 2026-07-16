@@ -67,6 +67,24 @@
   align-items: center;
   gap: 14px;
 }
+/* Non-destructive exit: the class keeps running, dashboard resumes it. */
+.cd-dash-link {
+  font-family: var(--cd-display);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--cd-ink-soft);
+  text-decoration: none;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--cd-line);
+  background: var(--cd-panel);
+  white-space: nowrap;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.cd-dash-link:hover {
+  color: var(--cd-plum);
+  border-color: var(--cd-plum-line);
+}
 .cd-code-pill {
   display: inline-flex;
   flex-direction: column;
