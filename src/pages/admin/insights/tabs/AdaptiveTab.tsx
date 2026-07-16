@@ -26,22 +26,22 @@ import type {
 
 const REGIME_TONES: Record<AdaptiveRegime, { tone: string; label: string }> = {
     fresh:       { tone: '#9094B0', label: 'Fresh'       },
-    productive:  { tone: '#55DDE0', label: 'Productive'  },
-    flow:        { tone: '#7ED957', label: 'Flow'        },
-    boredom:     { tone: '#6C3FA4', label: 'Boredom'     },
-    frustration: { tone: '#FF6B6B', label: 'Frustration' },
+    productive:  { tone: '#5BCE9A', label: 'Productive'  },
+    flow:        { tone: '#5BCE9A', label: 'Flow'        },
+    boredom:     { tone: '#8A66F0', label: 'Boredom'     },
+    frustration: { tone: '#F07A5E', label: 'Frustration' },
 };
 
 const SCAFFOLD_TONES: Record<AdaptiveScaffold, string> = {
-    none:    '#7ED957',
-    partial: '#FFB14D',
-    full:    '#FF6B6B',
+    none:    '#5BCE9A',
+    partial: '#FFC83D',
+    full:    '#F07A5E',
 };
 
 const REWARD_TONES: Record<AdaptiveReward, string> = {
     quiet:    '#9094B0',
-    standard: '#55DDE0',
-    big:      '#FFD84D',
+    standard: '#5BCE9A',
+    big:      '#FFC83D',
 };
 
 const RECOVERY_LABELS = [
@@ -113,8 +113,8 @@ export const AdaptiveTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
             <div className="iv-col-12">
                 <div style={{
                     display: 'flex', gap: 32, padding: '12px 16px',
-                    background: 'rgba(108, 63, 164, 0.04)',
-                    border: '1px solid rgba(108, 63, 164, 0.12)',
+                    background: 'rgba(138, 102, 240, 0.04)',
+                    border: '1px solid rgba(138, 102, 240, 0.12)',
                     borderRadius: 12, marginBottom: 16,
                     font: '13px/1.4 Nunito, system-ui, sans-serif',
                 }}>
@@ -316,7 +316,7 @@ export const AdaptiveTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                                                 </td>
                                                 <td>{modeLabel(r.game_mode)}</td>
                                                 <td>{r.current_item ?? '-'}</td>
-                                                <td>{r.next_item ?? <em style={{ color: '#FF6B6B' }}>break</em>}</td>
+                                                <td>{r.next_item ?? <em style={{ color: '#F07A5E' }}>break</em>}</td>
                                                 <td>
                                                     <span style={{
                                                         background: SCAFFOLD_TONES[r.scaffold_level],

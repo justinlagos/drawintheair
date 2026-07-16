@@ -8,14 +8,88 @@ export type Range = '24h' | '7d' | '30d' | '90d';
 export const RANGE_DAYS: Record<Range, number> = { '24h': 1, '7d': 7, '30d': 30, '90d': 90 };
 
 export type TabKey =
+    | 'growth'
     | 'executive' | 'activation' | 'engagement' | 'learning'
     | 'retention' | 'sessions' | 'errors' | 'friction' | 'progression' | 'adaptive' | 'observations' | 'observability' | 'system-health';
+
+/** Single source of truth for URL validation + keyboard shortcuts. */
+export const TAB_KEYS: readonly TabKey[] = [
+    'growth', 'executive', 'activation', 'engagement', 'learning',
+    'retention', 'sessions', 'errors', 'friction', 'progression',
+    'adaptive', 'observations', 'observability', 'system-health',
+] as const;
+
+/** Sidebar structure (pure data so it is unit-testable): sections
+ *  mirror how the numbers are used. Every TabKey must appear in
+ *  exactly one section — tests/insightsNav.test.ts enforces it. */
+export const SECTIONS: ReadonlyArray<{ title: string; items: ReadonlyArray<{ key: TabKey; label: string }> }> = [
+    {
+        title: 'Growth',
+        items: [
+            { key: 'growth',     label: 'Growth' },
+            { key: 'activation', label: 'Activation' },
+            { key: 'retention',  label: 'Retention' },
+        ],
+    },
+    {
+        title: 'Product',
+        items: [
+            { key: 'executive',  label: 'Executive' },
+            { key: 'engagement', label: 'Engagement' },
+            { key: 'sessions',   label: 'Sessions' },
+            { key: 'friction',   label: 'Friction' },
+        ],
+    },
+    {
+        title: 'Learning',
+        items: [
+            { key: 'learning',     label: 'Learning' },
+            { key: 'progression',  label: 'Progression' },
+            { key: 'adaptive',     label: 'Adaptive' },
+            { key: 'observations', label: 'Observations' },
+        ],
+    },
+    {
+        title: 'Reliability',
+        items: [
+            { key: 'errors',        label: 'Errors' },
+            { key: 'observability', label: 'Observability' },
+            { key: 'system-health', label: 'System health' },
+        ],
+    },
+] as const;
 
 export interface FilterState {
     range: Range;
     tab: TabKey;
     deviceType: 'all' | 'desktop' | 'tablet' | 'mobile';
     ageBand: 'all' | '4-5' | '6-7' | '8-9' | '10-11';
+}
+
+// ── Growth RPC (dashboard_growth) ─────────────────────────────────────
+export interface GrowthWeekSignups { week: string; signups: number; teachers: number; parents: number; }
+export interface GrowthWeekActivity { week: string; classroom_kids: number; classes_started: number; play_sessions: number; }
+export interface GrowthSignupRow { created_at: string; role: 'teacher' | 'parent' | 'account'; email_masked: string; has_subscription: boolean; }
+export interface GrowthData {
+    as_of: string;
+    range_days: number;
+    totals: {
+        accounts: number; parents: number; teachers: number;
+        child_profiles: number; roster_children: number; schools: number;
+    };
+    new_in_range: { accounts: number; parents: number; teachers: number };
+    last_signup_at: string | null;
+    subscriptions: {
+        active: number; trialing: number; trial_lapsed: number; canceled: number;
+        new_in_range: number; paying_conversion_pct: number | null;
+    };
+    engagement_7d: {
+        events: number; play_sessions: number; learning_attempts: number;
+        classroom_kids: number; live_classes: number; last_event_at: string | null;
+    };
+    weekly_signups: GrowthWeekSignups[];
+    weekly_activity: GrowthWeekActivity[];
+    latest_signups: GrowthSignupRow[];
 }
 
 // ── Executive summary RPC ─────────────────────────────────────────────

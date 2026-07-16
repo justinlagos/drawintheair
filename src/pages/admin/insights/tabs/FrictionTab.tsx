@@ -24,32 +24,32 @@ import type { FilterState, FrictionEngineeringData, FrictionModeCount } from '..
 
 const DETECTOR_LABELS: Record<string, { short: string; long: string; tone: string }> = {
     'friction_successful_learning_detected':
-        { short: 'Successful learning',  tone: '#7ED957',
+        { short: 'Successful learning',  tone: '#5BCE9A',
           long: 'In the desirable-difficulty band, completed, low stuck count.' },
     'friction_productive_struggle_detected':
-        { short: 'Productive struggle',  tone: '#55DDE0',
+        { short: 'Productive struggle',  tone: '#5BCE9A',
           long: 'Mid-accuracy (50–65%), recovering across attempts, completed.' },
     'friction_cognitive_overload_detected':
-        { short: 'Cognitive overload',   tone: '#FFB14D',
+        { short: 'Cognitive overload',   tone: '#FFC83D',
           long: 'Low accuracy AND repeated stuck, overwhelmed, not unable.' },
     'friction_decision_fatigue_detected':
-        { short: 'Decision fatigue',     tone: '#FFD84D',
+        { short: 'Decision fatigue',     tone: '#FFC83D',
           long: 'Long session with high stuck count, mid-accuracy. Probably tired.' },
     'friction_attention_collapse_detected':
-        { short: 'Attention collapse',   tone: '#FF6B6B',
+        { short: 'Attention collapse',   tone: '#F07A5E',
           long: 'Stuck, short, abandoned before completion.' },
     'friction_over_challenge_detected':
         { short: 'Over-challenge',       tone: '#C13A3A',
           long: 'Accuracy < 40% sustained. The item is genuinely too hard.' },
     'friction_boredom_detected':
-        { short: 'Boredom',              tone: '#6C3FA4',
+        { short: 'Boredom',              tone: '#8A66F0',
           long: 'Accuracy > 95% over ≥8 attempts. Time to push difficulty.' },
     'friction_distraction_detected':
         { short: 'Distraction',          tone: '#9094B0',
           long: 'Mean credibility below 0.85. Trust v1 flagged the attempts.' },
 };
 const detLabel = (raw: string) => DETECTOR_LABELS[raw]?.short ?? raw;
-const detTone  = (raw: string) => DETECTOR_LABELS[raw]?.tone  ?? '#6C3FA4';
+const detTone  = (raw: string) => DETECTOR_LABELS[raw]?.tone  ?? '#8A66F0';
 const detLong  = (raw: string) => DETECTOR_LABELS[raw]?.long  ?? '';
 
 const MODE_LABELS: Record<string, string> = {
@@ -139,8 +139,8 @@ export const FrictionTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
             <div className="iv-col-12">
                 <div style={{
                     display: 'flex', gap: 32, padding: '12px 16px',
-                    background: 'rgba(108, 63, 164, 0.04)',
-                    border: '1px solid rgba(108, 63, 164, 0.12)',
+                    background: 'rgba(138, 102, 240, 0.04)',
+                    border: '1px solid rgba(138, 102, 240, 0.12)',
                     borderRadius: 12, marginBottom: 16,
                     font: '13px/1.4 Nunito, system-ui, sans-serif',
                 }}>
