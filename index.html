@@ -63,13 +63,20 @@
     the difference between "the site is loading" and a blank white screen that
     reads as "the site is broken". React replaces #root's contents on mount.
   -->
-  <div id="root">
+  <!-- The comment markers below are the build-time SSR outlet. After
+       `vite build`, scripts/prerender-seo.mjs replaces everything between
+       them with each marketing route's server-rendered HTML so crawlers
+       (Googlebot first-pass, GPTBot, ClaudeBot, PerplexityBot, social
+       scrapers) receive real content instead of this splash. Do not remove
+       or rename them; if they are missing the script falls back to
+       head-only prerendering and logs a warning. -->
+  <div id="root"><!--dia-ssr-start-->
     <div id="boot-splash" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:linear-gradient(180deg,#BEEBFF 0%,#DEF5FF 35%,#FFF6E5 75%,#FFFAEB 100%);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#3F4052;text-align:center;padding:24px;">
       <div style="width:54px;height:54px;border:5px solid rgba(108,63,164,0.18);border-top-color:#6C3FA4;border-radius:50%;animation:dia-spin 0.9s linear infinite;"></div>
       <div style="font-size:1.15rem;font-weight:700;color:#6C3FA4;">Draw in the Air</div>
       <div id="boot-msg" style="font-size:0.95rem;opacity:0.8;max-width:320px;line-height:1.5;">Loading… this can take a moment on a slow connection.</div>
     </div>
-  </div>
+  <!--dia-ssr-end--></div>
   <style>
     @keyframes dia-spin { to { transform: rotate(360deg); } }
   </style>
