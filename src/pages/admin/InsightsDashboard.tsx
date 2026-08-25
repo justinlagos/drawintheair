@@ -208,11 +208,6 @@ const AuthenticatedDashboard: React.FC<{ email: string; onSignOut: () => Promise
         }
     };
 
-    // Dedicated report view, auto-prints once loaded.
-    if (reportMode) {
-        return <PrintReport range={filter.range} email={email} />;
-    }
-
     // Keyboard shortcuts for power use
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
@@ -230,6 +225,11 @@ const AuthenticatedDashboard: React.FC<{ email: string; onSignOut: () => Promise
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
     }, [setFilter]);
+
+    // Dedicated report view, auto-prints once loaded.
+    if (reportMode) {
+        return <PrintReport range={filter.range} email={email} />;
+    }
 
     return (
         <div className="iv-shell">

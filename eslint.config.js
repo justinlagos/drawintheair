@@ -14,7 +14,7 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 // leaving the signal in editor tooling — once the codebase has been
 // migrated to the v7 idioms we can flip them back to errors.
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'platform/**', 'video/**', 'supabase/functions/**']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
