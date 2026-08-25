@@ -28,7 +28,7 @@ import {
 } from '../../lib/parentApi';
 import { logEvent } from '../../lib/analytics';
 
-const AGE_BANDS = ['3-4', '5-6', '7-8', '9-11'] as const;
+const AGE_BANDS = ['3-4', '5-6', '7-8'] as const;
 const AVATARS = ['🌱', '🐢', '🦊', '🐝', '🐙', '🦄', '🐼', '🐰', '🦉', '🐬', '⭐', '🦖'];
 
 export default function ParentChildren() {

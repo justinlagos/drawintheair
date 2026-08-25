@@ -292,13 +292,36 @@ async function callEdgeFunction<T>(fn: string, body: Record<string, unknown> = {
 
 /** Start a Stripe Checkout session for either the monthly or yearly plan.
  *  `metaEventId` (optional) is stamped onto the Stripe subscription so the
- *  server CAPI Subscribe event deduplicates with the client Pixel. */
-export async function startStripeCheckout(interval: 'month' | 'year', metaEventId?: string) {
-  const res = await callEdgeFunction<{ url: string }>('stripe-checkout', {
-    interval,
-    ...(metaEventId ? { meta_event_id: metaEventId } : {}),
-  });
-  return res?.url ?? null;
+ *  server CAPI Subscribe event deduplicates with the client Pixel.
+ *
+ *  Returns { url } on success, { reason: 'already_subscribed' } when the parent
+ *  already has a live Stripe subscription (the server refuses a second one —
+ *  the caller should send them to the portal to change plans instead), or null
+ *  on other failures. */
+export async function startStripeCheckout(
+  interval: 'month' | 'year',
+  metaEventId?: string,
+): Promise<{ url: string } | { reason: 'already_subscribed' } | null> {
+  try {
+    await ensureFreshSession();
+    const res = await fetch(`${getSupabaseUrl()}/functions/v1/stripe-checkout`, {
+      method: 'POST',
+      headers: {
+        apikey: getAnonKey(),
+        Authorization: `Bearer ${getAccessToken()}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ interval, ...(metaEventId ? { meta_event_id: metaEventId } : {}) }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (res.ok && typeof json?.url === 'string') return { url: json.url };
+    if (res.status === 409 && json?.error === 'already_subscribed') {
+      return { reason: 'already_subscribed' };
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 /** Open the Stripe Customer Portal (manage card, plan, cancellation).

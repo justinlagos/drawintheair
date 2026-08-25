@@ -1,3 +1,10 @@
+# drawintheair.com — crawler policy.
+# The blanket rule below already allows everything except the app/admin
+# surfaces. The explicit AI-crawler stanzas are deliberate, self-documenting
+# opt-ins: being ingested and cited by AI assistants (ChatGPT, Claude,
+# Perplexity, Google AI Overviews) is part of the growth strategy, so none
+# of these bots may be blocked without a product decision.
+
 User-agent: *
 Allow: /
 Disallow: /admin
@@ -5,5 +12,31 @@ Disallow: /demo
 Disallow: /school
 Disallow: /parent
 Disallow: /*?debug=
+
+# OpenAI (ChatGPT answers + search)
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+# Anthropic (Claude)
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+
+# Google AI (Gemini / AI Overviews grounding)
+User-agent: Google-Extended
+Allow: /
+
+# Common Crawl (feeds most open-web training sets)
+User-agent: CCBot
+Allow: /
 
 Sitemap: https://drawintheair.com/sitemap.xml

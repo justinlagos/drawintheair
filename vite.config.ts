@@ -27,6 +27,10 @@ export default defineConfig({
     // browsers a few years old rather than bleeding-edge so the bundle
     // doesn't ship syntax old engines choke on.
     target: ['es2020', 'chrome87', 'edge88', 'safari14', 'firefox78'],
+    // Emit dist/.vite/manifest.json so scripts/prerender-seo.mjs can map
+    // each prerendered route to its page chunk's CSS files (avoids a flash
+    // of unstyled SSR content) and add a modulepreload for the chunk.
+    manifest: true,
     rollupOptions: {
       output: {
         // Split heavy, rarely-changing vendor libraries into their own

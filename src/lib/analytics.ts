@@ -22,7 +22,13 @@
  *   analytics.endSession('back_to_landing');
  */
 
-import { dbInsert } from './supabase';
+import { dbInsert, callRpc } from './supabase';
+import {
+    classifyEnvironment,
+    classifyTrafficType,
+    type AppEnvironment,
+    type TrafficType,
+} from './trafficClassifier';
 import { recordActivityCompleted } from './activationCounter';
 import {
     trackEvent as obsTrackEvent,
@@ -456,7 +462,14 @@ function computeFatigueScore(): number | null {
     if (f <= 0) return null;
     return Math.round((l / f) * 100) / 100;
 }
-function resetActionTimings(): void { actionTimings.length = 0; }
+function resetActionTimings(): void { actionTimings.length = 0; productiveActionCount = 0; }
+
+// Count of ALL productive actions this session (grab/drop/pop/hit/trace),
+// independent of whether the event carried a duration_ms. session_ended
+// previously reported action_count from actionTimings.length, which only
+// grows for duration-carrying events — so real sessions full of activity
+// ended with action_count: 0 in the dashboard.
+let productiveActionCount = 0;
 
 // ── Per-flag exposure dedupe ─────────────────────────────────────
 // feature_flag_exposed should fire at most once per session per flag.
@@ -470,6 +483,12 @@ const exposedFlags = new Set<string>();
 // every 60s if they keep idling). Resets on next action.
 const STUCK_THRESHOLD_MS = 30_000;
 const STUCK_REPEAT_MS = 60_000;
+// Hard cap per armed context: a tab parked overnight used to emit
+// stuck_detected roughly once a minute for hours (388 events in one
+// session on 2026-06-20). Five fires (~4 minutes of silence) already
+// says everything "stuck" can say; past that the idle-timeout abandon
+// path owns the outcome.
+const STUCK_MAX_FIRES = 5;
 let stuckCtx: { gameMode: string | null; stageId: string | null; lastActionAt: number; firedCount: number } | null = null;
 let stuckTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -488,6 +507,9 @@ function startStuckWatcher(): void {
                 value_number: idle,
                 meta: { idle_ms: idle, fired_count: c.firedCount },
             });
+            if (c.firedCount >= STUCK_MAX_FIRES) {
+                stuckCtx = null;  // disarm; idle-timeout handles the rest
+            }
         }
     }, 5_000);
 }
@@ -499,6 +521,7 @@ function startStuckWatcher(): void {
  * so the resulting event has context.
  */
 export function noteProductiveAction(gameMode: string, stageId?: string): void {
+    productiveActionCount += 1;
     stuckCtx = {
         gameMode,
         stageId: stageId ?? null,
@@ -583,6 +606,167 @@ function getOrCreateSession(): SessionContext {
     };
     persistSession(session);
     return session;
+}
+
+// ════════════════════════════════════════════════════════════════════
+// Activity attempt identity (the keystone primitive)
+// ════════════════════════════════════════════════════════════════════
+//
+// An "attempt" is one play of one activity: it opens on `mode_started`
+// and closes on a terminal event (`mode_completed` / `mode_abandoned` /
+// `mode_switched`). Every event built while an attempt is open carries
+// its `attempt_id`, so the whole journey — start, stages, the win/lose
+// events, and the terminal outcome — joins on a single id.
+//
+// WHY THIS IS THE KEYSTONE
+//   Without it, completion is inferred by pairing `mode_started` with a
+//   later `mode_completed` on the same session by event order — which
+//   silently miscounts when a child replays, switches modes, or a tab
+//   fires two starts. It is also impossible to say honestly "of the
+//   attempts that began, how many finished" — the denominator the whole
+//   Engagement/Friction story depends on. attempt_id makes that exact.
+//
+// Auto-managed inside logEvent so existing call sites don't change.
+// Persisted in sessionStorage so a refresh mid-activity keeps the same
+// attempt rather than orphaning it. Shipped via event meta (the table
+// already has a jsonb meta column) so no schema change is needed to
+// start collecting; migration 20260626 promotes it to a column.
+const ATTEMPT_KEY = 'dita_current_attempt';
+let currentAttemptId: string | null = null;
+let attemptRestored = false;
+
+function persistAttemptId(): void {
+    if (typeof window === 'undefined') return;
+    try {
+        if (currentAttemptId) sessionStorage.setItem(ATTEMPT_KEY, currentAttemptId);
+        else sessionStorage.removeItem(ATTEMPT_KEY);
+    } catch { /* private mode */ }
+}
+
+/** Current open attempt id, restoring a refresh-interrupted one once. */
+export function getCurrentAttemptId(): string | null {
+    if (currentAttemptId) return currentAttemptId;
+    if (!attemptRestored && typeof window !== 'undefined') {
+        attemptRestored = true;
+        try { currentAttemptId = sessionStorage.getItem(ATTEMPT_KEY); } catch { /* ignore */ }
+    }
+    return currentAttemptId;
+}
+
+/** Open a fresh attempt and return its id. Auto-called on `mode_started`;
+ *  exported for explicit use (e.g. unassisted checkpoints in Workstream D). */
+export function startAttempt(): string {
+    currentAttemptId = generateUUID();
+    attemptRestored = true;
+    persistAttemptId();
+    return currentAttemptId;
+}
+
+/** Close the current attempt. Auto-called on terminal events. */
+export function endAttempt(): void {
+    currentAttemptId = null;
+    attemptRestored = true;
+    persistAttemptId();
+}
+
+const ATTEMPT_TERMINAL_EVENTS = new Set<EventName>([
+    'mode_completed',
+    'mode_abandoned',
+    'mode_switched',
+]);
+
+/** Why an attempt ended without a normal completion. Carried on the
+ *  terminal event's meta.exit_reason so the Friction/Engagement layer can
+ *  separate genuine difficulty from tab-close, idle, teacher control and
+ *  tracking loss (A3 in the data-to-growth plan). */
+export type AttemptExitReason =
+    | 'tab_close'
+    | 'timed_out'
+    | 'tracking_lost'
+    | 'teacher_ended'
+    | 'nav_away';
+
+/**
+ * Guarantee a terminal outcome for an open attempt. Emits `mode_abandoned`
+ * with the given exit reason (which closes the attempt via the terminal
+ * handler in logEvent) so an attempt that ends by tab-close, idle timeout,
+ * teacher action or tracking loss never orphans its `mode_started`. No-op
+ * when no attempt is open. Returns the closed attempt id, or null.
+ */
+export function abandonOpenAttempt(reason: AttemptExitReason): string | null {
+    const open = getCurrentAttemptId();
+    if (!open) return null;
+    logEvent('mode_abandoned', { meta: { exit_reason: reason } });
+    return open;
+}
+
+// ── Attempt idle timeout → 'timed_out' terminal outcome ────────────
+// If an activity stays open with ZERO real interaction for a sustained
+// window, the child has almost certainly walked away or left the tab
+// parked. Close the attempt as 'timed_out' rather than leaving the
+// `mode_started` orphaned (which otherwise inflates time-on-task and
+// hides the drop-off). Passive telemetry (heartbeats, tracker quality
+// samples, visibility flips) does NOT count as activity, so a parked
+// tab is detected even though it keeps emitting background events.
+//
+// Conservative 3-minute default keeps a slow or thinking child safe.
+// Tunable WITHOUT a redeploy via localStorage 'dita_idle_timeout_ms'
+// (set 0 to disable) — this is the threshold-tuning lever.
+const IDLE_ABANDON_DEFAULT_MS = 180_000;
+let lastActivityAt = Date.now();
+
+// Events that are NOT real interaction; they must not reset the idle
+// clock, otherwise a walked-away child's background pulse would keep the
+// attempt alive forever.
+const IDLE_PASSIVE_EVENTS = new Set<EventName>([
+    'session_heartbeat',
+    'tracker_quality_sample',
+    'tracker_warmup_timing',
+    'tracker_low_confidence',
+    'two_hands_detected',
+    'tab_hidden',
+    'tab_visible',
+    'feature_flag_exposed',
+    'system_error',
+    'csp_violation',
+]);
+
+/**
+ * Pure decision: should an open attempt time out? Exported for tests so
+ * the policy is verified without driving real timers.
+ */
+export function shouldTimeoutAttempt(
+    attemptOpen: boolean,
+    idleMs: number,
+    thresholdMs: number,
+): boolean {
+    if (!attemptOpen) return false;
+    if (thresholdMs <= 0) return false; // disabled
+    return idleMs >= thresholdMs;
+}
+
+function idleThresholdMs(): number {
+    if (typeof window === 'undefined') return IDLE_ABANDON_DEFAULT_MS;
+    try {
+        const raw = localStorage.getItem('dita_idle_timeout_ms');
+        if (raw !== null) {
+            const n = Number(raw);
+            if (Number.isFinite(n) && n >= 0) return n;
+        }
+    } catch { /* private mode */ }
+    return IDLE_ABANDON_DEFAULT_MS;
+}
+
+/** Heartbeat hook: close an idle-abandoned attempt with a 'timed_out'
+ *  outcome. No-op when nothing is open or the timeout is disabled. */
+function checkAttemptIdleTimeout(): void {
+    if (shouldTimeoutAttempt(
+        getCurrentAttemptId() !== null,
+        Date.now() - lastActivityAt,
+        idleThresholdMs(),
+    )) {
+        abandonOpenAttempt('timed_out');
+    }
 }
 
 // ── LIOS Sprint 3: classroom-code redemption flow ──────────────
@@ -678,6 +862,23 @@ export function setSessionContext(kind: SessionContextKind): void {
     try { localStorage.setItem(CONTEXT_KEY, kind); } catch { /* ignore */ }
 }
 
+/**
+ * Enter a classroom session: remember the class code AND flip context to
+ * 'classroom'. Needed for the Conductor join flow (StudentClassClient),
+ * where a child enters a code in the UI rather than via a /?join=CODE URL
+ * (which is the only path resolveDefaultContext covers). Without this the
+ * whole classroom session is mis-attributed as 'home' in Insights.
+ * Every subsequent event then carries context='classroom' and
+ * meta.class_code (buildRow injects the code via getClassCode()).
+ */
+export function setClassCode(code: string): void {
+    const trimmed = (code || '').trim().toUpperCase();
+    if (trimmed && trimmed.length <= 32) {
+        try { localStorage.setItem(CLASS_CODE_KEY, trimmed); } catch { /* private mode */ }
+    }
+    setSessionContext('classroom');
+}
+
 // ════════════════════════════════════════════════════════════════════
 // Context capture (browser, device, UTM, etc.)
 // ════════════════════════════════════════════════════════════════════
@@ -734,6 +935,62 @@ function getBuildVersion(): string {
     return (import.meta.env.VITE_BUILD_VERSION as string) || 'dev';
 }
 
+// ── Traffic classification (internal-traffic exclusion) ────────────
+// Stamps every event with `environment` and `traffic_type` so the
+// Insights queries can default to real-only and stop mixing founders,
+// QA, localhost and bots into the headline denominators. The decision
+// logic lives in the pure trafficClassifier module; this resolver only
+// gathers the live browser signals and the sticky device flags.
+//
+// Sticky flags: a single visit to /admin (or arriving with ?internal=1)
+// marks the whole device as internal for the lifetime of localStorage,
+// because an admin/founder navigates away from /admin into the product
+// and every one of those sessions must stay out of `real`.
+const TRAFFIC_INTERNAL_KEY = 'dita_traffic_internal';
+const TRAFFIC_QA_KEY        = 'dita_traffic_qa';
+
+function resolveTrafficStamp(): { environment: AppEnvironment; traffic_type: TrafficType } {
+    // SSR / prerender (scripts/prerender-seo.mjs): there is no real user
+    // here, so this must NEVER classify as 'real'.
+    if (typeof window === 'undefined') {
+        return { environment: 'production', traffic_type: 'internal' };
+    }
+
+    const environment = classifyEnvironment(window.location.hostname);
+    const path = window.location.pathname || '';
+    const params = new URLSearchParams(window.location.search);
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+    const webdriver =
+        typeof navigator !== 'undefined' &&
+        (navigator as Navigator & { webdriver?: boolean }).webdriver === true;
+
+    const adminVisit = path.startsWith('/admin');
+    const internalParam = params.get('internal') === '1';
+    const qaParam = params.get('qa') === '1';
+    const demo = params.get('demo') === '1' || path.startsWith('/demo');
+
+    let internal = adminVisit || internalParam;
+    let qa = qaParam;
+    try {
+        if (internal) localStorage.setItem(TRAFFIC_INTERNAL_KEY, '1');
+        if (qa) localStorage.setItem(TRAFFIC_QA_KEY, '1');
+        internal = localStorage.getItem(TRAFFIC_INTERNAL_KEY) === '1';
+        qa = localStorage.getItem(TRAFFIC_QA_KEY) === '1';
+    } catch {
+        // private mode: fall back to the per-call signals only.
+    }
+
+    const traffic_type = classifyTrafficType({
+        environment,
+        userAgent: ua,
+        webdriver,
+        internal,
+        qa,
+        demo,
+    });
+    return { environment, traffic_type };
+}
+
 // ════════════════════════════════════════════════════════════════════
 // Event row construction
 // ════════════════════════════════════════════════════════════════════
@@ -752,9 +1009,19 @@ function buildRow(name: EventName, opts: EventOptions = {}): EventRow {
     // home-vs-classroom split is keyed on the `context` column,
     // but per-classroom drilldowns join on this meta field.
     const classCode = ctx.context === 'classroom' ? getClassCode() : null;
-    const eventMeta: Record<string, unknown> = classCode
-        ? { ...(opts.meta || {}), class_code: classCode }
-        : (opts.meta || {});
+    // Stamp traffic classification onto every event so Insights can
+    // default to real-only. Shipped via meta (the table already has a
+    // jsonb meta column) so this needs no schema change to take effect;
+    // migration 20260626 promotes these to first-class columns.
+    const traffic = resolveTrafficStamp();
+    const attemptId = getCurrentAttemptId();
+    const eventMeta: Record<string, unknown> = {
+        ...(opts.meta || {}),
+        ...(classCode ? { class_code: classCode } : {}),
+        ...(attemptId ? { attempt_id: attemptId } : {}),
+        traffic_type: traffic.traffic_type,
+        environment: traffic.environment,
+    };
     return {
         session_id: ctx.sessionId,
         device_id: getOrCreateDeviceId(),
@@ -826,38 +1093,135 @@ function persistQueue(): void {
     }
 }
 
+// ── Idempotent ingest (2026-07-09 pipeline repair) ───────────────────
+//
+// ROOT CAUSE of the silent 26-Jun → 9-Jul outage: the flush used
+// `Prefer: resolution=ignore-duplicates` (INSERT ... ON CONFLICT DO
+// NOTHING). Postgres needs to SEE conflicting rows to arbitrate, and
+// the anon role has no SELECT policy on these tables (by design), so
+// EVERY flush failed with 42501 and re-queued forever. The only rows
+// that ever landed came from the unload beacon (a plain insert) —
+// minus whatever batch a failed flush had in flight, which is why
+// stored sessions began mid-flow (first row at client_seq 21).
+//
+// The fix moves idempotency server-side: SECURITY DEFINER RPCs
+// (migration 20260709000001) do the ON CONFLICT DO NOTHING with no
+// read access granted to the caller. If the RPC is missing (staging /
+// un-migrated DB) we fall back to a plain insert and treat a 23505
+// duplicate-key response as "already delivered".
+let ingestRpcAvailable = true;
+let learningIngestRpcAvailable = true;
+// The batch a flush currently has in flight. The unload beacon must
+// include it: if the page dies mid-flight the requeue never runs, and
+// this batch — always the FRONT of the queue — is exactly what
+// production lost for two weeks.
+let inFlightBatch: EventRow[] = [];
+let inFlightLearningBatch: LearningRow[] = [];
+
+/** True when the error means the ingest RPC doesn't exist on this DB.
+ *  Exported for unit tests. */
+export function isMissingRpc(code: string | undefined): boolean {
+    return code === 'PGRST202' || code === '404';
+}
+
+/**
+ * Decide whether a batch is SETTLED after a plain (non-RPC) insert.
+ * Settled means: do not requeue. A 23505 duplicate-key response proves
+ * the rows already exist server-side (the unique event_uid index), so
+ * retrying would collide forever — the poison-batch failure mode the
+ * old ignore-duplicates header tried (and failed) to prevent.
+ * Exported for unit tests.
+ */
+export function plainInsertSettled(error: { code?: string } | null): boolean {
+    return error === null || error.code === '23505';
+}
+
+/**
+ * Deliver one batch. Returns true when the batch is settled (inserted,
+ * or provably already present) and must NOT be requeued.
+ */
+async function deliverEventBatch(batch: EventRow[]): Promise<boolean> {
+    if (ingestRpcAvailable) {
+        const { error } = await callRpc('ingest_analytics_events', { in_events: batch });
+        if (!error) return true;
+        if (!isMissingRpc(error.code)) {
+             
+            console.warn('[analytics] ingest rpc failed:', error.code, error.message);
+            return false;
+        }
+        ingestRpcAvailable = false; // fall through to plain insert
+         
+        console.warn('[analytics] ingest rpc missing, falling back to plain insert');
+    }
+    // Plain insert (NO ignore-duplicates: with no anon SELECT policy the
+    // ON CONFLICT arbitration is rejected by RLS with 42501 — the exact
+    // bug this rewrite removes). A 23505 means every retry would collide
+    // on event_uid forever: the rows are already in the table, so the
+    // batch is settled, not poison.
+    const { error } = await dbInsert(
+        'analytics_events',
+        batch as unknown as Record<string, unknown>,
+        { returning: false },
+    );
+    if (plainInsertSettled(error)) {
+        if (error) {
+             
+            console.warn('[analytics] duplicate batch already delivered, dropping', batch.length, 'events');
+        }
+        return true;
+    }
+     
+    console.warn('[analytics] flush failed:', error?.code, error?.message);
+    return false;
+}
+
+/** Same contract as deliverEventBatch, for the learning mirror. */
+async function deliverLearningBatch(batch: LearningRow[]): Promise<boolean> {
+    if (learningIngestRpcAvailable) {
+        const { error } = await callRpc('ingest_learning_attempts', { in_attempts: batch });
+        if (!error) return true;
+        if (!isMissingRpc(error.code)) {
+             
+            console.warn('[analytics] learning ingest rpc failed:', error.code, error.message);
+            return false;
+        }
+        learningIngestRpcAvailable = false;
+         
+        console.warn('[analytics] learning ingest rpc missing, falling back to plain insert');
+    }
+    const { error } = await dbInsert(
+        'learning_attempts',
+        batch as unknown as Record<string, unknown>,
+        { returning: false },
+    );
+    if (plainInsertSettled(error)) return true;
+     
+    console.warn('[analytics] learning flush failed:', error?.code, error?.message);
+    return false;
+}
+
 async function flush(): Promise<void> {
     if (flushing) return;
     if (eventQueue.length === 0 && learningQueue.length === 0) return;
     flushing = true;
 
-    // Mirror flush of learning_attempts. Same return=minimal trick as
-    // analytics_events to dodge the SELECT-after-INSERT RLS rollback.
-    //
-    // LIOS: ignoreDuplicates makes the bulk insert tolerant of
-    // event_uid collisions, when an offline-queue retry races a
-    // partial-success flush, the duplicate rows are silently
-    // skipped instead of aborting the whole batch.
     if (learningQueue.length > 0) {
         const learningBatch = learningQueue.splice(0, FLUSH_BATCH_SIZE);
+        inFlightLearningBatch = learningBatch;
         persistLearningQueue();
         try {
-            const { error } = await dbInsert(
-                'learning_attempts',
-                learningBatch as unknown as Record<string, unknown>,
-                { returning: false, ignoreDuplicates: true },
-            );
-            if (error) {
+            const settled = await deliverLearningBatch(learningBatch);
+            if (!settled) {
                 learningQueue = [...learningBatch, ...learningQueue];
                 persistLearningQueue();
-                // eslint-disable-next-line no-console
-                console.warn('[analytics] learning flush failed:', error.code, error.message);
             }
         } catch (e) {
             learningQueue = [...learningBatch, ...learningQueue];
             persistLearningQueue();
-            // eslint-disable-next-line no-console
+             
             console.warn('[analytics] learning flush threw:', (e as Error).message);
+        } finally {
+            inFlightLearningBatch = [];
         }
     }
     if (eventQueue.length === 0) {
@@ -868,44 +1232,27 @@ async function flush(): Promise<void> {
     // Take a snapshot, anything that arrives during the network call
     // remains in eventQueue and flushes on the next tick.
     const batch = eventQueue.splice(0, FLUSH_BATCH_SIZE);
+    inFlightBatch = batch;
     persistQueue();
 
     try {
-        // dbInsert accepts a single row OR an array. PostgREST does bulk
-        // insert when the body is a JSON array.
-        //
-        // CRITICAL: returning: false sends `Prefer: return=minimal`. With
-        // the default (return=representation) PostgREST executes an
-        // implicit SELECT after the INSERT to return the new rows, and
-        // the SELECT side runs under RLS. Our SELECT policy only allows
-        // the `authenticated` role, so anon-role inserts get rolled back
-        // with 42501 even though the INSERT policy is wide open. We
-        // don't need the inserted rows back, fire-and-forget telemetry.
-        const { error } = await dbInsert(
-            'analytics_events',
-            batch as unknown as Record<string, unknown>,
-            { returning: false, ignoreDuplicates: true },
-        );
-        if (error) {
+        const settled = await deliverEventBatch(batch);
+        if (!settled) {
             // Put the batch back at the front of the queue and retry next tick
             eventQueue = [...batch, ...eventQueue];
             persistQueue();
-            // Surface the failure, analytics has been silently broken
-            // for too long. We can quiet this back down once the pipeline
-            // is stable.
-            // eslint-disable-next-line no-console
-            console.warn('[analytics] flush failed:', error.code, error.message, '| queued:', eventQueue.length);
         } else {
-            // eslint-disable-next-line no-console
+             
             console.debug('[analytics] flushed', batch.length, 'events; remaining:', eventQueue.length);
         }
     } catch (e) {
         // Network down or Supabase unreachable, keep events for retry
         eventQueue = [...batch, ...eventQueue];
         persistQueue();
-        // eslint-disable-next-line no-console
+         
         console.warn('[analytics] flush threw:', (e as Error).message, '| queued:', eventQueue.length);
     } finally {
+        inFlightBatch = [];
         flushing = false;
     }
 }
@@ -920,6 +1267,7 @@ function startFlushTimer(): void {
 function startHeartbeat(): void {
     if (heartbeatTimer) return;
     heartbeatTimer = setInterval(() => {
+        checkAttemptIdleTimeout();
         logEvent('session_heartbeat');
     }, HEARTBEAT_INTERVAL_MS);
 }
@@ -932,25 +1280,62 @@ function setupBeforeUnload(): void {
     // never crash or degrade the page, least of all while it is unloading).
     window.addEventListener('beforeunload', () => {
         safeInvoke(() => {
+            // If a child is mid-activity when the tab closes, close the open
+            // attempt with a terminal outcome FIRST so the started attempt
+            // isn't orphaned. This enqueues a mode_abandoned event that the
+            // beacon below ships in the same last-gasp batch.
+            abandonOpenAttempt('tab_close');
+
             // Use sendBeacon for reliable last-gasp delivery during page unload.
             // dbInsert won't work here because the page is being torn down.
             //
-            // LIOS: sendBeacon doesn't expose the Prefer header (the body
-            // is a Blob and the browser sets Content-Type only). We append
-            // the resolution preference as a URL hint that PostgREST also
-            // accepts on the query string, same effect, duplicate
-            // event_uids are silently ignored instead of failing the batch.
-            if (eventQueue.length === 0) return;
+            // Target the idempotent ingest RPC (20260709000001), NOT the
+            // table endpoint: the RPC dedupes on event_uid server-side, so
+            // a beacon racing an in-flight flush can't 409 the whole batch.
+            // (The old `on_conflict=event_uid` query hint did nothing
+            // without a Prefer: resolution header, which sendBeacon can't
+            // send — a duplicate row failed the entire beacon batch.)
+            //
+            // Include the batch a flush currently has in flight: if the
+            // page dies before that fetch settles, its requeue never runs.
+            // That in-flight batch is always the FRONT of the queue, which
+            // is exactly the chunk production lost (sessions whose first
+            // stored row was client_seq 21).
+            const pending = [...inFlightBatch, ...eventQueue];
+            if (pending.length === 0) return;
             const url = (import.meta.env.VITE_SUPABASE_URL as string) || '';
             const key = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || '';
             if (!url || !key) return;
-            const body = new Blob([JSON.stringify(eventQueue)], { type: 'application/json' });
-            navigator.sendBeacon(
-                `${url}/rest/v1/analytics_events?apikey=${encodeURIComponent(key)}&on_conflict=event_uid`,
+            const body = new Blob(
+                [JSON.stringify({ in_events: pending })],
+                { type: 'application/json' },
+            );
+            const accepted = navigator.sendBeacon(
+                `${url}/rest/v1/rpc/ingest_analytics_events?apikey=${encodeURIComponent(key)}`,
                 body,
             );
-            eventQueue = [];
-            persistQueue();
+            // Only clear what the browser actually accepted for delivery.
+            // The old handler cleared unconditionally, so a rejected beacon
+            // (payload too large, transport unavailable) silently destroyed
+            // the whole session's remaining telemetry.
+            if (accepted) {
+                eventQueue = [];
+                persistQueue();
+            }
+
+            // Last-gasp for the learning mirror too (was never beaconed:
+            // any learning rows still queued at unload were simply lost).
+            const pendingLearning = [...inFlightLearningBatch, ...learningQueue];
+            if (pendingLearning.length > 0) {
+                const learningAccepted = navigator.sendBeacon(
+                    `${url}/rest/v1/rpc/ingest_learning_attempts?apikey=${encodeURIComponent(key)}`,
+                    new Blob([JSON.stringify({ in_attempts: pendingLearning })], { type: 'application/json' }),
+                );
+                if (learningAccepted) {
+                    learningQueue = [];
+                    persistLearningQueue();
+                }
+            }
         }, {
             label: 'analytics.beforeunload',
             // Feature-detect sendBeacon (and the window) before touching it; an
@@ -964,9 +1349,22 @@ function setupBeforeUnload(): void {
 // CSP-violation listener (catches bugs like the May 2026 regression)
 // ════════════════════════════════════════════════════════════════════
 
+// Dedupe key → send count. A blocked third-party tag retries forever
+// (capig.stape.be alone produced 1,621 csp_violation rows in 30 days),
+// so each (directive, origin) pair is reported at most 3× per session —
+// enough to see the problem, without drowning the event table.
+const cspViolationCounts = new Map<string, number>();
+const CSP_MAX_PER_KEY = 3;
+
 function setupCSPListener(): void {
     if (typeof document === 'undefined') return;
     document.addEventListener('securitypolicyviolation', (e) => {
+        let origin = e.blockedURI;
+        try { origin = new URL(e.blockedURI).origin; } catch { /* keep raw (e.g. 'inline', 'eval') */ }
+        const key = `${e.violatedDirective}|${origin}`;
+        const n = (cspViolationCounts.get(key) ?? 0) + 1;
+        cspViolationCounts.set(key, n);
+        if (n > CSP_MAX_PER_KEY) return;
         logEvent('csp_violation', {
             meta: {
                 blocked_uri: e.blockedURI,
@@ -1053,6 +1451,10 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
         }
     }
 
+    // Reset the idle clock on real interaction (not passive telemetry) so
+    // the attempt idle-timeout only fires when the child has truly stopped.
+    if (!IDLE_PASSIVE_EVENTS.has(name)) lastActivityAt = Date.now();
+
     // Side-effect: harvest action timing for fatigue analysis.
     if (name === 'item_dropped') {
         const dur = (opts.meta?.action_duration_ms as number | undefined);
@@ -1085,9 +1487,20 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
     if (name === 'mode_completed') {
         try { recordActivityCompleted(); } catch { /* never break analytics */ }
     }
+    // Attempt lifecycle: open on mode_started so the start event itself
+    // carries the new attempt_id. A terminal event is built below while
+    // the attempt is still open (so it carries the id) and closes after.
+    if (name === 'mode_started') startAttempt();
+
     const row = buildRow(name, opts);
     eventQueue.push(row);
     persistQueue();
+
+    // Close the attempt AFTER the row is built. The learning mirrors
+    // below read attempt_id from row.meta, not the live pointer, so
+    // clearing here keeps the lifecycle in one place without dropping
+    // the id from the terminal event's mirror rows.
+    if (ATTEMPT_TERMINAL_EVENTS.has(name)) endAttempt();
 
     // ── Observability fan-out ──────────────────────────────────────────────
     // Mirror funnel-relevant events to PostHog and bump the in-memory
@@ -1200,7 +1613,10 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
                 ms_to_attempt: (m.action_duration_ms as number | undefined) ?? null,
                 expected_value: expected,
                 actual_value: actual,
-                meta: m as Record<string, unknown>,
+                meta: {
+                    ...(m as Record<string, unknown>),
+                    attempt_id: (row.meta as Record<string, unknown>).attempt_id ?? null,
+                },
 
                 // Inherit the LIOS envelope from the parent event
                 // so analytics_events.event_uid ⇔ learning_attempts.event_uid
@@ -1271,15 +1687,22 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
         // school/anonymous attribution.
         if (childProfileId) {
             const m = opts.meta ?? {};
-            const itemKey =
+            const contentKey =
                 (m.itemKey as string | undefined) ??
                 (m.item_key as string | undefined) ??
                 (m.stage_id as string | undefined) ??
                 (m.piece_id as string | undefined) ??
                 (m.word as string | undefined) ??
                 (m.letter as string | undefined) ??
-                (m.balloon_id as string | undefined) ??
-                name; // last resort: event name itself
+                (m.balloon_id as string | undefined);
+            // Last resort: the event name itself. Rows carrying an event
+            // name as item_key are ENGAGEMENT evidence, not curriculum
+            // skills — they must never feed mastery. _item_kind lets the
+            // mastery pipeline (lios_is_technical_item_key + this flag)
+            // separate them without guessing from the key string.
+            const itemKey = contentKey ?? name;
+            const itemKind: 'content' | 'technical' =
+                contentKey !== undefined ? 'content' : 'technical';
             const ctx = getOrCreateSession();
             learningQueue.push({
                 occurred_at: row.occurred_at,
@@ -1298,7 +1721,12 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
                               ?? null,
                 expected_value: null,
                 actual_value: null,
-                meta: { ...(m as Record<string, unknown>), _mirror_source: name },
+                meta: {
+                    ...(m as Record<string, unknown>),
+                    _mirror_source: name,
+                    _item_kind: itemKind,
+                    attempt_id: (row.meta as Record<string, unknown>).attempt_id ?? null,
+                },
                 event_uid: row.event_uid,
                 client_seq: row.client_seq,
                 client_ts: row.client_ts,
@@ -1467,8 +1895,8 @@ export function endSession(reason: string = 'unspecified'): void {
     logEvent('session_ended', {
         meta: {
             reason,
-            fatigue_score: fatigueScore,            // null if <8 actions
-            action_count: actionTimings.length,
+            fatigue_score: fatigueScore,            // null if <8 timed actions
+            action_count: productiveActionCount,    // ALL productive actions (was timed-only, hence always 0)
         },
         value_number: durationMs,
     });
@@ -1510,9 +1938,18 @@ export function initAnalytics(): void {
     // Restore a session from sessionStorage if one survived a navigation.
     session = loadSession();
 
-    // Restore any unsent events from a prior tab.
-    eventQueue = loadQueueFromStorage();
-    learningQueue = loadLearningQueueFromStorage();
+    // Restore any unsent events from a prior tab, MERGED with anything
+    // already logged this boot. initAnalytics runs in a React effect, so
+    // child-component events (camera, tracker, wave gate) can precede it;
+    // a plain overwrite silently destroyed those when localStorage was
+    // unavailable (in-app webviews, blocked storage). Dedupe on event_uid
+    // because a working localStorage already contains this boot's events.
+    const persisted = loadQueueFromStorage();
+    const seen = new Set(persisted.map((r) => r.event_uid));
+    eventQueue = [...persisted, ...eventQueue.filter((r) => !seen.has(r.event_uid))];
+    const persistedLearning = loadLearningQueueFromStorage();
+    const seenLearning = new Set(persistedLearning.map((r) => r.event_uid));
+    learningQueue = [...persistedLearning, ...learningQueue.filter((r) => !seenLearning.has(r.event_uid))];
 
     startFlushTimer();
     if (session) startHeartbeat();
@@ -1572,6 +2009,11 @@ export const analytics = {
     noteProductiveAction,
     clearStuckWatcher,
     setSessionContext,
+    setClassCode,
     clearClassCode,
     getDeviceId: getOrCreateDeviceId,
+    startAttempt,
+    endAttempt,
+    getCurrentAttemptId,
+    abandonOpenAttempt,
 };

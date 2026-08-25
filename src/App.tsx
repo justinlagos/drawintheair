@@ -29,6 +29,7 @@ import { BuildingMode } from './features/modes/building/BuildingMode';
 import { buildingLogic } from './features/modes/building/buildingLogic';
 import { WaveToWake } from './features/onboarding/WaveToWake';
 import { WarmupTutorial } from './features/onboarding/WarmupTutorial';
+import { AmbientWarmup } from './features/onboarding/AmbientWarmup';
 import { InAppBrowserNotice } from './features/onboarding/InAppBrowserNotice';
 import { shouldShowInAppNotice } from './features/onboarding/inAppDetection';
 import { AudiencePrompt } from './features/onboarding/AudiencePrompt';
@@ -47,6 +48,11 @@ import { GameCompanion } from './features/kid2/GameCompanion';
 import { ChildProfileSelector } from './features/parent/ChildProfileSelector';
 import { LearnerGreeting } from './features/parent/LearnerGreeting';
 import { SaveProgressNudge } from './features/parent/SaveProgressNudge';
+import { usePlayControls } from './features/parent/usePlayControls';
+import { PlayBlockedNotice } from './features/parent/PlayBlockedNotice';
+import type { PlayBlockReason } from './features/parent/playControlsGate';
+import { ActiveLearnerChip } from './features/parent/ActiveLearnerChip';
+import { touchSelection } from './features/parent/activeLearner';
 import { AdultGate } from './features/safety/AdultGate';
 import { MagicCursor } from './components/MagicCursor';
 import { ModeBackground } from './components/ModeBackground';
@@ -63,7 +69,7 @@ import { type GameMode as FeatureGameMode } from './core/featureFlags';
 import { interactionStateManager } from './core/InteractionState';
 import { getTrackingFlag, isDebugModeEnabled } from './core/flags/TrackingFlags';
 import type { FilterProfileMode } from './core/filters/OneEuroFilter';
-import { logEvent, hasActiveSession, endSession } from './lib/analytics';
+import { logEvent, hasActiveSession, endSession, getCurrentAttemptId } from './lib/analytics';
 import './App.css';
 import { startCountdown } from './core/countdownService';
 
@@ -118,6 +124,15 @@ function App() {
   const [happinessOpen, setHappinessOpen] = useState(false);
   const [inAppDismissed, setInAppDismissed] = useState(false);
   const [audienceOpen, setAudienceOpen] = useState(false);
+
+  // ── Parental controls (paused / daily limit / sound) ───────────────
+  // Reads the active learner's controls and applies them to the live
+  // session. For anonymous /play the gate is always unrestricted.
+  const playControls = usePlayControls();
+  const [blockedNotice, setBlockedNotice] = useState<PlayBlockReason>(null);
+  // Latest gate held in a ref so handleModeSelect stays referentially stable.
+  const gateRef = useRef(playControls.gate);
+  useEffect(() => { gateRef.current = playControls.gate; }, [playControls.gate]);
 
   // Sprint 3: record the visit (returning-device detection) and infer the
   // home/school audience from acquisition signals — once per app load.
@@ -194,14 +209,29 @@ function App() {
   }, []);
 
   const handleWake = useCallback(() => {
-    // First-time devices get the optional balloon warm-up (learn-by-doing,
-    // guaranteed first success = activation). Returning devices skip it.
-    if (!warmupDone()) {
-      setAppState('tutorial');
-      return;
-    }
+    // 2026-07-02 product decision: the "Quick warm-up?" offer interstitial
+    // is removed from the entry path — the child goes straight to the menu
+    // after waving. Its replacement is the AMBIENT warm-up (three poppable
+    // balloons drifting over the menu, flag: ambientWarmupV1) rendered in
+    // the menu block below — guaranteed first success without a modal.
     goToMenu();
   }, [goToMenu]);
+
+  // Ambient warm-up visibility: first-time devices only, and only until the
+  // child has a first success from ANY source (balloons or a real activity).
+  const [ambientWarmupOpen, setAmbientWarmupOpen] = useState(() => !warmupDone());
+  const handleAmbientWarmupComplete = useCallback(() => {
+    markWarmupDone();
+    setAmbientWarmupOpen(false);
+  }, []);
+  useEffect(() => {
+    // A completed real activity IS the first success — the balloons have
+    // nothing left to guarantee, so they never come back.
+    if (activityCount > 0 && ambientWarmupOpen) {
+      markWarmupDone();
+      setAmbientWarmupOpen(false);
+    }
+  }, [activityCount, ambientWarmupOpen]);
 
   const handleTutorialComplete = useCallback(() => {
     markWarmupDone();
@@ -239,6 +269,16 @@ function App() {
   }, [handleBackToLanding]);
 
   const handleModeSelect = useCallback((mode: GameMode) => {
+    // Parental controls: block activity entry when the grown-up has paused
+    // play or the learner has reached today's limit. Shows a kid-safe notice
+    // instead of starting the activity. (No-op for anonymous /play.)
+    if (gateRef.current.blocked) {
+      setBlockedNotice(gateRef.current.reason);
+      return;
+    }
+    // Active play refreshes the learner-selection inactivity clock so it does
+    // not expire mid-session.
+    touchSelection();
     // Detect mode-switching (kid bounced back to the menu and picked a
     // different mode without ever closing the session). This pattern is
     // a strong "what's hooking them" signal, far more useful than just
@@ -294,16 +334,20 @@ function App() {
   const handleExitToMenu = useCallback(() => {
     setAppState('menu');
     drawingEngine.clear();
-    // Fire events for pilot analytics. We treat every menu-button exit
-    // as `mode_abandoned` . the per-stage `mode_completed` events from
-    // inside the game logic are the source of truth for "actually
-    // finished a stage". Using mode_completed here was a lie that made
-    // every exit look like a win.
+    // Fire events for pilot analytics. A menu-button exit is only an
+    // abandonment when the current attempt is still OPEN (no completion
+    // yet). mode_completed closes the attempt (analytics.ts terminal
+    // handler), so exiting after finishing a letter/painting/round must
+    // not be recorded as mode_abandoned — that was the inverse of the
+    // old lie: it made every win that ended at the menu look like a
+    // quit and inflated abandonment in the executive dashboard.
     if (hasActiveSession()) {
-      logEvent('mode_abandoned', {
-        game_mode: gameMode,
-        meta: { reason: 'exit_to_menu' },
-      });
+      if (getCurrentAttemptId()) {
+        logEvent('mode_abandoned', {
+          game_mode: gameMode,
+          meta: { reason: 'exit_to_menu' },
+        });
+      }
       logEvent('menu_opened');
     }
   }, [gameMode]);
@@ -322,6 +366,32 @@ function App() {
     // After calibration, go to menu to pick another mode
     setAppState('menu');
   }, []);
+
+  // Parental controls: accumulate today's active play time (device-local)
+  // while an activity is running, so the daily limit reflects real play.
+  const { addActiveSeconds, refresh: refreshControls } = playControls;
+  useEffect(() => {
+    if (appState !== 'game') return;
+    const id = setInterval(() => addActiveSeconds(5), 5000);
+    return () => clearInterval(id);
+  }, [appState, addActiveSeconds]);
+
+  // Re-read controls whenever the menu opens so a grown-up's changes (pause,
+  // sound, limit) take effect on the next session without a stale-state reload.
+  useEffect(() => {
+    if (appState === 'menu') refreshControls();
+  }, [appState, refreshControls]);
+
+  // If the daily limit is reached mid-activity, end it gently and show the
+  // kid-safe notice rather than letting play continue past the limit.
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (appState === 'game' && playControls.gate.blocked && playControls.gate.reason === 'daily-limit') {
+      setAppState('menu');
+      setBlockedNotice('daily-limit');
+    }
+  }, [appState, playControls.gate]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const [wordSearchSettingsOpen, setWordSearchSettingsOpen] = useState(false);
   const handleWordSearchSettings = useCallback(() => {
@@ -413,7 +483,7 @@ function App() {
       <PerfOverlay />
       <MessageCardOverlay />
       <CountdownOverlay />
-      <TrackingLayer onFrame={activeLogic} suppressNotifications={appState === 'onboarding' || appState === 'tutorial'}>
+      <TrackingLayer onFrame={activeLogic} suppressNotifications={appState === 'onboarding' || appState === 'tutorial'} cameraReassurance={playControls.gate.cameraReassurance}>
         {(frameRef, diagnostics) => {
           return (
             <>
@@ -481,6 +551,15 @@ function App() {
                 />
               )}
 
+              {/* Parental-controls block (pause / daily limit). Kid-safe,
+                   full-screen, dismisses back to the menu. */}
+              {blockedNotice && (
+                <PlayBlockedNotice
+                  reason={blockedNotice}
+                  onClose={() => setBlockedNotice(null)}
+                />
+              )}
+
               {/* State: Menu */}
               {appState === 'menu' && (
                 <>
@@ -492,6 +571,9 @@ function App() {
                   {/* Warm greeting by nickname for parent-linked learners.
                        Anonymous /play visitors never see it. */}
                   <LearnerGreeting />
+                  {/* Always-visible "Playing as X · Switch learner" so progress
+                       attribution is confirmed every session, not just the first. */}
+                  <ActiveLearnerChip />
                   {/* "Save this progress?" appears once for anonymous /play
                        visitors after their first successful round. */}
                   <SaveProgressNudge />
@@ -500,6 +582,17 @@ function App() {
                     onBack={handleExitIntent}
                     trackingResults={frameRef.current.results}
                   />
+                  {/* Ambient warm-up: three poppable balloons over the menu
+                       for first-time devices. Non-blocking (container is
+                       pointer-events:none), zero reading. Popping all three
+                       fires the activation events that trigger
+                       SaveProgressNudge. */}
+                  {flags.ambientWarmupV1 && ambientWarmupOpen && (
+                    <AmbientWarmup
+                      frameRef={frameRef}
+                      onComplete={handleAmbientWarmupComplete}
+                    />
+                  )}
                 </>
               )}
 

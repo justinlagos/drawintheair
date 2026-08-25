@@ -225,6 +225,15 @@ export const MagicCanvasMode = ({ onExit }: Props = {}) => {
     };
     const doFinish = () => {
         logEvent('paint_creation_finished', { game_mode: 'free', meta: { stroke_count: snap?.strokeCount, colour_count: snap?.coloursUsed } });
+        // Free Paint is open-ended, so pressing Done IS the completion.
+        // Without this, Free Paint sessions could never register in the
+        // activation funnel (mode_completed is the unit it counts), which
+        // structurally under-reported every child who chose Free Paint.
+        logEvent('mode_completed', {
+            game_mode: 'free',
+            stage_id: 'creation-finished',
+            meta: { stroke_count: snap?.strokeCount, colour_count: snap?.coloursUsed },
+        });
         setShowCelebration(true);
         setPhase('done');
     };

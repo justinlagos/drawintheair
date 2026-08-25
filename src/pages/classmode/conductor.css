@@ -623,12 +623,17 @@
 }
 @keyframes cd-spin { to { transform: rotate(360deg); } }
 
-/* Persistent name pip during gameplay (top-right) */
+/* Persistent name pip during gameplay.
+   Top-LEFT (P0 2026-07-09): it previously sat top-right where the round
+   timer (ClassModeGameWrapper, fixed top:12 right:16, z-500) rendered
+   directly on top of it. The Menu button that used to occupy the top-left
+   corner is hidden in class mode (.cd-locked below), so the pip takes
+   that slot and the two HUD elements can never collide. */
 .cd-student-pip {
   position: fixed;
   top: 16px;
-  right: 16px;
-  z-index: 100;
+  left: 16px;
+  z-index: 950;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -642,6 +647,35 @@
   color: var(--cd-ink);
   box-shadow: 0 4px 14px rgba(108, 63, 164, 0.10);
   pointer-events: none;
+}
+
+/* ── Locked class play (P0 2026-07-09) ──────────────────────────────
+   During a teacher-led activity the child must have NO route out of the
+   classroom. The shared game components render a "← Menu" back button
+   (GameTopBar and friends, aria-label="Back to menu"); inside the locked
+   shell we remove it entirely. The teacher is the only exit. */
+.cd-locked [aria-label="Back to menu"],
+.cd-locked [aria-label="Back to Menu"],
+.cd-locked [aria-label="Exit to menu"] {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* Teacher-paused overlay. Sits ON TOP of the still-mounted game (the game
+   is not unmounted on pause any more — unmounting reset the round timer
+   and re-acquired the camera on every resume). Opaque enough to hide the
+   play field; pointer events stop here; frame logic is a no-op while
+   paused so nothing can be scored behind it. Below the name pip (z-950)
+   so the teacher can still identify the screen. */
+.cd-pause-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(222, 236, 255, 0.97) 0%, rgba(244, 239, 255, 0.97) 100%);
+  backdrop-filter: blur(6px);
 }
 
 /* Join card refinements (overrides cm-join-card spacing) */
@@ -661,3 +695,10 @@
   cursor: pointer;
 }
 .cm-btn-danger-outline:hover { background: var(--cd-bad-bg); }
+
+/* ── P3b: picture-token assignment + learner readiness ─────────── */
+.cd-panel-h-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}

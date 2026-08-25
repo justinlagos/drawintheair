@@ -19,7 +19,7 @@ const EDUCATION_DATA: Record<EducationSlug, {
     'for-homeschool': {
         meta: {
             title: 'Homeschool Activities, Gesture Learning for Kids at Home | Draw in the Air',
-            description: 'Perfect for homeschool families! Draw in the Air offers no-download gesture activities for letters, numbers, and creative drawing. Free, safe, and screen-smart for ages 3–8.',
+            description: 'Perfect for homeschool families! Draw in the Air offers no-download gesture activities for letters, numbers, and creative drawing. Free, safe, and screen-smart for ages 3–7.',
             keywords: ['homeschool activities preschool', 'homeschool learning games free', 'home education activities kids', 'preschool homeschool curriculum', 'interactive homeschool app'],
             canonical: '/for-homeschool'
         },

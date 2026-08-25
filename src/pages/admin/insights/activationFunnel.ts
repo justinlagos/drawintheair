@@ -15,7 +15,21 @@ export interface ActivationMetrics {
     cam_granted: number;
     tracker_ok: number;
     mode_starts?: number;
+    /** Distinct SESSIONS with at least one `mode_started`. Preferred for
+     *  the funnel ladder: `mode_starts` is a raw EVENT count (a child
+     *  replaying fires several), which made the "Activity started" bar
+     *  exceed "Camera granted" (8 > 3). Returned by
+     *  dashboard_executive_summary since 20260703000001. */
+    mode_start_sessions?: number;
+    /** Count of `mode_completed` EVENTS (fires per stage/letter, so it
+     *  can exceed the number of sessions). Use only for raw volume — NOT
+     *  as an activation numerator. */
     mode_completions: number;
+    /** Distinct SESSIONS with at least one `mode_completed` (each session
+     *  counted once). This is the honest activation numerator; it can
+     *  never exceed `sessions_started`. Returned by
+     *  dashboard_executive_summary.curr_metrics.sessions_completed. */
+    sessions_completed?: number;
 }
 
 export interface ActivationStep {
@@ -38,8 +52,18 @@ export function buildActivationFunnel(m: ActivationMetrics): ActivationStep[] {
         { label: 'Sessions started', n: m.sessions_started },
         { label: 'Camera granted', n: m.cam_granted },
         { label: 'Tracker ready', n: m.tracker_ok },
-        { label: 'Activity started', n: m.mode_starts ?? m.mode_completions },
-        { label: '★ First activity completed', n: m.mode_completions, isActivation: true },
+        // Distinct sessions, falling back to the raw event count for
+        // pre-20260703 RPC payloads. Every rung of the ladder is now a
+        // session count, so a lower step can never exceed a higher one.
+        { label: 'Activity started', n: m.mode_start_sessions ?? m.mode_starts ?? m.mode_completions },
+        {
+            label: '★ First activity completed',
+            // Distinct activated sessions, so the activation step can never
+            // exceed the top of the funnel (was mode_completions = events,
+            // which produced the impossible 106% / 105.7%).
+            n: m.sessions_completed ?? m.mode_completions,
+            isActivation: true,
+        },
     ];
     const top = raw[0].n;
     return raw.map((s, i) => ({
@@ -51,9 +75,19 @@ export function buildActivationFunnel(m: ActivationMetrics): ActivationStep[] {
     }));
 }
 
-/** Activation rate = first completions ÷ sessions started, as a %. */
+/**
+ * Activation rate = distinct sessions that completed their first activity
+ * ÷ distinct sessions started, as a %.
+ *
+ * Uses `sessions_completed` (distinct sessions), NOT `mode_completions`
+ * (event count) — the latter fires per stage/letter and produced the
+ * impossible 105.7%. Each session counts once, so the rate is bounded
+ * to [0, 100]; the clamp is a defensive guard, not a fudge (a child
+ * completing five activities is still one activated session).
+ */
 export function activationRate(m: ActivationMetrics): number {
-    return pct(m.mode_completions, m.sessions_started);
+    const activated = m.sessions_completed ?? m.mode_completions;
+    return Math.min(100, pct(activated, m.sessions_started));
 }
 
 /** The single biggest drop in the funnel — where to focus next. */

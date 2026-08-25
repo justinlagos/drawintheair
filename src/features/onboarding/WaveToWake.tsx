@@ -81,6 +81,12 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, trackerReady
     // Activation-funnel guard: fire wave_first_hand_seen exactly once per
     // mount, not every frame the hand stays in view.
     const hasLoggedFirstHand = useRef<boolean>(false);
+    // Same guard for wave_completed: the wake effect re-runs for every
+    // extra wave past the threshold during the 850ms celebration beat
+    // (waveCount 4→5→6…), which logged up to 5 duplicate wave_completed
+    // events per session (seen in prod 2026-07-04) and inflated the
+    // funnel's event counts.
+    const hasLoggedWake = useRef<boolean>(false);
     // Capture the moment trackerReady first flips true so we can split
     // "slow tracker init" from "out-of-frame user", surfaced by the
     // 2026-05-11 audit (8 sessions granted camera but never saw a
@@ -185,11 +191,14 @@ export const WaveToWake = ({ onWake, trackingResults, cameraStatus, trackerReady
     // beat so the win lands before we transition (reference State 3).
     useEffect(() => {
         if (waveCount >= wakeThreshold) {
-            const timeToWave = Date.now() - waveStartTime.current;
-            logEvent('wave_completed', {
-                value_number: timeToWave,
-                meta: { wave_count: waveCount, threshold: wakeThreshold },
-            });
+            if (!hasLoggedWake.current) {
+                hasLoggedWake.current = true;
+                const timeToWave = Date.now() - waveStartTime.current;
+                logEvent('wave_completed', {
+                    value_number: timeToWave,
+                    meta: { wave_count: waveCount, threshold: wakeThreshold },
+                });
+            }
             const t = setTimeout(onWake, 850);
             return () => clearTimeout(t);
         }

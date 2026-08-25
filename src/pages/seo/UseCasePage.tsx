@@ -52,7 +52,7 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
     description: [
       'Draw in the Air brings physical movement into digital learning. Children stand or sit in front of their computer\'s camera, raise a finger, and interact with on-screen activities through natural hand gestures. The platform uses browser-based computer vision to track hand position in real time, no special hardware required.',
       'Unlike passive screen time, every interaction requires deliberate physical movement: extending an arm to trace a letter path, reaching across the camera\'s field of view to sort objects into categories, or pointing at floating bubbles to build hand-eye coordination.',
-      'Nine activity modes run directly in Chrome with no installation, no accounts, and no data collection. Works immediately on any Chromebook, school laptop, or desktop with a webcam.',
+      'Nine activity modes run directly in Chrome with no installation and no child accounts or logins. The camera is processed on the device and is never uploaded or stored. Works immediately on any Chromebook, school laptop, or desktop with a webcam.',
     ],
     educationalExplanation: [
       'Movement-based learning activates multiple cognitive pathways simultaneously. When a child physically traces the letter A in the air while seeing the letter form on screen, they engage proprioceptive memory, visual processing, and motor planning in a single action. Research in embodied cognition consistently shows that learning tied to physical action produces stronger recall than passive observation.',
@@ -76,7 +76,7 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
     ],
     faq: [
       { q: 'Does it work on low-spec Chromebooks?', a: 'Yes. The platform is optimised for the ARM and Intel Celeron processors common in education-grade Chromebooks like the Lenovo 100e and HP Chromebook 11. Adaptive frame rates maintain smooth interaction on constrained hardware.' },
-      { q: 'Do students need accounts or logins?', a: 'No. There are no accounts, no email addresses, and no student data collection of any kind. Open the browser and start immediately.' },
+      { q: 'Do students need accounts or logins?', a: 'No. Students never create accounts or log in, and the camera is processed on the device and never uploaded or stored. Open the browser and start immediately.' },
       { q: 'Can I use it with the whole class at once?', a: 'Yes, project it on an interactive whiteboard for one student to demonstrate while others watch, or set up individual stations for simultaneous independent use.' },
       { q: 'Is this suitable for SEN learners?', a: 'Gesture interaction uses gross motor skills (extending an arm, pointing a finger) that children develop earlier than fine motor precision. This makes it more accessible for children who struggle with mouse or touchscreen control.' },
     ],
@@ -98,7 +98,7 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
   'gesture-learning': {
     meta: {
       title: 'Gesture-Based Learning Tools for Early Education, Free | Draw in the Air',
-      description: 'Gesture-controlled educational activities for children ages 3–8. Trace letters, sort objects, and play learning games using hand movements detected by webcam. No download, no accounts.',
+      description: 'Gesture-controlled educational activities for children ages 3–7. Trace letters, sort objects, and play learning games using hand movements detected by webcam. No download, no accounts.',
       canonical: '/gesture-learning',
       keywords: [
         'gesture-based learning', 'gesture learning tools',
@@ -138,7 +138,7 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
     ],
     faq: [
       { q: 'How accurate is the hand tracking?', a: 'The platform uses Google MediaPipe, a production-grade computer vision library that detects 21 hand landmarks at 30 frames per second. It is highly accurate under normal lighting conditions and adapts to different skin tones and hand sizes.' },
-      { q: 'What age is gesture learning most effective for?', a: 'The sweet spot is ages 3–8. Younger children benefit from gross motor engagement before pencil skills; older children benefit from the novelty and the STEM exposure to computer vision technology.' },
+      { q: 'What age is gesture learning most effective for?', a: 'The sweet spot is ages 3–7. Younger children benefit from gross motor engagement before pencil skills; older children benefit from the novelty and the STEM exposure to computer vision technology.' },
       { q: 'Does the child need to be right-handed?', a: 'The tracking works with either hand and detects whichever hand is most prominent in the camera view. Left-handed children use it with no adjustment required.' },
       { q: 'What happens if the lighting is poor?', a: 'The system will show a reduced hand tracking confidence indicator. Standard classroom or home lighting works well. Avoid positioning directly in front of a window, as backlighting reduces detection accuracy.' },
     ],
@@ -175,7 +175,7 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
     heroSub: 'Every activity runs in Chrome. No installation, no IT requests, no admin permissions. Open the browser and students are learning within 60 seconds.',
     description: [
       'Chromebook classrooms face a unique constraint: teachers cannot install arbitrary software, and many native apps require IT admin approval that takes weeks. Draw in the Air eliminates this barrier entirely. Every activity runs directly in the Chrome browser, using only the built-in webcam that every Chromebook already has.',
-      'A teacher can open drawintheair.com, bookmark it, and students can begin immediately. There are no accounts, no student data collection, no COPPA compliance concerns, and no IT department involvement required. The platform is optimised for the display resolutions and processing capabilities of classroom Chromebooks, including lower-spec models.',
+      'A teacher can open drawintheair.com, bookmark it, and students can begin immediately. Students do not create accounts or log in, the camera stays on the device, and no IT department involvement is required. The platform is optimised for the display resolutions and processing capabilities of classroom Chromebooks, including lower-spec models.',
       'Activities span the primary curriculum: letter tracing for phonics and handwriting, number formation for early maths, shape recognition for geometry foundations, sorting for categorisation skills, and creative drawing for expressive arts. Each activity requires students to physically move, raising their hand and tracing gestures in front of the webcam.',
     ],
     educationalExplanation: [
@@ -222,7 +222,7 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
   'homeschool-movement-learning': {
     meta: {
       title: 'Homeschool Movement Learning Games, Free Active Education | Draw in the Air',
-      description: 'Active, movement-based learning activities for homeschool families. Children trace letters, numbers, and shapes using hand gestures. Free, browser-based, no downloads. Ages 3–8.',
+      description: 'Active, movement-based learning activities for homeschool families. Children trace letters, numbers, and shapes using hand gestures. Free, browser-based, no downloads. Ages 3–7.',
       canonical: '/homeschool-movement-learning',
       keywords: [
         'homeschool movement activities', 'homeschool learning games free',
@@ -284,7 +284,7 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
   'hand-eye-coordination-activities': {
     meta: {
       title: 'Hand-Eye Coordination Activities for Children, Free Games | Draw in the Air',
-      description: 'Fun hand-eye coordination activities for children ages 3–8. Trace letters, pop bubbles, and sort objects using hand gestures. Develops visual-motor skills through play. Free, browser-based.',
+      description: 'Fun hand-eye coordination activities for children ages 3–7. Trace letters, pop bubbles, and sort objects using hand gestures. Develops visual-motor skills through play. Free, browser-based.',
       canonical: '/hand-eye-coordination-activities',
       keywords: [
         'hand-eye coordination activities for kids', 'hand-eye coordination games children',
