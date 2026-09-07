@@ -43,11 +43,17 @@ const supabaseUrl = env.VITE_SUPABASE_URL || env.SUPABASE_URL || '';
 const supabaseRef = refFromUrl(supabaseUrl);
 
 // ---- Rule 1: Preview/Staging must NOT point at the production Supabase -----
+// This script now runs inside every Vercel build (via `prebuild`). Until a
+// non-production Supabase project exists for previews, this rule WARNS on
+// preview so PR previews keep building; set ENV_SAFETY_STRICT_PREVIEW=1 in the
+// Vercel Preview environment to make it fail (recommended once previews have
+// their own Supabase project).
 if (isPreviewOrStaging && supabaseRef && supabaseRef === PRODUCTION_SUPABASE_REF) {
-  errors.push(
+  const msg =
     `Environment "${environment}" is pointing at the PRODUCTION Supabase project (${PRODUCTION_SUPABASE_REF}). ` +
-      `Preview/Staging must use a non-production Supabase project.`
-  );
+    `Preview/Staging must use a non-production Supabase project.`;
+  if (env.ENV_SAFETY_STRICT_PREVIEW === '1') errors.push(msg);
+  else warnings.push(`${msg} (warning only — set ENV_SAFETY_STRICT_PREVIEW=1 to enforce)`);
 }
 
 // ---- Rule 2: No service-role / privileged secret in a public (VITE_) var ---
@@ -74,13 +80,41 @@ for (const [name, value] of Object.entries(env)) {
   }
 }
 
-// ---- Rule 3: Required public vars present (warn unless production) ---------
+// ---- Rule 3: Required public vars present (FAIL on production, warn elsewhere)
+// The client reads these in src/lib/supabase.ts and src/lib/analytics.ts and
+// silently falls back to '' — a production bundle built without them ships a
+// site where Class Mode, auth and analytics are dead. This script runs from
+// `prebuild`, so a production build on Vercel cannot succeed without them.
+// Local dev / CI / preview only warn so `npm run build` still works offline.
 const REQUIRED_PUBLIC = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'];
 for (const key of REQUIRED_PUBLIC) {
   if (!env[key]) {
     const msg = `Required environment variable "${key}" is missing.`;
     if (isProductionEnv) errors.push(msg);
     else warnings.push(msg);
+  }
+}
+if (isProductionEnv && supabaseUrl && !supabaseRef) {
+  errors.push(`VITE_SUPABASE_URL is set but is not a https://<ref>.supabase.co URL.`);
+}
+
+// ---- Rule 3b: Production builds must be Git builds of `master` -------------
+// Deploy contract: production = master on the Vercel project, deployed only by
+// merge. A `vercel --prod` from a laptop or a production build of another
+// branch fails here. (A dashboard "Promote" of an existing deployment does not
+// rebuild, so it cannot be caught by a build-time check — see
+// docs/audits/evidence/release/WP1B.2/reproducible-builds.md.)
+const PRODUCTION_BRANCH = 'master';
+const gitRef = env.VERCEL_GIT_COMMIT_REF || '';
+if (vercelEnv === 'production') {
+  if (!gitRef) {
+    errors.push(
+      `Production build has no VERCEL_GIT_COMMIT_REF — production must be built by Vercel from Git (merge to ${PRODUCTION_BRANCH}), not from a CLI upload.`
+    );
+  } else if (gitRef !== PRODUCTION_BRANCH) {
+    errors.push(
+      `Production build is from branch "${gitRef}"; only "${PRODUCTION_BRANCH}" may deploy to production.`
+    );
   }
 }
 
