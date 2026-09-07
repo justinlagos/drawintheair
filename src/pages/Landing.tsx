@@ -262,8 +262,8 @@ const HOW_STEPS = [
 ];
 
 const HOME_FAQ = [
-  { q: "How is my child's privacy protected?", a: 'No video, no audio, and no images are ever stored or sent anywhere. The camera frame is processed entirely inside the browser tab and discarded each frame. The product runs without a server connection once loaded.' },
-  { q: 'What ages is it designed for?',         a: 'The interaction is built for children aged 3 to 7. Younger children play the warm-up and free-paint modes; from age 5 onward, tracing, spelling, and maths activities open up. Adult supervision is recommended for the first session.' },
+  { q: "How is my child's privacy protected?", a: 'No video, no audio, and no images are ever stored or sent anywhere. The camera frame is processed entirely inside the browser tab and discarded each frame. An internet connection is needed while playing so progress and class sessions can sync.' },
+  { q: 'What ages is it designed for?',         a: 'The interaction is built for children aged 3 to 7. Bubble Pop, Free Paint and Tracing are open from age 3. Spelling Stars and Word Search are pitched at 5 to 7, and Balloon Math at 4 to 7. Adult supervision is recommended for the first session.' },
   { q: 'Does it really not need special hardware?', a: 'Just a modern browser (Chrome, Edge, Safari 15+) and a webcam. Most laptops from the last five years work. No phone, no tablet, no controller, no glove.' },
   { q: 'How is this different from a touchscreen?', a: 'A touchscreen needs only a wrist movement. Draw in the Air rewards whole-arm movement, how 3 to 7 year-olds naturally develop fine motor control. It works best on a laptop or Chromebook with a webcam; tablets can work too, but a laptop gives the most room to move.' },
   { q: 'Is it free for parents?', a: 'You can start for free — core activities are always free to play. A Family plan (with a 7-day free trial) unlocks the full activity library, progress reports, and parental controls. Schools join a free pilot programme; we set the first classroom session up with you personally.' },
@@ -568,7 +568,7 @@ export const Landing: React.FC = () => {
                     'EYFS and early-literacy aligned',
                     'No registration for free activities',
                     'Works on any laptop or tablet with a camera',
-                    'Children stay safe, no data collected',
+                    'No video stored, no child accounts',
                   ].map((b) => (
                     <div className="bullet" key={b}>
                       <span className="check">{'✓'}</span>

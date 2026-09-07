@@ -20,7 +20,7 @@ const VALUE_PROPS: { title: string; desc: string; color: string; bg: string; ico
   { title: 'Whole-school deployment', desc: 'One license covers every classroom, no per-student counting.', color: LAVENDER, bg: '#F4EFFF', icon: '🏫' },
   { title: 'No IT setup', desc: 'Browser-based on any device with a camera. No installs.', color: SKY, bg: '#EEF6FF', icon: '⚡' },
   { title: 'EYFS & KS1 aligned', desc: 'Activities map to Physical Development, Literacy and Maths.', color: MINT, bg: '#ECFBF3', icon: '🎯' },
-  { title: 'Privacy by design', desc: 'No student accounts, no recordings, no tracking. Ever.', color: PEACH, bg: '#FFF1EB', icon: '🔒' },
+  { title: 'Privacy by design', desc: 'No student accounts, no recordings. Class lists hold a first name or nickname only.', color: PEACH, bg: '#FFF1EB', icon: '🔒' },
 ];
 
 export const Schools: React.FC = () => {

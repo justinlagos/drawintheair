@@ -100,7 +100,7 @@ export const PAGE_META = {
   },
   sortAndPlace: {
     title: 'Sort and Place, Gesture Sorting Game for Kids | Draw in the Air',
-    description: 'Sort and place objects by pointing in the air! A hands-free sorting game that develops categorisation and cognitive skills. Perfect for ages 3–7. Free, browser-based, no download.',
+    description: 'Sort and place objects by pointing in the air! A hands-free sorting game that develops categorisation and cognitive skills. Perfect for ages 3–7. Browser-based, no download. Included in the Family plan.',
     keywords: ['sorting game for kids online', 'gesture sorting game', 'preschool categorising game', 'kids hand tracking sorting', 'educational sorting game free'],
     canonical: '/activities/sort-and-place',
   },

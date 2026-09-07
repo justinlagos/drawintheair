@@ -265,6 +265,9 @@ export function EyfsView() {
 }
 
 /* ════════════════════════════════ RESOURCES ════════════════════════════════ */
+// 01-teacher-quick-start-guide.pdf and 05-parent-communication-pack.pdf were
+// removed pending regeneration (age range and join-flow copy were out of date;
+// see docs/audits/evidence/release/TRACK-P).
 const GUIDES: { file: string; emoji: string; title: string; desc: string; audience: string; group: string }[] = [
   { file: '00-teacher-guide.pdf', emoji: '🚀', title: 'Teacher Guide', desc: 'Everything for your first class: the four steps, what your children are learning, the activities, a first-lesson plan, and our privacy promise.', audience: 'All teachers', group: 'Getting started' },
   { file: '04-chromebook-classroom-setup.pdf', emoji: '💻', title: 'Chromebook Classroom Setup', desc: 'Step-by-step setup for school Chromebook carts, labs, and managed devices.', audience: 'Tech coordinators', group: 'Getting started' },
@@ -275,7 +278,6 @@ const GUIDES: { file: string; emoji: string; title: string; desc: string; audien
   { file: '03-fine-motor-skills-integration.pdf', emoji: '✋', title: 'Fine Motor Skills Integration', desc: 'The science behind gesture learning and how it connects to pre-writing development.', audience: 'EYFS / Reception', group: 'Pedagogy & inclusion' },
   { file: '07-send-inclusion-support-guide.pdf', emoji: '💜', title: 'SEND & Inclusion Support Guide', desc: 'Specific adaptations for ASC, dyspraxia, ADHD, and EAL learners.', audience: 'SENCOs / TAs', group: 'Pedagogy & inclusion' },
   { file: '06-progress-tracking-sheet.pdf', emoji: '📊', title: 'Progress & Observation Tracker', desc: 'Observation prompts and an A–Z letter mastery grid for learning-journey evidence.', audience: 'All teachers', group: 'Pedagogy & inclusion' },
-  { file: '05-parent-communication-pack.pdf', emoji: '📨', title: 'Parent Communication Pack', desc: 'Ready-to-send letters, ClassDojo messages, and a parent FAQ · zero writing required.', audience: 'Class teachers', group: 'Pedagogy & inclusion' },
 ];
 const GROUPS = ['Getting started', 'Planning & curriculum', 'Pedagogy & inclusion'];
 const LETTER_EMOJI: Record<string, string> = { A: '🍎', B: '⚽', C: '🐱', D: '🐶', E: '🐘', F: '🐠', G: '🦒', H: '🎩', I: '🍦', J: '🤹', K: '🪁', L: '🦁', M: '🌙', N: '🪺', O: '🐙', P: '🐧', Q: '👑', R: '🌈', S: '☀️', T: '🌳', U: '☂️', V: '🎻', W: '🍉', X: '🎶', Y: '🪀', Z: '🦓' };
@@ -296,11 +298,9 @@ export function ResourcesView() {
         <div><h1 className="tdash-greet" style={{ fontSize: '2.4rem' }}>Resources</h1><p className="tdash-sub">Every teacher PDF on the platform · how-to guides, planning, inclusion, and printables. All free to download.</p></div>
       </div>
 
-      {/* Download-everything banner */}
-      <div className="tdash-cta" style={{ marginTop: 0, marginBottom: 22 }}>
-        <div><h2>The complete pilot pack</h2><p>Every guide, lesson plan and printable in one PDF · ideal to print or share with your team.</p></div>
-        <a className="tdash-btn" href="/pilot-pack.pdf" download="Draw-in-the-Air-Pilot-Pack.pdf">⬇ Download all</a>
-      </div>
+      {/* Pilot pack PDF removed pending regeneration: the current file carries
+          pricing tiers, feature claims and testimonials that do not match the
+          shipped product (see docs/audits/evidence/release/TRACK-P). */}
 
       {/* Set up your class in four steps — mirrors the pilot welcome email so the app and email say the same thing */}
       <section className="tdash-panel" style={{ marginBottom: 28 }}>

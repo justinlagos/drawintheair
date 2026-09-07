@@ -44,7 +44,7 @@ Two apps in one repo: the kid-facing Vite app (root) and the teacher platform
 
 - Bugs have shipped that only appeared in the production build (Vercel strict-null
   tsc errors, vendor-chunk TDZ). That's why check-task.sh includes the build — don't skip it.
-- `lint` is green (0 errors) but ratcheted at `--max-warnings 162`. Don't add
+- `lint` is green (0 errors) but ratcheted at `--max-warnings 160`. Don't add
   warnings; if you remove some, lower the number in `package.json` in the same PR.
 - Rendering: no React state updates per frame — use refs. Camera coordinates are unmirrored.
 - The Supabase service-role key must NEVER appear in client (`VITE_`) code. `.env` is

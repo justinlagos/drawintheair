@@ -52,7 +52,7 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
     description: [
       'Draw in the Air brings physical movement into digital learning. Children stand or sit in front of their computer\'s camera, raise a finger, and interact with on-screen activities through natural hand gestures. The platform uses browser-based computer vision to track hand position in real time, no special hardware required.',
       'Unlike passive screen time, every interaction requires deliberate physical movement: extending an arm to trace a letter path, reaching across the camera\'s field of view to sort objects into categories, or pointing at floating bubbles to build hand-eye coordination.',
-      'Nine activity modes run directly in Chrome with no installation and no child accounts or logins. The camera is processed on the device and is never uploaded or stored. Works immediately on any Chromebook, school laptop, or desktop with a webcam.',
+      'Eight activity modes run directly in Chrome with no installation and no child accounts or logins. The camera is processed on the device and is never uploaded or stored. Works immediately on any Chromebook, school laptop, or desktop with a webcam.',
     ],
     educationalExplanation: [
       'Movement-based learning activates multiple cognitive pathways simultaneously. When a child physically traces the letter A in the air while seeing the letter form on screen, they engage proprioceptive memory, visual processing, and motor planning in a single action. Research in embodied cognition consistently shows that learning tied to physical action produces stronger recall than passive observation.',
@@ -75,7 +75,7 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
       { icon: '6', text: 'Activities run 30 seconds to 3 minutes. The next child steps up when done.' },
     ],
     faq: [
-      { q: 'Does it work on low-spec Chromebooks?', a: 'Yes. The platform is optimised for the ARM and Intel Celeron processors common in education-grade Chromebooks like the Lenovo 100e and HP Chromebook 11. Adaptive frame rates maintain smooth interaction on constrained hardware.' },
+      { q: 'Does it work on low-spec Chromebooks?', a: 'It is designed to run on low-cost education Chromebooks. Adaptive frame rates reduce the load on slower hardware. If tracking stutters, close other tabs and make sure the room is well lit.' },
       { q: 'Do students need accounts or logins?', a: 'No. Students never create accounts or log in, and the camera is processed on the device and never uploaded or stored. Open the browser and start immediately.' },
       { q: 'Can I use it with the whole class at once?', a: 'Yes, project it on an interactive whiteboard for one student to demonstrate while others watch, or set up individual stations for simultaneous independent use.' },
       { q: 'Is this suitable for SEN learners?', a: 'Gesture interaction uses gross motor skills (extending an arm, pointing a finger) that children develop earlier than fine motor precision. This makes it more accessible for children who struggle with mouse or touchscreen control.' },
@@ -114,7 +114,7 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
     description: [
       'Gesture-based learning replaces the mouse, keyboard, and touchscreen with natural hand movement. Draw in the Air uses the camera built into any laptop or Chromebook to detect a child\'s hand position in real time. The child raises their index finger, and the system responds to their movements with on-screen feedback.',
       'This approach removes the fine motor barrier that makes traditional computer interaction difficult for young children. A 4-year-old who cannot yet control a mouse cursor with precision can extend their arm and trace a large letter path through the air. The gesture is natural, intuitive, and requires no instruction beyond "point your finger at the screen."',
-      'Nine activity modes cover letter formation (A–Z), number writing (0–10), shape recognition (8 shapes), object categorisation, colour mixing, word finding, mental arithmetic, and creative free drawing. Each mode runs directly in the browser with no software to install and no accounts to create.',
+      'Eight activity modes cover letter formation (A–Z), number writing (0–10), shape recognition (8 shapes), object categorisation, colour matching, word finding, spelling, mental arithmetic, and creative free drawing. Each mode runs directly in the browser with no software to install and no accounts to create.',
     ],
     educationalExplanation: [
       'Gesture interaction creates a bridge between physical play and screen-based learning. Traditional educational software asks young children to manipulate a mouse or tap a precise screen location, skills that require fine motor development many 3–5 year olds have not yet achieved. Gesture-based interaction uses gross motor skills (extending an arm, pointing a finger) that children master much earlier.',
@@ -125,7 +125,7 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
       { icon: '♿', title: 'SEN Support', detail: 'Children with limited fine motor control can participate fully in writing activities through large arm gestures.' },
       { icon: '⏱️', title: 'Transition Activity', detail: '2-minute Bubble Pop between carpet time and table work resets attention without long transitions.' },
       { icon: '📊', title: 'Assessment Support', detail: 'Teacher observes which letter formations students trace confidently versus which need reinforcement.' },
-      { icon: '🎨', title: 'Cross-Curricular', detail: 'Colour Builder for art vocabulary, Balloon Math for numeracy, Shape Tracing for geometry foundations.' },
+      { icon: '🎨', title: 'Cross-Curricular', detail: 'Rainbow Bridge for colour vocabulary, Balloon Math for numeracy, Shape Tracing for geometry foundations.' },
       { icon: '🏠', title: 'Home Learning', detail: 'Same activities available at home, no app installation needed on family computers.' },
     ],
     steps: [
@@ -200,8 +200,8 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
     ],
     faq: [
       { q: 'Does it work without IT approval or installation?', a: 'Yes. Because everything runs in the Chrome browser with no extension or application to install, there is nothing to approve. Open the URL and it works immediately on any managed Chromebook.' },
-      { q: 'Will it work on older, lower-spec Chromebooks?', a: 'Yes. The platform uses adaptive rendering to reduce processing load on slower hardware. It has been tested on Celeron N3350 and ARM Cortex-A72 devices common in education-grade Chromebooks.' },
-      { q: 'Does it need an internet connection?', a: 'The initial page load requires internet access. Once the AI model has loaded (about 5 seconds), the hand tracking runs entirely offline on the device.' },
+      { q: 'Will it work on older, lower-spec Chromebooks?', a: 'It is designed for lower-spec hardware and uses adaptive rendering to reduce processing load. Performance varies by device, so try it on one of your Chromebooks before rolling out to a class.' },
+      { q: 'Does it need an internet connection?', a: 'Yes. You need an internet connection while using it. Hand tracking runs on the device, but the app needs the connection to load, to save progress, and to run class sessions.' },
       { q: 'Can I embed it directly on my class Google Site?', a: 'Yes. Use the embed code from drawintheair.com/embed to place an activity widget directly on any Google Site. Students interact with it without leaving your class page.' },
     ],
     internalLinks: [
@@ -238,7 +238,7 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
     description: [
       'Homeschool families constantly balance screen time concerns with the reality that digital tools can be powerful learning aids. Draw in the Air resolves this tension: every interaction requires physical movement. Your child stands or sits in front of the computer, raises their hand, and learns by moving, tracing letter shapes in the air, reaching to sort objects, pointing to pop bubbles.',
       'The platform covers core early years curriculum areas: letter formation for all 26 letters, number writing for 0–10, recognition of 8 geometric shapes, categorisation and sorting, colour theory, early arithmetic, and creative expression through free drawing. Each activity takes 1–3 minutes with immediate visual feedback.',
-      'No account creation. No data collection. No ads. No in-app purchases. The camera feed is processed entirely on your computer and is never transmitted anywhere.',
+      'No account needed to try it. No ads. The camera feed is processed entirely on your computer and is never transmitted anywhere. A Family plan unlocks the full activity library.',
     ],
     educationalExplanation: [
       'Homeschool environments have a unique advantage: the flexibility to integrate physical movement into learning without the constraints of a classroom schedule. Draw in the Air fits naturally into a homeschool day as a transition activity between subjects, a warm-up before handwriting practice, or a brain break after focused reading time.',
@@ -296,9 +296,9 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
     badge: 'Motor Development',
     emoji: '🎯',
     heroTitle: 'Hand-Eye Coordination Activities Children Actually Want to Do',
-    heroSub: 'Nine gesture-controlled games that develop visual-motor skills while feeling like play. No setup, no cost, no downloads.',
+    heroSub: 'Eight gesture-controlled activities that develop visual-motor skills while feeling like play. No setup, no downloads, free to start.',
     description: [
-      'Hand-eye coordination is the foundation for handwriting, ball skills, dressing, and dozens of daily activities that children need to master. Draw in the Air provides nine distinct activities designed to develop the connection between what a child sees and how their hand responds.',
+      'Hand-eye coordination is the foundation for handwriting, ball skills, dressing, and dozens of daily activities that children need to master. Draw in the Air provides eight distinct activities designed to develop the connection between what a child sees and how their hand responds.',
       'Bubble Pop builds rapid visual tracking and reaction speed, the child must follow a moving target and point precisely. Letter Tracing develops sustained visual attention and motor planning, the child must follow a path with controlled, deliberate movement. Sort and Place combines spatial reasoning with precise hand positioning, the child pinches to grab and drags to a target zone.',
       'Because the interaction uses the whole arm, children develop coordination starting from the shoulder and working down through elbow, wrist, and fingers, the same proximal-to-distal development sequence that occupational therapists recommend for pre-writing readiness.',
     ],

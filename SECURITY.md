@@ -34,20 +34,20 @@ We will respond within 48 hours and work to resolve critical issues promptly.
 
 ### Data Protection
 
-- **No child PII stored**: We do not collect, store, or transmit personal information about children
+- **Minimal child data**: for learners added by a parent or teacher we store a first name or nickname, an age band, and activity progress. Children joining a class session type a first name or nickname. No surnames, dates of birth, contact details, photos, or video are collected from children
 - **No biometric data**: No face recognition, video storage, or biometric identifiers
-- **Anonymous analytics**: All analytics are coarse-grained and anonymous
+- **Pseudonymous analytics**: product events carry a per-browser device ID and per-tab session ID, never a name or email. Events are deleted after 365 days by a scheduled job
 - **Local processing**: Camera video is processed locally, never transmitted
-- **No tracking cookies**: Analytics use sessionStorage only
+- **Cookies**: essential cookies and local storage only by default. Google Analytics 4, Microsoft Clarity, PostHog and the Meta Pixel load only after the visitor accepts them in the cookie banner
 
 ### Privacy for Children
 
 - No child accounts
-- No persistent identifiers
-- No behavioral tracking
-- Analytics are aggregated and anonymous
+- Pseudonymous per-browser device ID only; never linked to a name or email
+- No behavioural advertising to children
+- Public reporting is aggregated with small groups suppressed
 - Camera permissions are clearly explained
-- No data sharing with third parties
+- No child data is sold. Sub-processors (Supabase, Stripe, Sentry, PostHog) are listed in the compliance dossier
 
 ### API Security
 
@@ -71,9 +71,7 @@ See `docs/security-checklist.md` for detailed security checklist.
 ## Compliance
 
 This application is designed for early years education and complies with:
-- COPPA (Children's Online Privacy Protection Act) principles
-- GDPR principles (no personal data collection)
-- UK Data Protection Act principles
+- UK GDPR and the UK Data Protection Act 2018 (data minimisation, retention limits, parent and teacher access, export and deletion)
 
 ## Updates
 

@@ -8,7 +8,7 @@ Last updated: May 2026
 
 ## 1. Executive summary
 
-Draw in the Air is a browser-based, camera-driven learning platform for children aged 3 to 9. Children practise pre-writing strokes, letters, numbers and shapes by moving their hand in the air; a webcam tracks the position of the index finger using Google's open-source MediaPipe library, entirely within the browser. No camera frames, video, or biometric data ever leave the device. No personal information is collected from children. Parent accounts (for home users) and school accounts (for classrooms) are protected by industry-standard authentication and database row-level security.
+Draw in the Air is a browser-based, camera-driven learning platform for children aged 3 to 7. Children practise pre-writing strokes, letters, numbers and shapes by moving their hand in the air; a webcam tracks the position of the index finger using Google's open-source MediaPipe library, entirely within the browser. No camera frames, video, or biometric data ever leave the device. Children are never asked for anything beyond a first name or nickname. Parent accounts (for home users) and school accounts (for classrooms) are protected by industry-standard authentication and database row-level security.
 
 This document is the consolidated safety, privacy and compliance brief for school leaders, Data Protection Officers and Data Protection Compliance Organisations (DPCOs) in Nigeria, with reference to the Nigeria Data Protection Act 2023 (NDPA), the NDPC General Application & Implementation Directive 2025 (GAID), the EU General Data Protection Regulation (GDPR), the UK Data Protection Act 2018, and the US Children's Online Privacy Protection Act (COPPA).
 
@@ -29,7 +29,7 @@ It does not store video. It does not store images. It does not perform face reco
 ### 2.3 Modes of use
 
 - **Home / individual:** a parent creates an account; children play under a nickname or emoji avatar. Up to two child profiles are included in the base plan.
-- **Classroom:** a teacher launches a session with a four-digit join code; children type a first name (treated as ephemeral session data, never persisted to long-term analytics) and join. Class progress is shown to the teacher; individual children are not identified to other classes or to the public.
+- **Classroom:** a teacher launches a session with a four-digit join code; children type a first name or nickname and join. That name is stored with the session roster and, where the teacher keeps a class list, with the class record. It is never written to analytics events. Class progress is shown to the teacher; individual children are not identified to other classes or to the public.
 - **Anonymous /play:** a visitor can try the platform without an account. No data is associated with a profile in this mode.
 
 ---
@@ -41,9 +41,9 @@ It does not store video. It does not store images. It does not perform face reco
 | Field | Required? | Stored where | Retention |
 |---|---|---|---|
 | Nickname | No (emoji avatar accepted) | Database, scoped to parent's account by RLS | Until parent deletes |
-| Age band (4–5, 6–7, 8–9, 10–11, 12+) | Optional | Database, scoped to parent | Until parent deletes |
+| Age band (3–4, 5–6, 7–8) | Optional | Database, scoped to parent | Until parent deletes |
 | Emoji avatar | No | Database, scoped to parent | Until parent deletes |
-| First name (Class Mode only) | Required for join | Session memory only | Cleared at session end; never written to analytics |
+| First name or nickname (Class Mode only) | Required for join | Database (session roster and teacher class list), scoped to the teacher by RLS | Until the teacher deletes the record; never written to analytics |
 | Pseudonymous device ID (per browser) | Auto-generated | `localStorage` on the child's device | Cleared when site data is cleared |
 | Pseudonymous session ID (per tab) | Auto-generated | `sessionStorage` on the child's device | Cleared when tab closes |
 
@@ -81,7 +81,7 @@ Marketing pageview telemetry (Google Analytics, Microsoft Clarity) runs only on 
 
 ### 4.1 Architecture
 
-Every camera frame is processed entirely on the child's device by Google MediaPipe's WebAssembly + WebGL pipeline. The hand-landmark detector returns 21 normalised 2D coordinates per detected hand. Only these coordinates — small numerical scalars — leave the device, and only in aggregate as part of gesture-quality metrics that describe the *quality* of a movement (path accuracy percentage, time-to-first-movement, pause count). Raw coordinates are never transmitted.
+Every camera frame is processed entirely on the child's device by Google MediaPipe's WebAssembly + WebGL pipeline. The hand-landmark detector returns 21 normalised 2D coordinates per detected hand. The coordinates never leave the device. What leaves is a handful of derived scalars that describe the quality of a movement (path accuracy percentage, time-to-first-movement, pause count). Raw coordinates are never transmitted.
 
 ### 4.2 No upload, no storage
 
@@ -112,7 +112,7 @@ The NDPA, signed June 2023, replaced the older NDPR. The NDPC's General Applicat
 | Purpose limitation (s.24(1)(b)) | Data flows are documented per activity; analytics events are typed and the schema is published in `docs/ANALYTICS_PLAN.md`. |
 | Storage limitation (s.24(1)(e)) | 12-month rolling retention on analytics with cron-enforced deletion; parent-initiated deletion of child profiles within 30 days. |
 | Security of processing (s.39) | TLS in transit; RLS at rest; OWASP-aligned audit; incident-response SLA. |
-| Cross-border transfer (s.41) | EU hosting; cross-border adequacy via the EU adequacy framework. Schools may request data residency confirmation in writing. |
+| Cross-border transfer (s.41) | UK hosting (Supabase, London region). Schools may request data residency confirmation in writing. |
 | Data subject rights (s.34) | Self-service view, export, delete in the parent dashboard. |
 | Data protection officer (s.32) | Draw in the Air operates an internal DPO function; appointment of an external DPO via a Nigerian DPCO is supported on request for school pilots. |
 | Breach notification (s.40) | 72-hour notification to data controllers (the school) on confirmed breach; logged via `partnership@drawintheair.com`. |
@@ -130,7 +130,7 @@ The NDPC issued a compliance notice to the Nigerian education sector on 19 Febru
 
 ### 5.3 COPPA (US, 1998 / as amended)
 
-Draw in the Air does not collect any personal information from children as defined in COPPA Rule § 312.2: no full name, no contact information, no persistent identifier tied to a child, no geolocation, no photo or video, no audio. For parent-initiated household use of paid features, verifiable parental consent is collected at account creation.
+Draw in the Air collects the minimum from children: a first name or nickname (Class Mode join, or a learner record created by an adult), an age band, and activity progress. It collects no full name, no contact information, no geolocation, no photo or video, and no audio. Anonymous play uses a per-browser pseudonymous ID that is not linked to a name. For parent-initiated household use of paid features, verifiable parental consent is collected at account creation.
 
 ### 5.4 UK Data Protection Act 2018 & Children's Code
 
@@ -244,7 +244,6 @@ The discipline of running this audit, finding and fixing real issues, and being 
 
 - Quarterly RLS policy audit, scripted.
 - CI security gates: ESLint security plugin, secret-scanner, CSP regression check.
-- Annual third-party penetration test scheduled before any broad school rollout.
 
 ---
 
@@ -287,10 +286,11 @@ The discipline of running this audit, finding and fixing real issues, and being 
 
 | Sub-processor | Purpose | Region | Data shared |
 |---|---|---|---|
-| Supabase | Database, Auth, Edge Functions, Realtime | EU | Pseudonymous IDs, parent email (hashed for auth), telemetry events |
+| Supabase | Database, Auth, Edge Functions, Realtime | UK (London, eu-west-2) | Parent and teacher email, learner first names or nicknames, age bands, progress, telemetry events |
 | Stripe | Payments | EU + US (PCI scope only) | Parent email, Stripe customer ID, subscription metadata |
-| Sentry | Error tracking | EU | Pseudonymous IDs, error stack traces |
-| PostHog | Product analytics | EU | Pseudonymous IDs, event names, allow-listed properties |
+| Sentry | Error tracking | Per account region (confirm before quoting) | Pseudonymous IDs, error stack traces |
+| PostHog | Product analytics | EU (eu.i.posthog.com) | Pseudonymous IDs, event names, allow-listed properties |
+| Google Analytics 4, Microsoft Clarity, Meta Pixel | Web measurement, loaded only after cookie consent | US | Pageviews, device and usage data on marketing pages |
 | Vercel | Static hosting & edge CDN | Global edge | TLS termination, no personal data |
 | Google MediaPipe (open-source library) | On-device CV model | On the child's device only | None — runs locally |
 

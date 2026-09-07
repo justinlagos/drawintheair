@@ -61,8 +61,20 @@ import SpecialActivityPage from './pages/seo/SpecialActivityPage';
 import TracePage from './pages/seo/TracePage';
 
 import { LETTERS, NUMBERS, SHAPES } from './seo/seo-config';
+import {
+  ACTIVITY_ROUTES,
+  EDUCATION_SLUGS,
+  LEARN_SLUGS,
+  SPECIAL_ACTIVITY_SLUGS,
+  STATIC_PATHS,
+  USECASE_SLUGS,
+  VIRAL_PATHS,
+  type StaticPath,
+} from './seo/prerender-paths';
 
 // ─── Route table ────────────────────────────────────────────────────────────
+// The path lists live in src/seo/prerender-paths.ts (pure data, unit-tested
+// against robots.txt). This file pairs each path with its page component.
 // `src` is the page component's source path, used by the prerender script to
 // look up that route's CSS/JS chunks in the client build manifest so the
 // static HTML links the right stylesheets (no flash of unstyled content).
@@ -75,77 +87,33 @@ export interface PrerenderRoute {
 
 const P = 'src/pages';
 
-const STATIC_ROUTES: PrerenderRoute[] = [
-  { path: '/', src: `${P}/Landing.tsx`, element: () => <Landing /> },
-  { path: '/faq', src: `${P}/FAQ.tsx`, element: () => <FAQ /> },
-  { path: '/schools', src: `${P}/Schools.tsx`, element: () => <Schools /> },
-  { path: '/schools/training', src: `${P}/Training.tsx`, element: () => <Training /> },
-  { path: '/school', src: `${P}/SchoolPilot.tsx`, element: () => <SchoolPilot /> },
-  { path: '/teachers', src: `${P}/Teachers.tsx`, element: () => <Teachers /> },
-  { path: '/pricing', src: `${P}/Pricing.tsx`, element: () => <Pricing /> },
-  { path: '/about', src: `${P}/About.tsx`, element: () => <About /> },
-  { path: '/privacy', src: `${P}/Privacy.tsx`, element: () => <Privacy /> },
-  { path: '/terms', src: `${P}/Terms.tsx`, element: () => <Terms /> },
-  { path: '/cookies', src: `${P}/Cookies.tsx`, element: () => <Cookies /> },
-  { path: '/safeguarding', src: `${P}/Safeguarding.tsx`, element: () => <Safeguarding /> },
-  { path: '/accessibility', src: `${P}/Accessibility.tsx`, element: () => <Accessibility /> },
-  { path: '/embed', src: `${P}/seo/EmbedPage.tsx`, element: () => <EmbedPage /> },
-  { path: '/press', src: `${P}/seo/PressPage.tsx`, element: () => <PressPage /> },
-  { path: '/free-resources', src: `${P}/seo/FreeResourcesPage.tsx`, element: () => <FreeResourcesPage /> },
-  { path: '/for-teachers', src: `${P}/seo/ForTeachersPage.tsx`, element: () => <ForTeachersPage /> },
-  { path: '/for-parents', src: `${P}/seo/ForParentsPage.tsx`, element: () => <ForParentsPage /> },
-  { path: '/learn', src: `${P}/seo/LearnHubPage.tsx`, element: () => <LearnHubPage /> },
-];
+type StaticPage = Omit<PrerenderRoute, 'path'>;
 
-// Education audience pages — slug is the path without the leading slash.
-const EDUCATION_SLUGS = ['for-homeschool', 'for-preschool', 'for-kindergarten'];
+// Keyed by StaticPath so adding a path in prerender-paths.ts without a
+// component here (or the reverse) is a type error.
+const STATIC_PAGES: Record<StaticPath, StaticPage> = {
+  '/': { src: `${P}/Landing.tsx`, element: () => <Landing /> },
+  '/faq': { src: `${P}/FAQ.tsx`, element: () => <FAQ /> },
+  '/schools': { src: `${P}/Schools.tsx`, element: () => <Schools /> },
+  '/schools/training': { src: `${P}/Training.tsx`, element: () => <Training /> },
+  '/school': { src: `${P}/SchoolPilot.tsx`, element: () => <SchoolPilot /> },
+  '/teachers': { src: `${P}/Teachers.tsx`, element: () => <Teachers /> },
+  '/pricing': { src: `${P}/Pricing.tsx`, element: () => <Pricing /> },
+  '/about': { src: `${P}/About.tsx`, element: () => <About /> },
+  '/privacy': { src: `${P}/Privacy.tsx`, element: () => <Privacy /> },
+  '/terms': { src: `${P}/Terms.tsx`, element: () => <Terms /> },
+  '/cookies': { src: `${P}/Cookies.tsx`, element: () => <Cookies /> },
+  '/safeguarding': { src: `${P}/Safeguarding.tsx`, element: () => <Safeguarding /> },
+  '/accessibility': { src: `${P}/Accessibility.tsx`, element: () => <Accessibility /> },
+  '/embed': { src: `${P}/seo/EmbedPage.tsx`, element: () => <EmbedPage /> },
+  '/press': { src: `${P}/seo/PressPage.tsx`, element: () => <PressPage /> },
+  '/free-resources': { src: `${P}/seo/FreeResourcesPage.tsx`, element: () => <FreeResourcesPage /> },
+  '/for-teachers': { src: `${P}/seo/ForTeachersPage.tsx`, element: () => <ForTeachersPage /> },
+  '/for-parents': { src: `${P}/seo/ForParentsPage.tsx`, element: () => <ForParentsPage /> },
+  '/learn': { src: `${P}/seo/LearnHubPage.tsx`, element: () => <LearnHubPage /> },
+};
 
-// Learn articles — keep in sync with ARTICLES in LearnArticlePage.tsx.
-const LEARN_SLUGS = [
-  'hand-tracking-for-kids',
-  'gesture-learning',
-  'drawing-skills-for-children',
-  'early-childhood-motor-skills',
-  'ai-for-kids',
-  'screen-time-alternatives',
-];
-
-// Use-case landing pages — keep in sync with getRouteFromPath in main.tsx.
-const USECASE_SLUGS = [
-  'gesture-learning',
-  'classroom-movement-activities',
-  'chromebook-learning-tools',
-  'homeschool-movement-learning',
-  'hand-eye-coordination-activities',
-  'ai-learning-tools-for-kids',
-];
-
-// Standard activity pages. '/free-paint' is the canonical free-paint URL.
-const ACTIVITY_ROUTES: Array<{ path: string; slug: string }> = [
-  { path: '/activities/bubble-pop', slug: 'bubble-pop' },
-  { path: '/activities/sort-and-place', slug: 'sort-and-place' },
-  { path: '/activities/letter-tracing', slug: 'letter-tracing' },
-  { path: '/free-paint', slug: 'free-paint' },
-];
-
-// Seasonal + viral pages — keys must exist in SPECIAL_DATA
-// (SpecialActivityPage.tsx). Seasonal live under /activities/<slug>;
-// the three viral challenges are top-level paths (see main.tsx).
-// NOTE: /draw-heart-in-air, /draw-star-in-air and /draw-alphabet-in-air
-// exist in PAGE_META but have no SPECIAL_DATA entry and no router match —
-// they fall through to the Landing page, so they are intentionally NOT
-// body-prerendered until that drift is fixed.
-const SPECIAL_ACTIVITY_SLUGS = [
-  'christmas-drawing-for-kids',
-  'halloween-drawing-kids',
-  'back-to-school-activities',
-  'valentines-drawing-kids',
-  'easter-drawing-kids',
-  'summer-activities-kids',
-  'thanksgiving-kids-activities',
-  'mothers-day-drawing-kids',
-];
-const VIRAL_PATHS = ['/draw-number-in-air', '/air-drawing-challenge', '/draw-circle-in-air'];
+const STATIC_ROUTES: PrerenderRoute[] = STATIC_PATHS.map((path) => ({ path, ...STATIC_PAGES[path] }));
 
 export const ROUTES: PrerenderRoute[] = [
   ...STATIC_ROUTES,

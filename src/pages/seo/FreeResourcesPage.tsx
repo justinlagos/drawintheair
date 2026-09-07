@@ -23,12 +23,12 @@ function ArrowIcon({ size = 16 }: { size?: number }) {
   );
 }
 
+// 01-teacher-quick-start-guide.pdf and 05-parent-communication-pack.pdf were
+// removed pending regeneration (see docs/audits/evidence/release/TRACK-P).
 const CLASSROOM_GUIDES = [
-  { file: '01-teacher-quick-start-guide.pdf', emoji: '🚀', title: "Teacher's Quick Start Guide", desc: 'Get up and running in under 5 minutes. Covers all modes, the pinch gesture, and classroom setup.', audience: 'All teachers' },
   { file: '02-five-day-movement-break-plan.pdf', emoji: '📅', title: '5-Day Movement Break Plan', desc: 'A ready-to-run weekly structure, one Draw in the Air activity per day, Monday to Friday.', audience: 'Class teachers' },
   { file: '03-fine-motor-skills-integration.pdf', emoji: '✋', title: 'Fine Motor Skills Integration', desc: 'The science behind gesture learning and how it connects to pre-writing development.', audience: 'EYFS / Reception' },
   { file: '04-chromebook-classroom-setup.pdf', emoji: '💻', title: 'Chromebook Classroom Setup', desc: 'Step-by-step setup for school Chromebook carts, labs, and managed devices.', audience: 'Tech coordinators' },
-  { file: '05-parent-communication-pack.pdf', emoji: '📨', title: 'Parent Communication Pack', desc: 'Ready-to-send letters, ClassDojo messages, and parent FAQ, zero writing required.', audience: 'Class teachers' },
   { file: '06-progress-tracking-sheet.pdf', emoji: '📊', title: 'Progress & Observation Tracker', desc: 'Observation prompts and an A–Z letter mastery grid for learning journey evidence.', audience: 'All teachers' },
   { file: '07-send-inclusion-support-guide.pdf', emoji: '💜', title: 'SEND & Inclusion Support Guide', desc: 'Specific adaptations for ASC, dyspraxia, ADHD, and EAL learners.', audience: 'SENCOs / TAs' },
   { file: '08-eyfs-reception-activity-guide.pdf', emoji: '🎒', title: 'EYFS & Reception Activity Guide', desc: 'Development Matters mapping and a complete 15-minute session plan for Reception.', audience: 'EYFS / Reception' },
@@ -100,7 +100,7 @@ export default function FreeResourcesPage() {
                 Free printables and <span className="grad">classroom guides.</span>
               </h1>
               <p className="lead" style={{ marginTop: 16 }}>
-                Bridge digital and physical learning. Ten professional classroom guides
+                Bridge digital and physical learning. Eight professional classroom guides
                 and a full A–Z tracing worksheet series, free to download, print, and
                 share with colleagues. No email required.
               </p>
@@ -114,7 +114,7 @@ export default function FreeResourcesPage() {
             <SectionHead
               eyebrow="Classroom guides"
               tone="mint"
-              title="Ten guides, written for real classrooms."
+              title="Eight guides, written for real classrooms."
               lead="From EYFS curriculum links to Chromebook setup, everything a teacher needs to run Draw in the Air with confidence."
             />
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
@@ -137,8 +137,8 @@ export default function FreeResourcesPage() {
               ))}
             </div>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginTop: 28 }}>
-              <a href="/classroom-guides/01-teacher-quick-start-guide.pdf" download="Draw-in-the-Air-Teacher-Quick-Start.pdf" className="btn btn-primary md">
-                Download the most popular guide
+              <a href="/classroom-guides/08-eyfs-reception-activity-guide.pdf" download="Draw-in-the-Air-EYFS-Activity-Guide.pdf" className="btn btn-primary md">
+                Download the EYFS activity guide
               </a>
               <a href="/classroom-guides/az-letter-tracing-workbook.pdf" download="Draw-in-the-Air-AZ-Workbook.pdf" className="btn btn-secondary md">
                 Get the A–Z workbook

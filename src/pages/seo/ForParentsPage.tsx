@@ -21,7 +21,7 @@ const BENEFITS = [
   { icon: '📱', title: 'No download needed', desc: 'Open the browser, visit the site, and play, instantly. No app store, no installation, no waiting for updates.' },
   { icon: '🧠', title: 'Develops real skills', desc: 'Letter recognition, number formation, hand-eye coordination, fine motor control, and phonics, built through genuine play.' },
   { icon: '💰', title: 'Free to start', desc: 'Core activities are always free to play. A Family plan (with a 7-day free trial) unlocks the full library, progress reports, and parental controls.' },
-  { icon: '🎓', title: 'Curriculum-aligned', desc: 'Activities align with preschool and primary school early learning frameworks, including EYFS (UK) and Common Core (US) readiness standards.' },
+  { icon: '🎓', title: 'Curriculum-aligned', desc: 'Activities are mapped to the EYFS framework (UK) and fit general preschool readiness goals.' },
 ];
 
 export default function ForParentsPage() {

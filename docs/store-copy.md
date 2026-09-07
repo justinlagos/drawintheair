@@ -58,4 +58,4 @@ Draw in the Air transforms any webcam-enabled device into an interactive learnin
 "Turn screen time into active learning time. Draw in the Air gets kids moving their hands to trace letters and shapes, offering a magical, frustration-free way to practice early writing skills right from your laptop."
 
 **Privacy-Safe Pitch (For IT Admins):**
-"Zero video storage. All AI hand-tracking runs completely client-side in the browser — video frames never leave the device. The platform has no accounts, no dark patterns, and no personal data collection. Anonymous usage statistics are sent only to our own server (no Google Analytics, no ad networks), making the platform immediately compliant with COPPA, UK GDPR, and strict school IT requirements."
+"Zero video storage. All AI hand-tracking runs completely client-side in the browser. Video frames never leave the device. Children have no accounts and see no advertising. Anonymous play needs no sign-up. Usage events go to our own database. Google Analytics, Microsoft Clarity and the Meta Pixel load only after cookie consent. Designed around UK GDPR and school IT requirements."
