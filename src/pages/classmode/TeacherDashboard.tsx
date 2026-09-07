@@ -12,7 +12,6 @@ import { MODE_LABELS, SCOREABLE_MODES } from '../../features/classmode/scoreMapp
 import type { GameModeId } from '../../features/classmode/scoreMapping';
 import './classmode.css';
 
-const platformUrl = import.meta.env.VITE_PLATFORM_URL || 'https://app.drawintheair.com';
 
 interface SessionRow {
   id: string;
@@ -121,7 +120,7 @@ export default function TeacherDashboard() {
       <div className="cm-topbar">
         <div className="cm-topbar-left">
           <span className="cm-topbar-title">Class Mode</span>
-          <a href={`${platformUrl}/auth/login?redirect=/dashboard`} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '16px', fontSize: '0.85rem', color: '#8b5cf6', textDecoration: 'none' }}>
+          <a href="/teacher/dashboard" style={{ marginLeft: '16px', fontSize: '0.85rem', color: '#8b5cf6', textDecoration: 'none' }}>
             → Full Dashboard
           </a>
         </div>

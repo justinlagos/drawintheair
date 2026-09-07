@@ -7,7 +7,6 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'https://drawintheair.com',
   'https://www.drawintheair.com',
-  'https://app.drawintheair.com',
 ];
 
 export function corsHeaders(origin: string | null): Record<string, string> {

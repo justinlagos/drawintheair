@@ -3,7 +3,6 @@ import './landing.css';
 
 export const Footer: React.FC = () => {
   const [openSection, setOpenSection] = useState<string | null>(null);
-  const platformUrl = import.meta.env.VITE_PLATFORM_URL || 'https://app.drawintheair.com';
 
   const handleSchoolPackClick = () => {
     if (window.location.pathname === '/') {
@@ -86,7 +85,7 @@ export const Footer: React.FC = () => {
             className={`landing-footer-accordion-content ${openSection === 'educators' ? 'open' : ''}`}
           >
             <div className="landing-footer-links">
-              <a href={platformUrl + '/auth/login'} className="landing-footer-link">Teacher Login</a>
+              <a href="/teacher/login" className="landing-footer-link">Teacher Login</a>
               <a href="/teachers" className="landing-footer-link">For Teachers</a>
               <a href="/parents" className="landing-footer-link">For Parents</a>
               <a href="/schools" className="landing-footer-link">For Schools</a>

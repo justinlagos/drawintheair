@@ -1,6 +1,6 @@
 # This folder: teacher platform (separate app)
 
-Next.js 14 app for teacher accounts, auth, and billing (app.drawintheair.com).
+Next.js 14 app for teacher accounts, auth, and billing. Retired prototype: not deployed; app.drawintheair.com is being redirected to drawintheair.com (WP2B.7, DIA-016).
 Independent of the root Vite app — React 18 (not 19), its own package.json and node_modules.
 
 # Rules that only apply here

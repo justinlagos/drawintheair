@@ -46,7 +46,7 @@ These are real, in-code controls. If she pushes hard, you can name them.
 - HTTPS enforced (HSTS — `Strict-Transport-Security`).
 - Security headers: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(self), microphone=(), geolocation=(), interest-cohort=()`. (Translation: only Draw in the Air can use the camera, mic and location are disabled, no ad-tech cohorts.)
 - Content Security Policy whitelists script and connection origins.
-- CORS allow-list — only `drawintheair.com` and `app.drawintheair.com` can call our edge functions.
+- CORS allow-list: only `drawintheair.com` can call our edge functions.
 - Data hosted in the EU (matters for cross-border under GDPR and aligns with NDPA Section 41 cross-border rules).
 - Stripe for any billing — no card data ever touches our servers.
 - Sentry + PostHog for error/usage telemetry, pseudonymous IDs only.
