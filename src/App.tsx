@@ -43,7 +43,12 @@ import {
   shouldShowHappiness,
 } from './features/feedback';
 import { getActivityCount, onActivityCompleted } from './lib/activationCounter';
-import { ModeSelectionMenu, type GameMode } from './features/menu/ModeSelectionMenu';
+import { ModeSelectionMenu } from './features/menu/ModeSelectionMenu';
+import { isGameMode, getModeTier, MODE_CATALOG, type GameMode } from './features/menu/modeCatalog';
+import { evaluateModeMount } from './features/menu/modeMountGuard';
+import { ModeMountHold } from './features/menu/ModeMountHold';
+import { useParentAccess } from './features/parent/useParentAccess';
+import { PremiumLockModal } from './features/parent/PremiumLockModal';
 import { GameCompanion } from './features/kid2/GameCompanion';
 import { ChildProfileSelector } from './features/parent/ChildProfileSelector';
 import { LearnerGreeting } from './features/parent/LearnerGreeting';
@@ -89,15 +94,16 @@ const markWarmupDone = (): void => {
 const getInitialState = (): { appState: AppState; gameMode: GameMode } => {
   const params = new URLSearchParams(window.location.search);
   const screen = params.get('screen');
-  const mode = params.get('mode') as GameMode;
+  const mode = params.get('mode');
 
-  // Check screen param first - allows direct access to any screen
+  // Check screen param first - allows direct access to any screen.
+  // Landing on 'game' this way does NOT skip the paywall or parental
+  // controls: the mount guard below runs on every mode mount.
   if (screen === 'menu') return { appState: 'menu', gameMode: 'free' };
   if (screen === 'game') {
-    const validMode = (mode === 'free' || mode === 'pre-writing' || mode === 'calibration' || mode === 'sort-and-place' || mode === 'word-search' || mode === 'colour-builder' || mode === 'balloon-math' || mode === 'rainbow-bridge' || mode === 'gesture-spelling' || mode === 'building') ? mode : 'free';
     return {
       appState: 'game',
-      gameMode: validMode
+      gameMode: isGameMode(mode) ? mode : 'free',
     };
   }
 
@@ -133,6 +139,32 @@ function App() {
   // Latest gate held in a ref so handleModeSelect stays referentially stable.
   const gateRef = useRef(playControls.gate);
   useEffect(() => { gateRef.current = playControls.gate; }, [playControls.gate]);
+
+  // ── Mode mount guard (DIA-014) ─────────────────────────────────────
+  // Entitlement and parental controls are decided HERE, at the point a
+  // mode mounts, not only in the menu. Any path that sets appState to
+  // 'game' (menu tap, hand dwell, ?screen=game&mode=... deep link) goes
+  // through the same pure decision. Only an 'allow' mounts the mode.
+  const parentAccess = useParentAccess();
+  const mountDecision = useMemo(() => evaluateModeMount({
+    context: 'play',
+    tier: getModeTier(gameMode),
+    hasAccess: parentAccess.hasAccess,
+    accessChecked: parentAccess.checked,
+    controls: playControls.controls,
+    todaySeconds: playControls.todaySeconds,
+  }), [gameMode, parentAccess.hasAccess, parentAccess.checked, playControls.controls, playControls.todaySeconds]);
+  const modeMounted = appState === 'game' && mountDecision.kind === 'allow';
+  // Re-ask the server on every mode entry so a trial that ended since the
+  // tab opened is caught, not served from the session cache.
+  const { recheck: recheckAccess } = parentAccess;
+  const accessRecheckArmed = useRef(false);
+  useEffect(() => {
+    // The hook already fetches once on first render, so a deep link that
+    // lands straight in 'game' does not need a second identical request.
+    if (!accessRecheckArmed.current) { accessRecheckArmed.current = true; return; }
+    if (appState === 'game') recheckAccess();
+  }, [appState, gameMode, recheckAccess]);
 
   // Sprint 3: record the visit (returning-device detection) and infer the
   // home/school audience from acquisition signals — once per app load.
@@ -355,12 +387,12 @@ function App() {
   const lastCountdownKeyRef = useRef<string>('');
 
   useEffect(() => {
-    if (appState !== 'game') return;
+    if (!modeMounted) return;
     const key = `${appState}:${gameMode}`;
     if (lastCountdownKeyRef.current === key) return;
     lastCountdownKeyRef.current = key;
     startCountdown(3000);
-  }, [appState, gameMode]);
+  }, [appState, gameMode, modeMounted]);
 
   const handleCalibrationComplete = useCallback(() => {
     // After calibration, go to menu to pick another mode
@@ -371,10 +403,10 @@ function App() {
   // while an activity is running, so the daily limit reflects real play.
   const { addActiveSeconds, refresh: refreshControls } = playControls;
   useEffect(() => {
-    if (appState !== 'game') return;
+    if (!modeMounted) return;
     const id = setInterval(() => addActiveSeconds(5), 5000);
     return () => clearInterval(id);
-  }, [appState, addActiveSeconds]);
+  }, [modeMounted, addActiveSeconds]);
 
   // Re-read controls whenever the menu opens so a grown-up's changes (pause,
   // sound, limit) take effect on the next session without a stale-state reload.
@@ -386,11 +418,11 @@ function App() {
   // kid-safe notice rather than letting play continue past the limit.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    if (appState === 'game' && playControls.gate.blocked && playControls.gate.reason === 'daily-limit') {
+    if (modeMounted && playControls.gate.blocked && playControls.gate.reason === 'daily-limit') {
       setAppState('menu');
       setBlockedNotice('daily-limit');
     }
-  }, [appState, playControls.gate]);
+  }, [modeMounted, playControls.gate]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const [wordSearchSettingsOpen, setWordSearchSettingsOpen] = useState(false);
@@ -400,7 +432,8 @@ function App() {
 
   // Determine which logic to use based on current mode
   const getActiveLogic = () => {
-    if (appState !== 'game') {
+    // No per-frame mode logic unless the guard let the mode mount.
+    if (!modeMounted) {
       return undefined;
     }
 
@@ -447,7 +480,7 @@ function App() {
   // Make activeLogic reactive to gameMode, appState, and flags changes
   const activeLogic = useMemo(() => {
     return getActiveLogic();
-  }, [gameMode, appState, flags]);
+  }, [gameMode, modeMounted, flags]);
 
   // Initialize ToyMode and Narrator
   useEffect(() => {
@@ -509,12 +542,12 @@ function App() {
               {/* Magic Cursor - shows pen state. Hidden during Magic Canvas
                   gameplay: that engine draws its own brush tip exactly where the
                   ink lands, so a second cursor would diverge from the paint. */}
-              {!(gameMode === 'free' && flags.freePaintMagicCanvasV1 && appState === 'game') && (
+              {!(gameMode === 'free' && flags.freePaintMagicCanvasV1 && modeMounted) && (
                 <MagicCursor
                   frameRef={frameRef}
                   airPaintEnabled={flags.airPaintEnabled}
                   mode={gameMode}
-                  getPenDown={() => (gameMode === 'free' && appState === 'game'
+                  getPenDown={() => (gameMode === 'free' && modeMounted
                     ? drawingEngine.getPenState() === PenState.DOWN
                     : false)}
                 />
@@ -596,8 +629,29 @@ function App() {
                 </>
               )}
 
-              {/* State: Game */}
-              {appState === 'game' && (
+              {/* State: Game, refused by the mount guard. The mode is not
+                   mounted. The same kid-safe surfaces the menu uses are
+                   shown instead, over the toy-world background, and both
+                   dismiss back to the menu. Never a blank screen. */}
+              {appState === 'game' && mountDecision.kind === 'pending' && (
+                <ModeMountHold />
+              )}
+              {appState === 'game' && mountDecision.kind === 'locked' && (
+                <PremiumLockModal
+                  gameTitle={MODE_CATALOG[gameMode].title}
+                  gameIcon={MODE_CATALOG[gameMode].icon}
+                  onClose={handleExitToMenu}
+                />
+              )}
+              {appState === 'game' && mountDecision.kind === 'blocked' && (
+                <PlayBlockedNotice
+                  reason={mountDecision.reason}
+                  onClose={handleExitToMenu}
+                />
+              )}
+
+              {/* State: Game, mode allowed to mount */}
+              {modeMounted && (
                 <>
                   {/* Adult Gate - always visible in game mode */}
                   <AdultGate
