@@ -39,23 +39,39 @@ const vercelJsonPath = path.join(repoRoot, 'vercel.json');
 // ─────────────────────────────────────────────────────────────────────
 const REQUIREMENTS = [
     // ── MediaPipe hand tracking — load + inference ───────────────────
+    // Since WP2B.3 (DIA-020) the runtime loads from our own origin first
+    // (/mediapipe/<version>/, covered by 'self' in script-src, connect-src
+    // and the 'unsafe-eval' already in script-src for WebAssembly). The
+    // CDN hosts below stay allowed as the automatic fallback.
+    {
+        directive: 'script-src',
+        origin: "'self'",
+        why: 'Self-hosted MediaPipe vision_wasm_internal.js loader script',
+        owner: 'src/core/trackingAssets.ts → SELF_HOSTED_WASM_PATH',
+    },
+    {
+        directive: 'connect-src',
+        origin: "'self'",
+        why: 'Self-hosted MediaPipe WASM binary + hand_landmarker.task model',
+        owner: 'src/core/trackingAssets.ts → SELF_HOSTED_MODEL_PATH',
+    },
     {
         directive: 'connect-src',
         origin: 'https://cdn.jsdelivr.net',
-        why: 'MediaPipe Tasks Vision WASM (hand tracker WebAssembly)',
-        owner: 'src/core/handTracker.ts → WASM_BASE_URL',
+        why: 'MediaPipe Tasks Vision WASM (hand tracker WebAssembly), CDN fallback',
+        owner: 'src/core/trackingAssets.ts → CDN_WASM_BASE_URL',
     },
     {
         directive: 'script-src',
         origin: 'https://cdn.jsdelivr.net',
-        why: 'MediaPipe vision_wasm_internal.js loader script',
-        owner: 'src/core/handTracker.ts → FilesetResolver.forVisionTasks',
+        why: 'MediaPipe vision_wasm_internal.js loader script, CDN fallback',
+        owner: 'src/core/trackingAssets.ts → CDN_WASM_BASE_URL',
     },
     {
         directive: 'connect-src',
         origin: 'https://storage.googleapis.com',
-        why: 'MediaPipe hand_landmarker.task model file',
-        owner: 'src/core/handTracker.ts → MODEL_URL',
+        why: 'MediaPipe hand_landmarker.task model file, CDN fallback',
+        owner: 'src/core/trackingAssets.ts → CDN_MODEL_URL',
     },
     // ── Worker support — MediaPipe spawns blob: workers internally ───
     {
