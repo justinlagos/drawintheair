@@ -17,6 +17,7 @@ export type CameraCause =
     | 'DEVICE_BUSY'
     | 'NOT_SUPPORTED'
     | 'CONSTRAINTS'
+    | 'CAMERA_LOST'
     | 'UNKNOWN';
 
 export interface BrowserContext {
@@ -105,6 +106,16 @@ export function getRecoveryCopy(cause: CameraCause, ctx: BrowserContext = detect
                     'Refresh the page.',
                     'If you\'re on an external camera, try a built-in one.',
                 ],
+                canRetry: true,
+            };
+
+        case 'CAMERA_LOST':
+            // Child-facing, mid-game. One short line, no steps: the panel
+            // is icon-led and the primary action is the big Try again.
+            return {
+                title: 'Oops! The camera went away.',
+                body: 'Check it is plugged in, then tap Try again.',
+                steps: [],
                 canRetry: true,
             };
 

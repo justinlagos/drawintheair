@@ -19,6 +19,7 @@ import { initCanvasCoordinateMapper, updateCanvasCoordinateMapper, getCanvasCoor
 import { getTrackingFlag, isDebugModeEnabled } from '../../core/flags/TrackingFlags';
 import { HandGuidanceOverlay } from '../../components/HandGuidanceOverlay';
 import { useCameraController } from '../../camera/useCameraController';
+import { isCameraLostVisible } from '../../camera/cameraLoss';
 import { useVisionLoop } from '../../camera/useVisionLoop';
 import { CameraDebugBadge, CAMERA_DEBUG } from '../../camera/debug';
 import type { VisionLoopResult } from '../../camera/useVisionLoop';
@@ -131,7 +132,7 @@ const EMPTY_FRAME: TrackingFrameData = {
 };
 
 export const TrackingLayer = ({ onFrame, children, suppressNotifications, cameraReassurance = 'off' }: TrackingLayerProps) => {
-    const { videoRef, state: cameraState, startCamera, restartCamera, updateVisionMetrics } = useCameraController();
+    const { videoRef, state: cameraState, loss: cameraLoss, startCamera, restartCamera, reacquireCamera, updateVisionMetrics } = useCameraController();
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     // Latest frame stored in a ref, avoids per-frame React re-renders
@@ -245,14 +246,33 @@ export const TrackingLayer = ({ onFrame, children, suppressNotifications, camera
 
     const handleExplainerContinue = useCallback(() => setExplainerDone(true), []);
 
+    // Mid-session camera loss (DIA-022): the loss machine decides when the
+    // child-facing panel shows. It stays up through the retry so there is
+    // no flash of an empty game while the new stream is requested.
+    const cameraLostVisible = isCameraLostVisible(cameraLoss);
+
+    // The vision loop stops with the stream, so the last positioning toast
+    // ("I need to see your hands") would otherwise sit under the panel. The
+    // frame data is also reset so a pen-down from the last frame does not
+    // keep drawing while no camera is live.
+    useEffect(() => {
+        if (!cameraLostVisible) return;
+        noHandFramesRef.current = 0;
+        setCameraNotification(null);
+        lastFrameDataRef.current = EMPTY_FRAME;
+        interactionStateManager.reset();
+    }, [cameraLostVisible]);
+
     // Map cameraState.errorCode (CameraState union) onto CameraCause for
     // the recovery screen. Unknown codes fall through to 'UNKNOWN'.
     const recoveryCause: CameraCause | null = (() => {
+        if (cameraLostVisible) return null;
         if (cameraState.status !== 'error') return null;
         const c = cameraState.errorCode;
         if (c === 'PERMISSION_DENIED' || c === 'NO_DEVICE' || c === 'DEVICE_BUSY' || c === 'NOT_SUPPORTED') {
             return c;
         }
+        if (c === 'CAMERA_LOST') return 'CAMERA_LOST';
         return 'UNKNOWN';
     })();
 
@@ -700,13 +720,21 @@ export const TrackingLayer = ({ onFrame, children, suppressNotifications, camera
 
             {/* Camera permission flow, treatment arm pre-prompt + per-cause */}
             {/* recovery. Recovery takes precedence when an error is active.   */}
+            {cameraLostVisible && (
+                <CameraRecovery
+                    cause="CAMERA_LOST"
+                    layout="panel"
+                    retrying={cameraLoss.status === 'reacquiring'}
+                    onRetry={reacquireCamera}
+                />
+            )}
             {recoveryCause && (
                 <CameraRecovery
                     cause={recoveryCause}
                     onRetry={restartCamera}
                 />
             )}
-            {!recoveryCause && cameraVariant === 'treatment' && !explainerDone && (
+            {!recoveryCause && !cameraLostVisible && cameraVariant === 'treatment' && !explainerDone && (
                 <CameraExplainer onContinue={handleExplainerContinue} />
             )}
         </div>

@@ -18,6 +18,15 @@ interface CameraRecoveryProps {
     onRetry?: () => void;
     onBackToHome?: () => void;
     isCompact?: boolean;
+    /** 'full' (default) is the adult-facing full-screen dialog used for
+     *  permission and device errors. 'panel' is the child-facing card used
+     *  for a mid-game camera loss (DIA-022): it sits over the play area
+     *  without blanking it, has no steps, no home button and no email
+     *  link, and one big Try again. */
+    layout?: 'full' | 'panel';
+    /** When the caller drives the retry (auto or manual), pass true while
+     *  it is in flight so the button shows Retrying and stays disabled. */
+    retrying?: boolean;
 }
 
 export const CameraRecovery: React.FC<CameraRecoveryProps> = ({
@@ -25,11 +34,14 @@ export const CameraRecovery: React.FC<CameraRecoveryProps> = ({
     onRetry,
     onBackToHome,
     isCompact = false,
+    layout = 'full',
+    retrying: retryingProp,
 }) => {
     const hasLoggedView = useRef(false);
     const ctx = detectBrowser();
     const copy = getRecoveryCopy(cause, ctx);
-    const [retrying, setRetrying] = useState(false);
+    const [retryingLocal, setRetryingLocal] = useState(false);
+    const retrying = retryingProp ?? retryingLocal;
 
     useEffect(() => {
         if (hasLoggedView.current) return;
@@ -41,11 +53,13 @@ export const CameraRecovery: React.FC<CameraRecoveryProps> = ({
 
     const handleRetry = () => {
         if (!onRetry || retrying) return;
-        setRetrying(true);
-        logEvent('camera_recovery_retry', { meta: { cause } });
+        if (retryingProp === undefined) setRetryingLocal(true);
+        // The camera-lost panel logs its own retry (auto vs manual) in the
+        // camera controller, so do not double count it here.
+        if (cause !== 'CAMERA_LOST') logEvent('camera_recovery_retry', { meta: { cause } });
         onRetry();
         // Re-enable retry button after 2s
-        setTimeout(() => setRetrying(false), 2000);
+        if (retryingProp === undefined) setTimeout(() => setRetryingLocal(false), 2000);
     };
 
     const handleDismiss = () => {
@@ -53,6 +67,119 @@ export const CameraRecovery: React.FC<CameraRecoveryProps> = ({
         if (onBackToHome) onBackToHome();
         else window.location.href = '/';
     };
+
+    if (layout === 'panel') {
+        return (
+            <div
+                role="alert"
+                aria-live="assertive"
+                data-testid="camera-lost-panel"
+                style={{
+                    position: 'absolute',
+                    inset: 0,
+                    zIndex: 200,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 16,
+                    // Let the play area show through; only the card takes taps.
+                    background: 'rgba(31, 27, 46, 0.35)',
+                    pointerEvents: 'none',
+                    fontFamily: tokens.fontFamily.body,
+                }}
+            >
+                <div
+                    style={{
+                        pointerEvents: 'auto',
+                        width: '100%',
+                        maxWidth: 420,
+                        background: '#FFFFFF',
+                        border: '3px solid rgba(138, 102, 240, 0.25)',
+                        borderRadius: 28,
+                        padding: '24px 24px 22px',
+                        boxShadow: '0 18px 48px rgba(31, 27, 46, 0.30)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 14,
+                        textAlign: 'center',
+                    }}
+                >
+                    {/* Unplugged camera icon */}
+                    <div style={{
+                        width: 88, height: 88,
+                        borderRadius: 26,
+                        background: 'linear-gradient(165deg, #FFE2EC 0%, #FFD2DD 100%)',
+                        border: '2px solid rgba(240, 122, 92, 0.4)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={tokens.colors.coral} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <rect x="3" y="6" width="12" height="11" rx="2" />
+                            <path d="M20 8v7l-5-2.5v-2L20 8z" />
+                            <path d="M6 20v-3M10 20v-3" />
+                            <path d="M4 22h8" />
+                            <path d="M2 2l20 20" />
+                        </svg>
+                    </div>
+
+                    <p style={{
+                        margin: 0,
+                        fontFamily: tokens.fontFamily.display,
+                        fontWeight: 700,
+                        fontSize: 'clamp(1.15rem, 3.5vw, 1.5rem)',
+                        lineHeight: 1.2,
+                        color: tokens.colors.charcoal,
+                    }}>
+                        {copy.title}
+                    </p>
+                    <p style={{
+                        margin: 0,
+                        fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
+                        lineHeight: 1.4,
+                        color: tokens.colors.charcoal,
+                        opacity: 0.75,
+                    }}>
+                        {copy.body}
+                    </p>
+
+                    {onRetry && (
+                        <button
+                            type="button"
+                            onClick={handleRetry}
+                            disabled={retrying}
+                            aria-label="Try again"
+                            style={{
+                                marginTop: 4,
+                                minWidth: 200,
+                                minHeight: 64,
+                                background: 'linear-gradient(180deg, #7E4FB8 0%, #6C3FA4 100%)',
+                                border: 'none',
+                                color: '#FFFFFF',
+                                fontFamily: tokens.fontFamily.display,
+                                fontWeight: 700,
+                                fontSize: '1.25rem',
+                                padding: '14px 30px',
+                                borderRadius: 9999,
+                                cursor: retrying ? 'wait' : 'pointer',
+                                boxShadow: '0 8px 18px rgba(108, 63, 164, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.4)',
+                                opacity: retrying ? 0.7 : 1,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 10,
+                            }}
+                        >
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="M21 12a9 9 0 1 1-2.6-6.4" />
+                                <path d="M21 3v6h-6" />
+                            </svg>
+                            {retrying ? 'Trying…' : 'Try again'}
+                        </button>
+                    )}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div

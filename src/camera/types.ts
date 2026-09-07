@@ -12,6 +12,7 @@ export type CameraErrorCode =
     | 'NO_DEVICE'
     | 'DEVICE_BUSY'
     | 'NOT_SUPPORTED'
+    | 'CAMERA_LOST'
     | 'UNKNOWN'
     | null;
 
