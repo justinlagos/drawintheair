@@ -22,6 +22,7 @@
  *   analytics.endSession('back_to_landing');
  */
 
+import { mapEventToAttempt } from './attemptMirror';
 import { dbInsert, callRpc } from './supabase';
 import {
     classifyEnvironment,
@@ -1651,6 +1652,63 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
     }
 
     // ─────────────────────────────────────────────────────────────────
+    // CONTENT-EVENT MIRROR (WP2B.8, DIA-030). The deployed activities
+    // (playful tracing, bubble pop) never emit item_dropped, so the mirror
+    // above starved learning_attempts from 10 July 2026. The mapping
+    // table in attemptMirror.ts says which per-item content events are
+    // attempts and how to read them. Fires for EVERY session (school,
+    // anonymous, parent) and reuses the same queue and RPC. Meta is
+    // allow-listed scalars only, never free text.
+    // ─────────────────────────────────────────────────────────────────
+    let mirroredByTable = false;
+    if (opts.game_mode) {
+        try {
+            const mapped = mapEventToAttempt(name, opts);
+            if (mapped) {
+                mirroredByTable = true;
+                const ctx = getOrCreateSession();
+                learningQueue.push({
+                    occurred_at: row.occurred_at,
+                    session_id: ctx.sessionId,
+                    device_id: getOrCreateDeviceId(),
+                    game_mode: opts.game_mode,
+                    stage_id: mapped.stage_id,
+                    stage_index: mapped.stage_index,
+                    item_key: mapped.item_key,
+                    age_band: ctx.ageBand,
+                    was_correct: mapped.was_correct,
+                    attempt_number: nextAttemptNumber(mapped.item_key),
+                    ms_to_attempt: mapped.ms_to_attempt,
+                    expected_value: mapped.expected_value,
+                    actual_value: mapped.actual_value,
+                    meta: {
+                        ...mapped.meta,
+                        _mirror_source: name,
+                        _item_kind: mapped.item_kind,
+                        attempt_id: (row.meta as Record<string, unknown>).attempt_id ?? null,
+                    },
+                    event_uid: row.event_uid,
+                    client_seq: row.client_seq,
+                    client_ts: row.client_ts,
+                    context: row.context,
+                    child_profile_id: readSelectedChildId(),
+                    gq_path_accuracy_pct: null,
+                    gq_path_efficiency: null,
+                    gq_spatial_error_mean_px: null,
+                    gq_velocity_variance: null,
+                    gq_pause_count: null,
+                    gq_directional_changes: null,
+                    gq_time_to_first_movement_ms: null,
+                    gq_time_to_completion_ms: null,
+                    gq_corrections_in_stroke: null,
+                    gq_n_samples: null,
+                });
+                persistLearningQueue();
+            }
+        } catch { /* the mirror must never break logEvent */ }
+    }
+
+    // ─────────────────────────────────────────────────────────────────
     // EXTENDED MIRROR, many game modes don't fire `item_dropped`. To
     // keep the parent dashboard's child_activity_summary populated for
     // EVERY mode, also mirror well-defined "win" events into
@@ -1675,7 +1733,9 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
         'build_object_completed',
         'successful_snap',
     ]);
-    if (WIN_EVENTS.has(name) && opts.game_mode) {
+    // Skipped when the mapping table already wrote this event's row, so a
+    // child-bound session never gets two rows for one attempt.
+    if (WIN_EVENTS.has(name) && opts.game_mode && !mirroredByTable) {
         let childProfileId: string | null = null;
         try {
             const raw = sessionStorage.getItem('dita-selected-child');
@@ -1785,6 +1845,22 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
             })();
         }
     }
+}
+
+/** Selected child profile id from the parent dashboard, or null for
+ *  school and anonymous play. Read from sessionStorage so the mirror
+ *  stays decoupled from React state. */
+function readSelectedChildId(): string | null {
+    try {
+        const raw = sessionStorage.getItem('dita-selected-child');
+        if (raw && /^[0-9a-f-]{36}$/i.test(raw)) return raw;
+    } catch { /* private mode etc. */ }
+    return null;
+}
+
+/** Test-only view of the pending learning_attempts rows. Returns a copy. */
+export function peekLearningQueueForTests(): ReadonlyArray<Record<string, unknown>> {
+    return learningQueue.map((r) => ({ ...r }));
 }
 
 const LEARNING_QUEUE_KEY = 'dita_learning_queue';
