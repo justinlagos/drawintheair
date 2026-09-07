@@ -18,7 +18,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!api|assets|images|public|favicon|logo|robots|sitemap|health\\.json|\\.well-known).*)",
+      "source": "/((?!api|assets|images|mediapipe|public|favicon|logo|robots|sitemap|health\\.json|\\.well-known).*)",
       "destination": "/index.html"
     }
   ],
@@ -27,6 +27,18 @@
       "source": "/assets/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/mediapipe/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/mediapipe/(.*)\\.task",
+      "headers": [
+        { "key": "Content-Type", "value": "application/octet-stream" }
       ]
     },
     {

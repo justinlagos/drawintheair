@@ -75,6 +75,7 @@ export type EventName =
     | 'tracker_init_started'        // handTracker.initialize() invoked
     | 'tracker_init_succeeded'      // meta: { delegate, init_duration_ms }
     | 'tracker_init_failed'         // meta: { code, message, tried_delegates }
+    | 'tracker_assets_resolved'     // meta: { wasm_source, model_source } ('self' or 'cdn', DIA-020)
 
     // ── Camera permission flow (A/B experiment camera_explainer_v1) ──
     | 'camera_explainer_shown'      // Pre-prompt rendered (treatment arm only)
