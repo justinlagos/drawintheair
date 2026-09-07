@@ -11,7 +11,7 @@
     "build": "tsc -b && vite build && vite build --ssr src/entry-prerender.tsx --outDir dist-ssr --emptyOutDir && node scripts/prerender-seo.mjs",
     "type-check": "tsc -b --noEmit",
     "type-check:watch": "tsc -b --noEmit --watch",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 162",
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview",
