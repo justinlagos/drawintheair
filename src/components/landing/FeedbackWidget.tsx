@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { submitFormData } from '../../lib/formSubmission';
+import { submitFormData, SUBMISSION_FAILED_MESSAGE } from '../../lib/formSubmission';
 import './landing.css';
 
 export const FeedbackWidget: React.FC = () => {
@@ -8,18 +8,24 @@ export const FeedbackWidget: React.FC = () => {
     const [email, setEmail] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const [error, setError] = useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!feedback.trim()) return;
 
         setIsSubmitting(true);
+        setError('');
         try {
-            await submitFormData({
+            const result = await submitFormData({
                 type: 'feedback',
                 email: email.trim() || undefined,
                 message: feedback.trim(),
             });
+            if (!result.success) {
+                setError(result.error || SUBMISSION_FAILED_MESSAGE);
+                return;
+            }
             setSubmitted(true);
             setTimeout(() => {
                 setIsOpen(false);
@@ -29,13 +35,7 @@ export const FeedbackWidget: React.FC = () => {
             }, 3000);
         } catch (err) {
             console.error('Error submitting feedback:', err);
-            setSubmitted(true);
-            setTimeout(() => {
-                setIsOpen(false);
-                setSubmitted(false);
-                setFeedback('');
-                setEmail('');
-            }, 3000);
+            setError(SUBMISSION_FAILED_MESSAGE);
         } finally {
             setIsSubmitting(false);
         }
@@ -75,8 +75,14 @@ export const FeedbackWidget: React.FC = () => {
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="landing-feedback-form">
+                            {error && (
+                                <div className="landing-pilot-error" role="alert">
+                                    {error}
+                                </div>
+                            )}
                             <textarea
                                 placeholder="What can we do better?"
+                                aria-label="Your feedback"
                                 value={feedback}
                                 onChange={(e) => setFeedback(e.target.value)}
                                 required
@@ -85,6 +91,7 @@ export const FeedbackWidget: React.FC = () => {
                             <input
                                 type="email"
                                 placeholder="Email (optional)"
+                                aria-label="Email (optional)"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                             />

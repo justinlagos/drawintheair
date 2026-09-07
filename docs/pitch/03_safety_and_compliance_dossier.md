@@ -179,7 +179,7 @@ The helper function `auth_owns_child(uuid)` is `SECURITY DEFINER` and references
 
 ### 6.4 CORS
 
-Edge functions allow-list only `https://drawintheair.com`, `https://www.drawintheair.com`, `https://app.drawintheair.com`, and localhost development origins.
+Edge functions allow-list only `https://drawintheair.com`, `https://www.drawintheair.com`, and localhost development origins.
 
 ### 6.5 Payments
 

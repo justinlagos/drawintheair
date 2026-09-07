@@ -10,7 +10,7 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { LegalPageLayout } from '../components/landing/LegalPageLayout';
-import { submitFormData } from '../lib/formSubmission';
+import { submitFormData, SUBMISSION_FAILED_MESSAGE } from '../lib/formSubmission';
 
 interface FormData {
   name: string;
@@ -82,7 +82,7 @@ export default function SchoolPilot() {
     setError('');
     setLoading(true);
     try {
-      await submitFormData({
+      const result = await submitFormData({
         type: 'school_pilot',
         name: form.name,
         email: form.email,
@@ -91,9 +91,10 @@ export default function SchoolPilot() {
         pupils: form.pupils,
         message: form.message,
       });
-      setSubmitted(true);
+      if (result.success) setSubmitted(true);
+      else setError(result.error || SUBMISSION_FAILED_MESSAGE);
     } catch {
-      setSubmitted(true);
+      setError(SUBMISSION_FAILED_MESSAGE);
     } finally {
       setLoading(false);
     }
@@ -138,7 +139,7 @@ export default function SchoolPilot() {
               </div>
 
               {error && (
-                <div style={{
+                <div role="alert" style={{
                   marginBottom: 20,
                   borderRadius: 12,
                   border: '1px solid rgba(240,122,92,0.4)',

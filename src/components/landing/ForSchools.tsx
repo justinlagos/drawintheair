@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { submitFormData } from '../../lib/formSubmission';
+import { submitFormData, SUBMISSION_FAILED_MESSAGE } from '../../lib/formSubmission';
 import './landing.css';
 
 interface ForSchoolsProps {
@@ -78,7 +78,7 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
       }
 
       // Submit through unified form system
-      await submitFormData({
+      const result = await submitFormData({
         type: 'school_pack_request',
         name: sanitizedData.contactName,
         email: sanitizedData.email,
@@ -88,6 +88,11 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
         deviceType: sanitizedData.deviceType || undefined,
         sendNotes: sanitizedData.sendNotes || undefined,
       });
+
+      if (!result.success) {
+        setError(result.error || SUBMISSION_FAILED_MESSAGE);
+        return;
+      }
 
       setSubmitted(true);
       setFormData({
@@ -105,7 +110,7 @@ export const ForSchools: React.FC<ForSchoolsProps> = ({ onRequestSchoolPack }) =
       }, 3000);
     } catch (error) {
       console.error('Error submitting form:', error);
-      setError('Failed to save form. Please try again.');
+      setError(SUBMISSION_FAILED_MESSAGE);
     } finally {
       setIsSubmitting(false);
     }

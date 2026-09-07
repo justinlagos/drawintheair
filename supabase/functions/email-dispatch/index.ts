@@ -10,6 +10,10 @@
  *      (reminder_2d_sent_at is null).
  *   3. Sends the TRIAL ENDED email after expiry
  *      (reminder_expired_sent_at is null).
+ *   4. Emails the founder about new marketing leads stored by the
+ *      lead-capture function (form_submissions.founder_notified_at is null,
+ *      feedback excluded). Recipient: LEAD_NOTIFY_TO secret, default
+ *      partnership@drawintheair.com. WP2B.2 / DIA-013.
  *
  * Each send is recorded so no email is ever sent twice.
  *
@@ -190,5 +194,86 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  return new Response(JSON.stringify({ ok: true, ...out }), { status: 200, headers });
+  // 4. New leads for the founder (WP2B.2). One email per lead, stamped
+  //    founder_notified_at on success so it never repeats. Rows that
+  //    keep failing are retried every run until they succeed.
+  const leadOut = { leads: 0, leadsFailed: 0 };
+  const { data: leads, error: leadErr } = await supabase
+    .from('form_submissions')
+    .select('id, form_type, email, name, school, role, message, metadata, created_at')
+    .is('founder_notified_at', null)
+    .neq('form_type', 'feedback')
+    .order('created_at', { ascending: true })
+    .limit(50);
+  if (leadErr) {
+    console.error('[email-dispatch] lead scan failed:', leadErr.message);
+  }
+  const notifyTo = Deno.env.get('LEAD_NOTIFY_TO') || 'partnership@drawintheair.com';
+  for (const lead of leads ?? []) {
+    try {
+      const ok = await sendEmail(notifyTo, leadSubject(lead.form_type), leadEmailHtml(lead));
+      if (ok) {
+        await supabase.from('form_submissions')
+          .update({ founder_notified_at: new Date().toISOString() })
+          .eq('id', lead.id);
+        leadOut.leads++;
+      } else leadOut.leadsFailed++;
+    } catch {
+      leadOut.leadsFailed++;
+    }
+  }
+
+  return new Response(JSON.stringify({ ok: true, ...out, ...leadOut }), { status: 200, headers });
 });
+
+const LEAD_LABELS: Record<string, string> = {
+  school_pack_request: 'School pack request',
+  school_pilot: 'School pilot application',
+  parent_trial: 'Parent trial signup',
+  newsletter: 'Newsletter signup',
+  contact: 'Contact form',
+  pilot_list: 'Pilot list signup',
+};
+
+function leadSubject(formType: string): string {
+  return `New lead: ${LEAD_LABELS[formType] || formType}`;
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+}
+
+interface LeadRow {
+  form_type: string;
+  email: string | null;
+  name: string | null;
+  school: string | null;
+  role: string | null;
+  message: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
+function leadEmailHtml(lead: LeadRow): string {
+  const rows: Array<[string, unknown]> = [
+    ['Type', LEAD_LABELS[lead.form_type] || lead.form_type],
+    ['Email', lead.email],
+    ['Name', lead.name],
+    ['School', lead.school],
+    ['Role', lead.role],
+    ['Message', lead.message],
+    ['Received', lead.created_at],
+  ];
+  for (const [k, v] of Object.entries(lead.metadata || {})) rows.push([k, v]);
+  const table = rows
+    .filter(([, v]) => v !== null && v !== undefined && v !== '')
+    .map(([k, v]) => `<tr><td style="padding:6px 10px;font-weight:600;color:#3E3A4E;vertical-align:top;">${escapeHtml(String(k))}</td><td style="padding:6px 10px;color:#1F1B2E;white-space:pre-wrap;">${escapeHtml(String(v))}</td></tr>`)
+    .join('');
+  return brandEmail({
+    preheader: `New lead from ${lead.email || 'the website'}`,
+    heading: leadSubject(lead.form_type),
+    bodyHtml: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:14px;">${table}</table>`,
+    ctaLabel: lead.email ? 'Reply to this lead' : 'Open drawintheair.com',
+    ctaUrl: lead.email ? `mailto:${encodeURIComponent(lead.email)}` : SITE,
+  });
+}
