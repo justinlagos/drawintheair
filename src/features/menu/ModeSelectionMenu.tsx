@@ -20,10 +20,13 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { type HandLandmarkerResult } from '@mediapipe/tasks-vision';
 import { useParentAccess } from '../parent/useParentAccess';
 import { PremiumLockModal } from '../parent/PremiumLockModal';
-import { evaluateModeGate } from './modeGate';
+import { evaluateModeGate, type ModeTier } from './modeGate';
+import { getModeTier, type GameMode } from './modeCatalog';
 import { Dita2Root, type Tone } from '../kid2/Kid2';
 
-export type GameMode = 'calibration' | 'free' | 'pre-writing' | 'sort-and-place' | 'word-search' | 'colour-builder' | 'balloon-math' | 'rainbow-bridge' | 'gesture-spelling' | 'building';
+// GameMode is defined in modeCatalog.ts (shared with the mount guard in
+// App.tsx). Re-exported here so existing imports keep working.
+export type { GameMode } from './modeCatalog';
 
 interface ModeOption {
     id: GameMode;
@@ -35,8 +38,8 @@ interface ModeOption {
     category: string;
     /** Age band shown on the tile tag (product fact, not progress). */
     age: string;
-    /** 'free' = always playable; 'premium' = requires parent subscription/trial. */
-    tier: 'free' | 'premium';
+    /** Read from modeCatalog so the menu and the mount guard agree. */
+    tier: ModeTier;
 }
 
 /**
@@ -57,16 +60,16 @@ interface ModeOption {
  * Source: dashboard mode_started + mode_completed counts over the
  * last 90 days. Phase 2 of the activation refactor.
  */
-const MODES: ModeOption[] = [
-    { id: 'free',             title: 'Free Paint',     subtitle: 'Create anything',        icon: '🎨', tone: 'lavender', category: 'Creative', age: '3–7', tier: 'free' },
-    { id: 'calibration',      title: 'Bubble Pop',     subtitle: 'Warm up your hands',     icon: '🫧', tone: 'peach',    category: 'Warm-up',  age: '3–7', tier: 'free' },
-    { id: 'pre-writing',      title: 'Tracing',        subtitle: 'Follow the path',        icon: '✏️', tone: 'mint',     category: 'Learning', age: '3–7', tier: 'free' },
-    { id: 'gesture-spelling', title: 'Spelling Stars', subtitle: 'Spell the word!',        icon: '✍️', tone: 'lavender', category: 'Learning', age: '5–7', tier: 'premium' },
-    { id: 'sort-and-place',   title: 'Sort & Place',   subtitle: 'Think and sort',         icon: '🗂️', tone: 'sky',      category: 'Puzzle',   age: '3–6', tier: 'premium' },
-    { id: 'word-search',      title: 'Word Search',    subtitle: 'Find the words',         icon: '🔍', tone: 'sun',      category: 'Puzzle',   age: '5–7', tier: 'premium' },
-    { id: 'balloon-math',     title: 'Balloon Math',   subtitle: 'Pop the right number!',  icon: '🎈', tone: 'peach',    category: 'Learning', age: '4–7', tier: 'premium' },
-    { id: 'rainbow-bridge',   title: 'Rainbow Bridge', subtitle: 'Match the colours',      icon: '🌈', tone: 'sky',      category: 'Learning', age: '3–6', tier: 'premium' },
-];
+const MODES: ModeOption[] = ([
+    { id: 'free',             title: 'Free Paint',     subtitle: 'Create anything',        icon: '🎨', tone: 'lavender', category: 'Creative', age: '3–7' },
+    { id: 'calibration',      title: 'Bubble Pop',     subtitle: 'Warm up your hands',     icon: '🫧', tone: 'peach',    category: 'Warm-up',  age: '3–7' },
+    { id: 'pre-writing',      title: 'Tracing',        subtitle: 'Follow the path',        icon: '✏️', tone: 'mint',     category: 'Learning', age: '3–7' },
+    { id: 'gesture-spelling', title: 'Spelling Stars', subtitle: 'Spell the word!',        icon: '✍️', tone: 'lavender', category: 'Learning', age: '5–7' },
+    { id: 'sort-and-place',   title: 'Sort & Place',   subtitle: 'Think and sort',         icon: '🗂️', tone: 'sky',      category: 'Puzzle',   age: '3–6' },
+    { id: 'word-search',      title: 'Word Search',    subtitle: 'Find the words',         icon: '🔍', tone: 'sun',      category: 'Puzzle',   age: '5–7' },
+    { id: 'balloon-math',     title: 'Balloon Math',   subtitle: 'Pop the right number!',  icon: '🎈', tone: 'peach',    category: 'Learning', age: '4–7' },
+    { id: 'rainbow-bridge',   title: 'Rainbow Bridge', subtitle: 'Match the colours',      icon: '🌈', tone: 'sky',      category: 'Learning', age: '3–6' },
+] as Omit<ModeOption, 'tier'>[]).map((m) => ({ ...m, tier: getModeTier(m.id) }));
 
 interface ModeSelectionMenuProps {
     onSelect: (mode: GameMode) => void;
