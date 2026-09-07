@@ -1,18 +1,31 @@
 import React, { useState } from 'react';
-import { submitFormData } from '../../lib/formSubmission';
+import { submitFormData, SUBMISSION_FAILED_MESSAGE } from '../../lib/formSubmission';
 import './landing.css';
 
 export const PilotCallout: React.FC = () => {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
-      await submitFormData({ type: 'pilot_list', email: email.trim() });
+    if (!email || sending) return;
+    setSending(true);
+    setError('');
+    try {
+      const result = await submitFormData({ type: 'pilot_list', email: email.trim() });
+      if (!result.success) {
+        setError(result.error || SUBMISSION_FAILED_MESSAGE);
+        return;
+      }
       setSubmitted(true);
       setEmail('');
       setTimeout(() => setSubmitted(false), 5000);
+    } catch {
+      setError(SUBMISSION_FAILED_MESSAGE);
+    } finally {
+      setSending(false);
     }
   };
 
@@ -42,11 +55,17 @@ export const PilotCallout: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              aria-label="Your email"
             />
-            <button type="submit" className="landing-btn landing-btn-primary">
-              Join the pilot list
+            <button type="submit" className="landing-btn landing-btn-primary" disabled={sending}>
+              {sending ? 'Sending...' : 'Join the pilot list'}
             </button>
           </form>
+          {error && (
+            <div className="landing-pilot-error" role="alert">
+              {error}
+            </div>
+          )}
           {submitted && (
             <div className="landing-pilot-success">
               <svg className="landing-success-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">

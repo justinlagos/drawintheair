@@ -1,23 +1,26 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { LegalPageLayout } from '../components/landing/LegalPageLayout';
-import { submitFormData } from '../lib/formSubmission';
+import { submitFormData, SUBMISSION_FAILED_MESSAGE } from '../lib/formSubmission';
 
 export default function ParentAccess() {
   const [email, setEmail] = useState('');
   const [childAge, setChildAge] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email) return;
     setLoading(true);
+    setError('');
     try {
-      await submitFormData({ type: 'parent_trial', email: email.trim(), childAge });
-      setSubmitted(true);
+      const result = await submitFormData({ type: 'parent_trial', email: email.trim(), childAge });
+      if (result.success) setSubmitted(true);
+      else setError(result.error || SUBMISSION_FAILED_MESSAGE);
     } catch {
-      setSubmitted(true);
+      setError(SUBMISSION_FAILED_MESSAGE);
     } finally {
       setLoading(false);
     }
@@ -74,6 +77,11 @@ export default function ParentAccess() {
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                {error && (
+                  <div role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                    {error}
+                  </div>
+                )}
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1.5">
                     Your email address
@@ -112,7 +120,7 @@ export default function ParentAccess() {
                   disabled={loading}
                   className="w-full rounded-xl bg-teal-600 px-6 py-3 text-base font-medium text-white hover:bg-teal-700 transition-colors disabled:opacity-60"
                 >
-                  {loading ? 'Sending…' : 'Send Me Activity Ideas'}
+                  {loading ? 'Sending...' : 'Send Me Activity Ideas'}
                 </button>
                 <p className="text-xs text-slate-500 text-center">
                   We never share your email. Unsubscribe any time.
