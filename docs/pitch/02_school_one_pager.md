@@ -10,7 +10,7 @@ Draw in the Air is a browser-based early-years learning platform. Children pract
 
 ## What it is NOT
 
-It is not a social network. It is not a video-storage service. It is not an AI camera. There is no chat, no leaderboard, no child-to-child contact, no advertising, and no data sold to third parties — ever.
+It is not a social network. It is not a video-storage service. It is not an AI camera. There is no chat, no public leaderboard (Class Mode shows a live scoreboard to the teacher and class only), no child-to-child contact, no advertising, and no data sold to third parties, ever.
 
 ---
 
@@ -19,9 +19,9 @@ It is not a social network. It is not a video-storage service. It is not an AI c
 | Concern | How Draw in the Air handles it |
 |---|---|
 | Camera video | Processed locally in the browser by Google's open-source MediaPipe library. Frames are never uploaded, never stored, never sent off-device. |
-| Personal data on a child | A nickname (or just an emoji avatar) and an age band (4–5, 6–7, 8–9). No full names, dates of birth, photos, phone numbers, school names attached to a child, or biometric data. |
-| Identifiability | Each learner is a randomly generated pseudonymous ID. Any analytics group of fewer than 5 children is suppressed automatically (k-anonymity). |
-| Hosting | EU-based infrastructure (Supabase). Data does not transit through ad networks. |
+| Personal data on a child | At home: a first name or nickname, an emoji avatar and an age band (3–4, 5–6, 7–8). In class: a first name or nickname on the teacher's class list. No surnames, dates of birth, photos, phone numbers, or biometric data. |
+| Identifiability | Analytics use a randomly generated pseudonymous ID, never a name. Any published group of fewer than 5 children is suppressed automatically (k-anonymity). |
+| Hosting | UK-based infrastructure (Supabase, London region). Data does not transit through ad networks. |
 | Tracking and ads | No behavioural advertising. No tracking cookies for child sessions. `Permissions-Policy` disables microphone, geolocation, and ad-tech cohorts at the browser level. |
 | Parental control | Parents can view, export, or delete every record we hold about them and their child from a self-service account page. Consent can be withdrawn at any time. |
 

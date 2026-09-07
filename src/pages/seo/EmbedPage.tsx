@@ -26,7 +26,7 @@ const EMBED_VARIANTS: EmbedVariant[] = [
     id: 'full',
     label: 'Full Platform',
     emoji: '🎮',
-    description: 'All nine activities, letters, numbers, shapes, sorting, colours, maths, and free drawing.',
+    description: 'All eight activities, letters, numbers, shapes, sorting, colours, maths, spelling, and free drawing.',
     height: 620,
     borderColor: '#8A66F0',
     src: `${BASE_URL}/play?embed=true`,
@@ -167,7 +167,7 @@ export default function EmbedPage() {
               { icon: '⚡', label: '60 seconds', sub: 'to add to your site' },
               { icon: '0️⃣', label: 'Zero cost', sub: 'free to embed forever' },
               { icon: '5', label: 'Activity variants', sub: 'full platform or single mode' },
-              { icon: '🔒', label: 'Privacy first', sub: 'no data collection, no video storage' },
+              { icon: '🔒', label: 'Privacy first', sub: 'no video storage, no child accounts' },
             ].map(stat => (
               <div key={stat.label} style={{ background: '#FFFFFF', border: '1px solid rgba(138,102,240,0.17)', borderRadius: 12, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
                 <span style={{ fontSize: '1.6rem' }}>{stat.icon}</span>

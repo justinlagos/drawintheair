@@ -90,7 +90,7 @@ const TransparencyPage: React.FC = () => {
                         <TrustBadge
                             icon="🔒"
                             title="Privacy first by design"
-                            note="No names, no faces, no personal accounts. Pseudonymous IDs only."
+                            note="No faces, no child accounts. Anonymous play uses pseudonymous IDs only."
                         />
                         <TrustBadge
                             icon="🏫"
@@ -257,7 +257,7 @@ const TransparencyPage: React.FC = () => {
                         <PrivacyCard
                             icon="🪪"
                             title="No personal identity"
-                            body="No names, no emails, no faces. Each learner is a randomly generated pseudonymous ID that lives only on their device."
+                            body="No emails, no faces. Anonymous play uses a randomly generated pseudonymous ID that lives only on the device. Learners added by a parent or teacher are recorded with a first name or nickname and an age band only."
                         />
                         <PrivacyCard
                             icon="🧮"
@@ -266,8 +266,8 @@ const TransparencyPage: React.FC = () => {
                         />
                         <PrivacyCard
                             icon="🌍"
-                            title="Hosted in the EU"
-                            body="Data lives in EU servers. We do not sell, share, or monetise children's information. Ever."
+                            title="Hosted in the UK"
+                            body="Data lives on servers in London, UK. We do not sell, share, or monetise children's information. Ever."
                         />
                     </div>
                 </section>

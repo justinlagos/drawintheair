@@ -147,7 +147,7 @@ export default function ParentSetupGuide() {
                             <li>No faces, audio, or video</li>
                             <li>No geolocation</li>
                             <li>No cross-site tracking, no advertising IDs</li>
-                            <li>No data shared with any third party</li>
+                            <li>Camera video is never shared with anyone. Usage events go to our own database and, only if you accept the cookie banner, to the analytics tools listed in our Privacy Policy</li>
                         </ul>
                         <p>
                             Full detail and how to opt out / clear your local data:{' '}
@@ -169,7 +169,7 @@ export default function ParentSetupGuide() {
                             <li><strong>Balloon Math:</strong> number recognition + early arithmetic, with the answer-balloon you have to physically reach for.</li>
                             <li><strong>Rainbow Bridge:</strong> colour matching + memory.</li>
                             <li><strong>Spelling Stars:</strong> letter order, simple words.</li>
-                            <li>Aligned with EYFS (UK) and US Common Core early-learning standards.</li>
+                            <li>Aligned with the EYFS framework (UK).</li>
                         </ul>
                     </section>
 

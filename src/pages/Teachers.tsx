@@ -79,7 +79,7 @@ const PILOT_STEPS = [
 const TEACHER_FAQ = [
   { q: 'Do children need accounts?',         a: 'No. Children never log in. You open the activity on the class device, pupils join the movement, not a system. Teacher accounts exist only for analytics and classroom mode.' },
   { q: 'What about our IT restrictions?',    a: 'It runs in the browser with no install. We provide a Chromebook setup guide and the exact domains to allow-list for your network team.' },
-  { q: 'Is there a cost to pilot?',          a: 'The pilot is free, and the full activity set is free to use in class. School licences add admin analytics and whole-school reporting.' },
+  { q: 'Is there a cost to pilot?',          a: 'The pilot is free, and every activity is available in Class Mode sessions during the pilot. School licences are agreed with the school after the pilot.' },
 ];
 
 export const Teachers: React.FC = () => {
@@ -173,7 +173,7 @@ export const Teachers: React.FC = () => {
                 </div>
                 <h2 className="h2" style={{ color: '#fff', marginTop: 16 }}>Run your whole class at once.</h2>
                 <p className="lead" style={{ color: 'rgba(255,255,255,0.74)', marginTop: 16 }}>
-                  A live class view shows energy in the room in real time. Start an activity, watch engagement, and download a session report when you are done.
+                  A live class view shows energy in the room in real time. Start an activity, watch engagement, and print a session summary when you are done.
                 </p>
                 <div className="bullets">
                   {[

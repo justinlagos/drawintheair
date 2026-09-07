@@ -29,8 +29,8 @@ const FAQ = [
   { q: 'Does Draw in the Air require student accounts?', a: 'No. Children never need accounts, logins, or registrations. They join with a short class code on screen, making it ideal for any classroom environment.' },
   { q: 'Does it work on school Chromebooks?', a: 'Yes! Draw in the Air is built as a browser-based web app and works on all modern browsers including Chrome on Chromebooks. It requires only camera access, which most school Chromebooks support. No installation or admin approval needed in most school networks.' },
   { q: 'Can I use it on an interactive whiteboard?', a: 'Absolutely. Draw in the Air can be displayed on an interactive whiteboard through any connected laptop. The teacher can demonstrate gestures to the whole class while students follow along on individual devices.' },
-  { q: 'Is student data collected?', a: 'No personally-identifying student data is collected, no names, emails, faces, audio, or video. The camera feed never leaves the device. We do collect anonymised, aggregated usage analytics (which game modes are popular, whether hand tracking started successfully, which letters were practised) tied to a randomly-generated browser identifier, never to a real child. Anonymised analytics are auto-deleted after 365 days. See our Privacy Policy for the full detail. The platform is designed to be GDPR and COPPA compliant for children.' },
-  { q: 'Which curriculum frameworks does it support?', a: 'Draw in the Air supports Early Years Foundation Stage (EYFS) in the UK, Common Core early learning standards in the US, and general pre-school/kindergarten readiness frameworks globally. Letter and number tracing are aligned with typical curriculum sequences.' },
+  { q: 'Is student data collected?', a: 'No faces, audio, or video are ever collected, and the camera feed never leaves the device. A child joining a class session types a first name or nickname, which the teacher can see and delete. No emails or contact details are collected from children. We do collect pseudonymous usage analytics (which game modes are popular, whether hand tracking started successfully, which letters were practised) tied to a randomly generated browser identifier, never to a real child, and aggregated for reporting. These events are auto-deleted after 365 days. See our Privacy Policy for the full detail. The platform is designed around UK GDPR.' },
+  { q: 'Which curriculum frameworks does it support?', a: 'Draw in the Air is mapped to the Early Years Foundation Stage (EYFS) in the UK and fits general pre-school and kindergarten readiness goals elsewhere. Letter and number tracing are aligned with typical curriculum sequences.' },
   { q: 'Can the whole class use it simultaneously?', a: 'Yes! Each student uses Draw in the Air independently on their own device, or the whole class can move together in live classroom mode with one laptop, webcam and projector.' },
   { q: 'Can I embed it on our school website?', a: 'Yes! Visit drawintheair.com/embed to get the free embed code. Paste it into any school website or blog and it runs directly in the page, great for homework pages or classroom portals.' },
 ];
@@ -53,16 +53,6 @@ const FRAMEWORKS = [
       'Physical Development, Fine Motor Skills',
       'Mathematics, Numbers and Shape',
       'Understanding the World, Technology',
-    ],
-  },
-  {
-    framework: 'Common Core (US)',
-    tone: 'sky',
-    areas: [
-      'Print Concepts, Letter Recognition',
-      'Counting and Cardinality K.CC',
-      'Geometry, Shape Identification',
-      'Physical Development, Fine Motor',
     ],
   },
   {
@@ -259,8 +249,8 @@ export default function ForTeachersPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
               {[
                 { icon: '🎥', title: 'Camera stays on-device', desc: 'Hand tracking runs in the browser. No video is ever recorded, transmitted, or stored.' },
-                { icon: '🪪', title: 'No child accounts', desc: 'Children never log in and never have a profile. They join with a short class code.' },
-                { icon: '🛡️', title: 'GDPR & COPPA aligned', desc: 'Anonymised, aggregated analytics only, auto-deleted after 365 days.' },
+                { icon: '🪪', title: 'No child accounts', desc: 'Children never log in. They join with a short class code and a first name or nickname, which the teacher controls and can delete.' },
+                { icon: '🛡️', title: 'UK GDPR by design', desc: 'Event analytics are pseudonymous, aggregated for reporting, and auto-deleted after 365 days.' },
                 { icon: '🔍', title: 'Publicly auditable', desc: 'Our live transparency page shows exactly what we measure and what we don’t claim.' },
               ].map(p => (
                 <div key={p.title} className="card" style={{ padding: '22px 20px' }}>

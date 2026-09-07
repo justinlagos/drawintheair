@@ -33,7 +33,7 @@ const KEY_FACTS = [
   { label: 'Launch', value: '2025' },
   { label: 'Made in', value: 'United Kingdom' },
   { label: 'Age range', value: '3–7 years' },
-  { label: 'Activities', value: '10 modes' },
+  { label: 'Activities', value: '8 modes' },
   { label: 'Child accounts', value: 'None, ever' },
   { label: 'Video stored', value: 'None, on-device only' },
   { label: 'Works on', value: 'Any webcam device' },
@@ -116,8 +116,8 @@ export default function PressPage() {
               <p style={{ fontSize: '1.02rem', lineHeight: 1.75, marginBottom: 0 }}>
                 The hand tracking is powered by Google MediaPipe, a production-grade AI
                 library that detects 21 hand landmarks in real time, entirely in the
-                browser. No video is recorded, transmitted, or stored. No child accounts,
-                no personal data on children, no ads.
+                browser. No video is recorded, transmitted, or stored. No child accounts, no ads.
+                Learners added by a parent or teacher are recorded with a first name or nickname and an age band only.
               </p>
             </div>
 

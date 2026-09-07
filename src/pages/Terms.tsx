@@ -28,7 +28,7 @@ export const Terms: React.FC = () => {
       <p>Draw In The Air is provided "as is" without any warranties, express or implied. We do not guarantee that the platform will be error free, uninterrupted, or meet your specific requirements.</p>
 
       <h2>Liability limits</h2>
-      <p>To the fullest extent permitted by law, we are not liable for any indirect, incidental, or consequential damages arising from your use of Draw In The Air. Our total liability is limited to the amount you have paid to use the platform (which is currently zero, as the platform is free to use).</p>
+      <p>To the fullest extent permitted by law, we are not liable for any indirect, incidental, or consequential damages arising from your use of Draw In The Air. Our total liability is limited to the amount you have paid to use the platform in the twelve months before the claim arose. If you have paid nothing, our liability is limited to zero.</p>
 
       <h2>Changes to service</h2>
       <p>We may modify, update, or discontinue Draw In The Air at any time. We will endeavour to provide notice of significant changes, but are not obligated to do so.</p>

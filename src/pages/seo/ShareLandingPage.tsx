@@ -102,8 +102,8 @@ const ACTIVITY_MAP: Record<string, ActivityMeta> = {
     badge: 'Gesture Learning',
     playPath: SITE.appPath,
     heroTitle: 'Gesture Learning, Your Colleague Shared This Platform',
-    heroSub: 'Nine gesture-controlled learning activities for children ages 3–7. Everything runs in the browser, no installation, no accounts, no cost.',
-    whatItIs: 'Draw in the Air uses AI hand tracking to let children interact with learning activities through natural hand movements. Nine modes cover letters, numbers, shapes, sorting, colours, maths, and creative drawing. Works on any laptop or Chromebook with a webcam.',
+    heroSub: 'Eight gesture-controlled learning activities for children ages 3–7. Everything runs in the browser, no installation, no accounts to try it, free to start.',
+    whatItIs: 'Draw in the Air uses AI hand tracking to let children interact with learning activities through natural hand movements. Eight modes cover letters, numbers, shapes, sorting, colours, maths, spelling, and creative drawing. Works on any laptop or Chromebook with a webcam.',
     howToPlay: [
       'Open drawintheair.com on any device with a webcam',
       'Allow camera access',
@@ -118,13 +118,13 @@ const ACTIVITY_MAP: Record<string, ActivityMeta> = {
 // Fallback for unknown slugs, maps to the full app
 const FALLBACK_META: ActivityMeta = {
   title: 'Draw in the Air, Gesture Learning Activity',
-  description: 'Your colleague shared a gesture learning activity. Try it free in your browser, no download, no account, no cost.',
+  description: 'Your colleague shared a gesture learning activity. Try it free in your browser, no download, no account needed to start.',
   emoji: '🎮',
   badge: 'Shared Activity',
   playPath: SITE.appPath,
   heroTitle: 'A Colleague Shared This Learning Activity',
   heroSub: 'Draw in the Air offers gesture-controlled educational activities for children ages 3–7. Everything runs in the browser, no installation needed.',
-  whatItIs: 'Draw in the Air uses AI hand tracking to let children interact with learning activities through natural hand movements. Nine modes cover letters, numbers, shapes, sorting, and creative drawing. Works on any Chromebook or laptop with a webcam.',
+  whatItIs: 'Draw in the Air uses AI hand tracking to let children interact with learning activities through natural hand movements. Eight modes cover letters, numbers, shapes, sorting, and creative drawing. Works on any Chromebook or laptop with a webcam.',
   howToPlay: [
     'Open drawintheair.com on any device with a webcam',
     'Allow camera access, no video is recorded or transmitted',

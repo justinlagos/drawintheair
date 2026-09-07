@@ -66,7 +66,7 @@ function useReveal(rootRef: React.RefObject<HTMLElement | null>) {
 
 const ABOUT_VALUES = [
   { img: '/landing-assets/icons/hand.png',       title: 'Movement first',     text: 'The hand is the whole interaction. Children learn with their bodies, the way they were built to.' },
-  { img: '/landing-assets/icons/shield.png',     title: 'Private by default', text: 'The camera frame is processed in the browser and discarded. Nothing is stored or sent anywhere.' },
+  { img: '/landing-assets/icons/shield.png',     title: 'Private by default', text: 'The camera frame is processed in the browser and discarded. Video is never stored or sent anywhere.' },
   { img: '/landing-assets/icons/globe.png',      title: 'For every classroom', text: 'Browser-based and EYFS-aligned, so it works on the laptops schools already have.' },
   { img: '/landing-assets/icons/books-star.png', title: 'Real early learning', text: 'Built on early-years pedagogy, not gimmicks. Letters, numbers, shapes and creativity.' },
 ];
@@ -135,7 +135,7 @@ const About: React.FC = () => {
                   Parents and teachers should not have to choose between a screen and an active child. By making movement the entire input, every minute in front of the camera is a minute of whole-arm letter formation, counting, and creative play.
                 </p>
                 <p className="lead" style={{ marginTop: 14 }}>
-                  We keep the technology invisible. No accounts for children, no downloads, and no data leaving the device. Just a hand in the air and a canvas of light.
+                  We keep the technology invisible. No accounts for children, no downloads, and no video leaving the device. Just a hand in the air and a canvas of light.
                 </p>
               </div>
             </div>

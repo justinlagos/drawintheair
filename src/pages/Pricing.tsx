@@ -110,10 +110,7 @@ const TEACHER_PLANS = [
 // Schools (Whole school)
 const SCHOOL_FEATS = [
   'Every teacher included',
-  'Whole-school analytics',
-  'Admin dashboard and reporting',
-  'Bulk class management',
-  'Single sign-on (SSO) options',
+  'Class Mode for every classroom',
   'Onboarding and priority support',
   'Annual or termly billing',
   'EYFS curriculum mapping',
@@ -353,7 +350,7 @@ export const Pricing: React.FC = () => {
                  'Start your 7-day free trial.'}
               </h2>
               <p className="lead">
-                {audience === 'schools' ? 'Whole-school access, admin reporting, and onboarding support.' :
+                {audience === 'schools' ? 'Whole-school access and onboarding support.' :
                  audience === 'teachers' ? 'Free pilot, no card required. No paid plan to set up.' :
                  'Up to 2 learners, the full activity library, and cancel anytime.'}
               </p>

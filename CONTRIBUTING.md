@@ -39,7 +39,7 @@ No feature, fix, or config work begins directly on `master`.
 Runs on PRs into `master`, on pushes to `master`, and on manual dispatch.
 
 - **Required checks (all five verified green locally on `release/new-term`,
-  2026-09-07):** `lint` (0 errors, ratcheted at `--max-warnings 162`), `typecheck`,
+  2026-09-07):** `lint` (0 errors, ratcheted at `--max-warnings 160`), `typecheck`,
   `unit-tests` (256 tests), `secret-scan` (secret + CSP + env-safety), `build`
   (Vite production build + 93-route SEO prerender).
 

@@ -45,7 +45,7 @@ const ACTIVITY_DATA: Record<ActivitySlug, {
     meta: PAGE_META.sortAndPlace,
     emoji: '🗂️', badge: 'Game, Ages 3–7',
     heroTitle: 'Sort and Place, Gesture Sorting Game for Kids',
-    heroSub: 'Sort and place objects by pointing in the air! A hands-free sorting and categorisation game that develops cognitive skills, logical thinking, and spatial reasoning. Three rounds of increasing difficulty. Free, no download.',
+    heroSub: 'Sort and place objects by pointing in the air! A hands-free sorting and categorisation game that develops cognitive skills, logical thinking, and spatial reasoning. Three rounds of increasing difficulty. Part of the Family plan, no download.',
     skills: [
       { icon: '🧠', title: 'Logical Thinking', desc: 'Sorting by colour, size, or category builds categorisation and classification skills.' },
       { icon: '🎯', title: 'Hand-Eye Coordination', desc: 'Grabbing and placing objects with a pinch gesture builds precision motor control.' },
