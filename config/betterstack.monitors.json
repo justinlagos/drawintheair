@@ -92,6 +92,26 @@
       "notification_channels": ["email:on-call"]
     },
     {
+      "name": "Supabase health — ingest canary",
+      "url": "https://${SUPABASE_PROJECT_REF}.supabase.co/rest/v1/rpc/canary_status",
+      "method": "POST",
+      "headers": {
+        "apikey": "${SUPABASE_ANON_KEY}",
+        "Authorization": "Bearer ${SUPABASE_ANON_KEY}",
+        "Content-Type": "application/json"
+      },
+      "body": "{}",
+      "expected_status_codes": [200],
+      "keyword_present": ["true"],
+      "check_frequency_sec": 300,
+      "confirmation_period_sec": 600,
+      "recovery_period_sec": 300,
+      "priority": "p2",
+      "owners": ["platform"],
+      "_note": "WP2B.6 (DIA-029). Synthetic ingest canary: pg_cron writes one traffic_type=internal event every 15 min through the same ingest RPC the browser uses; canary_status() returns {healthy, age_seconds} and nothing else. healthy=false once the newest canary row is older than 45 min (3 missed runs). This monitor checks the KEYWORD, not just the status code: the RPC answers 200 in both states. Configure it as 'alert when keyword is missing'. The keyword is the bare word true because the body is {healthy, age_seconds} where age_seconds is an integer, so true only ever appears when healthy is true, whatever the JSON spacing. It is a pipeline liveness check and is deliberately independent of user volume, so it cannot false-alarm on a quiet weekend. Zero genuine sessions is reported separately in the daily digest as a notification.",
+      "notification_channels": ["email:on-call"]
+    },
+    {
       "name": "Main JS bundle reachable",
       "url": "https://drawintheair.com/assets/index.js",
       "method": "HEAD",
