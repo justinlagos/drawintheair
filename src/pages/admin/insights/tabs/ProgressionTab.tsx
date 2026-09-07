@@ -111,8 +111,8 @@ const LearnerPicker: React.FC<{
                                     onClick={() => onSelect(l.device_id)}
                                     style={{
                                         cursor: 'pointer',
-                                        background: isSelected ? 'rgba(108, 63, 164, 0.08)' : 'transparent',
-                                        outline: isSelected ? '2px solid #6C3FA4' : 'none',
+                                        background: isSelected ? 'rgba(138, 102, 240, 0.08)' : 'transparent',
+                                        outline: isSelected ? '2px solid #8A66F0' : 'none',
                                     }}
                                 >
                                     <td style={{ fontFamily: 'ui-monospace, monospace' }}>
@@ -232,7 +232,7 @@ const LearnerProfile: React.FC<{
                                                 <td><Tag tone="plum">{a.item_key}</Tag></td>
                                                 <td><Tag tone="aqua">{modeLabel(a.game_mode)}</Tag></td>
                                                 <td style={{
-                                                    color: a.was_correct ? '#7ED957' : '#FF6B6B',
+                                                    color: a.was_correct ? '#5BCE9A' : '#F07A5E',
                                                     fontWeight: 700,
                                                     fontSize: 16,
                                                 }}>{a.was_correct ? '✓' : '✗'}</td>

@@ -258,6 +258,25 @@ export default function TeacherDashboard() {
           </div>
         </div>
 
+        {/* A class left running in Class Mode: make the way back obvious. */}
+        {(() => {
+          const live = sessions.find((s) => isLive(s));
+          if (!live) return null;
+          const liveKids = students.filter((st) => st.session_id === live.id && !st.kicked_at).length;
+          return (
+            <div className="tdash-livebar">
+              <span className="tdash-livebar-dot" aria-hidden="true" />
+              <span className="tdash-livebar-text">
+                <b>{live.class_name || `Class ${live.code}`}</b> is live
+                {liveKids > 0 ? ` · ${liveKids} ${liveKids === 1 ? 'child' : 'children'} joined` : ''} · code <b>{live.code}</b>
+              </span>
+              <button className="tdash-btn tdash-livebar-btn" onClick={() => { window.location.href = '/class'; }}>
+                Return to class
+              </button>
+            </div>
+          );
+        })()}
+
         {/* Real stat cards */}
         <div className="tdash-stats">
           <Stat label="Classes run" value={String(stats.classesRun)} delta={`${sessions.length} total`} />

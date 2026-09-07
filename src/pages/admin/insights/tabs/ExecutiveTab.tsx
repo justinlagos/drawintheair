@@ -67,7 +67,7 @@ export const ExecutiveTab: React.FC<{ filter: FilterState }> = ({ filter }) => {
                     label="Distinct devices"
                     value={fmtNum(c.distinct_devices)}
                     delta={dlt.distinct_devices_pct}
-                    sparkColor="#55DDE0"
+                    sparkColor="#5BCE9A"
                 />
                 <Kpi
                     label="Completion rate"
@@ -207,7 +207,7 @@ const Mini: React.FC<{
         <div>
             <div className="iv-kpi-label" style={{ marginBottom: 4 }}>{label}</div>
             <div style={{
-                font: '700 22px Fredoka, system-ui, sans-serif',
+                font: '700 22px Outfit, system-ui, sans-serif',
                 color: colorMap[tone],
                 lineHeight: 1.1,
             }}>{value}</div>
@@ -262,7 +262,7 @@ const ErrorList: React.FC<{ errors: Array<{ occurred_at: string; event_name: str
                     display: 'flex', justifyContent: 'space-between',
                     alignItems: 'center', gap: 8,
                     padding: '8px 10px',
-                    background: 'rgba(255, 107, 107, 0.08)',
+                    background: 'rgba(240, 122, 94, 0.08)',
                     borderRadius: 8,
                 }}>
                     <div style={{ minWidth: 0 }}>

@@ -70,14 +70,14 @@ export const RetentionTab: React.FC = () => {
                             <div style={{
                                 marginTop: 14,
                                 padding: '12px 16px',
-                                background: 'rgba(108, 63, 164, 0.06)',
-                                border: '1px solid rgba(108, 63, 164, 0.18)',
+                                background: 'rgba(138, 102, 240, 0.06)',
+                                border: '1px solid rgba(138, 102, 240, 0.18)',
                                 borderRadius: 10,
                                 display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12,
                             }}>
                                 <div>
                                     <div style={{
-                                        font: '700 28px Fredoka, system-ui',
+                                        font: '700 28px Outfit, system-ui',
                                         color: 'var(--plum)', lineHeight: 1,
                                     }}>{fmtPct(deep.data.stickiness_dau_mau)}</div>
                                     <div style={{ fontSize: 11.5, color: 'var(--flat)', marginTop: 4 }}>
@@ -125,11 +125,11 @@ export const RetentionTab: React.FC = () => {
                                             }}>
                                                 <div style={{
                                                     height: '100%', width: `${pct}%`,
-                                                    background: 'linear-gradient(90deg, #55DDE0, #6C3FA4)',
+                                                    background: 'linear-gradient(90deg, #5BCE9A, #8A66F0)',
                                                 }} />
                                             </div>
                                             <span style={{
-                                                font: '700 12px Fredoka', textAlign: 'right',
+                                                font: '700 12px Outfit', textAlign: 'right',
                                             }}>{fmtNum(h.devices)}</span>
                                         </div>
                                     );

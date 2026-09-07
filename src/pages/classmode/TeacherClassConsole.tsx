@@ -655,6 +655,11 @@ function ConductorScreen({ session, onSessionUpdate, onSignOut, userName, userAv
                     </div>
                 </div>
                 <div className="cd-topbar-right">
+                    <a
+                        className="cd-dash-link"
+                        href="/teacher/dashboard"
+                        title="Your class stays live — resume it from the dashboard any time"
+                    >Dashboard</a>
                     <HoldToConfirmButton
                         label="End class"
                         confirmLabel="Hold to end…"
@@ -766,6 +771,11 @@ function ConductorTopBar({ userName, userAvatarUrl, onSignOut }: { userName: str
     return (
         <div className="cm-topbar">
             <div className="cm-topbar-left">
+                <a
+                    className="cm-topbar-back"
+                    href="/teacher/dashboard"
+                    aria-label="Back to your teacher dashboard"
+                >← Dashboard</a>
                 <span className="cm-topbar-title">Class Mode</span>
             </div>
             <div className="cm-topbar-right">
@@ -1074,8 +1084,11 @@ function ClassSummaryView({ sessionId, onDone, userName, userAvatarUrl, onSignOu
                     </>
                 )}
 
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 32 }}>
-                    <button className="cm-btn-primary" onClick={onDone}>Back to dashboard</button>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 32, flexWrap: 'wrap' }}>
+                    {/* "Back to dashboard" previously only reset to the /class
+                      * start screen — it never reached the teacher dashboard. */}
+                    <button className="cm-btn-primary" onClick={() => { window.location.href = '/teacher/dashboard'; }}>Back to dashboard</button>
+                    <button className="cm-btn-secondary" onClick={onDone}>Start another class</button>
                     <button className="cm-btn-secondary" onClick={() => window.print()}>Print summary</button>
                 </div>
             </div>
