@@ -34,7 +34,15 @@ import { KidStyles } from './styles/KidStyles.tsx'
 import { lazyWithRetry } from './lib/lazyWithRetry.tsx'
 import { BrowserRouter } from 'react-router-dom'
 import { CookieConsentBanner } from './components/CookieConsentBanner.tsx'
-import { hasAnalyticsConsent, onConsentChange } from './lib/analyticsConsent.ts'
+import { onConsentChange } from './lib/analyticsConsent.ts'
+import {
+  applyRouteAnalyticsPolicy,
+  thirdPartyAnalyticsAllowed,
+  GA_MEASUREMENT_ID,
+  CLARITY_PROJECT_ID,
+  CHILD_BLOCK_FLAG,
+} from './lib/thirdPartyAnalytics.ts'
+import { isChildRoute } from './lib/childRoutes.ts'
 
 // ── Observability bootstrap ────────────────────────────────────────────────
 // Initialise Sentry + PostHog BEFORE React mounts so even the very first
@@ -277,6 +285,19 @@ function Root() {
       const hash = window.location.hash;
       const newRoute = getRouteFromPath(path, hash);
       setRoute(newRoute);
+
+      // WP2B.1: child routes never run optional third-party analytics.
+      // Stop GA4 / Clarity / Meta Pixel / PostHog the moment a child screen
+      // is reached (SPA navigation from an adult page included), and let
+      // them run again only on an adult route with consent. Runs before
+      // the trackEvent / trackMetaPageView calls below so a route_view for
+      // a child screen is never forwarded.
+      try {
+        applyRouteAnalyticsPolicy(path, hash);
+        window.dispatchEvent(new CustomEvent('dia:route', { detail: { path, hash } }));
+      } catch {
+        /* never let the analytics gate crash the router */
+      }
 
       // Scroll restoration. Without this, clicking a footer link kept the
       // old scroll position, so the new page opened at its own footer and
@@ -841,6 +862,12 @@ function loadDeferredAnalytics(): void {
   const w = window as unknown as Record<string, unknown>;
   if (w.__diaAnalyticsLoaded) return;
   if (!isThirdPartyAnalyticsHost()) return;
+  // WP2B.1: never inject any of these on a child route, whatever consent
+  // says. thirdPartyAnalyticsAllowed() checks consent AND the route; the
+  // block flag is set by the router when a child screen was reached.
+  if (!thirdPartyAnalyticsAllowed()) return;
+  if (w[CHILD_BLOCK_FLAG] === true) return;
+  if (isChildRoute(window.location.pathname, window.location.hash)) return;
   w.__diaAnalyticsLoaded = true;
 
   // Meta Pixel base code — loaded post-interactive alongside GA4/Clarity so it
@@ -849,7 +876,7 @@ function loadDeferredAnalytics(): void {
 
   // Google Analytics 4
   try {
-    const GA_ID = 'G-S4XSWT6Q09';
+    const GA_ID = GA_MEASUREMENT_ID;
     const s = document.createElement('script');
     s.async = true;
     s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
@@ -877,7 +904,7 @@ function loadDeferredAnalytics(): void {
     }
     const t = document.createElement('script');
     t.async = true;
-    t.src = 'https://www.clarity.ms/tag/vseevw9uck';
+    t.src = 'https://www.clarity.ms/tag/' + CLARITY_PROJECT_ID;
     const y = document.getElementsByTagName('script')[0];
     y.parentNode?.insertBefore(t, y);
   } catch {
@@ -888,8 +915,9 @@ function loadDeferredAnalytics(): void {
 if (typeof window !== 'undefined') {
   const schedule = () => {
     // Non-essential third-party analytics/marketing (GA4, Clarity, Meta Pixel)
-    // only load once the visitor has granted cookie consent.
-    if (!hasAnalyticsConsent()) return;
+    // only load once an adult has granted cookie consent, and never on a
+    // child route (WP2B.1).
+    if (!thirdPartyAnalyticsAllowed()) return;
     const ric = (window as unknown as Record<string, any>).requestIdleCallback;
     if (typeof ric === 'function') {
       ric(loadDeferredAnalytics, { timeout: 4000 });
@@ -900,7 +928,9 @@ if (typeof window !== 'undefined') {
   if (document.readyState === 'complete') schedule();
   else window.addEventListener('load', schedule);
   // If consent is granted later via the cookie banner, load immediately.
-  onConsentChange((choice) => { if (choice === 'granted') loadDeferredAnalytics(); });
+  onConsentChange((choice) => {
+    if (choice === 'granted' && thirdPartyAnalyticsAllowed()) loadDeferredAnalytics();
+  });
 }
 
 // ---------- Service Worker Registration ----------

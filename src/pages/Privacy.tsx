@@ -21,7 +21,8 @@ export const Privacy: React.FC = () => {
 
       <h2>Analytics and measurement</h2>
       <p>We use analytics to understand how the platform is used and to improve it. Alongside our own event analytics (hosted on Supabase in the EU), we use the following third-party tools: Google Analytics 4, Microsoft Clarity, PostHog, and the Meta (Facebook) Pixel for measuring the effectiveness of our marketing. These tools may set cookies and collect usage and device information.</p>
-      <p>We do not send child camera video, audio, or images to any analytics tool, and we do not sell personal data. Where required, non-essential analytics and marketing tools should only run with your consent; you can also limit them using your browser and device privacy controls.</p>
+      <p>We do not send child camera video, audio, or images to any analytics tool, and we do not sell personal data. Non-essential analytics and marketing tools only run on adult pages (marketing, teacher, parent and admin pages) and only with your consent; you can also limit them using your browser and device privacy controls.</p>
+      <p>On the screens a child uses (the play area and the classroom join screen) these third-party tools are switched off and never loaded, whatever consent was given elsewhere, and no cookie banner is shown to a child. Only our own first-party learning events and anonymised error reports run there.</p>
 
       <h2>Cookies and local storage</h2>
       <p>We use essential cookies and local storage to operate the service (for example, to keep you signed in and to remember which learner is playing). We also use non-essential analytics and marketing cookies through the third-party tools listed above. You can clear cookies and site data at any time through your browser settings.</p>
