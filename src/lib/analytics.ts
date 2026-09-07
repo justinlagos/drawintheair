@@ -84,6 +84,7 @@ export type EventName =
     | 'camera_recovery_shown'       // Error-state recovery screen rendered; meta.cause/browser/os
     | 'camera_recovery_retry'       // User tapped "Try again" on recovery screen
     | 'camera_recovery_dismissed'   // User tapped "Back to home" on recovery screen
+    | 'camera_lost'                 // Live video track ended or device vanished mid-session; meta.cause
     | 'wave_screen_view'
     | 'wave_first_hand_seen'        // First MediaPipe landmark detected
     | 'wave_completed'              // Wave gate cleared
