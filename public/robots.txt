@@ -1,16 +1,24 @@
-# drawintheair.com — crawler policy.
+# drawintheair.com crawler policy.
 # The blanket rule below already allows everything except the app/admin
 # surfaces. The explicit AI-crawler stanzas are deliberate, self-documenting
 # opt-ins: being ingested and cited by AI assistants (ChatGPT, Claude,
 # Perplexity, Google AI Overviews) is part of the growth strategy, so none
 # of these bots may be blocked without a product decision.
 
+# robots.txt rules are prefix matches. A bare "Disallow: /school" would also
+# block /schools and /schools/training, and "Disallow: /parent" would block
+# /parents. Use "$" (end of URL) plus a trailing-slash rule so only the exact
+# path and anything nested under it are blocked. Public marketing pages
+# (/schools, /schools/training, /parents) stay crawlable; see
+# tests/robots.test.ts, which checks every prerendered route.
 User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /demo
-Disallow: /school
-Disallow: /parent
+Disallow: /school$
+Disallow: /school/
+Disallow: /parent$
+Disallow: /parent/
 Disallow: /*?debug=
 
 # OpenAI (ChatGPT answers + search)
