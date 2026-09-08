@@ -141,7 +141,7 @@ export const fetchToday      = () => callRpc<TodayData>('dashboard_today', {});
 export const fetchFunnel     = (days: number) => callRpc<FunnelData>('dashboard_funnel', { in_days: days });
 export const fetchTracker    = (days: number) => callRpc<TrackerData>('dashboard_tracker_health', { in_days: days });
 export const fetchTopModes   = (days: number) => callRpc<ModesData>('dashboard_top_modes', { in_days: days });
-export const fetchErrors     = (limit = 30) => callRpc<ErrorsData>('dashboard_errors', { in_limit: limit });
+export const fetchErrors     = (limit = 30) => callRpc<ErrorsData>('dashboard_errors', { row_limit: limit });
 export const fetchCohorts    = (weeks: number) => callRpc<CohortData>('dashboard_cohort_retention', { in_weeks: weeks });
 export const fetchMastery    = (days: number, minAttempts = 3) =>
     callRpc<MasteryData>('dashboard_mastery', { in_days: days, in_min_attempts: minAttempts });
@@ -150,4 +150,4 @@ export const fetchMilestones = (days = 60, minAttempts = 5, thresholdPct = 80) =
     callRpc<MilestonesData>('dashboard_mastery_milestones', {
         in_days: days, in_min_attempts: minAttempts, in_threshold_pct: thresholdPct,
     });
-export const fetchSessions   = (limit = 50) => callRpc<SessionsData>('dashboard_latest_sessions', { in_limit: limit });
+export const fetchSessions   = (limit = 50) => callRpc<SessionsData>('dashboard_latest_sessions', { row_limit: limit });
