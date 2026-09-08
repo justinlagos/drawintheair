@@ -1,0 +1,26 @@
+PROD-ONLY 7
+  publication supabase_realtime_messages_publication.realtime.messages_2026_08_26
+  publication supabase_realtime_messages_publication.realtime.messages_2026_08_27
+  publication supabase_realtime_messages_publication.realtime.messages_2026_08_28
+  publication supabase_realtime_messages_publication.realtime.messages_2026_08_29
+  publication supabase_realtime_messages_publication.realtime.messages_2026_08_30
+  publication supabase_realtime_messages_publication.realtime.messages_2026_08_31
+  publication supabase_realtime_messages_publication.realtime.messages_2026_09_01
+STAGING-ONLY 9
+  cronjob billing-health-15m
+  cronjob dita-anomaly-check
+  cronjob dita-daily-digest
+  cronjob dita-prune-analytics-events
+  cronjob dita-prune-learning-attempts
+  cronjob email-dispatch-15m
+  cronjob lios-pipeline-every-5min
+  cronjob refresh-materialized-views
+  cronjob retention-purge
+CHANGED 7
+  column public.teachers.tenant_id
+  column public.teachers.updated_at
+  extension pg_net
+  funcacl public.lios_is_technical_item_key(k text)
+  function app_private.run_billing_health()
+  function app_private.run_email_dispatch()
+  schema cron

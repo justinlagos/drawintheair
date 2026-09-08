@@ -1,0 +1,164 @@
+{
+ "project": "fmrsfjxwswzhvicylaph",
+ "table": "supabase_migrations.schema_migrations",
+ "read_at": "2026-09-08",
+ "count": 39,
+ "rows": [
+  {
+   "version": "0004",
+   "name": "parent_subscriptions"
+  },
+  {
+   "version": "0005",
+   "name": "rls"
+  },
+  {
+   "version": "0006",
+   "name": "rpcs"
+  },
+  {
+   "version": "0007",
+   "name": "parent_subscriptions_v2"
+  },
+  {
+   "version": "0008",
+   "name": "teacher_profiles"
+  },
+  {
+   "version": "0009",
+   "name": "security_hardening"
+  },
+  {
+   "version": "0010",
+   "name": "revoke_anon_execute_internal_rpcs"
+  },
+  {
+   "version": "20260625154825",
+   "name": "activity_realtime_fix_part1"
+  },
+  {
+   "version": "20260625154854",
+   "name": "activity_realtime_fix_part2"
+  },
+  {
+   "version": "20260625154917",
+   "name": "join_pilot_hardening"
+  },
+  {
+   "version": "20260625155315",
+   "name": "join_align_joinable_states"
+  },
+  {
+   "version": "20260625160025",
+   "name": "fix_session_status_vocabulary"
+  },
+  {
+   "version": "20260626055435",
+   "name": "fix_session_lookup_status_vocab"
+  },
+  {
+   "version": "20260626060611",
+   "name": "restore_class_join_function"
+  },
+  {
+   "version": "20260626074159",
+   "name": "analytics_traffic_type"
+  },
+  {
+   "version": "20260626074253",
+   "name": "metric_definition_fixes"
+  },
+  {
+   "version": "20260626074513",
+   "name": "metric_fixes_security_hardening"
+  },
+  {
+   "version": "20260626074546",
+   "name": "latency_authenticated_only"
+  },
+  {
+   "version": "20260626075729",
+   "name": "broadcast_log"
+  },
+  {
+   "version": "20260626100551",
+   "name": "promote_meta_to_columns_trigger"
+  },
+  {
+   "version": "20260626100723",
+   "name": "observability_real_latency"
+  },
+  {
+   "version": "20260626100832",
+   "name": "executive_summary_exclude_internal"
+  },
+  {
+   "version": "20260629180319",
+   "name": "persistent_learner_p1_class_children_pii_minimise"
+  },
+  {
+   "version": "20260629180322",
+   "name": "persistent_learner_p2_readiness_state"
+  },
+  {
+   "version": "20260629180329",
+   "name": "persistent_learner_p3a_set_readiness_rpc"
+  },
+  {
+   "version": "20260629180351",
+   "name": "persistent_learner_p3b_token_join"
+  },
+  {
+   "version": "20260629180357",
+   "name": "persistent_learner_p4_deletion"
+  },
+  {
+   "version": "20260629180400",
+   "name": "persistent_learner_p5a_teacher_consolidation"
+  },
+  {
+   "version": "20260629203559",
+   "name": "fix_class_end_activity_idempotent"
+  },
+  {
+   "version": "20260701151623",
+   "name": "parent_trial_on_signup_trigger"
+  },
+  {
+   "version": "20260702200020",
+   "name": "metric_definition_fixes"
+  },
+  {
+   "version": "20260702200123",
+   "name": "mastery_item_eligibility"
+  },
+  {
+   "version": "20260703074707",
+   "name": "dashboard_funnel_honesty"
+  },
+  {
+   "version": "20260709132926",
+   "name": "analytics_ingest_rpc"
+  },
+  {
+   "version": "20260709132946",
+   "name": "dashboard_funnel_real_ladder"
+  },
+  {
+   "version": "20260710101104",
+   "name": "0025_classroom_realtime_restore_is_admin_user_execute"
+  },
+  {
+   "version": "20260710111421",
+   "name": "0026_class_student_heartbeat"
+  },
+  {
+   "version": "20260716110907",
+   "name": "classroom_reclaim_roster_link"
+  },
+  {
+   "version": "20260716111014",
+   "name": "dashboard_growth"
+  }
+ ]
+}

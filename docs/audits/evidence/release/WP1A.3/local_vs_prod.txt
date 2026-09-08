@@ -1,0 +1,3 @@
+prod-only []
+local-only []
+changed ['public.teachers.tenant_id', 'public.teachers.updated_at']
