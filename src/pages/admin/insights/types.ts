@@ -314,7 +314,7 @@ export interface TransparencySignalsData {
         learners_active:          number;
         sessions_run:             number;
         avg_attempts_per_session: number | null;
-        classrooms_engaged:       number;
+        classrooms_engaged:       number | null;
     };
     top_engaging_mode: string | null;
     strongest_signal:        { game_mode: string; pct_a: number | null } | null;

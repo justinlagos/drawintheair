@@ -105,6 +105,7 @@ function describeStatus(status: string): string {
   switch (status) {
     case 'active': return 'Active';
     case 'trialing': return 'In free trial';
+    case 'trial_expired': return 'Free trial ended';
     case 'past_due': return 'Payment past due';
     case 'canceled': return 'Cancelled';
     default: return status || 'None';
