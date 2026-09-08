@@ -1108,7 +1108,7 @@ function persistQueue(): void {
 // stored sessions began mid-flow (first row at client_seq 21).
 //
 // The fix moves idempotency server-side: SECURITY DEFINER RPCs
-// (migration 20260709000001) do the ON CONFLICT DO NOTHING with no
+// (migration 20260709132926) do the ON CONFLICT DO NOTHING with no
 // read access granted to the caller. If the RPC is missing (staging /
 // un-migrated DB) we fall back to a plain insert and treat a 23505
 // duplicate-key response as "already delivered".
@@ -1292,7 +1292,7 @@ function setupBeforeUnload(): void {
             // Use sendBeacon for reliable last-gasp delivery during page unload.
             // dbInsert won't work here because the page is being torn down.
             //
-            // Target the idempotent ingest RPC (20260709000001), NOT the
+            // Target the idempotent ingest RPC (20260709132926), NOT the
             // table endpoint: the RPC dedupes on event_uid server-side, so
             // a beacon racing an in-flight flush can't 409 the whole batch.
             // (The old `on_conflict=event_uid` query hint did nothing

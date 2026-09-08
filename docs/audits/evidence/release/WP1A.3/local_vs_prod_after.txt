@@ -1,0 +1,18 @@
+# Database built from the repo baseline migration vs live production
+# Method: fresh empty Postgres 16, Supabase role/schema stubs, then
+#         supabase/migrations/20260908000000_baseline_prod_schema.sql applied verbatim
+#         (three extension lines stubbed, PG17-only MAINTAIN privilege dropped - harness only).
+# Compared kinds: column, table, view, constraint, index, trigger, function, policy, sequence, type
+# Production side: docs/audits/evidence/release/WP1A.3/prod_inventory.tsv, re-verified on
+#         2026-09-08 by full-inventory md5 a18ed81f99b4dfd3ecaf5106b6380e4c over 1614 rows.
+
+objects compared: 1356 vs 1356
+prod-only:  0
+local-only: 0
+changed:    2
+   column public.teachers.tenant_id
+   column public.teachers.updated_at
+
+# Function ACLs compared separately: 140 vs 140, prod-only 0, local-only 0,
+# changed 10 - all order-only differences in the proacl array with identical grantees
+# and identical has_function_privilege results for anon/authenticated/service_role/PUBLIC.
