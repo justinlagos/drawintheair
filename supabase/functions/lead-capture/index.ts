@@ -12,7 +12,7 @@
  *   2. Validate the body (type whitelist, email shape, length caps,
  *      honeypot field `website`).
  *   3. Rate limit by hashed client IP through the service-role-only RPC
- *      lead_capture_rate_check (migration 20260907130000).
+ *      lead_capture_rate_check (migration 20260908130000).
  *   4. Insert into public.form_submissions with the service role.
  *   5. Founder notification is NOT sent here. The email-dispatch cron
  *      (every 15 minutes) picks up rows with founder_notified_at null and

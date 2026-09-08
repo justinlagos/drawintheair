@@ -1,0 +1,329 @@
+--- prod vs staging: prod-only=15 staging-only=100 changed=48
+[PROD-ONLY] 15
+    funcacl public.dashboard_classrooms(in_days integer)
+    funcacl public.dashboard_gesture_quality(in_days integer)
+    funcacl public.dashboard_ingest_latency(in_days integer)
+    funcacl public.dashboard_pipeline_status(in_limit integer)
+    function public.dashboard_classrooms(in_days integer)
+    function public.dashboard_gesture_quality(in_days integer)
+    function public.dashboard_ingest_latency(in_days integer)
+    function public.dashboard_pipeline_status(in_limit integer)
+    publication supabase_realtime_messages_publication.realtime.messages_2026_08_26
+    publication supabase_realtime_messages_publication.realtime.messages_2026_08_27
+    publication supabase_realtime_messages_publication.realtime.messages_2026_08_28
+    publication supabase_realtime_messages_publication.realtime.messages_2026_08_29
+    publication supabase_realtime_messages_publication.realtime.messages_2026_08_30
+    publication supabase_realtime_messages_publication.realtime.messages_2026_08_31
+    publication supabase_realtime_messages_publication.realtime.messages_2026_09_01
+[STAGING-ONLY] 100
+    column public.dashboard_public_cache.computed_at
+    column public.dashboard_public_cache.key
+    column public.dashboard_public_cache.payload
+    constraint public.dashboard_public_cache.dashboard_public_cache_pkey
+    funcacl public._dashboard_ab_results_impl(in_flag text)
+    funcacl public._dashboard_adaptive_decisions_impl(in_days integer)
+    funcacl public._dashboard_anomaly_check_impl()
+    funcacl public._dashboard_cohort_curves_impl(in_weeks integer)
+    funcacl public._dashboard_cohort_retention_impl(in_weeks integer)
+    funcacl public._dashboard_context_split_impl(in_days integer)
+    funcacl public._dashboard_curriculum_coverage_impl(in_days integer)
+    funcacl public._dashboard_daily_digest_impl()
+    funcacl public._dashboard_engagement_deep_impl(in_days integer)
+    funcacl public._dashboard_errors_impl(row_limit integer)
+    funcacl public._dashboard_executive_summary_impl(in_days integer)
+    funcacl public._dashboard_export_headline_impl(in_days integer)
+    funcacl public._dashboard_friction_engineering_impl(in_days integer)
+    funcacl public._dashboard_funnel_impl(in_days integer)
+    funcacl public._dashboard_guard()
+    funcacl public._dashboard_latest_sessions_impl(row_limit integer)
+    funcacl public._dashboard_live_impl()
+    funcacl public._dashboard_mastery_impl(in_days integer, in_min_attempts integer)
+    funcacl public._dashboard_mastery_milestones_impl(in_days integer, in_min_attempts integer, in_threshold_pct integer)
+    funcacl public._dashboard_mastery_summary_impl(in_days integer)
+    funcacl public._dashboard_mastery_v2_impl(in_days integer)
+    funcacl public._dashboard_observability_impl(in_days integer)
+    funcacl public._dashboard_observations_impl(in_days integer)
+    funcacl public._dashboard_progression_for_learner_impl(in_device_id text)
+    funcacl public._dashboard_progression_top_learners_impl(in_days integer, in_limit integer)
+    funcacl public._dashboard_public_proof_impl()
+    funcacl public._dashboard_retention_deep_impl()
+    funcacl public._dashboard_today_impl()
+    funcacl public._dashboard_top_modes_impl(in_days integer)
+    funcacl public._dashboard_tracker_health_impl(in_days integer)
+    funcacl public._dashboard_transparency_report_impl(in_days integer)
+    funcacl public._dashboard_transparency_signals_impl(in_days integer)
+    funcacl public._dashboard_trust_strip_impl(in_days integer)
+    funcacl public._parent_profile_start_trial()
+    funcacl public._parent_trial_eligible(p_parent uuid)
+    funcacl public._start_parent_trial_if_eligible(p_parent uuid)
+    funcacl public.assert_student_scope(in_session_id uuid, in_student_id uuid)
+    funcacl public.student_row_id()
+    funcacl public.student_session_id()
+    funcacl public.student_update_guard()
+    function public._dashboard_ab_results_impl(in_flag text)
+    function public._dashboard_adaptive_decisions_impl(in_days integer)
+    function public._dashboard_anomaly_check_impl()
+    function public._dashboard_cohort_curves_impl(in_weeks integer)
+    function public._dashboard_cohort_retention_impl(in_weeks integer)
+    function public._dashboard_context_split_impl(in_days integer)
+    function public._dashboard_curriculum_coverage_impl(in_days integer)
+    function public._dashboard_daily_digest_impl()
+    function public._dashboard_engagement_deep_impl(in_days integer)
+    function public._dashboard_errors_impl(row_limit integer)
+    function public._dashboard_executive_summary_impl(in_days integer)
+    function public._dashboard_export_headline_impl(in_days integer)
+    function public._dashboard_friction_engineering_impl(in_days integer)
+    function public._dashboard_funnel_impl(in_days integer)
+    function public._dashboard_guard()
+    function public._dashboard_latest_sessions_impl(row_limit integer)
+    function public._dashboard_live_impl()
+    function public._dashboard_mastery_impl(in_days integer, in_min_attempts integer)
+    function public._dashboard_mastery_milestones_impl(in_days integer, in_min_attempts integer, in_threshold_pct integer)
+    function public._dashboard_mastery_summary_impl(in_days integer)
+    function public._dashboard_mastery_v2_impl(in_days integer)
+    function public._dashboard_observability_impl(in_days integer)
+    function public._dashboard_observations_impl(in_days integer)
+    function public._dashboard_progression_for_learner_impl(in_device_id text)
+    function public._dashboard_progression_top_learners_impl(in_days integer, in_limit integer)
+    function public._dashboard_public_proof_impl()
+    function public._dashboard_retention_deep_impl()
+    function public._dashboard_today_impl()
+    function public._dashboard_top_modes_impl(in_days integer)
+    function public._dashboard_tracker_health_impl(in_days integer)
+    function public._dashboard_transparency_report_impl(in_days integer)
+    function public._dashboard_transparency_signals_impl(in_days integer)
+    function public._dashboard_trust_strip_impl(in_days integer)
+    function public._parent_profile_start_trial()
+    function public._parent_trial_eligible(p_parent uuid)
+    function public._start_parent_trial_if_eligible(p_parent uuid)
+    function public.assert_student_scope(in_session_id uuid, in_student_id uuid)
+    function public.student_row_id()
+    function public.student_session_id()
+    function public.student_update_guard()
+    index public.dashboard_public_cache.dashboard_public_cache_pkey
+    policy public.round_scores.round_scores_insert_student
+    policy public.round_scores.round_scores_select_student
+    policy public.session_activities.session_activities_select_student
+    policy public.session_students.session_students_select_student_self
+    policy public.session_students.session_students_update_student_self
+    policy public.sessions.sessions_select_student
+    publication supabase_realtime_messages_publication.realtime.messages_2026_09_07
+    publication supabase_realtime_messages_publication.realtime.messages_2026_09_08
+    publication supabase_realtime_messages_publication.realtime.messages_2026_09_09
+    publication supabase_realtime_messages_publication.realtime.messages_2026_09_10
+    publication supabase_realtime_messages_publication.realtime.messages_2026_09_11
+    table public.dashboard_public_cache
+    tableacl public.dashboard_public_cache
+    trigger public.parent_profiles.trg_parent_profile_start_trial
+    trigger public.session_students.trg_student_update_guard
+[CHANGED] 48
+    column public.teachers.tenant_id
+    column public.teachers.updated_at
+    extension pg_net
+    funcacl public.dashboard_transparency_report(in_days integer)
+    funcacl public.dashboard_transparency_signals(in_days integer)
+    funcacl public.lios_is_technical_item_key(k text)
+    function app_private.run_billing_health()
+    function app_private.run_email_dispatch()
+    function public.class_get_activity(in_activity_id uuid)
+    function public.class_get_self(in_student_id uuid)
+    function public.class_get_session(in_session_id uuid)
+    function public.class_set_readiness(in_student_id uuid, in_state text)
+    function public.class_student_heartbeat(in_student_id uuid)
+    function public.dashboard_ab_results(in_flag text)
+    function public.dashboard_adaptive_decisions(in_days integer)
+    function public.dashboard_anomaly_check()
+    function public.dashboard_cohort_curves(in_weeks integer)
+    function public.dashboard_cohort_retention(in_weeks integer)
+    function public.dashboard_context_split(in_days integer)
+    function public.dashboard_curriculum_coverage(in_days integer)
+    function public.dashboard_daily_digest()
+    function public.dashboard_engagement_deep(in_days integer)
+    function public.dashboard_errors(row_limit integer)
+    function public.dashboard_executive_summary(in_days integer)
+    function public.dashboard_export_headline(in_days integer)
+    function public.dashboard_friction_engineering(in_days integer)
+    function public.dashboard_funnel(in_days integer)
+    function public.dashboard_latest_sessions(row_limit integer)
+    function public.dashboard_live()
+    function public.dashboard_mastery(in_days integer, in_min_attempts integer)
+    function public.dashboard_mastery_milestones(in_days integer, in_min_attempts integer, in_threshold_pct integer)
+    function public.dashboard_mastery_summary(in_days integer)
+    function public.dashboard_mastery_v2(in_days integer)
+    function public.dashboard_observability(in_days integer)
+    function public.dashboard_observations(in_days integer)
+    function public.dashboard_progression_for_learner(in_device_id text)
+    function public.dashboard_progression_top_learners(in_days integer, in_limit integer)
+    function public.dashboard_public_proof()
+    function public.dashboard_retention_deep()
+    function public.dashboard_today()
+    function public.dashboard_top_modes(in_days integer)
+    function public.dashboard_tracker_health(in_days integer)
+    function public.dashboard_transparency_report(in_days integer)
+    function public.dashboard_transparency_signals(in_days integer)
+    function public.dashboard_trust_strip(in_days integer)
+    function public.handle_new_parent_user()
+    function public.register_parent()
+    schema cron
+--- stgAfterWP1A2 vs stgNow: stgAfterWP1A2-only=17 stgNow-only=100 changed=41
+[STGAFTERWP1A2-ONLY] 17
+    cronjob billing-health-15m
+    cronjob dita-anomaly-check
+    cronjob dita-daily-digest
+    cronjob dita-prune-analytics-events
+    cronjob dita-prune-learning-attempts
+    cronjob email-dispatch-15m
+    cronjob lios-pipeline-every-5min
+    cronjob refresh-materialized-views
+    cronjob retention-purge
+    funcacl public.dashboard_classrooms(in_days integer)
+    funcacl public.dashboard_gesture_quality(in_days integer)
+    funcacl public.dashboard_ingest_latency(in_days integer)
+    funcacl public.dashboard_pipeline_status(in_limit integer)
+    function public.dashboard_classrooms(in_days integer)
+    function public.dashboard_gesture_quality(in_days integer)
+    function public.dashboard_ingest_latency(in_days integer)
+    function public.dashboard_pipeline_status(in_limit integer)
+[STGNOW-ONLY] 100
+    column public.dashboard_public_cache.computed_at
+    column public.dashboard_public_cache.key
+    column public.dashboard_public_cache.payload
+    constraint public.dashboard_public_cache.dashboard_public_cache_pkey
+    funcacl public._dashboard_ab_results_impl(in_flag text)
+    funcacl public._dashboard_adaptive_decisions_impl(in_days integer)
+    funcacl public._dashboard_anomaly_check_impl()
+    funcacl public._dashboard_cohort_curves_impl(in_weeks integer)
+    funcacl public._dashboard_cohort_retention_impl(in_weeks integer)
+    funcacl public._dashboard_context_split_impl(in_days integer)
+    funcacl public._dashboard_curriculum_coverage_impl(in_days integer)
+    funcacl public._dashboard_daily_digest_impl()
+    funcacl public._dashboard_engagement_deep_impl(in_days integer)
+    funcacl public._dashboard_errors_impl(row_limit integer)
+    funcacl public._dashboard_executive_summary_impl(in_days integer)
+    funcacl public._dashboard_export_headline_impl(in_days integer)
+    funcacl public._dashboard_friction_engineering_impl(in_days integer)
+    funcacl public._dashboard_funnel_impl(in_days integer)
+    funcacl public._dashboard_guard()
+    funcacl public._dashboard_latest_sessions_impl(row_limit integer)
+    funcacl public._dashboard_live_impl()
+    funcacl public._dashboard_mastery_impl(in_days integer, in_min_attempts integer)
+    funcacl public._dashboard_mastery_milestones_impl(in_days integer, in_min_attempts integer, in_threshold_pct integer)
+    funcacl public._dashboard_mastery_summary_impl(in_days integer)
+    funcacl public._dashboard_mastery_v2_impl(in_days integer)
+    funcacl public._dashboard_observability_impl(in_days integer)
+    funcacl public._dashboard_observations_impl(in_days integer)
+    funcacl public._dashboard_progression_for_learner_impl(in_device_id text)
+    funcacl public._dashboard_progression_top_learners_impl(in_days integer, in_limit integer)
+    funcacl public._dashboard_public_proof_impl()
+    funcacl public._dashboard_retention_deep_impl()
+    funcacl public._dashboard_today_impl()
+    funcacl public._dashboard_top_modes_impl(in_days integer)
+    funcacl public._dashboard_tracker_health_impl(in_days integer)
+    funcacl public._dashboard_transparency_report_impl(in_days integer)
+    funcacl public._dashboard_transparency_signals_impl(in_days integer)
+    funcacl public._dashboard_trust_strip_impl(in_days integer)
+    funcacl public._parent_profile_start_trial()
+    funcacl public._parent_trial_eligible(p_parent uuid)
+    funcacl public._start_parent_trial_if_eligible(p_parent uuid)
+    funcacl public.assert_student_scope(in_session_id uuid, in_student_id uuid)
+    funcacl public.student_row_id()
+    funcacl public.student_session_id()
+    funcacl public.student_update_guard()
+    function public._dashboard_ab_results_impl(in_flag text)
+    function public._dashboard_adaptive_decisions_impl(in_days integer)
+    function public._dashboard_anomaly_check_impl()
+    function public._dashboard_cohort_curves_impl(in_weeks integer)
+    function public._dashboard_cohort_retention_impl(in_weeks integer)
+    function public._dashboard_context_split_impl(in_days integer)
+    function public._dashboard_curriculum_coverage_impl(in_days integer)
+    function public._dashboard_daily_digest_impl()
+    function public._dashboard_engagement_deep_impl(in_days integer)
+    function public._dashboard_errors_impl(row_limit integer)
+    function public._dashboard_executive_summary_impl(in_days integer)
+    function public._dashboard_export_headline_impl(in_days integer)
+    function public._dashboard_friction_engineering_impl(in_days integer)
+    function public._dashboard_funnel_impl(in_days integer)
+    function public._dashboard_guard()
+    function public._dashboard_latest_sessions_impl(row_limit integer)
+    function public._dashboard_live_impl()
+    function public._dashboard_mastery_impl(in_days integer, in_min_attempts integer)
+    function public._dashboard_mastery_milestones_impl(in_days integer, in_min_attempts integer, in_threshold_pct integer)
+    function public._dashboard_mastery_summary_impl(in_days integer)
+    function public._dashboard_mastery_v2_impl(in_days integer)
+    function public._dashboard_observability_impl(in_days integer)
+    function public._dashboard_observations_impl(in_days integer)
+    function public._dashboard_progression_for_learner_impl(in_device_id text)
+    function public._dashboard_progression_top_learners_impl(in_days integer, in_limit integer)
+    function public._dashboard_public_proof_impl()
+    function public._dashboard_retention_deep_impl()
+    function public._dashboard_today_impl()
+    function public._dashboard_top_modes_impl(in_days integer)
+    function public._dashboard_tracker_health_impl(in_days integer)
+    function public._dashboard_transparency_report_impl(in_days integer)
+    function public._dashboard_transparency_signals_impl(in_days integer)
+    function public._dashboard_trust_strip_impl(in_days integer)
+    function public._parent_profile_start_trial()
+    function public._parent_trial_eligible(p_parent uuid)
+    function public._start_parent_trial_if_eligible(p_parent uuid)
+    function public.assert_student_scope(in_session_id uuid, in_student_id uuid)
+    function public.student_row_id()
+    function public.student_session_id()
+    function public.student_update_guard()
+    index public.dashboard_public_cache.dashboard_public_cache_pkey
+    policy public.round_scores.round_scores_insert_student
+    policy public.round_scores.round_scores_select_student
+    policy public.session_activities.session_activities_select_student
+    policy public.session_students.session_students_select_student_self
+    policy public.session_students.session_students_update_student_self
+    policy public.sessions.sessions_select_student
+    publication supabase_realtime_messages_publication.realtime.messages_2026_09_07
+    publication supabase_realtime_messages_publication.realtime.messages_2026_09_08
+    publication supabase_realtime_messages_publication.realtime.messages_2026_09_09
+    publication supabase_realtime_messages_publication.realtime.messages_2026_09_10
+    publication supabase_realtime_messages_publication.realtime.messages_2026_09_11
+    table public.dashboard_public_cache
+    tableacl public.dashboard_public_cache
+    trigger public.parent_profiles.trg_parent_profile_start_trial
+    trigger public.session_students.trg_student_update_guard
+[CHANGED] 41
+    funcacl public.dashboard_transparency_report(in_days integer)
+    funcacl public.dashboard_transparency_signals(in_days integer)
+    function public.class_get_activity(in_activity_id uuid)
+    function public.class_get_self(in_student_id uuid)
+    function public.class_get_session(in_session_id uuid)
+    function public.class_set_readiness(in_student_id uuid, in_state text)
+    function public.class_student_heartbeat(in_student_id uuid)
+    function public.dashboard_ab_results(in_flag text)
+    function public.dashboard_adaptive_decisions(in_days integer)
+    function public.dashboard_anomaly_check()
+    function public.dashboard_cohort_curves(in_weeks integer)
+    function public.dashboard_cohort_retention(in_weeks integer)
+    function public.dashboard_context_split(in_days integer)
+    function public.dashboard_curriculum_coverage(in_days integer)
+    function public.dashboard_daily_digest()
+    function public.dashboard_engagement_deep(in_days integer)
+    function public.dashboard_errors(row_limit integer)
+    function public.dashboard_executive_summary(in_days integer)
+    function public.dashboard_export_headline(in_days integer)
+    function public.dashboard_friction_engineering(in_days integer)
+    function public.dashboard_funnel(in_days integer)
+    function public.dashboard_latest_sessions(row_limit integer)
+    function public.dashboard_live()
+    function public.dashboard_mastery(in_days integer, in_min_attempts integer)
+    function public.dashboard_mastery_milestones(in_days integer, in_min_attempts integer, in_threshold_pct integer)
+    function public.dashboard_mastery_summary(in_days integer)
+    function public.dashboard_mastery_v2(in_days integer)
+    function public.dashboard_observability(in_days integer)
+    function public.dashboard_observations(in_days integer)
+    function public.dashboard_progression_for_learner(in_device_id text)
+    function public.dashboard_progression_top_learners(in_days integer, in_limit integer)
+    function public.dashboard_public_proof()
+    function public.dashboard_retention_deep()
+    function public.dashboard_today()
+    function public.dashboard_top_modes(in_days integer)
+    function public.dashboard_tracker_health(in_days integer)
+    function public.dashboard_transparency_report(in_days integer)
+    function public.dashboard_transparency_signals(in_days integer)
+    function public.dashboard_trust_strip(in_days integer)
+    function public.handle_new_parent_user()
+    function public.register_parent()
