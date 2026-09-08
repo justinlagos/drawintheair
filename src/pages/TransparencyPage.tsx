@@ -294,7 +294,7 @@ const TransparencyPage: React.FC = () => {
                 </section>
 
                 {/* ── Section 8. Global signals ──────────────────────── */}
-                {signals && (signals.impact.classrooms_engaged > 0 || signals.impact.learners_active > 0) && (
+                {signals && ((signals.impact.classrooms_engaged ?? 0) > 0 || signals.impact.learners_active > 0) && (
                     <section className="tx-card tx-global">
                         <h2>Where children are practising</h2>
                         <p className="tx-card-sub">
@@ -308,10 +308,12 @@ const TransparencyPage: React.FC = () => {
                                 <strong>{signals.impact.learners_active.toLocaleString()}</strong>
                                 <span>active learners</span>
                             </div>
-                            <div className="tx-global-stat">
-                                <strong>{signals.impact.classrooms_engaged.toLocaleString()}</strong>
-                                <span>classrooms tagged</span>
-                            </div>
+                            {signals.impact.classrooms_engaged !== null && (
+                                <div className="tx-global-stat">
+                                    <strong>{signals.impact.classrooms_engaged.toLocaleString()}</strong>
+                                    <span>classrooms tagged</span>
+                                </div>
+                            )}
                             <div className="tx-global-stat">
                                 <strong>{signals.impact.sessions_run.toLocaleString()}</strong>
                                 <span>sessions logged</span>
