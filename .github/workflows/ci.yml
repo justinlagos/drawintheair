@@ -24,7 +24,7 @@ concurrency:
 
 env:
   # One Node major everywhere: .nvmrc, package.json engines, Vercel, CI.
-  NODE_VERSION: '20'
+  NODE_VERSION: '24'
 
 jobs:
   # lint is green (0 errors) and ratcheted at --max-warnings in package.json.

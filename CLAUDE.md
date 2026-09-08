@@ -20,7 +20,7 @@ Two apps in one repo: the kid-facing Vite app (root) and the teacher platform
 
 - React 19 + TypeScript + Vite + Tailwind; MediaPipe hand tracking; Supabase
   (Class Mode, auth); Vercel; PostHog/Sentry/Meta Pixel (production hosts only).
-- npm with committed lockfile (`npm ci`), Node 20 (`.nvmrc`).
+- npm with committed lockfile (`npm ci`), Node 24 (`.nvmrc`).
 
 # Commands
 

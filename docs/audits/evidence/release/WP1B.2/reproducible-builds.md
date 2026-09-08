@@ -51,8 +51,8 @@ Do these in order, after `release/new-term` is pushed and merged to `master`.
    If it says `main`, change it — that is the single most important setting.
 2. **Settings → Git → Ignored Build Step:** leave default. Do **not** add build-skipping
    logic that could bypass `prebuild`.
-3. **Settings → General → Node.js Version = 20.x.** Match `.nvmrc`/`engines`. If Vercel
-   already shows "20.x" (inferred from `engines`), just confirm.
+3. **Settings → General → Node.js Version = 24.x.** Match `.nvmrc`/`engines`. If Vercel
+   already shows "24.x" (inferred from `engines`), just confirm.
 4. **Settings → Environment Variables → Production scope** must contain
    `VITE_SUPABASE_URL` (= `https://fmrsfjxwswzhvicylaph.supabase.co`) and
    `VITE_SUPABASE_ANON_KEY`. After this PR the production build **fails** without them —
@@ -92,3 +92,9 @@ Do these in order, after `release/new-term` is pushed and merged to `master`.
 - After merge: the production deployment's build log shows
   "— Environment safety check — … OK" and "pass 2: wrote 93 full-body route file(s)".
 - Try a direct push to `master` → rejected by the ruleset.
+
+## Amendment, 8 Sept 2026: Node major moved from 20 to 24
+
+Vercel build log on the release branch: "Node.js version 20.x is deprecated. Deployments created on or after 2026-10-01 will fail to build." Production had been building on 24.x before the WP1B.2 pin (the log says "Node.js version changed from 24.x to 20.x"). Pin moved to 24 in `.nvmrc`, `engines.node` and `ci.yml` so Gate 3 cannot fall over on the Vercel cutoff. Local checks re-run on Node 22 (only major available in the build container); CI on 24 is the proof.
+
+Also observed in the same log, three failed production builds on 8 Sept: founder pressed Promote on the release/new-term preview. The env-safety guard refused each one ("only master may deploy to production"). That is the intended behaviour. Gate 3 is a PR merge into master.

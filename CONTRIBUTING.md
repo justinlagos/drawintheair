@@ -22,7 +22,7 @@ No feature, fix, or config work begins directly on `master`.
 
 ## Package manager & runtime
 - **npm** (committed `package-lock.json`). Install with `npm ci`.
-- **Node 20** (`.nvmrc`).
+- **Node 24** (`.nvmrc`).
 
 ## Required commands (the real ones)
 | Purpose | Command |
