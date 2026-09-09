@@ -6,13 +6,39 @@
  * cookies (auth/session) run regardless. The choice is persisted.
  *
  * Styles are inline so it renders on any route without a stylesheet dependency.
+ *
+ * WP2B.1 / DIA-009: consent is an adult decision. The banner is never
+ * rendered on a child route (/play, /join, /app, /onboarding, /demo), so a
+ * child can never tap Accept, and it never overlaps the play area. The
+ * check re-runs on every navigation (popstate, hashchange and the router's
+ * dia:route event) so SPA moves between adult and child screens are covered.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getConsent, setConsent, type ConsentChoice } from '../lib/analyticsConsent';
+import { isCurrentChildRoute } from '../lib/childRoutes';
+
+function useOnChildRoute(): boolean {
+  const [onChild, setOnChild] = useState<boolean>(() => isCurrentChildRoute());
+  useEffect(() => {
+    const update = () => setOnChild(isCurrentChildRoute());
+    update();
+    window.addEventListener('popstate', update);
+    window.addEventListener('hashchange', update);
+    window.addEventListener('dia:route', update);
+    return () => {
+      window.removeEventListener('popstate', update);
+      window.removeEventListener('hashchange', update);
+      window.removeEventListener('dia:route', update);
+    };
+  }, []);
+  return onChild;
+}
 
 export function CookieConsentBanner() {
   const [choice, setChoiceState] = useState<ConsentChoice | null>(() => getConsent());
+  const onChildRoute = useOnChildRoute();
+  if (onChildRoute) return null;
   if (choice !== null) return null;
 
   const choose = (c: ConsentChoice) => { setConsent(c); setChoiceState(c); };

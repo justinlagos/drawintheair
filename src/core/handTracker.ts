@@ -2,7 +2,9 @@
  * HandTracker, wrapper around MediaPipe HandLandmarker with hardening.
  *
  * Resilience guarantees:
- *   • Pinned WASM URL (no `@latest` resolution flakiness, locks to the
+ *   • Self-hosted runtime first (own origin, /mediapipe/<version>/), public
+ *     CDNs as automatic fallback. See src/core/trackingAssets.ts (DIA-020).
+ *   • Pinned WASM version (no `@latest` resolution flakiness, locks to the
  *     exact version installed in package.json).
  *   • GPU delegate is preferred but falls back to CPU on failure, so the
  *     app works on devices without WebGL2 / hardware acceleration.
@@ -19,18 +21,11 @@
 import { FilesetResolver, HandLandmarker, type HandLandmarkerResult } from '@mediapipe/tasks-vision';
 import { trackingFeatures } from './trackingFeatures';
 import { logEvent } from '../lib/analytics';
+import { resolveTrackingAssets, type TrackingAssetSource } from './trackingAssets';
 
-// Pin to the version actually resolved in package-lock.json (the
-// installed JS). If we pin to the package.json range instead, the WASM
-// can drift to a different version than the JS, and the JS↔WASM API
-// contract is version-locked, so a mismatch breaks createFromOptions.
-//
-// To verify after a `npm install`:
-//   grep -A1 '"node_modules/@mediapipe/tasks-vision"' package-lock.json
-// and update this constant if the version changed.
-const TASKS_VISION_VERSION = '0.10.32';
-const WASM_BASE_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}/wasm`;
-const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+// Version pinning and all asset URLs live in ./trackingAssets.ts so the
+// self-hosted copy under public/mediapipe/<version>/ and the CDN
+// fallback cannot drift apart from each other.
 
 const INIT_TIMEOUT_MS = 15_000;
 
@@ -63,6 +58,7 @@ export class HandTracker {
     private initialized: boolean = false;
     private activeDelegate: HandTrackerDelegate | null = null;
     private lastError: HandTrackerError | null = null;
+    private assetSources: { wasm: TrackingAssetSource; model: TrackingAssetSource } | null = null;
 
     /** Try GPU first, fall back to CPU. Throws on total failure. */
     async initialize(): Promise<void> {
@@ -80,11 +76,54 @@ export class HandTracker {
         const initStartedAt = Date.now();
         logEvent('tracker_init_started', { meta: { num_hands: numHands } });
 
-        // Step 1: Load WASM. This is shared across delegate attempts.
+        // Step 1: Decide where the runtime loads from (own origin first,
+        // CDN fallback) and download the model. Then load the WASM
+        // fileset. Shared across delegate attempts.
         let vision: Awaited<ReturnType<typeof FilesetResolver.forVisionTasks>>;
+        let modelBuffer: ArrayBuffer;
+        let wasmBaseUrl: string;
+        try {
+            const assets = await resolveTrackingAssets();
+            this.assetSources = { wasm: assets.wasm.source, model: assets.model.source };
+            modelBuffer = assets.model.buffer;
+            wasmBaseUrl = assets.wasm.baseUrl;
+            console.log(
+                `[HandTracker] assets: wasm=${assets.wasm.source} model=${assets.model.source}`
+                + (assets.wasm.selfError ? ` (self wasm skipped: ${assets.wasm.selfError})` : '')
+                + (assets.model.selfError ? ` (self model skipped: ${assets.model.selfError})` : ''),
+            );
+            logEvent('tracker_assets_resolved', {
+                meta: {
+                    wasm_source: assets.wasm.source,
+                    model_source: assets.model.source,
+                    self_wasm_error: assets.wasm.selfError ?? null,
+                    self_model_error: assets.model.selfError ?? null,
+                    resolve_duration_ms: Date.now() - initStartedAt,
+                },
+            });
+        } catch (err) {
+            const isTimeout = err instanceof Error && err.message.startsWith('Timeout');
+            this.lastError = {
+                code: isTimeout ? 'TIMEOUT' : 'MODEL_LOAD',
+                message: err instanceof Error ? err.message : String(err),
+                triedDelegates: [],
+            };
+            console.error('[HandTracker]', this.lastError);
+            logEvent('tracker_init_failed', {
+                value_number: Date.now() - initStartedAt,
+                meta: {
+                    code: this.lastError.code,
+                    message: this.lastError.message,
+                    tried_delegates: this.lastError.triedDelegates,
+                    stage: 'model_load',
+                },
+            });
+            throw err;
+        }
+
         try {
             vision = await withTimeout(
-                FilesetResolver.forVisionTasks(WASM_BASE_URL),
+                FilesetResolver.forVisionTasks(wasmBaseUrl),
                 INIT_TIMEOUT_MS,
                 'forVisionTasks',
             );
@@ -103,16 +142,22 @@ export class HandTracker {
                     message: this.lastError.message,
                     tried_delegates: this.lastError.triedDelegates,
                     stage: 'wasm_load',
+                    wasm_source: this.assetSources.wasm,
                 },
             });
             throw err;
         }
 
+        // The WASM binary itself is fetched inside createFromOptions using
+        // the same base URL. MediaPipe copies the model bytes into its own
+        // heap, so one buffer is safe to reuse for the CPU retry.
+        const modelAssetBuffer = new Uint8Array(modelBuffer);
+
         // Step 2: Try GPU delegate first.
         try {
             this.handLandmarker = await withTimeout(
                 HandLandmarker.createFromOptions(vision, {
-                    baseOptions: { modelAssetPath: MODEL_URL, delegate: 'GPU' },
+                    baseOptions: { modelAssetBuffer, delegate: 'GPU' },
                     runningMode: this.runningMode,
                     numHands,
                     minHandDetectionConfidence: 0.5,
@@ -133,6 +178,8 @@ export class HandTracker {
                     delegate: 'GPU',
                     num_hands: numHands,
                     tried_delegates: ['GPU'],
+                    wasm_source: this.assetSources.wasm,
+                    model_source: this.assetSources.model,
                 },
             });
             return;
@@ -145,7 +192,7 @@ export class HandTracker {
         try {
             this.handLandmarker = await withTimeout(
                 HandLandmarker.createFromOptions(vision, {
-                    baseOptions: { modelAssetPath: MODEL_URL, delegate: 'CPU' },
+                    baseOptions: { modelAssetBuffer, delegate: 'CPU' },
                     runningMode: this.runningMode,
                     numHands,
                     minHandDetectionConfidence: 0.5,
@@ -167,6 +214,8 @@ export class HandTracker {
                     num_hands: numHands,
                     tried_delegates: tried,
                     fell_back_from_gpu: true,
+                    wasm_source: this.assetSources.wasm,
+                    model_source: this.assetSources.model,
                 },
             });
             return;
@@ -186,6 +235,8 @@ export class HandTracker {
                     message: this.lastError.message,
                     tried_delegates: tried,
                     stage: 'create_from_options',
+                    wasm_source: this.assetSources.wasm,
+                    model_source: this.assetSources.model,
                 },
             });
             throw cpuErr;
@@ -204,6 +255,11 @@ export class HandTracker {
     /** Returns the most recent init error, or null if init succeeded. */
     getLastError(): HandTrackerError | null {
         return this.lastError;
+    }
+
+    /** Where the WASM runtime and model were loaded from ('self' or 'cdn'), or null before init. */
+    getAssetSources(): { wasm: TrackingAssetSource; model: TrackingAssetSource } | null {
+        return this.assetSources;
     }
 
     /** Reinitialise with a different numHands count (closes existing). */

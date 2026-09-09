@@ -2,6 +2,11 @@ name: CI
 
 # Runs on every PR into master and on pushes to master (post-merge verification),
 # plus manual dispatch. Production branch is `master` (NOT `main`).
+#
+# Deploy contract: these five jobs are the SAME commands Vercel runs (`npm ci`
+# then `npm run build`, whose `prebuild` hook runs env-safety + CSP + typecheck)
+# plus the local gate `./scripts/check-task.sh` (lint, tests, secret scan).
+# All five are to be REQUIRED status checks on master (branch protection).
 on:
   pull_request:
     branches: [ master ]
@@ -17,8 +22,12 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # One Node major everywhere: .nvmrc, package.json engines, Vercel, CI.
+  NODE_VERSION: '24'
+
 jobs:
-  # ---- Verified-green on master 2026-06-25; safe to make REQUIRED: typecheck, secret-scan, unit-tests ----
+  # lint is green (0 errors) and ratcheted at --max-warnings in package.json.
   lint:
     name: lint
     runs-on: ubuntu-latest
@@ -26,7 +35,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
       - run: npm run lint
@@ -38,7 +47,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
       - run: npm run type-check
@@ -50,7 +59,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
       - name: Scan for committed secrets
@@ -58,9 +67,18 @@ jobs:
       - name: Validate Content-Security-Policy
         run: npm run check:csp
       - name: Environment-safety guard (no prod refs / leaked service-role)
-        run: node scripts/check-env-safety.mjs
+        run: npm run check:env-safety
+      - name: Environment-safety guard rejects a production build with no Supabase vars
+        # Proves the guard that protects the Vercel production build actually fails.
+        env:
+          VERCEL_ENV: production
+          VERCEL_GIT_COMMIT_REF: master
+        run: |
+          if npm run check:env-safety; then
+            echo "::error::env-safety guard passed a production build with no VITE_SUPABASE_* vars"; exit 1
+          fi
+          echo "guard correctly failed"
 
-  # ---- lint is RED on master (9 pre-existing errors) -> keep NON-required until fixed; see CONTRIBUTING.md ----
   unit-tests:
     name: unit-tests
     runs-on: ubuntu-latest
@@ -68,7 +86,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
       - name: Run unit tests (mocked MediaPipe; no webcam/network)
@@ -87,7 +105,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - name: Production build (same command as Vercel; prebuild runs env-safety + CSP + typecheck)
+        run: npm run build
+      - name: Assert SSG prerender output (production baseline = 93 full-body routes)
+        run: |
+          n=$(find dist -name index.html -not -path dist/index.html | wc -l)
+          echo "prerendered route files: $n"
+          if [ "$n" -lt 93 ]; then
+            echo "::error::expected at least 93 prerendered route files, got $n"; exit 1
+          fi

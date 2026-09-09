@@ -39,23 +39,39 @@ const vercelJsonPath = path.join(repoRoot, 'vercel.json');
 // ─────────────────────────────────────────────────────────────────────
 const REQUIREMENTS = [
     // ── MediaPipe hand tracking — load + inference ───────────────────
+    // Since WP2B.3 (DIA-020) the runtime loads from our own origin first
+    // (/mediapipe/<version>/, covered by 'self' in script-src, connect-src
+    // and the 'unsafe-eval' already in script-src for WebAssembly). The
+    // CDN hosts below stay allowed as the automatic fallback.
+    {
+        directive: 'script-src',
+        origin: "'self'",
+        why: 'Self-hosted MediaPipe vision_wasm_internal.js loader script',
+        owner: 'src/core/trackingAssets.ts → SELF_HOSTED_WASM_PATH',
+    },
+    {
+        directive: 'connect-src',
+        origin: "'self'",
+        why: 'Self-hosted MediaPipe WASM binary + hand_landmarker.task model',
+        owner: 'src/core/trackingAssets.ts → SELF_HOSTED_MODEL_PATH',
+    },
     {
         directive: 'connect-src',
         origin: 'https://cdn.jsdelivr.net',
-        why: 'MediaPipe Tasks Vision WASM (hand tracker WebAssembly)',
-        owner: 'src/core/handTracker.ts → WASM_BASE_URL',
+        why: 'MediaPipe Tasks Vision WASM (hand tracker WebAssembly), CDN fallback',
+        owner: 'src/core/trackingAssets.ts → CDN_WASM_BASE_URL',
     },
     {
         directive: 'script-src',
         origin: 'https://cdn.jsdelivr.net',
-        why: 'MediaPipe vision_wasm_internal.js loader script',
-        owner: 'src/core/handTracker.ts → FilesetResolver.forVisionTasks',
+        why: 'MediaPipe vision_wasm_internal.js loader script, CDN fallback',
+        owner: 'src/core/trackingAssets.ts → CDN_WASM_BASE_URL',
     },
     {
         directive: 'connect-src',
         origin: 'https://storage.googleapis.com',
-        why: 'MediaPipe hand_landmarker.task model file',
-        owner: 'src/core/handTracker.ts → MODEL_URL',
+        why: 'MediaPipe hand_landmarker.task model file, CDN fallback',
+        owner: 'src/core/trackingAssets.ts → CDN_MODEL_URL',
     },
     // ── Worker support — MediaPipe spawns blob: workers internally ───
     {
@@ -65,18 +81,11 @@ const REQUIREMENTS = [
         owner: 'MediaPipe Tasks Vision (internal)',
     },
     // ── Supabase (auth + analytics backend) ─────────────────────────
-    {
-        directive: 'connect-src',
-        origin: 'https://fmrsfjxwswzhvicylaph.supabase.co',
-        why: 'Supabase REST + auth API',
-        owner: 'src/lib/supabase.ts',
-    },
-    {
-        directive: 'connect-src',
-        origin: 'wss://fmrsfjxwswzhvicylaph.supabase.co',
-        why: 'Supabase realtime websocket',
-        owner: 'src/lib/supabase.ts',
-    },
+    // NOT listed here: the Supabase origin differs per policy block
+    // (production hostnames get the production project, preview URLs get
+    // staging), so a single required origin cannot be right for both.
+    // checkSupabaseSplit() below asserts the correct origin per block,
+    // including its wss:// twin.
     // ── Form submission backend ──────────────────────────────────────
     {
         directive: 'connect-src',
@@ -121,16 +130,52 @@ const REQUIREMENTS = [
 // ─────────────────────────────────────────────────────────────────────
 // Validate
 // ─────────────────────────────────────────────────────────────────────
-function readCsp() {
+function readCspPolicies() {
     const raw = fs.readFileSync(vercelJsonPath, 'utf8');
     const json = JSON.parse(raw);
     const headerBlocks = json.headers || [];
+    const found = [];
     for (const block of headerBlocks) {
         for (const h of block.headers || []) {
-            if (h.key === 'Content-Security-Policy') return h.value;
+            if (h.key === 'Content-Security-Policy') {
+                const host = (block.has || []).find(c => c.type === 'host');
+                found.push({
+                    label: host ? `host=${host.value}` : 'preview/fallback (no host condition)',
+                    value: h.value,
+                });
+            }
         }
     }
-    return null;
+    return found;
+}
+
+// Since WP1A.2 the CSP is split by host: the production hostnames get a
+// policy naming the production Supabase origin, and the fallback block
+// (every preview URL) names the staging origin instead. Previews point at
+// staging, so a CSP that only ever allowed production silently blocked
+// every Supabase call on a preview - which is exactly how WP1A.2 first
+// failed its acceptance test. Both policies are validated below, and the
+// Supabase origin each one carries is asserted, so the split cannot rot.
+const PROD_SUPABASE = 'https://fmrsfjxwswzhvicylaph.supabase.co';
+const STAGING_SUPABASE = 'https://dcivdrhxeaiulbbhsgfv.supabase.co';
+
+function checkSupabaseSplit(policies) {
+    const problems = [];
+    for (const p of policies) {
+        const isProdHost = p.label.startsWith('host=') && p.label.includes('drawintheair.com');
+        const want = isProdHost ? PROD_SUPABASE : STAGING_SUPABASE;
+        const forbid = isProdHost ? STAGING_SUPABASE : PROD_SUPABASE;
+        if (!p.value.includes(want)) {
+            problems.push(`${p.label}: connect-src is missing ${want}`);
+        }
+        if (p.value.includes(forbid)) {
+            problems.push(`${p.label}: connect-src must not name ${forbid}`);
+        }
+        if (!p.value.includes('wss://' + want.replace('https://', ''))) {
+            problems.push(`${p.label}: connect-src is missing the wss:// origin for realtime`);
+        }
+    }
+    return problems;
 }
 
 function parseCsp(csp) {
@@ -150,25 +195,51 @@ function main() {
         process.exit(2);
     }
 
-    const csp = readCsp();
+    const policies = readCspPolicies();
+    const csp = policies.length ? policies[0].value : null;
     if (!csp) {
         console.error('[check-csp] FATAL: no Content-Security-Policy header in vercel.json');
         process.exit(2);
     }
 
-    const directives = parseCsp(csp);
+    // Every policy must carry every required origin, not just the first.
     const missing = [];
-
-    for (const req of REQUIREMENTS) {
-        const allowed = directives[req.directive];
-        if (!allowed || !allowed.has(req.origin)) {
-            missing.push(req);
+    for (const policy of policies) {
+        const directives = parseCsp(policy.value);
+        for (const req of REQUIREMENTS) {
+            const allowed = directives[req.directive];
+            if (!allowed || !allowed.has(req.origin)) {
+                missing.push({ ...req, policy: policy.label });
+            }
         }
     }
 
-    if (missing.length === 0) {
-        console.log(`[check-csp] ✓ all ${REQUIREMENTS.length} required CSP origins present.`);
+    const splitProblems = checkSupabaseSplit(policies);
+
+    if (missing.length === 0 && splitProblems.length === 0) {
+        console.log(
+            `[check-csp] ✓ all ${REQUIREMENTS.length} required origins present in ` +
+            `${policies.length} policy block(s); Supabase host split correct.`,
+        );
         return;
+    }
+
+    if (splitProblems.length > 0) {
+        console.error('');
+        console.error('═══════════════════════════════════════════════════════════════');
+        console.error('  ❌ CSP SUPABASE HOST SPLIT IS WRONG');
+        console.error('═══════════════════════════════════════════════════════════════');
+        console.error('');
+        console.error('  Production hostnames must allow the production Supabase');
+        console.error('  origin; the fallback block (preview URLs) must allow the');
+        console.error('  staging one. A preview whose CSP names production cannot');
+        console.error('  reach staging at all, and every Supabase call fails.');
+        console.error('');
+        for (const p of splitProblems) console.error(`    • ${p}`);
+        console.error('');
+        console.error('  Fix: edit vercel.json → headers → Content-Security-Policy');
+        console.error('');
+        process.exit(1);
     }
 
     console.error('');
@@ -179,7 +250,7 @@ function main() {
     console.error(`  ${missing.length} required origin(s) not in vercel.json's CSP:`);
     console.error('');
     for (const m of missing) {
-        console.error(`    • ${m.directive}: ${m.origin}`);
+        console.error(`    • [${m.policy}] ${m.directive}: ${m.origin}`);
         console.error(`        why:   ${m.why}`);
         console.error(`        used:  ${m.owner}`);
         console.error('');

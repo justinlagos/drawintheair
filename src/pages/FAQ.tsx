@@ -17,11 +17,11 @@ const faqSections: FAQSection[] = [
     items: [
       {
         question: 'Does it work on tablets?',
-        answer: 'Yes. Draw In The Air works on tablets with a front-facing camera. It runs in the browser, no app installation needed. Chrome and Edge work best.',
+        answer: 'It is built for laptops, desktops, and Chromebooks with a webcam. Some tablets with a front-facing camera can run it in the browser, but tracking quality and screen size are better on a computer. Chrome and Edge work best.',
       },
       {
         question: 'Does it require a strong internet connection?',
-        answer: 'No. Once the page loads, all hand-tracking processing happens on the device. You only need internet for the initial page load.',
+        answer: 'You need a working internet connection while playing. Hand tracking itself runs on the device, but the app needs the connection to load, to save progress, and to run class sessions. A normal school or home broadband connection is enough.',
       },
       {
         question: 'What if the camera does not work?',
@@ -50,7 +50,7 @@ const faqSections: FAQSection[] = [
       },
       {
         question: 'What is Classroom Mode?',
-        answer: 'Classroom Mode lets a teacher run a whole-class session with a live leaderboard. Students join with a 4-digit code, no accounts needed. The teacher sees all students\' scores in real time. It is included in the free classroom pilot.',
+        answer: 'Classroom Mode lets a teacher run a whole-class session with a live leaderboard. Students join with a 4-digit code and a first name or nickname, no accounts needed. The teacher sees all students\' scores in real time. It is included in the free classroom pilot.',
       },
       {
         question: 'Can we use it on school Chromebooks?',
@@ -63,7 +63,7 @@ const faqSections: FAQSection[] = [
     items: [
       {
         question: 'Do you store any child data?',
-        answer: 'No. We do not collect, store, or transmit any child data. All camera processing happens locally in the browser on the device. No video is saved, and there are no child accounts.',
+        answer: 'We never store or transmit camera video. All camera processing happens in the browser on the device and there are no child accounts. If a parent or teacher adds a learner, we store a first name or nickname, an age band, and activity progress so reports can be shown to that adult. See the Privacy Policy for details.',
       },
       {
         question: 'Is the camera recording our children?',
@@ -71,7 +71,7 @@ const faqSections: FAQSection[] = [
       },
       {
         question: 'Is it GDPR compliant?',
-        answer: 'Yes. Because we do not collect or store any personal data from children or parents, there is nothing to process under GDPR. For teacher accounts on the platform, we process only the minimal data necessary to provide the service.',
+        answer: 'We follow UK GDPR. We hold parent and teacher account details (an email address) and, for learners that an adult adds, a first name or nickname, an age band, and progress. Parents can view, export, and delete this data from their account page, and teachers can remove any child and all their data from their dashboard. Schools remain the data controller for their pupils and we act as processor.',
       },
     ],
   },
@@ -84,7 +84,7 @@ const faqSections: FAQSection[] = [
       },
       {
         question: 'What devices are compatible?',
-        answer: 'Any device with a front-facing camera and a modern browser: laptops, tablets, desktop computers with webcams, and Chromebooks. Mobile phones work but the experience is optimised for larger screens.',
+        answer: 'A laptop, desktop, or Chromebook with a webcam and a modern browser. Some tablets can run it. Phones are not supported for play; on a phone we offer to email you a link to open on a laptop.',
       },
       {
         question: 'Does it need any software or plugins?',

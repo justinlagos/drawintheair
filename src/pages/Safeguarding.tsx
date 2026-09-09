@@ -13,7 +13,7 @@ export const Safeguarding: React.FC = () => {
       <p>The adult gate feature requires an adult to access settings and exit the platform. This helps ensure that children cannot accidentally change settings or exit the platform without supervision.</p>
 
       <h2>No ads, no child profiles</h2>
-      <p>Draw In The Air does not display advertisements and does not create child profiles. There is no registration, login, or personal information collection. This helps protect children from inappropriate content and data collection.</p>
+      <p>Draw In The Air does not display advertisements. Children never register or log in. A parent or teacher may add a learner record holding a first name or nickname and an age band. A child joining a class session types a first name or nickname only. We never ask children for surnames, dates of birth, or contact details.</p>
 
       <h2>What schools should do locally</h2>
       <p>Schools using Draw In The Air should:</p>

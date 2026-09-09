@@ -139,6 +139,13 @@ self.addEventListener('fetch', (event) => {
 
     const url = new URL(request.url);
 
+    // Self-hosted MediaPipe runtime (/mediapipe/<version>/, DIA-020). Leave
+    // these to the browser: vercel.json serves them immutable-cached, and
+    // the network-first 6 s race below would wrongly fail the 200 KB loader
+    // script on a slow school link and push tracking onto the CDN fallback.
+    // Do not put these files in the SW cache (the .wasm alone is 11 MB).
+    if (url.pathname.startsWith('/mediapipe/')) return;
+
     // ── Navigation (HTML pages) → network-first ────────────────────────
     if (request.mode === 'navigate') {
         event.respondWith(networkFirst(request));

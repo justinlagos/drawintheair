@@ -9,6 +9,10 @@
 // so there's no circular-import risk.
 import { recordSupabaseRpcFailure } from './observability/health';
 import { createPkcePair, isSafeInternalPath } from './auth/pkce';
+import {
+  STUDENT_TOKEN_KEY,
+  isStudentTokenExpired,
+} from './studentToken';
 
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string) || '';
 const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || '';
@@ -111,6 +115,10 @@ export async function refreshSession(): Promise<boolean> {
       };
       persistSession(session);
       scheduleTokenRefresh();
+      // WP2A.3: the realtime socket holds the OLD token in its subscription
+      // claims. Hand it the new one on every joined topic, or the teacher
+      // console silently stops receiving postgres_changes an hour in.
+      pushAccessTokenToChannels();
       return true;
     } catch {
       return false; // transient network failure — keep the session, retry later
@@ -152,15 +160,61 @@ if (typeof window !== 'undefined' && currentSession) {
 
 // ─── Auth helpers ────────────────────────────────────────────────────────────
 
+// ─── Student capability token (WP2A.3 / DIA-007 Stage B) ─────────────────────
+//
+// A child has no Supabase auth session. It holds a short-lived JWT minted
+// by the class-join-token Edge Function whose claims name one session and
+// one roster row. It goes on PostgREST calls as the bearer AND into the
+// realtime phx_join payload as `access_token`. Before this, the socket
+// carried no token at all and every subscriber was evaluated as bare anon,
+// which is why the classroom policies had to be world-readable.
+
+let studentToken: string | null = null;
+
+if (typeof window !== 'undefined') {
+  try {
+    const stored = sessionStorage.getItem(STUDENT_TOKEN_KEY);
+    if (stored && !isStudentTokenExpired(stored, Date.now())) studentToken = stored;
+    else if (stored) sessionStorage.removeItem(STUDENT_TOKEN_KEY);
+  } catch { /* private mode: run without a stored token */ }
+}
+
+/**
+ * Store (or clear, with null) the student capability token. Also pushes
+ * it to every joined realtime topic so an in-flight socket picks up a
+ * refreshed token without a reconnect.
+ */
+export function setStudentToken(token: string | null): void {
+  studentToken = token;
+  try {
+    if (token) sessionStorage.setItem(STUDENT_TOKEN_KEY, token);
+    else sessionStorage.removeItem(STUDENT_TOKEN_KEY);
+  } catch { /* ignore, the in-memory copy still works for this tab */ }
+  pushAccessTokenToChannels();
+}
+
+/** The stored student token, or null when absent or past its life. */
+export function getStudentToken(): string | null {
+  if (studentToken && isStudentTokenExpired(studentToken, Date.now())) {
+    studentToken = null;
+    try { sessionStorage.removeItem(STUDENT_TOKEN_KEY); } catch { /* ignore */ }
+  }
+  return studentToken;
+}
+
 function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     'apikey': SUPABASE_ANON_KEY,
     'Content-Type': 'application/json',
   };
+  // A signed-in teacher or parent wins: their JWT carries auth.uid(), which
+  // the teacher and admin policy branches need. A student token is used only
+  // when there is no user session, which is always the case on a child device.
   if (currentSession?.access_token) {
     headers['Authorization'] = `Bearer ${currentSession.access_token}`;
   } else {
-    headers['Authorization'] = `Bearer ${SUPABASE_ANON_KEY}`;
+    const student = getStudentToken();
+    headers['Authorization'] = `Bearer ${student ?? SUPABASE_ANON_KEY}`;
   }
   return headers;
 }
@@ -170,7 +224,7 @@ export function getUser(): SupabaseUser | null {
 }
 
 export function getAccessToken(): string {
-  return currentSession?.access_token ?? SUPABASE_ANON_KEY;
+  return currentSession?.access_token ?? getStudentToken() ?? SUPABASE_ANON_KEY;
 }
 
 /**
@@ -1142,11 +1196,32 @@ function sendPhxJoin(topic: string) {
         presence: { key: '' },
         postgres_changes: postgresChanges,
       },
+      // WP2A.3: without this the socket authenticates as bare anon and
+      // Realtime evaluates every RLS policy as the anon role with no
+      // claims. Teachers send their user JWT, children send their student
+      // capability token. Both are verified by Realtime before the claims
+      // reach walrus, so this is the only thing that makes session-scoped
+      // policies deliver postgres_changes.
+      access_token: getAccessToken(),
     },
     ref: String(realtimeRef),
     join_ref: String(realtimeRef),
   };
   realtimeSocket?.send(JSON.stringify(msg));
+}
+
+/**
+ * Hand the current token to every joined topic. Realtime accepts an
+ * `access_token` event on a joined channel and re-evaluates that
+ * subscription's claims, so a refreshed student token or a teacher
+ * token refresh takes effect without dropping the socket.
+ */
+function pushAccessTokenToChannels(): void {
+  if (realtimeSocket?.readyState !== WebSocket.OPEN) return;
+  const token = getAccessToken();
+  channels.forEach((_channel, topic) => {
+    sendPhx('access_token', topic, { access_token: token });
+  });
 }
 
 export function subscribeToTable(

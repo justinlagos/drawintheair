@@ -1,0 +1,105 @@
+// src/seo/prerender-paths.ts
+// The URL paths that the SSG build prerenders (93 routes in production).
+//
+// This module is pure data with no React or browser imports so that unit
+// tests can read the public route list without loading page components.
+// src/entry-prerender.tsx pairs each path with its page component; the
+// type on STATIC_PAGES there fails the build if a static path is added
+// here without a component, or vice versa.
+
+import { LETTERS, NUMBERS, SHAPES } from './seo-config';
+
+export const STATIC_PATHS = [
+  '/',
+  '/faq',
+  '/schools',
+  '/schools/training',
+  '/school',
+  '/teachers',
+  '/pricing',
+  '/about',
+  '/privacy',
+  '/terms',
+  '/cookies',
+  '/safeguarding',
+  '/accessibility',
+  '/embed',
+  '/press',
+  '/free-resources',
+  '/for-teachers',
+  '/for-parents',
+  '/learn',
+] as const;
+
+export type StaticPath = (typeof STATIC_PATHS)[number];
+
+// Education audience pages. Slug is the path without the leading slash.
+export const EDUCATION_SLUGS = ['for-homeschool', 'for-preschool', 'for-kindergarten'] as const;
+
+// Learn articles. Keep in sync with ARTICLES in LearnArticlePage.tsx.
+export const LEARN_SLUGS = [
+  'hand-tracking-for-kids',
+  'gesture-learning',
+  'drawing-skills-for-children',
+  'early-childhood-motor-skills',
+  'ai-for-kids',
+  'screen-time-alternatives',
+] as const;
+
+// Use-case landing pages. Keep in sync with getRouteFromPath in main.tsx.
+export const USECASE_SLUGS = [
+  'gesture-learning',
+  'classroom-movement-activities',
+  'chromebook-learning-tools',
+  'homeschool-movement-learning',
+  'hand-eye-coordination-activities',
+  'ai-learning-tools-for-kids',
+] as const;
+
+// Standard activity pages. '/free-paint' is the canonical free-paint URL.
+export const ACTIVITY_ROUTES = [
+  { path: '/activities/bubble-pop', slug: 'bubble-pop' },
+  { path: '/activities/sort-and-place', slug: 'sort-and-place' },
+  { path: '/activities/letter-tracing', slug: 'letter-tracing' },
+  { path: '/free-paint', slug: 'free-paint' },
+] as const;
+
+// Seasonal pages. Keys must exist in SPECIAL_DATA (SpecialActivityPage.tsx).
+// NOTE: /draw-heart-in-air, /draw-star-in-air and /draw-alphabet-in-air
+// exist in PAGE_META but have no SPECIAL_DATA entry and no router match.
+// They fall through to the Landing page, so they are intentionally NOT
+// body-prerendered until that drift is fixed.
+export const SPECIAL_ACTIVITY_SLUGS = [
+  'christmas-drawing-for-kids',
+  'halloween-drawing-kids',
+  'back-to-school-activities',
+  'valentines-drawing-kids',
+  'easter-drawing-kids',
+  'summer-activities-kids',
+  'thanksgiving-kids-activities',
+  'mothers-day-drawing-kids',
+] as const;
+
+// The three viral challenges are top-level paths (see main.tsx).
+export const VIRAL_PATHS = ['/draw-number-in-air', '/air-drawing-challenge', '/draw-circle-in-air'] as const;
+
+// Programmatic trace pages: 26 letters + 10 numbers + 8 shapes.
+// '/letter-tracing' is intentionally absent: TracePage canonicalises it
+// to /trace-a, which would fight PAGE_META's '/letter-tracing' canonical.
+export const TRACE_PATHS: string[] = [
+  ...LETTERS.map((l) => `/trace-${l.toLowerCase()}`),
+  ...NUMBERS.map((n) => `/trace-number-${n}`),
+  ...SHAPES.map((s) => `/trace-${s}`),
+];
+
+/** Every path the SSG build prerenders, in build order. */
+export const PRERENDER_PATHS: string[] = [
+  ...STATIC_PATHS,
+  ...EDUCATION_SLUGS.map((slug) => `/${slug}`),
+  ...LEARN_SLUGS.map((slug) => `/learn/${slug}`),
+  ...USECASE_SLUGS.map((slug) => `/${slug}`),
+  ...ACTIVITY_ROUTES.map((r) => r.path),
+  ...SPECIAL_ACTIVITY_SLUGS.map((slug) => `/activities/${slug}`),
+  ...VIRAL_PATHS,
+  ...TRACE_PATHS,
+];

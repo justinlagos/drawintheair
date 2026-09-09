@@ -29,7 +29,9 @@
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { callRpc, subscribeToTable, onRealtimeReconnect } from '../../lib/supabase';
+import { callRpc, subscribeToTable, onRealtimeReconnect, setStudentToken, getStudentToken } from '../../lib/supabase';
+import { studentTokenNeedsRefresh, studentTokenMatches } from '../../lib/studentToken';
+import { lookupClassCode, joinClassWithName, refreshStudentToken, isJoinError } from '../../features/classmode/classJoin';
 import { analytics } from '../../lib/analytics';
 import { isValidCode, sanitizeCodeInput } from '../../features/classmode/sessionCode';
 import { classroomStateChanged } from '../../features/classmode/reconcile';
@@ -116,6 +118,15 @@ export default function StudentClassClient() {
             const memo = JSON.parse(raw) as ReconnectMemo;
             if (Date.now() - memo.ts > RECONNECT_TTL_MS) {
                 sessionStorage.removeItem(RECONNECT_KEY);
+                return;
+            }
+            // WP2A.3: the memo alone is not a capability any more. Without a
+            // student token that names this session and roster row, every
+            // scoped RPC will refuse, so send the child back to the code
+            // screen rather than to a screen that cannot load.
+            if (!studentTokenMatches(getStudentToken(), memo.sessionId, memo.studentId)) {
+                sessionStorage.removeItem(RECONNECT_KEY);
+                setStudentToken(null);
                 return;
             }
             (async () => {
@@ -242,6 +253,20 @@ export default function StudentClassClient() {
         const check = async () => {
             if (cancelled || document.visibilityState !== 'visible') return;
             try {
+                // WP2A.3: swap the capability token before it runs out. The
+                // poll is the only loop guaranteed to be running, so it owns
+                // the refresh. A refusal means the child is out of the class.
+                if (studentTokenNeedsRefresh(getStudentToken(), Date.now())) {
+                    const refreshed = await refreshStudentToken();
+                    if (cancelled) return;
+                    if (!refreshed) {
+                        sessionStorage.removeItem(RECONNECT_KEY);
+                        setStudentToken(null);
+                        setUi({ kind: 'ended', sessionId });
+                        return;
+                    }
+                }
+
                 // Presence heartbeat: fire-and-forget, never blocks the poll.
                 void callRpc('class_student_heartbeat', { in_student_id: studentId });
 
@@ -310,6 +335,9 @@ export default function StudentClassClient() {
         // terminal outcome for any activity the child still had open. Record
         // it as teacher_ended so it isn't mislabelled as difficulty/abandon.
         analytics.abandonOpenAttempt('teacher_ended');
+        // WP2A.3: the capability dies with the class. Drop it so a stale
+        // token cannot be replayed from this tab.
+        setStudentToken(null);
         // Classroom control: do NOT redirect the child to the marketing site.
         // On shared/projected classroom devices that would drop a young learner
         // onto the public homepage and its family signup CTA. The child stays on
@@ -320,19 +348,21 @@ export default function StudentClassClient() {
     const handleCode = useCallback(async (code: string) => {
         setError(null);
         if (!isValidCode(code)) { setError('Enter a 4-digit code'); return; }
-        // H1: resolve the code through the anon-callable SECURITY DEFINER RPC,
-        // which returns a tightly-scoped projection only for active sessions.
-        const { data, error: lookupErr } = await callRpc<SessionRow | null>(
-            'session_lookup_by_code', { in_code: code },
-        );
-        if (lookupErr) {
-            // Network / server failure is NOT "wrong code" — say so honestly
-            // instead of sending the child back to re-type a correct code.
-            setError('Hmm, we can’t connect right now. Check the internet and try again.');
+        // WP2A.3: the code is resolved by the class-join-token Edge Function,
+        // which runs class_validate_join with the service role. No roster row
+        // is created yet, so a mistyped code costs nothing.
+        const result = await lookupClassCode(code);
+        if ('error' in result) {
+            if (result.error === 'UNREACHABLE') {
+                // Network / server failure is NOT "wrong code", say so honestly
+                // instead of sending the child back to re-type a correct code.
+                setError('Hmm, we can’t connect right now. Check the internet and try again.');
+            } else {
+                setError('No active class with that code');
+            }
             return;
         }
-        if (!data) { setError('No active class with that code'); return; }
-        setUi({ kind: 'name', session: data });
+        setUi({ kind: 'name', session: result.session });
     }, []);
 
     const clearError = useCallback(() => setError(null), []);
@@ -369,16 +399,19 @@ export default function StudentClassClient() {
         setError(null);
         const desired = rawName.trim();
         if (!desired) { setError('Enter your first name'); return; }
-        // Legacy name-join: single SECURITY DEFINER RPC that validates the
-        // session, dedupes the name server-side, inserts, and returns the row.
-        const { data, error: joinErr } = await callRpc<StudentRow | null>(
-            'class_join', { in_session_id: ui.session.id, in_name: desired },
-        );
-        if (joinErr || !data) {
-            setError(joinErr?.message ?? 'Could not join class');
+        // WP2A.3: the Edge Function validates the session, dedupes the name
+        // server-side, inserts the roster row and returns the capability
+        // token, which is stored before anything else touches PostgREST.
+        const result = await joinClassWithName(ui.session.code, desired);
+        if (isJoinError(result)) {
+            setError(
+                result.error === 'UNREACHABLE'
+                    ? 'Hmm, we can’t connect right now. Check the internet and try again.'
+                    : 'Could not join class',
+            );
             return;
         }
-        await enterClassroom(ui.session, data);
+        await enterClassroom(result.session, result.student);
     }, [ui, enterClassroom]);
 
 

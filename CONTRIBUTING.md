@@ -22,7 +22,7 @@ No feature, fix, or config work begins directly on `master`.
 
 ## Package manager & runtime
 - **npm** (committed `package-lock.json`). Install with `npm ci`.
-- **Node 20** (`.nvmrc`).
+- **Node 24** (`.nvmrc`).
 
 ## Required commands (the real ones)
 | Purpose | Command |
@@ -38,18 +38,13 @@ No feature, fix, or config work begins directly on `master`.
 ## CI (GitHub Actions, `.github/workflows/ci.yml`)
 Runs on PRs into `master`, on pushes to `master`, and on manual dispatch.
 
-- **Required checks (verified green on `master` 2026-06-25):** `typecheck`, `unit-tests`
-  (160 tests passing), `secret-scan` (secret + CSP + env-safety).
-- **Stabilising checks (run + report, NOT yet required):**
-  - `lint` — currently **red on `master`**: 9 pre-existing ESLint errors
-    (conditional React hooks, `@ts-ignore` vs `@ts-expect-error`, a control-char
-    regex). Fix these in a dedicated `fix/lint-errors` PR, then promote `lint` to
-    required. Do not hide these failures.
-  - `build` — runs the Vite production build + SEO prerender on the Linux CI runner.
-    Confirm it is reliably green in CI, then promote to required.
+- **Required checks (all five verified green locally on `release/new-term`,
+  2026-09-07):** `lint` (0 errors, ratcheted at `--max-warnings 160`), `typecheck`,
+  `unit-tests` (256 tests), `secret-scan` (secret + CSP + env-safety), `build`
+  (Vite production build + 93-route SEO prerender).
 
-  Promote a check to required via **Branch protection → Require status checks** once it
-  is reliably green.
+  All five must be set as required via **Branch protection → Require status checks**
+  (founder action; see `docs/audits/evidence/release/WP1B.2/reproducible-builds.md`).
 
 ## Merge method
 - **Squash merge** is the default (clean, one commit per task on `master`).

@@ -1,0 +1,706 @@
+diff -ruN a/SECURITY.md b/SECURITY.md
+--- a/SECURITY.md	2026-09-07 13:12:59.111366934 +0000
++++ b/SECURITY.md	2026-09-07 13:15:13.546574662 +0000
+@@ -34,20 +34,20 @@
+ 
+ ### Data Protection
+ 
+-- **No child PII stored**: We do not collect, store, or transmit personal information about children
++- **Minimal child data**: for learners added by a parent or teacher we store a first name or nickname, an age band, and activity progress. Children joining a class session type a first name or nickname. No surnames, dates of birth, contact details, photos, or video are collected from children
+ - **No biometric data**: No face recognition, video storage, or biometric identifiers
+-- **Anonymous analytics**: All analytics are coarse-grained and anonymous
++- **Pseudonymous analytics**: product events carry a per-browser device ID and per-tab session ID, never a name or email. Events are deleted after 365 days by a scheduled job
+ - **Local processing**: Camera video is processed locally, never transmitted
+-- **No tracking cookies**: Analytics use sessionStorage only
++- **Cookies**: essential cookies and local storage only by default. Google Analytics 4, Microsoft Clarity, PostHog and the Meta Pixel load only after the visitor accepts them in the cookie banner
+ 
+ ### Privacy for Children
+ 
+ - No child accounts
+-- No persistent identifiers
+-- No behavioral tracking
+-- Analytics are aggregated and anonymous
++- Pseudonymous per-browser device ID only; never linked to a name or email
++- No behavioural advertising to children
++- Public reporting is aggregated with small groups suppressed
+ - Camera permissions are clearly explained
+-- No data sharing with third parties
++- No child data is sold. Sub-processors (Supabase, Stripe, Sentry, PostHog) are listed in the compliance dossier
+ 
+ ### API Security
+ 
+@@ -71,9 +71,7 @@
+ ## Compliance
+ 
+ This application is designed for early years education and complies with:
+-- COPPA (Children's Online Privacy Protection Act) principles
+-- GDPR principles (no personal data collection)
+-- UK Data Protection Act principles
++- UK GDPR and the UK Data Protection Act 2018 (data minimisation, retention limits, parent and teacher access, export and deletion)
+ 
+ ## Updates
+ 
+diff -ruN a/docs/pitch/01_CSO_meeting_talking_points.md b/docs/pitch/01_CSO_meeting_talking_points.md
+--- a/docs/pitch/01_CSO_meeting_talking_points.md	2026-09-07 13:12:59.131174144 +0000
++++ b/docs/pitch/01_CSO_meeting_talking_points.md	2026-09-07 13:15:28.650537881 +0000
+@@ -16,10 +16,10 @@
+ 
+ | If she asks... | You answer... |
+ |---|---|
+-| **"Where does the camera footage go?"** | "Nowhere. The camera frame is processed locally on the device by a Google library called MediaPipe. The platform never receives or stores video, photos, or biometrics. Only numerical coordinates of the hand position leave the device." |
+-| **"What personal data do you collect about the child?"** | "A nickname (or just an emoji avatar) and an age band — 4-5, 6-7, 8-9. That's it. No full name, no date of birth, no school name attached to a child, no email, no photo." |
+-| **"Who owns the data?"** | "The parent or the school. Parents can export or delete everything we hold from their account page. For school deployments we sign a data-processing agreement and we host inside the EU." |
+-| **"Is the kid identifiable?"** | "No. Every learner is a randomly generated pseudonymous ID. We also suppress any analytics group under 5 learners so individuals can't be picked out — that's k-anonymity. It's the same standard the UK Office for National Statistics uses." |
++| **"Where does the camera footage go?"** | "Nowhere. The camera frame is processed locally on the device by a Google library called MediaPipe. The platform never receives or stores video, photos, or biometrics. Only small summary numbers about how a stroke went leave the device; hand positions themselves are never sent." |
++| **"What personal data do you collect about the child?"** | "At home: a first name or nickname, an emoji avatar and an age band (3-4, 5-6 or 7-8). In a classroom: a first name or nickname on the teacher's class list. No surname, no date of birth, no email, no photo." |
++| **"Who owns the data?"** | "The parent or the school. Parents can export or delete everything we hold from their account page. For school deployments we sign a data-processing agreement and we host in the UK (Supabase, London region)." |
++| **"Is the kid identifiable?"** | "In anonymous play, every learner is a randomly generated pseudonymous ID. Learners added by a parent or teacher carry a first name or nickname that only that adult can see. We also suppress any analytics group under 5 learners so individuals can't be picked out. That's k-anonymity. It's the same standard the UK Office for National Statistics uses." |
+ | **"What about NDPA compliance?"** | "We're built privacy-first, which matches NDPA principles — lawful basis, data minimisation, consent, parental rights. For a school pilot we'd register as a data processor with the school as data controller and sign the standard processing agreement. We're aware the NDPC issued a compliance notice to the education sector in February 2026 — happy to align with whatever the school's DPCO requires." |
+ 
+ That last one is your power move. **NDPC = Nigeria Data Protection Commission. NDPA = Nigeria Data Protection Act 2023 (the live law). GAID = the implementation directive issued March 2025. NDPR = the OLD law (don't quote it as current).** A CSO will instantly upgrade her opinion of you if you don't mix these up.
+diff -ruN a/docs/pitch/02_school_one_pager.md b/docs/pitch/02_school_one_pager.md
+--- a/docs/pitch/02_school_one_pager.md	2026-09-07 13:12:59.140620844 +0000
++++ b/docs/pitch/02_school_one_pager.md	2026-09-07 13:15:13.547110476 +0000
+@@ -10,7 +10,7 @@
+ 
+ ## What it is NOT
+ 
+-It is not a social network. It is not a video-storage service. It is not an AI camera. There is no chat, no leaderboard, no child-to-child contact, no advertising, and no data sold to third parties — ever.
++It is not a social network. It is not a video-storage service. It is not an AI camera. There is no chat, no public leaderboard (Class Mode shows a live scoreboard to the teacher and class only), no child-to-child contact, no advertising, and no data sold to third parties, ever.
+ 
+ ---
+ 
+@@ -19,9 +19,9 @@
+ | Concern | How Draw in the Air handles it |
+ |---|---|
+ | Camera video | Processed locally in the browser by Google's open-source MediaPipe library. Frames are never uploaded, never stored, never sent off-device. |
+-| Personal data on a child | A nickname (or just an emoji avatar) and an age band (4–5, 6–7, 8–9). No full names, dates of birth, photos, phone numbers, school names attached to a child, or biometric data. |
+-| Identifiability | Each learner is a randomly generated pseudonymous ID. Any analytics group of fewer than 5 children is suppressed automatically (k-anonymity). |
+-| Hosting | EU-based infrastructure (Supabase). Data does not transit through ad networks. |
++| Personal data on a child | At home: a first name or nickname, an emoji avatar and an age band (3–4, 5–6, 7–8). In class: a first name or nickname on the teacher's class list. No surnames, dates of birth, photos, phone numbers, or biometric data. |
++| Identifiability | Analytics use a randomly generated pseudonymous ID, never a name. Any published group of fewer than 5 children is suppressed automatically (k-anonymity). |
++| Hosting | UK-based infrastructure (Supabase, London region). Data does not transit through ad networks. |
+ | Tracking and ads | No behavioural advertising. No tracking cookies for child sessions. `Permissions-Policy` disables microphone, geolocation, and ad-tech cohorts at the browser level. |
+ | Parental control | Parents can view, export, or delete every record we hold about them and their child from a self-service account page. Consent can be withdrawn at any time. |
+ 
+diff -ruN a/docs/pitch/03_safety_and_compliance_dossier.md b/docs/pitch/03_safety_and_compliance_dossier.md
+--- a/docs/pitch/03_safety_and_compliance_dossier.md	2026-09-07 13:12:59.149638162 +0000
++++ b/docs/pitch/03_safety_and_compliance_dossier.md	2026-09-07 13:15:13.547466302 +0000
+@@ -8,7 +8,7 @@
+ 
+ ## 1. Executive summary
+ 
+-Draw in the Air is a browser-based, camera-driven learning platform for children aged 3 to 9. Children practise pre-writing strokes, letters, numbers and shapes by moving their hand in the air; a webcam tracks the position of the index finger using Google's open-source MediaPipe library, entirely within the browser. No camera frames, video, or biometric data ever leave the device. No personal information is collected from children. Parent accounts (for home users) and school accounts (for classrooms) are protected by industry-standard authentication and database row-level security.
++Draw in the Air is a browser-based, camera-driven learning platform for children aged 3 to 7. Children practise pre-writing strokes, letters, numbers and shapes by moving their hand in the air; a webcam tracks the position of the index finger using Google's open-source MediaPipe library, entirely within the browser. No camera frames, video, or biometric data ever leave the device. No personal information is collected from children. Parent accounts (for home users) and school accounts (for classrooms) are protected by industry-standard authentication and database row-level security.
+ 
+ This document is the consolidated safety, privacy and compliance brief for school leaders, Data Protection Officers and Data Protection Compliance Organisations (DPCOs) in Nigeria, with reference to the Nigeria Data Protection Act 2023 (NDPA), the NDPC General Application & Implementation Directive 2025 (GAID), the EU General Data Protection Regulation (GDPR), the UK Data Protection Act 2018, and the US Children's Online Privacy Protection Act (COPPA).
+ 
+@@ -29,7 +29,7 @@
+ ### 2.3 Modes of use
+ 
+ - **Home / individual:** a parent creates an account; children play under a nickname or emoji avatar. Up to two child profiles are included in the base plan.
+-- **Classroom:** a teacher launches a session with a four-digit join code; children type a first name (treated as ephemeral session data, never persisted to long-term analytics) and join. Class progress is shown to the teacher; individual children are not identified to other classes or to the public.
++- **Classroom:** a teacher launches a session with a four-digit join code; children type a first name or nickname and join. That name is stored with the session roster and, where the teacher keeps a class list, with the class record. It is never written to analytics events. Class progress is shown to the teacher; individual children are not identified to other classes or to the public.
+ - **Anonymous /play:** a visitor can try the platform without an account. No data is associated with a profile in this mode.
+ 
+ ---
+@@ -41,9 +41,9 @@
+ | Field | Required? | Stored where | Retention |
+ |---|---|---|---|
+ | Nickname | No (emoji avatar accepted) | Database, scoped to parent's account by RLS | Until parent deletes |
+-| Age band (4–5, 6–7, 8–9, 10–11, 12+) | Optional | Database, scoped to parent | Until parent deletes |
++| Age band (3–4, 5–6, 7–8) | Optional | Database, scoped to parent | Until parent deletes |
+ | Emoji avatar | No | Database, scoped to parent | Until parent deletes |
+-| First name (Class Mode only) | Required for join | Session memory only | Cleared at session end; never written to analytics |
++| First name or nickname (Class Mode only) | Required for join | Database (session roster and teacher class list), scoped to the teacher by RLS | Until the teacher deletes the record; never written to analytics |
+ | Pseudonymous device ID (per browser) | Auto-generated | `localStorage` on the child's device | Cleared when site data is cleared |
+ | Pseudonymous session ID (per tab) | Auto-generated | `sessionStorage` on the child's device | Cleared when tab closes |
+ 
+@@ -81,7 +81,7 @@
+ 
+ ### 4.1 Architecture
+ 
+-Every camera frame is processed entirely on the child's device by Google MediaPipe's WebAssembly + WebGL pipeline. The hand-landmark detector returns 21 normalised 2D coordinates per detected hand. Only these coordinates — small numerical scalars — leave the device, and only in aggregate as part of gesture-quality metrics that describe the *quality* of a movement (path accuracy percentage, time-to-first-movement, pause count). Raw coordinates are never transmitted.
++Every camera frame is processed entirely on the child's device by Google MediaPipe's WebAssembly + WebGL pipeline. The hand-landmark detector returns 21 normalised 2D coordinates per detected hand. The coordinates never leave the device. What leaves is a handful of derived scalars that describe the quality of a movement (path accuracy percentage, time-to-first-movement, pause count). Raw coordinates are never transmitted.
+ 
+ ### 4.2 No upload, no storage
+ 
+@@ -112,7 +112,7 @@
+ | Purpose limitation (s.24(1)(b)) | Data flows are documented per activity; analytics events are typed and the schema is published in `docs/ANALYTICS_PLAN.md`. |
+ | Storage limitation (s.24(1)(e)) | 12-month rolling retention on analytics with cron-enforced deletion; parent-initiated deletion of child profiles within 30 days. |
+ | Security of processing (s.39) | TLS in transit; RLS at rest; OWASP-aligned audit; incident-response SLA. |
+-| Cross-border transfer (s.41) | EU hosting; cross-border adequacy via the EU adequacy framework. Schools may request data residency confirmation in writing. |
++| Cross-border transfer (s.41) | UK hosting (Supabase, London region). Schools may request data residency confirmation in writing. |
+ | Data subject rights (s.34) | Self-service view, export, delete in the parent dashboard. |
+ | Data protection officer (s.32) | Draw in the Air operates an internal DPO function; appointment of an external DPO via a Nigerian DPCO is supported on request for school pilots. |
+ | Breach notification (s.40) | 72-hour notification to data controllers (the school) on confirmed breach; logged via `partnership@drawintheair.com`. |
+@@ -130,7 +130,7 @@
+ 
+ ### 5.3 COPPA (US, 1998 / as amended)
+ 
+-Draw in the Air does not collect any personal information from children as defined in COPPA Rule § 312.2: no full name, no contact information, no persistent identifier tied to a child, no geolocation, no photo or video, no audio. For parent-initiated household use of paid features, verifiable parental consent is collected at account creation.
++Draw in the Air collects the minimum from children: a first name or nickname (Class Mode join, or a learner record created by an adult), an age band, and activity progress. It collects no full name, no contact information, no geolocation, no photo or video, and no audio. Anonymous play uses a per-browser pseudonymous ID that is not linked to a name. For parent-initiated household use of paid features, verifiable parental consent is collected at account creation.
+ 
+ ### 5.4 UK Data Protection Act 2018 & Children's Code
+ 
+@@ -244,7 +244,6 @@
+ 
+ - Quarterly RLS policy audit, scripted.
+ - CI security gates: ESLint security plugin, secret-scanner, CSP regression check.
+-- Annual third-party penetration test scheduled before any broad school rollout.
+ 
+ ---
+ 
+@@ -287,10 +286,11 @@
+ 
+ | Sub-processor | Purpose | Region | Data shared |
+ |---|---|---|---|
+-| Supabase | Database, Auth, Edge Functions, Realtime | EU | Pseudonymous IDs, parent email (hashed for auth), telemetry events |
++| Supabase | Database, Auth, Edge Functions, Realtime | UK (London, eu-west-2) | Parent and teacher email, learner first names or nicknames, age bands, progress, telemetry events |
+ | Stripe | Payments | EU + US (PCI scope only) | Parent email, Stripe customer ID, subscription metadata |
+-| Sentry | Error tracking | EU | Pseudonymous IDs, error stack traces |
+-| PostHog | Product analytics | EU | Pseudonymous IDs, event names, allow-listed properties |
++| Sentry | Error tracking | Per account region (confirm before quoting) | Pseudonymous IDs, error stack traces |
++| PostHog | Product analytics | EU (eu.i.posthog.com) | Pseudonymous IDs, event names, allow-listed properties |
++| Google Analytics 4, Microsoft Clarity, Meta Pixel | Marketing page measurement, after cookie consent only | US | Pageviews, device and usage data on marketing pages |
+ | Vercel | Static hosting & edge CDN | Global edge | TLS termination, no personal data |
+ | Google MediaPipe (open-source library) | On-device CV model | On the child's device only | None — runs locally |
+ 
+diff -ruN a/docs/store-copy.md b/docs/store-copy.md
+--- a/docs/store-copy.md	2026-09-07 13:12:59.121246443 +0000
++++ b/docs/store-copy.md	2026-09-07 13:15:28.650737206 +0000
+@@ -58,4 +58,4 @@
+ "Turn screen time into active learning time. Draw in the Air gets kids moving their hands to trace letters and shapes, offering a magical, frustration-free way to practice early writing skills right from your laptop."
+ 
+ **Privacy-Safe Pitch (For IT Admins):**
+-"Zero video storage. All AI hand-tracking runs completely client-side in the browser — video frames never leave the device. The platform has no accounts, no dark patterns, and no personal data collection. Anonymous usage statistics are sent only to our own server (no Google Analytics, no ad networks), making the platform immediately compliant with COPPA, UK GDPR, and strict school IT requirements."
++"Zero video storage. All AI hand-tracking runs completely client-side in the browser. Video frames never leave the device. Children have no accounts and see no advertising. Anonymous play needs no sign-up. Usage events on the play surface go only to our own database; marketing pages use Google Analytics, Microsoft Clarity and the Meta Pixel after cookie consent. Designed around UK GDPR and school IT requirements."
+diff -ruN a/index.html b/index.html
+--- a/index.html	2026-09-07 13:12:58.897641111 +0000
++++ b/index.html	2026-09-07 13:13:55.531358466 +0000
+@@ -27,7 +27,7 @@
+   <meta property="og:image" content="https://drawintheair.com/og-image.png" />
+   <meta property="og:image:width" content="1200" />
+   <meta property="og:image:height" content="630" />
+-  <meta property="og:image:alt" content="Draw in the Air, movement learning for ages 3–11" />
++  <meta property="og:image:alt" content="Draw in the Air, movement learning for ages 3 to 7" />
+   <meta property="og:url" content="https://drawintheair.com/" />
+   <meta name="twitter:card" content="summary_large_image" />
+   <meta name="twitter:title" content="Draw in the Air | Learn to Draw, Trace & Play" />
+diff -ruN a/src/pages/About.tsx b/src/pages/About.tsx
+--- a/src/pages/About.tsx	2026-09-07 13:12:58.993228031 +0000
++++ b/src/pages/About.tsx	2026-09-07 13:13:55.533568983 +0000
+@@ -66,7 +66,7 @@
+ 
+ const ABOUT_VALUES = [
+   { img: '/landing-assets/icons/hand.png',       title: 'Movement first',     text: 'The hand is the whole interaction. Children learn with their bodies, the way they were built to.' },
+-  { img: '/landing-assets/icons/shield.png',     title: 'Private by default', text: 'The camera frame is processed in the browser and discarded. Nothing is stored or sent anywhere.' },
++  { img: '/landing-assets/icons/shield.png',     title: 'Private by default', text: 'The camera frame is processed in the browser and discarded. Video is never stored or sent anywhere.' },
+   { img: '/landing-assets/icons/globe.png',      title: 'For every classroom', text: 'Browser-based and EYFS-aligned, so it works on the laptops schools already have.' },
+   { img: '/landing-assets/icons/books-star.png', title: 'Real early learning', text: 'Built on early-years pedagogy, not gimmicks. Letters, numbers, shapes and creativity.' },
+ ];
+@@ -135,7 +135,7 @@
+                   Parents and teachers should not have to choose between a screen and an active child. By making movement the entire input, every minute in front of the camera is a minute of whole-arm letter formation, counting, and creative play.
+                 </p>
+                 <p className="lead" style={{ marginTop: 14 }}>
+-                  We keep the technology invisible. No accounts for children, no downloads, and no data leaving the device. Just a hand in the air and a canvas of light.
++                  We keep the technology invisible. No accounts for children, no downloads, and no video leaving the device. Just a hand in the air and a canvas of light.
+                 </p>
+               </div>
+             </div>
+diff -ruN a/src/pages/Cookies.tsx b/src/pages/Cookies.tsx
+--- a/src/pages/Cookies.tsx	2026-09-07 13:12:58.917285542 +0000
++++ b/src/pages/Cookies.tsx	2026-09-07 13:13:55.531761621 +0000
+@@ -9,14 +9,14 @@
+       <h2>Essential cookies</h2>
+       <p>Draw In The Air uses essential cookies to ensure the platform functions correctly. These cookies are necessary for the platform to work and cannot be disabled.</p>
+ 
+-      <h2>Preference cookies</h2>
+-      <p>We do not currently use preference cookies. If we introduce them in the future, we will update this policy and provide controls to manage them.</p>
++      <h2>Analytics and marketing cookies</h2>
++      <p>We also use non-essential analytics and marketing tools: Google Analytics 4, Microsoft Clarity, PostHog, and the Meta (Facebook) Pixel. These may set cookies or use local storage. They only run after you accept them in the cookie banner. If you do not accept, they are not loaded.</p>
+ 
+       <h2>Cookie control</h2>
+-      <p>Since we only use essential cookies, there are no cookie preferences to manage. All cookies used are necessary for the platform to function.</p>
++      <p>Your choice in the cookie banner is stored in your browser. To change it, clear this site's data in your browser settings and the banner will show again. Essential cookies cannot be switched off because the service does not work without them.</p>
+ 
+       <h2>Third party cookies</h2>
+-      <p>We do not use third party cookies for advertising or tracking purposes.</p>
++      <p>The analytics and marketing tools listed above are third party services and may set their own cookies once you have accepted them. We do not use them to show advertising to children inside the app.</p>
+ 
+       <h2>Contact</h2>
+       <p>If you have questions about cookies, please contact us at:</p>
+diff -ruN a/src/pages/FAQ.tsx b/src/pages/FAQ.tsx
+--- a/src/pages/FAQ.tsx	2026-09-07 13:12:58.945957377 +0000
++++ b/src/pages/FAQ.tsx	2026-09-07 13:13:55.532207023 +0000
+@@ -17,11 +17,11 @@
+     items: [
+       {
+         question: 'Does it work on tablets?',
+-        answer: 'Yes. Draw In The Air works on tablets with a front-facing camera. It runs in the browser, no app installation needed. Chrome and Edge work best.',
++        answer: 'It is built for laptops, desktops, and Chromebooks with a webcam. Some tablets with a front-facing camera can run it in the browser, but tracking quality and screen size are better on a computer. Chrome and Edge work best.',
+       },
+       {
+         question: 'Does it require a strong internet connection?',
+-        answer: 'No. Once the page loads, all hand-tracking processing happens on the device. You only need internet for the initial page load.',
++        answer: 'You need a working internet connection while playing. Hand tracking itself runs on the device, but the app needs the connection to load, to save progress, and to run class sessions. A normal school or home broadband connection is enough.',
+       },
+       {
+         question: 'What if the camera does not work?',
+@@ -50,7 +50,7 @@
+       },
+       {
+         question: 'What is Classroom Mode?',
+-        answer: 'Classroom Mode lets a teacher run a whole-class session with a live leaderboard. Students join with a 4-digit code, no accounts needed. The teacher sees all students\' scores in real time. It is included in the free classroom pilot.',
++        answer: 'Classroom Mode lets a teacher run a whole-class session with a live leaderboard. Students join with a 4-digit code and a first name or nickname, no accounts needed. The teacher sees all students\' scores in real time. It is included in the free classroom pilot.',
+       },
+       {
+         question: 'Can we use it on school Chromebooks?',
+@@ -63,7 +63,7 @@
+     items: [
+       {
+         question: 'Do you store any child data?',
+-        answer: 'No. We do not collect, store, or transmit any child data. All camera processing happens locally in the browser on the device. No video is saved, and there are no child accounts.',
++        answer: 'We never store or transmit camera video. All camera processing happens in the browser on the device and there are no child accounts. If a parent or teacher adds a learner, we store a first name or nickname, an age band, and activity progress so reports can be shown to that adult. See the Privacy Policy for details.',
+       },
+       {
+         question: 'Is the camera recording our children?',
+@@ -71,7 +71,7 @@
+       },
+       {
+         question: 'Is it GDPR compliant?',
+-        answer: 'Yes. Because we do not collect or store any personal data from children or parents, there is nothing to process under GDPR. For teacher accounts on the platform, we process only the minimal data necessary to provide the service.',
++        answer: 'We follow UK GDPR. We hold parent and teacher account details (an email address) and, for learners that an adult adds, a first name or nickname, an age band, and progress. Parents and teachers can view, export, and delete this data from their account page. Schools remain the data controller for their pupils and we act as processor.',
+       },
+     ],
+   },
+@@ -84,7 +84,7 @@
+       },
+       {
+         question: 'What devices are compatible?',
+-        answer: 'Any device with a front-facing camera and a modern browser: laptops, tablets, desktop computers with webcams, and Chromebooks. Mobile phones work but the experience is optimised for larger screens.',
++        answer: 'A laptop, desktop, or Chromebook with a webcam and a modern browser. Some tablets can run it. Phones are not supported for play; on a phone we offer to email you a link to open on a laptop.',
+       },
+       {
+         question: 'Does it need any software or plugins?',
+diff -ruN a/src/pages/Landing.tsx b/src/pages/Landing.tsx
+--- a/src/pages/Landing.tsx	2026-09-07 13:12:58.955188460 +0000
++++ b/src/pages/Landing.tsx	2026-09-07 13:13:55.532602505 +0000
+@@ -262,8 +262,8 @@
+ ];
+ 
+ const HOME_FAQ = [
+-  { q: "How is my child's privacy protected?", a: 'No video, no audio, and no images are ever stored or sent anywhere. The camera frame is processed entirely inside the browser tab and discarded each frame. The product runs without a server connection once loaded.' },
+-  { q: 'What ages is it designed for?',         a: 'The interaction is built for children aged 3 to 7. Younger children play the warm-up and free-paint modes; from age 5 onward, tracing, spelling, and maths activities open up. Adult supervision is recommended for the first session.' },
++  { q: "How is my child's privacy protected?", a: 'No video, no audio, and no images are ever stored or sent anywhere. The camera frame is processed entirely inside the browser tab and discarded each frame. An internet connection is needed while playing so progress and class sessions can sync.' },
++  { q: 'What ages is it designed for?',         a: 'The interaction is built for children aged 3 to 7. Bubble Pop, Free Paint and Tracing are open from age 3. Spelling Stars and Word Search are pitched at 5 to 7, and Balloon Math at 4 to 7. Adult supervision is recommended for the first session.' },
+   { q: 'Does it really not need special hardware?', a: 'Just a modern browser (Chrome, Edge, Safari 15+) and a webcam. Most laptops from the last five years work. No phone, no tablet, no controller, no glove.' },
+   { q: 'How is this different from a touchscreen?', a: 'A touchscreen needs only a wrist movement. Draw in the Air rewards whole-arm movement, how 3 to 7 year-olds naturally develop fine motor control. It works best on a laptop or Chromebook with a webcam; tablets can work too, but a laptop gives the most room to move.' },
+   { q: 'Is it free for parents?', a: 'You can start for free — core activities are always free to play. A Family plan (with a 7-day free trial) unlocks the full activity library, progress reports, and parental controls. Schools join a free pilot programme; we set the first classroom session up with you personally.' },
+@@ -568,7 +568,7 @@
+                     'EYFS and early-literacy aligned',
+                     'No registration for free activities',
+                     'Works on any laptop or tablet with a camera',
+-                    'Children stay safe, no data collected',
++                    'No video stored, no child accounts',
+                   ].map((b) => (
+                     <div className="bullet" key={b}>
+                       <span className="check">{'✓'}</span>
+diff -ruN a/src/pages/ParentsLanding.tsx b/src/pages/ParentsLanding.tsx
+--- a/src/pages/ParentsLanding.tsx	2026-09-07 13:12:59.011902834 +0000
++++ b/src/pages/ParentsLanding.tsx	2026-09-07 13:13:55.533800697 +0000
+@@ -25,7 +25,7 @@
+   { q: 'What ages is this for?', a: 'Activities are designed for children aged 3 to 7 (Nursery to Year 2). The gestures are accessible for younger kids, while the activity content scales with difficulty for older ones.' },
+   { q: 'Do I need to install anything?', a: "No. Draw in the Air runs in any modern browser with a camera. Open the page, allow camera access, and you're playing in 10 seconds." },
+   { q: 'Is the camera feed recorded?', a: "No. The camera is processed locally inside the browser using on-device AI. Frames are discarded the moment they're processed. Nothing is sent to any server." },
+-  { q: 'Will it work on our family iPad / Chromebook / laptop?', a: 'Yes, any device with a camera and a modern browser. We test on Chrome, Safari, Edge, and Firefox; on Mac, Windows, iPadOS, Android, and ChromeOS.' },
++  { q: 'Will it work on our family iPad / Chromebook / laptop?', a: 'It is built for laptops and Chromebooks with a webcam, on Mac, Windows, and ChromeOS, in Chrome, Edge, Safari, or Firefox. Some iPads and Android tablets can run it in the browser, but a laptop gives the best tracking.' },
+   { q: 'How much time should my child spend on it?', a: 'Like all screen time, balance is key. We recommend 5 to 15 minute sessions, paired with offline activities. The platform is designed for short, active bursts, not marathon sittings.' },
+ ];
+ 
+diff -ruN a/src/pages/Pricing.tsx b/src/pages/Pricing.tsx
+--- a/src/pages/Pricing.tsx	2026-09-07 13:12:58.974546579 +0000
++++ b/src/pages/Pricing.tsx	2026-09-07 13:13:55.532897932 +0000
+@@ -110,10 +110,7 @@
+ // Schools (Whole school)
+ const SCHOOL_FEATS = [
+   'Every teacher included',
+-  'Whole-school analytics',
+-  'Admin dashboard and reporting',
+-  'Bulk class management',
+-  'Single sign-on (SSO) options',
++  'Class Mode for every classroom',
+   'Onboarding and priority support',
+   'Annual or termly billing',
+   'EYFS curriculum mapping',
+@@ -353,7 +350,7 @@
+                  'Start your 7-day free trial.'}
+               </h2>
+               <p className="lead">
+-                {audience === 'schools' ? 'Whole-school access, admin reporting, and onboarding support.' :
++                {audience === 'schools' ? 'Whole-school access and onboarding support.' :
+                  audience === 'teachers' ? 'Free pilot, no card required. No paid plan to set up.' :
+                  'Up to 2 learners, the full activity library, and cancel anytime.'}
+               </p>
+diff -ruN a/src/pages/Privacy.tsx b/src/pages/Privacy.tsx
+--- a/src/pages/Privacy.tsx	2026-09-07 13:12:58.907536550 +0000
++++ b/src/pages/Privacy.tsx	2026-09-07 13:13:55.531656303 +0000
+@@ -13,24 +13,24 @@
+       <p>The application uses your device's camera to detect and track hand positions in real time. This processing runs entirely inside your browser using on-device AI (MediaPipe). The camera feed is analysed locally, no video frames, images, or hand position data are ever transmitted to our servers or stored anywhere. The moment a frame has been processed, it is discarded from memory. We have no access to what the camera sees, and we never record, save, or transmit any video.</p>
+ 
+       <h2>Accounts and children</h2>
+-      <p>Children do not create accounts and never log in. To use classroom mode, a child joins with a short on-screen code, with no account and no personal details.</p>
+-      <p>A parent or teacher can create an account (email address and password) to save progress and manage settings. When a parent adds a learner, we store a nickname you choose and a coarse age band, so activities can be pitched at the right level and progress can be shown back to you. We do not ask for a child's real name, and you can delete a learner or your whole account at any time (see User rights below).</p>
++      <p>Children do not create accounts and never log in. To use classroom mode, a child joins with a short on-screen code and types a first name or nickname. That name is stored against the session and, where a teacher has set up a class list, against the class record, so the teacher can see who took part. We do not ask children for surnames, dates of birth, or contact details.</p>
++      <p>A parent or teacher can create an account (email address and password) to save progress and manage settings. When a parent adds a learner, we store a nickname you choose and a coarse age band, so activities can be pitched at the right level and progress can be shown back to you. We ask for a first name or nickname only, never a full name, and you can delete a learner or your whole account at any time (see User rights below).</p>
+ 
+       <h2>Progress and learning data</h2>
+       <p>For signed-in families and classrooms, we store learning activity, such as which activities were played, attempts and completions, and simple progress summaries, so we can show reports and recommend what to try next. This data is protected by row-level security so a parent or teacher can only see their own learners.</p>
+ 
+       <h2>Analytics and measurement</h2>
+-      <p>We use analytics to understand how the platform is used and to improve it. Alongside our own event analytics (hosted on Supabase in the EU), we use the following third-party tools: Google Analytics 4, Microsoft Clarity, PostHog, and the Meta (Facebook) Pixel for measuring the effectiveness of our marketing. These tools may set cookies and collect usage and device information.</p>
++      <p>We use analytics to understand how the platform is used and to improve it. Alongside our own event analytics (hosted on Supabase in London, UK), we use the following third-party tools: Google Analytics 4, Microsoft Clarity, PostHog, and the Meta (Facebook) Pixel for measuring the effectiveness of our marketing. These tools may set cookies and collect usage and device information.</p>
+       <p>We do not send child camera video, audio, or images to any analytics tool, and we do not sell personal data. Where required, non-essential analytics and marketing tools should only run with your consent; you can also limit them using your browser and device privacy controls.</p>
+ 
+       <h2>Cookies and local storage</h2>
+       <p>We use essential cookies and local storage to operate the service (for example, to keep you signed in and to remember which learner is playing). We also use non-essential analytics and marketing cookies through the third-party tools listed above. You can clear cookies and site data at any time through your browser settings.</p>
+ 
+       <h2>Third-party services</h2>
+-      <p>The hand-tracking model (MediaPipe) is loaded from Google's CDN on first use; only the model weights are downloaded to your device and no user data is sent as part of that. We also use Supabase (EU) to host our backend and Stripe to process subscription payments. The analytics and marketing providers listed above receive usage and device data as described.</p>
++      <p>The hand-tracking model (MediaPipe) is loaded from Google's CDN on first use; only the model weights are downloaded to your device and no user data is sent as part of that. We also use Supabase (London, UK region) to host our backend and Stripe to process subscription payments. The analytics and marketing providers listed above receive usage and device data as described.</p>
+ 
+       <h2>Children's privacy, COPPA and UK GDPR</h2>
+-      <p>We take children's privacy seriously and aim to follow UK GDPR, COPPA, and similar frameworks. Accounts are created and managed by adults (parents or teachers), and children do not provide personal information directly. Schools acting as data controllers should follow their own data-protection processes when introducing new tools. If you have any questions about lawful basis or a data-processing agreement, contact us using the details below.</p>
++      <p>We take children's privacy seriously and aim to follow UK GDPR, COPPA, and similar frameworks. Accounts are created and managed by adults (parents or teachers). The only thing a child types is a first name or nickname when joining a class session. Schools acting as data controllers should follow their own data-protection processes when introducing new tools. If you have any questions about lawful basis or a data-processing agreement, contact us using the details below.</p>
+ 
+       <h2>Data retention</h2>
+       <p>Account, learner, and progress data is kept while your account is active and is deleted when you delete a learner or close your account. Event-level analytics and learning attempts are automatically deleted after 365 days by a scheduled job. We may keep anonymised, aggregated summaries for reporting.</p>
+diff -ruN a/src/pages/Safeguarding.tsx b/src/pages/Safeguarding.tsx
+--- a/src/pages/Safeguarding.tsx	2026-09-07 13:12:58.926528823 +0000
++++ b/src/pages/Safeguarding.tsx	2026-09-07 13:13:55.531849042 +0000
+@@ -13,7 +13,7 @@
+       <p>The adult gate feature requires an adult to access settings and exit the platform. This helps ensure that children cannot accidentally change settings or exit the platform without supervision.</p>
+ 
+       <h2>No ads, no child profiles</h2>
+-      <p>Draw In The Air does not display advertisements and does not create child profiles. There is no registration, login, or personal information collection. This helps protect children from inappropriate content and data collection.</p>
++      <p>Draw In The Air does not display advertisements. Children never register or log in. A parent or teacher may add a learner record holding a first name or nickname and an age band. A child joining a class session types a first name or nickname only. Nothing else is collected from children.</p>
+ 
+       <h2>What schools should do locally</h2>
+       <p>Schools using Draw In The Air should:</p>
+diff -ruN a/src/pages/Schools.tsx b/src/pages/Schools.tsx
+--- a/src/pages/Schools.tsx	2026-09-07 13:12:59.002833426 +0000
++++ b/src/pages/Schools.tsx	2026-09-07 13:13:55.533687167 +0000
+@@ -20,7 +20,7 @@
+   { title: 'Whole-school deployment', desc: 'One license covers every classroom, no per-student counting.', color: LAVENDER, bg: '#F4EFFF', icon: '🏫' },
+   { title: 'No IT setup', desc: 'Browser-based on any device with a camera. No installs.', color: SKY, bg: '#EEF6FF', icon: '⚡' },
+   { title: 'EYFS & KS1 aligned', desc: 'Activities map to Physical Development, Literacy and Maths.', color: MINT, bg: '#ECFBF3', icon: '🎯' },
+-  { title: 'Privacy by design', desc: 'No student accounts, no recordings, no tracking. Ever.', color: PEACH, bg: '#FFF1EB', icon: '🔒' },
++  { title: 'Privacy by design', desc: 'No student accounts, no recordings. Class lists hold a first name or nickname only.', color: PEACH, bg: '#FFF1EB', icon: '🔒' },
+ ];
+ 
+ export const Schools: React.FC = () => {
+diff -ruN a/src/pages/Teachers.tsx b/src/pages/Teachers.tsx
+--- a/src/pages/Teachers.tsx	2026-09-07 13:12:58.965109133 +0000
++++ b/src/pages/Teachers.tsx	2026-09-07 13:13:55.532754963 +0000
+@@ -79,7 +79,7 @@
+ const TEACHER_FAQ = [
+   { q: 'Do children need accounts?',         a: 'No. Children never log in. You open the activity on the class device, pupils join the movement, not a system. Teacher accounts exist only for analytics and classroom mode.' },
+   { q: 'What about our IT restrictions?',    a: 'It runs in the browser with no install. We provide a Chromebook setup guide and the exact domains to allow-list for your network team.' },
+-  { q: 'Is there a cost to pilot?',          a: 'The pilot is free, and the full activity set is free to use in class. School licences add admin analytics and whole-school reporting.' },
++  { q: 'Is there a cost to pilot?',          a: 'The pilot is free, and every activity is available in Class Mode sessions during the pilot. School licences add admin analytics and whole-school reporting.' },
+ ];
+ 
+ export const Teachers: React.FC = () => {
+@@ -173,7 +173,7 @@
+                 </div>
+                 <h2 className="h2" style={{ color: '#fff', marginTop: 16 }}>Run your whole class at once.</h2>
+                 <p className="lead" style={{ color: 'rgba(255,255,255,0.74)', marginTop: 16 }}>
+-                  A live class view shows energy in the room in real time. Start an activity, watch engagement, and download a session report when you are done.
++                  A live class view shows energy in the room in real time. Start an activity, watch engagement, and print a session summary when you are done.
+                 </p>
+                 <div className="bullets">
+                   {[
+diff -ruN a/src/pages/Terms.tsx b/src/pages/Terms.tsx
+--- a/src/pages/Terms.tsx	2026-09-07 13:12:58.936217097 +0000
++++ b/src/pages/Terms.tsx	2026-09-07 13:13:55.531953896 +0000
+@@ -28,7 +28,7 @@
+       <p>Draw In The Air is provided "as is" without any warranties, express or implied. We do not guarantee that the platform will be error free, uninterrupted, or meet your specific requirements.</p>
+ 
+       <h2>Liability limits</h2>
+-      <p>To the fullest extent permitted by law, we are not liable for any indirect, incidental, or consequential damages arising from your use of Draw In The Air. Our total liability is limited to the amount you have paid to use the platform (which is currently zero, as the platform is free to use).</p>
++      <p>To the fullest extent permitted by law, we are not liable for any indirect, incidental, or consequential damages arising from your use of Draw In The Air. Our total liability is limited to the amount you have paid to use the platform in the twelve months before the claim arose. If you have paid nothing, our liability is limited to zero.</p>
+ 
+       <h2>Changes to service</h2>
+       <p>We may modify, update, or discontinue Draw In The Air at any time. We will endeavour to provide notice of significant changes, but are not obligated to do so.</p>
+diff -ruN a/src/pages/TransparencyPage.tsx b/src/pages/TransparencyPage.tsx
+--- a/src/pages/TransparencyPage.tsx	2026-09-07 13:12:58.983810884 +0000
++++ b/src/pages/TransparencyPage.tsx	2026-09-07 13:13:55.533405074 +0000
+@@ -90,7 +90,7 @@
+                         <TrustBadge
+                             icon="🔒"
+                             title="Privacy first by design"
+-                            note="No names, no faces, no personal accounts. Pseudonymous IDs only."
++                            note="No faces, no child accounts. Anonymous play uses pseudonymous IDs only."
+                         />
+                         <TrustBadge
+                             icon="🏫"
+@@ -257,7 +257,7 @@
+                         <PrivacyCard
+                             icon="🪪"
+                             title="No personal identity"
+-                            body="No names, no emails, no faces. Each learner is a randomly generated pseudonymous ID that lives only on their device."
++                            body="No emails, no faces. Anonymous play uses a randomly generated pseudonymous ID that lives only on the device. Learners added by a parent or teacher are recorded with a first name or nickname and an age band only."
+                         />
+                         <PrivacyCard
+                             icon="🧮"
+@@ -267,7 +267,7 @@
+                         <PrivacyCard
+                             icon="🌍"
+                             title="Hosted in the EU"
+-                            body="Data lives in EU servers. We do not sell, share, or monetise children's information. Ever."
++                            body="Data lives on servers in London, UK. We do not sell, share, or monetise children's information. Ever."
+                         />
+                     </div>
+                 </section>
+diff -ruN a/src/pages/parent/Privacy.tsx b/src/pages/parent/Privacy.tsx
+--- a/src/pages/parent/Privacy.tsx	2026-09-07 13:15:13.532405273 +0000
++++ b/src/pages/parent/Privacy.tsx	2026-09-07 13:15:13.546419505 +0000
+@@ -51,7 +51,7 @@
+           <p style={{ margin: 0, fontSize: 'var(--text-md)', lineHeight: 1.6, color: 'var(--fg-1)' }}>
+             Activities use your webcam to see where your child's hand is in the air.
+             The actual video <strong>stays on your device</strong>. We never upload camera frames.
+-            Only small numbers describing hand position leave the device.
++            Only small summary numbers describing how a stroke went (for example how closely it followed the path) leave the device. Hand positions are never sent.
+           </p>
+         </Card>
+ 
+diff -ruN a/src/pages/seo/ActivityPage.tsx b/src/pages/seo/ActivityPage.tsx
+--- a/src/pages/seo/ActivityPage.tsx	2026-09-07 13:12:59.069373587 +0000
++++ b/src/pages/seo/ActivityPage.tsx	2026-09-07 13:14:21.883437175 +0000
+@@ -45,7 +45,7 @@
+     meta: PAGE_META.sortAndPlace,
+     emoji: '🗂️', badge: 'Game, Ages 3–7',
+     heroTitle: 'Sort and Place, Gesture Sorting Game for Kids',
+-    heroSub: 'Sort and place objects by pointing in the air! A hands-free sorting and categorisation game that develops cognitive skills, logical thinking, and spatial reasoning. Three rounds of increasing difficulty. Free, no download.',
++    heroSub: 'Sort and place objects by pointing in the air! A hands-free sorting and categorisation game that develops cognitive skills, logical thinking, and spatial reasoning. Three rounds of increasing difficulty. Part of the Family plan, no download.',
+     skills: [
+       { icon: '🧠', title: 'Logical Thinking', desc: 'Sorting by colour, size, or category builds categorisation and classification skills.' },
+       { icon: '🎯', title: 'Hand-Eye Coordination', desc: 'Grabbing and placing objects with a pinch gesture builds precision motor control.' },
+diff -ruN a/src/pages/seo/EmbedPage.tsx b/src/pages/seo/EmbedPage.tsx
+--- a/src/pages/seo/EmbedPage.tsx	2026-09-07 13:12:59.049722843 +0000
++++ b/src/pages/seo/EmbedPage.tsx	2026-09-07 13:14:21.882970880 +0000
+@@ -26,7 +26,7 @@
+     id: 'full',
+     label: 'Full Platform',
+     emoji: '🎮',
+-    description: 'All nine activities, letters, numbers, shapes, sorting, colours, maths, and free drawing.',
++    description: 'All eight activities, letters, numbers, shapes, sorting, colours, maths, spelling, and free drawing.',
+     height: 620,
+     borderColor: '#8A66F0',
+     src: `${BASE_URL}/play?embed=true`,
+@@ -167,7 +167,7 @@
+               { icon: '⚡', label: '60 seconds', sub: 'to add to your site' },
+               { icon: '0️⃣', label: 'Zero cost', sub: 'free to embed forever' },
+               { icon: '5', label: 'Activity variants', sub: 'full platform or single mode' },
+-              { icon: '🔒', label: 'Privacy first', sub: 'no data collection, no video storage' },
++              { icon: '🔒', label: 'Privacy first', sub: 'no video storage, no child accounts' },
+             ].map(stat => (
+               <div key={stat.label} style={{ background: '#FFFFFF', border: '1px solid rgba(138,102,240,0.17)', borderRadius: 12, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
+                 <span style={{ fontSize: '1.6rem' }}>{stat.icon}</span>
+diff -ruN a/src/pages/seo/ForTeachersPage.tsx b/src/pages/seo/ForTeachersPage.tsx
+--- a/src/pages/seo/ForTeachersPage.tsx	2026-09-07 13:12:59.021270911 +0000
++++ b/src/pages/seo/ForTeachersPage.tsx	2026-09-07 13:13:55.534055497 +0000
+@@ -29,7 +29,7 @@
+   { q: 'Does Draw in the Air require student accounts?', a: 'No. Children never need accounts, logins, or registrations. They join with a short class code on screen, making it ideal for any classroom environment.' },
+   { q: 'Does it work on school Chromebooks?', a: 'Yes! Draw in the Air is built as a browser-based web app and works on all modern browsers including Chrome on Chromebooks. It requires only camera access, which most school Chromebooks support. No installation or admin approval needed in most school networks.' },
+   { q: 'Can I use it on an interactive whiteboard?', a: 'Absolutely. Draw in the Air can be displayed on an interactive whiteboard through any connected laptop. The teacher can demonstrate gestures to the whole class while students follow along on individual devices.' },
+-  { q: 'Is student data collected?', a: 'No personally-identifying student data is collected, no names, emails, faces, audio, or video. The camera feed never leaves the device. We do collect anonymised, aggregated usage analytics (which game modes are popular, whether hand tracking started successfully, which letters were practised) tied to a randomly-generated browser identifier, never to a real child. Anonymised analytics are auto-deleted after 365 days. See our Privacy Policy for the full detail. The platform is designed to be GDPR and COPPA compliant for children.' },
++  { q: 'Is student data collected?', a: 'No faces, audio, or video are ever collected, and the camera feed never leaves the device. A child joining a class session types a first name or nickname, which the teacher can see and delete. No emails or contact details are collected from children. We do collect anonymised, aggregated usage analytics (which game modes are popular, whether hand tracking started successfully, which letters were practised) tied to a randomly-generated browser identifier, never to a real child. Anonymised analytics are auto-deleted after 365 days. See our Privacy Policy for the full detail. The platform is designed to be GDPR and COPPA compliant for children.' },
+   { q: 'Which curriculum frameworks does it support?', a: 'Draw in the Air supports Early Years Foundation Stage (EYFS) in the UK, Common Core early learning standards in the US, and general pre-school/kindergarten readiness frameworks globally. Letter and number tracing are aligned with typical curriculum sequences.' },
+   { q: 'Can the whole class use it simultaneously?', a: 'Yes! Each student uses Draw in the Air independently on their own device, or the whole class can move together in live classroom mode with one laptop, webcam and projector.' },
+   { q: 'Can I embed it on our school website?', a: 'Yes! Visit drawintheair.com/embed to get the free embed code. Paste it into any school website or blog and it runs directly in the page, great for homework pages or classroom portals.' },
+@@ -259,8 +259,8 @@
+             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+               {[
+                 { icon: '🎥', title: 'Camera stays on-device', desc: 'Hand tracking runs in the browser. No video is ever recorded, transmitted, or stored.' },
+-                { icon: '🪪', title: 'No child accounts', desc: 'Children never log in and never have a profile. They join with a short class code.' },
+-                { icon: '🛡️', title: 'GDPR & COPPA aligned', desc: 'Anonymised, aggregated analytics only, auto-deleted after 365 days.' },
++                { icon: '🪪', title: 'No child accounts', desc: 'Children never log in. They join with a short class code and a first name or nickname, which the teacher controls and can delete.' },
++                { icon: '🛡️', title: 'UK GDPR by design', desc: 'Event analytics are pseudonymous, aggregated for reporting, and auto-deleted after 365 days.' },
+                 { icon: '🔍', title: 'Publicly auditable', desc: 'Our live transparency page shows exactly what we measure and what we don’t claim.' },
+               ].map(p => (
+                 <div key={p.title} className="card" style={{ padding: '22px 20px' }}>
+diff -ruN a/src/pages/seo/PressPage.tsx b/src/pages/seo/PressPage.tsx
+--- a/src/pages/seo/PressPage.tsx	2026-09-07 13:12:59.059453168 +0000
++++ b/src/pages/seo/PressPage.tsx	2026-09-07 13:14:21.883209323 +0000
+@@ -33,7 +33,7 @@
+   { label: 'Launch', value: '2025' },
+   { label: 'Made in', value: 'United Kingdom' },
+   { label: 'Age range', value: '3–7 years' },
+-  { label: 'Activities', value: '10 modes' },
++  { label: 'Activities', value: '8 modes' },
+   { label: 'Child accounts', value: 'None, ever' },
+   { label: 'Video stored', value: 'None, on-device only' },
+   { label: 'Works on', value: 'Any webcam device' },
+@@ -117,7 +117,8 @@
+                 The hand tracking is powered by Google MediaPipe, a production-grade AI
+                 library that detects 21 hand landmarks in real time, entirely in the
+                 browser. No video is recorded, transmitted, or stored. No child accounts,
+-                no personal data on children, no ads.
++                no child accounts, no ads.
++                Learners added by a parent or teacher are recorded with a first name or nickname and an age band only.
+               </p>
+             </div>
+ 
+diff -ruN a/src/pages/seo/ShareLandingPage.tsx b/src/pages/seo/ShareLandingPage.tsx
+--- a/src/pages/seo/ShareLandingPage.tsx	2026-09-07 13:12:59.040146395 +0000
++++ b/src/pages/seo/ShareLandingPage.tsx	2026-09-07 13:14:21.882653889 +0000
+@@ -102,8 +102,8 @@
+     badge: 'Gesture Learning',
+     playPath: SITE.appPath,
+     heroTitle: 'Gesture Learning, Your Colleague Shared This Platform',
+-    heroSub: 'Nine gesture-controlled learning activities for children ages 3–7. Everything runs in the browser, no installation, no accounts, no cost.',
+-    whatItIs: 'Draw in the Air uses AI hand tracking to let children interact with learning activities through natural hand movements. Nine modes cover letters, numbers, shapes, sorting, colours, maths, and creative drawing. Works on any laptop or Chromebook with a webcam.',
++    heroSub: 'Eight gesture-controlled learning activities for children ages 3–7. Everything runs in the browser, no installation, no accounts to try it, free to start.',
++    whatItIs: 'Draw in the Air uses AI hand tracking to let children interact with learning activities through natural hand movements. Eight modes cover letters, numbers, shapes, sorting, colours, maths, spelling, and creative drawing. Works on any laptop or Chromebook with a webcam.',
+     howToPlay: [
+       'Open drawintheair.com on any device with a webcam',
+       'Allow camera access',
+@@ -118,13 +118,13 @@
+ // Fallback for unknown slugs, maps to the full app
+ const FALLBACK_META: ActivityMeta = {
+   title: 'Draw in the Air, Gesture Learning Activity',
+-  description: 'Your colleague shared a gesture learning activity. Try it free in your browser, no download, no account, no cost.',
++  description: 'Your colleague shared a gesture learning activity. Try it free in your browser, no download, no account needed to start.',
+   emoji: '🎮',
+   badge: 'Shared Activity',
+   playPath: SITE.appPath,
+   heroTitle: 'A Colleague Shared This Learning Activity',
+   heroSub: 'Draw in the Air offers gesture-controlled educational activities for children ages 3–7. Everything runs in the browser, no installation needed.',
+-  whatItIs: 'Draw in the Air uses AI hand tracking to let children interact with learning activities through natural hand movements. Nine modes cover letters, numbers, shapes, sorting, and creative drawing. Works on any Chromebook or laptop with a webcam.',
++  whatItIs: 'Draw in the Air uses AI hand tracking to let children interact with learning activities through natural hand movements. Eight modes cover letters, numbers, shapes, sorting, and creative drawing. Works on any Chromebook or laptop with a webcam.',
+   howToPlay: [
+     'Open drawintheair.com on any device with a webcam',
+     'Allow camera access, no video is recorded or transmitted',
+diff -ruN a/src/pages/seo/UseCasePage.tsx b/src/pages/seo/UseCasePage.tsx
+--- a/src/pages/seo/UseCasePage.tsx	2026-09-07 13:12:59.030562737 +0000
++++ b/src/pages/seo/UseCasePage.tsx	2026-09-07 13:14:21.881236620 +0000
+@@ -52,7 +52,7 @@
+     description: [
+       'Draw in the Air brings physical movement into digital learning. Children stand or sit in front of their computer\'s camera, raise a finger, and interact with on-screen activities through natural hand gestures. The platform uses browser-based computer vision to track hand position in real time, no special hardware required.',
+       'Unlike passive screen time, every interaction requires deliberate physical movement: extending an arm to trace a letter path, reaching across the camera\'s field of view to sort objects into categories, or pointing at floating bubbles to build hand-eye coordination.',
+-      'Nine activity modes run directly in Chrome with no installation and no child accounts or logins. The camera is processed on the device and is never uploaded or stored. Works immediately on any Chromebook, school laptop, or desktop with a webcam.',
++      'Eight activity modes run directly in Chrome with no installation and no child accounts or logins. The camera is processed on the device and is never uploaded or stored. Works immediately on any Chromebook, school laptop, or desktop with a webcam.',
+     ],
+     educationalExplanation: [
+       'Movement-based learning activates multiple cognitive pathways simultaneously. When a child physically traces the letter A in the air while seeing the letter form on screen, they engage proprioceptive memory, visual processing, and motor planning in a single action. Research in embodied cognition consistently shows that learning tied to physical action produces stronger recall than passive observation.',
+@@ -75,7 +75,7 @@
+       { icon: '6', text: 'Activities run 30 seconds to 3 minutes. The next child steps up when done.' },
+     ],
+     faq: [
+-      { q: 'Does it work on low-spec Chromebooks?', a: 'Yes. The platform is optimised for the ARM and Intel Celeron processors common in education-grade Chromebooks like the Lenovo 100e and HP Chromebook 11. Adaptive frame rates maintain smooth interaction on constrained hardware.' },
++      { q: 'Does it work on low-spec Chromebooks?', a: 'It is designed to run on low-cost education Chromebooks. Adaptive frame rates reduce the load on slower hardware. If tracking stutters, close other tabs and make sure the room is well lit.' },
+       { q: 'Do students need accounts or logins?', a: 'No. Students never create accounts or log in, and the camera is processed on the device and never uploaded or stored. Open the browser and start immediately.' },
+       { q: 'Can I use it with the whole class at once?', a: 'Yes, project it on an interactive whiteboard for one student to demonstrate while others watch, or set up individual stations for simultaneous independent use.' },
+       { q: 'Is this suitable for SEN learners?', a: 'Gesture interaction uses gross motor skills (extending an arm, pointing a finger) that children develop earlier than fine motor precision. This makes it more accessible for children who struggle with mouse or touchscreen control.' },
+@@ -114,7 +114,7 @@
+     description: [
+       'Gesture-based learning replaces the mouse, keyboard, and touchscreen with natural hand movement. Draw in the Air uses the camera built into any laptop or Chromebook to detect a child\'s hand position in real time. The child raises their index finger, and the system responds to their movements with on-screen feedback.',
+       'This approach removes the fine motor barrier that makes traditional computer interaction difficult for young children. A 4-year-old who cannot yet control a mouse cursor with precision can extend their arm and trace a large letter path through the air. The gesture is natural, intuitive, and requires no instruction beyond "point your finger at the screen."',
+-      'Nine activity modes cover letter formation (A–Z), number writing (0–10), shape recognition (8 shapes), object categorisation, colour mixing, word finding, mental arithmetic, and creative free drawing. Each mode runs directly in the browser with no software to install and no accounts to create.',
++      'Eight activity modes cover letter formation (A–Z), number writing (0–10), shape recognition (8 shapes), object categorisation, colour matching, word finding, spelling, mental arithmetic, and creative free drawing. Each mode runs directly in the browser with no software to install and no accounts to create.',
+     ],
+     educationalExplanation: [
+       'Gesture interaction creates a bridge between physical play and screen-based learning. Traditional educational software asks young children to manipulate a mouse or tap a precise screen location, skills that require fine motor development many 3–5 year olds have not yet achieved. Gesture-based interaction uses gross motor skills (extending an arm, pointing a finger) that children master much earlier.',
+@@ -125,7 +125,7 @@
+       { icon: '♿', title: 'SEN Support', detail: 'Children with limited fine motor control can participate fully in writing activities through large arm gestures.' },
+       { icon: '⏱️', title: 'Transition Activity', detail: '2-minute Bubble Pop between carpet time and table work resets attention without long transitions.' },
+       { icon: '📊', title: 'Assessment Support', detail: 'Teacher observes which letter formations students trace confidently versus which need reinforcement.' },
+-      { icon: '🎨', title: 'Cross-Curricular', detail: 'Colour Builder for art vocabulary, Balloon Math for numeracy, Shape Tracing for geometry foundations.' },
++      { icon: '🎨', title: 'Cross-Curricular', detail: 'Rainbow Bridge for colour vocabulary, Balloon Math for numeracy, Shape Tracing for geometry foundations.' },
+       { icon: '🏠', title: 'Home Learning', detail: 'Same activities available at home, no app installation needed on family computers.' },
+     ],
+     steps: [
+@@ -200,8 +200,8 @@
+     ],
+     faq: [
+       { q: 'Does it work without IT approval or installation?', a: 'Yes. Because everything runs in the Chrome browser with no extension or application to install, there is nothing to approve. Open the URL and it works immediately on any managed Chromebook.' },
+-      { q: 'Will it work on older, lower-spec Chromebooks?', a: 'Yes. The platform uses adaptive rendering to reduce processing load on slower hardware. It has been tested on Celeron N3350 and ARM Cortex-A72 devices common in education-grade Chromebooks.' },
+-      { q: 'Does it need an internet connection?', a: 'The initial page load requires internet access. Once the AI model has loaded (about 5 seconds), the hand tracking runs entirely offline on the device.' },
++      { q: 'Will it work on older, lower-spec Chromebooks?', a: 'It is designed for lower-spec hardware and uses adaptive rendering to reduce processing load. Performance varies by device, so try it on one of your Chromebooks before rolling out to a class.' },
++      { q: 'Does it need an internet connection?', a: 'Yes. You need an internet connection while using it. Hand tracking runs on the device, but the app needs the connection to load, to save progress, and to run class sessions.' },
+       { q: 'Can I embed it directly on my class Google Site?', a: 'Yes. Use the embed code from drawintheair.com/embed to place an activity widget directly on any Google Site. Students interact with it without leaving your class page.' },
+     ],
+     internalLinks: [
+@@ -238,7 +238,7 @@
+     description: [
+       'Homeschool families constantly balance screen time concerns with the reality that digital tools can be powerful learning aids. Draw in the Air resolves this tension: every interaction requires physical movement. Your child stands or sits in front of the computer, raises their hand, and learns by moving, tracing letter shapes in the air, reaching to sort objects, pointing to pop bubbles.',
+       'The platform covers core early years curriculum areas: letter formation for all 26 letters, number writing for 0–10, recognition of 8 geometric shapes, categorisation and sorting, colour theory, early arithmetic, and creative expression through free drawing. Each activity takes 1–3 minutes with immediate visual feedback.',
+-      'No account creation. No data collection. No ads. No in-app purchases. The camera feed is processed entirely on your computer and is never transmitted anywhere.',
++      'No account needed to try it. No ads. The camera feed is processed entirely on your computer and is never transmitted anywhere. A Family plan unlocks the full activity library.',
+     ],
+     educationalExplanation: [
+       'Homeschool environments have a unique advantage: the flexibility to integrate physical movement into learning without the constraints of a classroom schedule. Draw in the Air fits naturally into a homeschool day as a transition activity between subjects, a warm-up before handwriting practice, or a brain break after focused reading time.',
+@@ -296,9 +296,9 @@
+     badge: 'Motor Development',
+     emoji: '🎯',
+     heroTitle: 'Hand-Eye Coordination Activities Children Actually Want to Do',
+-    heroSub: 'Nine gesture-controlled games that develop visual-motor skills while feeling like play. No setup, no cost, no downloads.',
++    heroSub: 'Eight gesture-controlled activities that develop visual-motor skills while feeling like play. No setup, no downloads, free to start.',
+     description: [
+-      'Hand-eye coordination is the foundation for handwriting, ball skills, dressing, and dozens of daily activities that children need to master. Draw in the Air provides nine distinct activities designed to develop the connection between what a child sees and how their hand responds.',
++      'Hand-eye coordination is the foundation for handwriting, ball skills, dressing, and dozens of daily activities that children need to master. Draw in the Air provides eight distinct activities designed to develop the connection between what a child sees and how their hand responds.',
+       'Bubble Pop builds rapid visual tracking and reaction speed, the child must follow a moving target and point precisely. Letter Tracing develops sustained visual attention and motor planning, the child must follow a path with controlled, deliberate movement. Sort and Place combines spatial reasoning with precise hand positioning, the child pinches to grab and drags to a target zone.',
+       'Because the interaction uses the whole arm, children develop coordination starting from the shoulder and working down through elbow, wrist, and fingers, the same proximal-to-distal development sequence that occupational therapists recommend for pre-writing readiness.',
+     ],
+diff -ruN a/src/pages/setup/ParentSetupGuide.tsx b/src/pages/setup/ParentSetupGuide.tsx
+--- a/src/pages/setup/ParentSetupGuide.tsx	2026-09-07 13:12:59.088201358 +0000
++++ b/src/pages/setup/ParentSetupGuide.tsx	2026-09-07 13:14:21.884647312 +0000
+@@ -147,7 +147,7 @@
+                             <li>No faces, audio, or video</li>
+                             <li>No geolocation</li>
+                             <li>No cross-site tracking, no advertising IDs</li>
+-                            <li>No data shared with any third party</li>
++                            <li>Camera video is never shared with anyone. Usage events go to our own database and, on the marketing pages only, to the analytics tools listed in our Privacy Policy</li>
+                         </ul>
+                         <p>
+                             Full detail and how to opt out / clear your local data:{' '}
+@@ -169,7 +169,7 @@
+                             <li><strong>Balloon Math:</strong> number recognition + early arithmetic, with the answer-balloon you have to physically reach for.</li>
+                             <li><strong>Rainbow Bridge:</strong> colour matching + memory.</li>
+                             <li><strong>Spelling Stars:</strong> letter order, simple words.</li>
+-                            <li>Aligned with EYFS (UK) and US Common Core early-learning standards.</li>
++                            <li>Aligned with the EYFS framework (UK).</li>
+                         </ul>
+                     </section>
+ 
+diff -ruN a/src/pages/teacher/TeacherViews.tsx b/src/pages/teacher/TeacherViews.tsx
+--- a/src/pages/teacher/TeacherViews.tsx	2026-09-07 13:12:59.097655040 +0000
++++ b/src/pages/teacher/TeacherViews.tsx	2026-09-07 13:14:21.885113494 +0000
+@@ -296,11 +296,9 @@
+         <div><h1 className="tdash-greet" style={{ fontSize: '2.4rem' }}>Resources</h1><p className="tdash-sub">Every teacher PDF on the platform · how-to guides, planning, inclusion, and printables. All free to download.</p></div>
+       </div>
+ 
+-      {/* Download-everything banner */}
+-      <div className="tdash-cta" style={{ marginTop: 0, marginBottom: 22 }}>
+-        <div><h2>The complete pilot pack</h2><p>Every guide, lesson plan and printable in one PDF · ideal to print or share with your team.</p></div>
+-        <a className="tdash-btn" href="/pilot-pack.pdf" download="Draw-in-the-Air-Pilot-Pack.pdf">⬇ Download all</a>
+-      </div>
++      {/* Pilot pack PDF removed pending regeneration: the current file carries
++          pricing tiers, feature claims and testimonials that do not match the
++          shipped product (see docs/audits/evidence/release/TRACK-P). */}
+ 
+       {/* Set up your class in four steps — mirrors the pilot welcome email so the app and email say the same thing */}
+       <section className="tdash-panel" style={{ marginBottom: 28 }}>
+diff -ruN a/src/seo/seo-config.ts b/src/seo/seo-config.ts
+--- a/src/seo/seo-config.ts	2026-09-07 13:12:59.078501070 +0000
++++ b/src/seo/seo-config.ts	2026-09-07 13:14:21.884324865 +0000
+@@ -100,7 +100,7 @@
+   },
+   sortAndPlace: {
+     title: 'Sort and Place, Gesture Sorting Game for Kids | Draw in the Air',
+-    description: 'Sort and place objects by pointing in the air! A hands-free sorting game that develops categorisation and cognitive skills. Perfect for ages 3–7. Free, browser-based, no download.',
++    description: 'Sort and place objects by pointing in the air! A hands-free sorting game that develops categorisation and cognitive skills. Perfect for ages 3–7. Browser-based, no download. Included in the Family plan.',
+     keywords: ['sorting game for kids online', 'gesture sorting game', 'preschool categorising game', 'kids hand tracking sorting', 'educational sorting game free'],
+     canonical: '/activities/sort-and-place',
+   },

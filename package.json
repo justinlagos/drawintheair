@@ -4,18 +4,18 @@
   "version": "0.0.0",
   "type": "module",
   "engines": {
-    "node": ">=20.0.0"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && vite build --ssr src/entry-prerender.tsx --outDir dist-ssr --emptyOutDir && node scripts/prerender-seo.mjs",
     "type-check": "tsc -b --noEmit",
     "type-check:watch": "tsc -b --noEmit --watch",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 160",
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview",
-    "prebuild": "npm run check:csp && npm run type-check",
+    "prebuild": "npm run check:env-safety && npm run check:csp && npm run type-check",
     "validate": "npm run type-check && npm run lint && npm run check:csp",
     "check:secrets": "node scripts/check-secrets.mjs",
     "check:csp": "node scripts/check-csp.mjs",

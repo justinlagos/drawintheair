@@ -58,9 +58,9 @@ export const Empty: React.FC<{ message: React.ReactNode }> = ({ message }) => (
 // single network call when more than one is mounted on the same tab.
 
 const TIER_COLOURS = {
-    A: '#7ED957',   // meadow green, full credibility
-    B: '#FFB14D',   // warm orange, reduced weight
-    C: '#FF6B6B',   // coral, quarantined
+    A: '#5BCE9A',   // meadow green, full credibility
+    B: '#FFC83D',   // warm orange, reduced weight
+    C: '#F07A5E',   // coral, quarantined
 } as const;
 
 const REASON_LABELS: Record<string, string> = {
@@ -214,7 +214,7 @@ export const Sparkline: React.FC<{
     points: SparkPoint[];
     width?: number; height?: number;
     color?: string;
-}> = ({ points, width = 64, height = 22, color = '#6C3FA4' }) => {
+}> = ({ points, width = 64, height = 22, color = '#8A66F0' }) => {
     if (!points || points.length < 2) {
         return <svg className="iv-spark" viewBox={`0 0 ${width} ${height}`} aria-hidden />;
     }
@@ -400,8 +400,8 @@ export const StrengthBar: React.FC<{
 
 export const StrengthKey: React.FC = () => (
     <div className="iv-strength-key">
-        <span><i style={{ background: 'linear-gradient(90deg, #7ED957, #2EAE52)' }} />Strong (≥5 attempts, ≥80% accuracy)</span>
-        <span><i style={{ background: 'linear-gradient(90deg, #FFD84D, #FFB14D)' }} />Practising (≥3 attempts, ≥50%)</span>
+        <span><i style={{ background: 'linear-gradient(90deg, #5BCE9A, #2EAE52)' }} />Strong (≥5 attempts, ≥80% accuracy)</span>
+        <span><i style={{ background: 'linear-gradient(90deg, #FFC83D, #FFC83D)' }} />Practising (≥3 attempts, ≥50%)</span>
         <span><i style={{ background: 'linear-gradient(90deg, #C8C8D2, #9B9DAE)' }} />New / still learning</span>
     </div>
 );
@@ -416,7 +416,7 @@ export const Heatmap: React.FC<{
         if (pct == null || pct === 0) return 'var(--flat-soft)';
         // Plum gradient: low pct = pale, high pct = saturated
         const a = Math.min(0.85, 0.10 + (pct / 100) * 0.75);
-        return `rgba(108, 63, 164, ${a.toFixed(2)})`;
+        return `rgba(138, 102, 240, ${a.toFixed(2)})`;
     };
     const textColorFor = (pct: number | null): string => (pct != null && pct >= 50) ? '#fff' : 'var(--ink)';
 
@@ -487,14 +487,14 @@ export const DualAreaChart: React.FC<{
                 ))}
                 {/* Returning area (plum) */}
                 <path d={`${bottomPath} L${padL + (points.length - 1) * stepX},${baselineY} L${padL},${baselineY} Z`}
-                      fill="rgba(108, 63, 164, 0.35)" stroke="#6C3FA4" strokeWidth={1.4} />
+                      fill="rgba(138, 102, 240, 0.35)" stroke="#8A66F0" strokeWidth={1.4} />
                 {/* New on top (aqua) */}
                 <path d={`${topPath} ${bottomPath.split(' ').reverse().map(s => s.replace(/^[ML]/, 'L')).join(' ')} Z`}
-                      fill="rgba(85, 221, 224, 0.35)" stroke="#55DDE0" strokeWidth={1.4} />
+                      fill="rgba(85, 221, 224, 0.35)" stroke="#5BCE9A" strokeWidth={1.4} />
             </svg>
             <div className="iv-curves-legend">
-                <span><i style={{ background: '#6C3FA4' }} />Returning devices</span>
-                <span><i style={{ background: '#55DDE0' }} />New devices</span>
+                <span><i style={{ background: '#8A66F0' }} />Returning devices</span>
+                <span><i style={{ background: '#5BCE9A' }} />New devices</span>
             </div>
         </div>
     );

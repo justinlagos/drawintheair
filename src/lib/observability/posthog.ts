@@ -160,6 +160,9 @@ export const PH_PROPERTY_ALLOWLIST = new Set<string>([
 
 let initialized = false;
 let active = false;
+// Set while a child route is on screen (WP2B.1). trackEvent and identify
+// no-op and the SDK is opted out of capturing until an adult route resumes.
+let suspended = false;
 
 interface PhContext {
     deviceType?: string;
@@ -293,6 +296,31 @@ export function initPostHog(): void {
     });
 
     active = true;
+    if (suspended) {
+        try { posthog.opt_out_capturing(); } catch { /* no-op */ }
+    }
+}
+
+/**
+ * Stop PostHog while a child route is on screen. Safe before init: the
+ * flag is honoured by initPostHog when it eventually runs.
+ */
+export function suspendPostHog(): void {
+    suspended = true;
+    if (!active) return;
+    try { posthog.opt_out_capturing(); } catch { /* no-op */ }
+}
+
+/** Resume PostHog on an adult route. Caller checks consent and route. */
+export function resumePostHog(): void {
+    suspended = false;
+    if (!active) return;
+    try { posthog.opt_in_capturing(); } catch { /* no-op */ }
+}
+
+/** Test helper. */
+export function isPostHogSuspended(): boolean {
+    return suspended;
 }
 
 /**
@@ -304,7 +332,7 @@ export function trackEvent(
     name: string,
     properties: Record<string, unknown> = {},
 ): void {
-    if (!active) return;
+    if (!active || suspended) return;
     if (!PH_EVENT_ALLOWLIST.has(name)) {
         // Unknown event, silently drop. We do NOT want a stray event
         // to leak through with un-vetted properties.
@@ -322,7 +350,7 @@ export function trackEvent(
  * Never call with a real name, email, or other PII.
  */
 export function identifyPseudonymous(deviceId: string): void {
-    if (!active) return;
+    if (!active || suspended) return;
     if (!deviceId || deviceId.length < 8) return;
     try {
         posthog.identify(deviceId);

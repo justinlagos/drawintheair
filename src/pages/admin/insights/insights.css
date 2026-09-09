@@ -1,60 +1,116 @@
 /* =====================================================================
-   Insights v2 — responsive grid + print stylesheet
+   Insights — Calm 2.0 restructure (July 2026)
+
+   Sidebar app-shell on the Draw in the Air 2.0 design language
+   (landing-calm.css / teacher-dashboard.css vocabulary): warm cream
+   surfaces, lavender primary, mint/sky/sun accents, Outfit display +
+   Fraunces editorial serif + Nunito body + JetBrains Mono for data.
+   The legacy iv-* component classes are kept so all tabs restyle
+   through the token block below.
    ===================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Tailwind preflight is disabled app-wide, so opt this surface into
+   border-box explicitly — the grid math below depends on it. */
+.iv-shell, .iv-shell *, .iv-shell *::before, .iv-shell *::after,
+.iv-gate, .iv-gate * { box-sizing: border-box; }
 
 /* ── App shell ───────────────────────────────────────────────────────── */
 .iv-shell {
-    --plum: #6C3FA4;
-    --plum-soft: rgba(108, 63, 164, 0.10);
-    --plum-bd:   rgba(108, 63, 164, 0.16);
-    --aqua: #55DDE0;
-    --good: #1f7a3a;
-    --good-soft: rgba(126, 217, 87, 0.18);
+    /* Calm 2.0 tokens (kept under the legacy var names so every
+       existing component restyles without churn). */
+    --plum: #8A66F0;                          /* lavender-500 */
+    --plum-deep: #5C3FB0;
+    --plum-soft: rgba(138, 102, 240, 0.10);
+    --plum-bd:   rgba(138, 102, 240, 0.18);
+    --aqua: #5BCE9A;                          /* mint-400 */
+    --sky:  #7BB6FF;
+    --sun:  #FFC83D;
+    --peach: #FF9B7E;
+    --good: #2B8A5E;                          /* mint-700, readable on white */
+    --good-soft: rgba(91, 206, 154, 0.16);
     --bad:  #C13A3A;
-    --bad-soft: rgba(255, 107, 107, 0.15);
-    --flat: #6B6F84;
-    --flat-soft: rgba(63, 64, 82, 0.08);
-    --paper: #FAFAFD;
+    --bad-soft: rgba(240, 122, 94, 0.15);
+    --flat: #6B6580;                          /* ink-500 */
+    --flat-soft: rgba(31, 27, 46, 0.06);
+    --paper: #FBF7EE;                         /* cream-100 */
+    --paper-deep: #F4EEDF;                    /* cream-200 */
     --card:  #FFFFFF;
-    --line:  rgba(63, 64, 82, 0.10);
-    --ink:   #1A1B2E;
+    --line:  rgba(31, 27, 46, 0.08);
+    --ink:   #1F1B2E;                         /* ink-900 */
+    --ink-700: #3A3450;
+    --display: 'Outfit', system-ui, sans-serif;
+    --serif: 'Fraunces', Georgia, serif;
+    --body: 'Nunito', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --shadow-card: 0 6px 16px rgba(64, 50, 90, 0.06), 0 1px 3px rgba(64, 50, 90, 0.05);
+    --r-card: 18px;
 
     min-height: 100vh;
+    display: flex;
+    align-items: stretch;
     background: var(--paper);
     color: var(--ink);
-    font: 14px/1.5 Nunito, system-ui, sans-serif;
+    font: 14px/1.5 var(--body);
     -webkit-font-smoothing: antialiased;
 }
 
-/* ── Top bar ─────────────────────────────────────────────────────────── */
-.iv-topbar {
-    position: sticky; top: 0; z-index: 30;
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: saturate(180%) blur(10px);
-    border-bottom: 1px solid var(--line);
+/* ── Sidebar ─────────────────────────────────────────────────────────── */
+.iv-side {
+    width: 232px; flex-shrink: 0;
+    position: sticky; top: 0;
+    height: 100vh; overflow-y: auto;
+    background: var(--paper-deep);
+    border-right: 1px solid var(--line);
+    padding: 22px 14px 18px;
+    display: flex; flex-direction: column; gap: 2px;
+    z-index: 40;
 }
-
-.iv-topbar-inner {
-    max-width: 1440px; margin: 0 auto;
-    padding: 14px 24px;
-    display: flex; flex-wrap: wrap; gap: 12px;
-    align-items: center;
-}
-
 .iv-brand {
     display: flex; align-items: center; gap: 10px;
+    padding: 0 8px 18px;
 }
 .iv-brand-logo {
-    height: 32px; width: auto; display: block;
-    filter: drop-shadow(0 1px 2px rgba(63, 64, 82, 0.08));
+    height: 30px; width: auto; display: block;
 }
 .iv-brand-name {
-    font: 700 15px Fredoka, system-ui, sans-serif;
-    color: var(--plum);
+    font: 700 15px var(--display);
+    letter-spacing: -0.01em;
+    color: var(--ink);
 }
 .iv-brand-sub {
-    font-size: 11px; color: var(--flat);
-    margin-top: 1px;
+    font-size: 10.5px; color: var(--flat);
+    margin-top: 1px; max-width: 140px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.iv-side-label {
+    font: 800 10px var(--display);
+    text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--flat);
+    padding: 14px 10px 6px;
+}
+.iv-side-item {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%; text-align: left;
+    background: transparent; border: none; cursor: pointer;
+    padding: 8px 10px; border-radius: 12px;
+    font: 600 13px var(--display);
+    color: var(--ink-700);
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.iv-side-item:hover { background: rgba(31, 27, 46, 0.04); }
+.iv-side-item.is-active {
+    background: var(--plum); color: #fff;
+}
+.iv-side-item .iv-side-key {
+    margin-left: auto;
+    font: 500 10px var(--mono);
+    color: currentColor; opacity: 0.45;
+}
+.iv-side-foot {
+    margin-top: auto; padding: 14px 10px 0;
+    border-top: 1px solid var(--line);
+    display: flex; flex-direction: column; gap: 8px;
 }
 
 .iv-live {
@@ -63,16 +119,37 @@
     color: var(--good);
     padding: 3px 10px;
     border-radius: 999px;
-    font: 700 11.5px Nunito, system-ui, sans-serif;
+    font: 700 11px var(--body);
     text-transform: uppercase; letter-spacing: 0.04em;
+    align-self: flex-start;
 }
 .iv-live-dot {
     width: 7px; height: 7px; border-radius: 50%;
-    background: #2EAE52;
+    background: #5BCE9A;
     animation: ivPulse 1.5s ease-in-out infinite;
 }
 @keyframes ivPulse { 50% { opacity: 0.35; } }
 
+/* ── Content column ──────────────────────────────────────────────────── */
+.iv-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+.iv-head {
+    position: sticky; top: 0; z-index: 30;
+    background: rgba(251, 247, 238, 0.85);
+    backdrop-filter: saturate(160%) blur(12px);
+    border-bottom: 1px solid var(--line);
+    padding: 16px 28px 12px;
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+}
+.iv-head-title {
+    margin: 0;
+    font: 600 26px/1.05 var(--serif);
+    letter-spacing: -0.01em;
+    color: var(--ink);
+}
+.iv-head-sub {
+    font-size: 11.5px; color: var(--flat); margin-top: 3px;
+}
 .iv-topbar-spacer { flex: 1; }
 
 .iv-topbar-actions {
@@ -81,26 +158,25 @@
 }
 .iv-btn {
     display: inline-flex; align-items: center; gap: 6px;
-    padding: 7px 14px; border-radius: 999px;
-    font: 700 12px Nunito, system-ui, sans-serif;
-    background: var(--card); color: var(--ink);
+    padding: 8px 15px; border-radius: 999px;
+    font: 700 12px var(--display);
+    background: var(--card); color: var(--ink-700);
     border: 1px solid var(--line);
     cursor: pointer; user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
-.iv-btn:hover { background: var(--paper); }
+.iv-btn:hover { border-color: rgba(31, 27, 46, 0.20); }
 .iv-btn-primary {
-    background: linear-gradient(180deg, #7E4FB8, #6C3FA4);
+    background: var(--plum);
     color: #fff; border-color: transparent;
-    box-shadow: 0 2px 6px rgba(108, 63, 164, 0.20);
 }
-.iv-btn-primary:hover { background: linear-gradient(180deg, #6C3FA4, #5A2F8C); }
+.iv-btn-primary:hover { background: #9D7DFF; }
 .iv-btn-ghost { background: transparent; border-color: transparent; color: var(--flat); }
 .iv-btn-sm { padding: 4px 10px; font-size: 11px; }
 
 /* ── Filter bar ──────────────────────────────────────────────────────── */
 .iv-filterbar {
-    max-width: 1440px; margin: 0 auto;
-    padding: 12px 24px 0;
+    padding: 12px 28px 0;
     display: flex; flex-wrap: wrap; gap: 8px;
     align-items: center;
 }
@@ -112,44 +188,30 @@
 .iv-filter-pill {
     background: transparent; border: none;
     padding: 5px 12px; border-radius: 999px;
-    font: 700 12px Nunito, system-ui, sans-serif;
+    font: 700 12px var(--display);
     color: var(--flat); cursor: pointer;
 }
 .iv-filter-pill.is-active {
     background: var(--plum); color: #fff;
 }
 
-/* ── Tab strip ───────────────────────────────────────────────────────── */
-.iv-tabstrip {
-    max-width: 1440px; margin: 0 auto;
-    padding: 8px 24px 0;
-    display: flex; gap: 4px;
-    overflow-x: auto;
-    scrollbar-width: none;
-}
-.iv-tabstrip::-webkit-scrollbar { display: none; }
-.iv-tab {
-    background: transparent; border: none;
-    padding: 10px 16px;
-    border-radius: 10px 10px 0 0;
-    font: 700 13px Nunito, system-ui, sans-serif;
-    color: var(--flat); cursor: pointer;
-    border-bottom: 3px solid transparent;
-    white-space: nowrap;
-}
-.iv-tab:hover { color: var(--ink); }
-.iv-tab.is-active {
-    color: var(--plum);
-    border-bottom-color: var(--plum);
-    background: rgba(108, 63, 164, 0.04);
+/* Mobile burger for the sidebar */
+.iv-burger {
+    display: none;
+    position: fixed; top: 12px; left: 12px; z-index: 60;
+    width: 40px; height: 40px; border-radius: 12px;
+    border: 1px solid var(--line); background: var(--card);
+    font-size: 18px; cursor: pointer;
 }
 
 /* ── Main grid ───────────────────────────────────────────────────────── */
 .iv-main {
-    max-width: 1440px; margin: 0 auto;
-    padding: 16px 24px 64px;
+    padding: 18px 28px 64px;
     display: grid; gap: 16px;
     grid-template-columns: repeat(12, 1fr);
+    align-content: start;
+    max-width: 1440px;
+    width: 100%;
 }
 
 .iv-row {
@@ -180,14 +242,14 @@
 }
 .iv-card-title {
     margin: 0;
-    font: 700 12.5px Fredoka, system-ui, sans-serif;
+    font: 700 12.5px Outfit, system-ui, sans-serif;
     text-transform: uppercase; letter-spacing: 0.06em;
     color: var(--plum);
 }
 .iv-card-tier {
-    font: 700 10px Fredoka, system-ui, sans-serif;
+    font: 700 10px Outfit, system-ui, sans-serif;
     letter-spacing: 0.08em;
-    background: #FFD84D; color: #1A1B2E;
+    background: #FFC83D; color: #1A1B2E;
     padding: 2px 7px; border-radius: 999px;
 }
 .iv-card-meta {
@@ -216,7 +278,7 @@
     color: var(--flat);
 }
 .iv-kpi-value {
-    font: 700 30px Fredoka, system-ui, sans-serif;
+    font: 700 30px Outfit, system-ui, sans-serif;
     line-height: 1.0; color: var(--ink);
     letter-spacing: -0.01em;
 }
@@ -322,9 +384,9 @@
 }
 .iv-funnel-bar > i {
     display: block; height: 100%;
-    background: linear-gradient(90deg, #7E4FB8, #6C3FA4);
+    background: linear-gradient(90deg, #9D7DFF, #8A66F0);
 }
-.iv-funnel-n     { font: 700 13px Fredoka, system-ui, sans-serif; text-align: right; }
+.iv-funnel-n     { font: 700 13px Outfit, system-ui, sans-serif; text-align: right; }
 .iv-funnel-pct   { font: 600 12px Nunito, system-ui, sans-serif; color: var(--flat); text-align: right; }
 
 /* ── Cohort curves ───────────────────────────────────────────────────── */
@@ -351,7 +413,7 @@
     margin-bottom: 8px;
 }
 .iv-ab-arm-rate {
-    font: 700 28px Fredoka, system-ui, sans-serif;
+    font: 700 28px Outfit, system-ui, sans-serif;
 }
 .iv-ab-arm-sub {
     font-size: 12px; color: var(--flat); margin-top: 2px;
@@ -377,7 +439,7 @@
     display: flex; align-items: center; gap: 8px;
 }
 .iv-mode-card-title {
-    font: 700 13px Fredoka, system-ui, sans-serif;
+    font: 700 13px Outfit, system-ui, sans-serif;
     color: var(--ink);
 }
 .iv-mode-card-grid {
@@ -389,7 +451,7 @@
     color: var(--flat);
 }
 .iv-mode-stat-value {
-    font: 700 15px Fredoka, system-ui, sans-serif;
+    font: 700 15px Outfit, system-ui, sans-serif;
     color: var(--ink); line-height: 1.1;
 }
 
@@ -401,8 +463,8 @@
 .iv-strength > i {
     display: block; height: 100%;
 }
-.iv-strength-strong     { background: linear-gradient(90deg, #7ED957, #2EAE52); }
-.iv-strength-practising { background: linear-gradient(90deg, #FFD84D, #FFB14D); }
+.iv-strength-strong     { background: linear-gradient(90deg, #5BCE9A, #2EAE52); }
+.iv-strength-practising { background: linear-gradient(90deg, #FFC83D, #FFC83D); }
 .iv-strength-new        { background: linear-gradient(90deg, #C8C8D2, #9B9DAE); }
 .iv-strength-key {
     display: flex; gap: 14px; flex-wrap: wrap;
@@ -450,7 +512,7 @@
     background: var(--paper); border-radius: 10px;
 }
 .iv-sticky-stat-value {
-    font: 700 22px Fredoka, system-ui, sans-serif; color: var(--ink);
+    font: 700 22px Outfit, system-ui, sans-serif; color: var(--ink);
     line-height: 1.0;
 }
 .iv-sticky-stat-label {
@@ -483,21 +545,83 @@
     100% { background-position: -200% 0; }
 }
 
+/* ── Growth tab ──────────────────────────────────────────────────────── */
+.iv-kpi-grid-6 { grid-template-columns: repeat(6, 1fr); }
+@media (max-width: 1720px) { .iv-kpi-grid-6 { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 639px)  { .iv-kpi-grid-6 { grid-template-columns: repeat(2, 1fr); } }
+
+.iv-growth-bars {
+    display: flex; align-items: flex-end; gap: 6px;
+    height: 170px; padding-top: 14px;
+}
+/* Baseline sits right under the bars (the stack), not under the labels. */
+.iv-growth-bar-stack { box-shadow: 0 1px 0 0 rgba(31, 27, 46, 0.14); }
+.iv-growth-bar-col {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column; align-items: center;
+    height: 100%;
+}
+.iv-growth-bar-stack {
+    width: 100%; max-width: 34px;
+    flex: 1;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    border-radius: 8px 8px 0 0; overflow: hidden;
+    background: transparent;
+}
+.iv-growth-bar-stack i { border-radius: 3px 3px 0 0; }
+.iv-growth-bar-stack i + i { border-radius: 0; }
+.iv-growth-bar-stack i { display: block; width: 100%; }
+.iv-growth-bar-n {
+    font: 700 10.5px var(--mono);
+    color: var(--ink-700); margin-top: 4px; min-height: 14px;
+}
+.iv-growth-bar-label {
+    font: 600 9px var(--body);
+    color: var(--flat); white-space: nowrap;
+}
+.iv-growth-legend {
+    display: flex; gap: 14px; margin-top: 10px;
+    font: 600 11px var(--body); color: var(--flat);
+}
+.iv-growth-legend i {
+    display: inline-block; width: 9px; height: 9px;
+    border-radius: 3px; margin-right: 5px;
+}
+.iv-growth-note {
+    margin: 10px 0 0; font-size: 11.5px; color: var(--flat);
+}
+.iv-growth-list {
+    list-style: none; margin: 0; padding: 0;
+    display: flex; flex-direction: column;
+}
+.iv-growth-list li {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 7px 2px; border-bottom: 1px dashed var(--line);
+    font-size: 13px; color: var(--ink-700);
+}
+.iv-growth-list li:last-child { border-bottom: none; }
+.iv-growth-list strong { font: 700 14px var(--mono); color: var(--ink); }
+.iv-growth-list-total { border-top: 1.5px solid var(--line); margin-top: 4px; }
+.iv-growth-list-total span { font-weight: 800; color: var(--ink); }
+.iv-growth-email { font-family: var(--mono); font-size: 11.5px; }
+
 /* ── Sign-in gate ────────────────────────────────────────────────────── */
+/* Rendered OUTSIDE .iv-shell, so it carries its own values. */
 .iv-gate {
     min-height: 100vh;
     display: flex; align-items: center; justify-content: center;
-    background: var(--paper);
+    background: #FBF7EE;
     padding: 24px;
+    font-family: 'Nunito', system-ui, sans-serif;
 }
 .iv-gate-card {
     max-width: 420px; width: 100%;
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 18px;
+    background: #FFFFFF;
+    border: 1px solid rgba(31, 27, 46, 0.08);
+    border-radius: 24px;
     padding: 32px;
     text-align: center;
-    box-shadow: 0 4px 20px rgba(63, 64, 82, 0.06);
+    box-shadow: 0 20px 50px rgba(64, 50, 90, 0.10);
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────── */
@@ -506,9 +630,8 @@
 }
 @media (max-width: 860px) {
     .iv-main { padding: 12px 16px 48px; gap: 12px; }
-    .iv-topbar-inner { padding: 12px 16px; }
+    .iv-head         { padding: 12px 16px 10px 60px; }
     .iv-filterbar    { padding: 12px 16px 0; }
-    .iv-tabstrip     { padding: 8px 16px 0; }
     .iv-kpi-grid {
         grid-template-columns: 84% 84% 84% 84% 84% 84% 84% 84%;
         grid-auto-flow: column;
@@ -542,14 +665,14 @@
        fell back to the site-wide dark-theme inherits and the printed
        report rendered as white-on-white. Keep these in sync with the
        .iv-shell block above. */
-    --plum:      #6C3FA4;
-    --plum-soft: rgba(108, 63, 164, 0.10);
-    --plum-bd:   rgba(108, 63, 164, 0.16);
-    --aqua:      #55DDE0;
+    --plum:      #8A66F0;
+    --plum-soft: rgba(138, 102, 240, 0.10);
+    --plum-bd:   rgba(138, 102, 240, 0.16);
+    --aqua:      #5BCE9A;
     --good:      #1f7a3a;
-    --good-soft: rgba(126, 217, 87, 0.18);
+    --good-soft: rgba(91, 206, 154, 0.18);
     --bad:       #C13A3A;
-    --bad-soft:  rgba(255, 107, 107, 0.15);
+    --bad-soft:  rgba(240, 122, 94, 0.15);
     --flat:      #6B6F84;
     --flat-soft: rgba(63, 64, 82, 0.08);
     --paper:     #FAFAFD;
@@ -597,7 +720,7 @@
 }
 .iv-report-page-head img { height: 28px; }
 .iv-report-page-head h1 {
-    margin: 0; font: 700 18px Fredoka, system-ui, sans-serif;
+    margin: 0; font: 700 18px Outfit, system-ui, sans-serif;
     color: var(--plum);
 }
 .iv-report-page-head .meta {
@@ -618,7 +741,7 @@
 }
 .iv-report-cover img { height: 64px; margin-bottom: 32px; }
 .iv-report-cover h1 {
-    margin: 0; font: 700 40px Fredoka, system-ui, sans-serif;
+    margin: 0; font: 700 40px Outfit, system-ui, sans-serif;
     color: var(--ink); line-height: 1.05;
 }
 .iv-report-cover h2 {
@@ -633,7 +756,7 @@
 }
 .iv-report-cover .stamp {
     margin-top: 6px;
-    font: 700 30px Fredoka;
+    font: 700 30px Outfit;
     color: var(--ink);
 }
 .iv-report-cover .gen {
@@ -657,7 +780,7 @@
     letter-spacing: 0.06em; color: var(--flat);
 }
 .iv-report-kpi-value {
-    font: 700 26px Fredoka; color: var(--ink); line-height: 1.05;
+    font: 700 26px Outfit; color: var(--ink); line-height: 1.05;
     margin-top: 8px;
 }
 .iv-report-kpi-sub {
@@ -705,7 +828,7 @@
         background: #fff !important;
         color: #1A1B2E !important;
     }
-    .iv-topbar { backdrop-filter: none !important; background: #fff !important; }
+    .iv-head, .iv-side { display: none !important; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -716,8 +839,8 @@
    ═══════════════════════════════════════════════════════════════════ */
 
 .iv-trust-strip {
-    background: rgba(108, 63, 164, 0.04);
-    border: 1px solid rgba(108, 63, 164, 0.12);
+    background: rgba(138, 102, 240, 0.04);
+    border: 1px solid rgba(138, 102, 240, 0.12);
     border-radius: 12px;
     padding: 12px 16px;
     margin: 0 0 16px 0;
@@ -751,7 +874,7 @@
     font: 700 11px/1 Nunito, system-ui, sans-serif;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: #6C3FA4;
+    color: #8A66F0;
 }
 .iv-trust-subtitle { font-size: 12px; color: #6B6F84; }
 .iv-trust-summary { font-size: 13px; color: #3F4052; }
@@ -779,7 +902,7 @@
 
 .iv-trust-details { margin-top: 12px; }
 .iv-trust-details summary {
-    cursor: pointer; font-size: 12px; color: #6C3FA4;
+    cursor: pointer; font-size: 12px; color: #8A66F0;
     padding: 4px 0;
 }
 .iv-trust-mode-table {
@@ -799,7 +922,7 @@
 }
 .iv-trust-mode-table tr.iv-trust-flag { background: rgba(255, 177, 77, 0.08); }
 .iv-trust-mode-table tr.iv-trust-flag td:first-child::before {
-    content: '⚠ '; color: #FF6B6B;
+    content: '⚠ '; color: #F07A5E;
 }
 
 .iv-trust-reasons {
@@ -816,8 +939,8 @@
 
 .iv-trust-pill {
     display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(108, 63, 164, 0.08);
-    border: 1px solid rgba(108, 63, 164, 0.16);
+    background: rgba(138, 102, 240, 0.08);
+    border: 1px solid rgba(138, 102, 240, 0.16);
     border-radius: 999px;
     padding: 2px 10px;
     font: 12px/1.4 Nunito, system-ui, sans-serif;
@@ -855,12 +978,21 @@
 .iv-kpi-value { font-size: 26px; }
 .iv-kpi-label { font-size: 10px; }
 
-/* ── Tablet (< 1024px) — intelligent column collapse ──────────── */
+/* ── Tablet (< 1024px) — sidebar goes off-canvas ──────────────── */
 @media (max-width: 1023px) {
-    .iv-topbar-inner,
+    .iv-burger { display: block; }
+    .iv-side {
+        position: fixed; left: 0; top: 0; bottom: 0;
+        height: 100dvh;
+        transform: translateX(-105%);
+        transition: transform 0.22s ease;
+        box-shadow: 0 20px 60px rgba(31, 27, 46, 0.18);
+    }
+    .iv-side.open { transform: translateX(0); }
+
     .iv-filterbar,
-    .iv-tabstrip,
     .iv-main { padding-left: 16px; padding-right: 16px; }
+    .iv-head { padding-left: 60px; }
     .iv-main { padding-bottom: 80px; gap: 12px; }
 
     .iv-kpi-grid { grid-template-columns: repeat(2, 1fr); }
@@ -870,7 +1002,7 @@
     .iv-col-6, .iv-col-8 { grid-column: span 12; }
 
     .iv-card { padding: 12px 14px; }
-    .iv-tab { padding: 10px 14px; font-size: 12.5px; }
+    .iv-side-item { padding: 9px 12px; }
 
     /* Bigger pills for touch */
     .iv-filter-pill { padding: 7px 13px; font-size: 12px; }
@@ -879,10 +1011,11 @@
 
 /* ── Mobile (< 640px) — full reflow + touch-first ─────────────── */
 @media (max-width: 639px) {
-    .iv-topbar-inner {
-        padding: 10px 14px;
+    .iv-head {
+        padding: 10px 14px 8px 58px;
         gap: 8px;
     }
+    .iv-head-title { font-size: 20px; }
     .iv-brand-logo { height: 24px; }
     .iv-brand-name { font-size: 13px; }
     .iv-brand-sub  { font-size: 10px; }
@@ -912,18 +1045,6 @@
         padding: 8px 14px;
         font-size: 11.5px;
         min-height: 34px;
-    }
-
-    .iv-tabstrip {
-        padding: 6px 14px 0;
-        gap: 2px;
-        scroll-snap-type: x mandatory;
-    }
-    .iv-tab {
-        padding: 10px 12px;
-        font-size: 12px;
-        scroll-snap-align: start;
-        min-height: 40px;
     }
 
     .iv-main {
@@ -971,13 +1092,11 @@
     .iv-brand-sub { display: none; }     /* email + refresh time row;
                                             keep the brand row clean */
     .iv-card-meta { display: none; }     /* tooltip-only on phone */
-    .iv-tabstrip { padding: 4px 12px 0; }
-    .iv-tab { padding: 9px 10px; font-size: 11.5px; }
 }
 
 /* ── Larger touch targets globally on coarse pointers (touch) ──── */
 @media (pointer: coarse) {
-    .iv-btn, .iv-filter-pill, .iv-tab {
+    .iv-btn, .iv-filter-pill, .iv-side-item {
         min-height: 36px;
     }
     /* Table rows on touch need a generous tap zone for row-click UX */

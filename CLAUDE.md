@@ -7,8 +7,10 @@ Two apps in one repo: the kid-facing Vite app (root) and the teacher platform
 # Non-negotiables
 
 - Read AI_AGENT_RULES.md before any work — its 17 rules and hard prohibitions bind every agent.
-- Production deploys from `master` (NOT `main`). Never edit on master — start with
-  `./scripts/start-task.sh <prefix> <name>`.
+- Deploy contract: production = the `master` branch (NOT `main`) on Vercel project
+  `drawintheair`. The ONLY way to deploy is a PR merged to `master` (squash) with CI
+  green; no manual promotes / rollbacks-to-arbitrary-deploys / CLI `vercel --prod`.
+  Never edit on master — start with `./scripts/start-task.sh <prefix> <name>`.
 - Before claiming anything is done, run `./scripts/check-task.sh` (lint, typecheck,
   tests, secret/CSP/env guards, production build) and report the real results.
 - This product serves children: no external links in child mode, no video storage,
@@ -18,7 +20,7 @@ Two apps in one repo: the kid-facing Vite app (root) and the teacher platform
 
 - React 19 + TypeScript + Vite + Tailwind; MediaPipe hand tracking; Supabase
   (Class Mode, auth); Vercel; PostHog/Sentry/Meta Pixel (production hosts only).
-- npm with committed lockfile (`npm ci`), Node 20 (`.nvmrc`).
+- npm with committed lockfile (`npm ci`), Node 24 (`.nvmrc`).
 
 # Commands
 
@@ -42,8 +44,8 @@ Two apps in one repo: the kid-facing Vite app (root) and the teacher platform
 
 - Bugs have shipped that only appeared in the production build (Vercel strict-null
   tsc errors, vendor-chunk TDZ). That's why check-task.sh includes the build — don't skip it.
-- `lint` is currently red on master (9 pre-existing errors). Don't fix or hide them
-  in passing — they get their own dedicated PR.
+- `lint` is green (0 errors) but ratcheted at `--max-warnings 160`. Don't add
+  warnings; if you remove some, lower the number in `package.json` in the same PR.
 - Rendering: no React state updates per frame — use refs. Camera coordinates are unmirrored.
 - The Supabase service-role key must NEVER appear in client (`VITE_`) code. `.env` is
   never committed; a secret already leaked into git history once.

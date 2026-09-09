@@ -72,6 +72,24 @@ function esc(s: unknown): string {
 function num(n: unknown): string { return ((n as number) ?? 0).toLocaleString(); }
 function pct(n: unknown): string { return n == null ? "—" : `${n}%`; }
 
+// WP2B.6 (DIA-029): "genuine sessions in last 24h: N" plus the ingest canary
+// state. Keys come from public.dashboard_daily_digest(); absent keys (older
+// SQL) render as "n/a" rather than throwing.
+export function renderIngestHealth(data: Record<string, unknown>): string {
+  const genuine = data.genuine_sessions_24h as number | null | undefined;
+  const note = data.genuine_sessions_note as string | null | undefined;
+  const canary = (data.ingest_canary ?? null) as { healthy?: boolean; age_seconds?: number | null } | null;
+  const canaryLine = canary == null
+    ? "Ingest canary: n/a (canary not deployed)"
+    : canary.healthy
+      ? `Ingest canary: healthy (last synthetic event ${num(canary.age_seconds)} s ago)`
+      : `Ingest canary: UNHEALTHY (last synthetic event ${canary.age_seconds == null ? "never" : `${num(canary.age_seconds)} s ago`}). Check cron.job_run_details for ingest-canary-15m.`;
+  const genuineLine = genuine == null
+    ? "Genuine sessions in last 24h: n/a"
+    : `Genuine sessions in last 24h: ${num(genuine)}`;
+  return `<p><strong>${esc(genuineLine)}</strong>${note ? `<br><em>${esc(note)}</em>` : ""}</p><p>${esc(canaryLine)}</p>`;
+}
+
 // (full HTML rendering body matches what was deployed via apply_edge_function;
 //  see deployed function source if regenerating.)
 // Source kept terse here so the file stays under git review-friendly size;
@@ -95,7 +113,11 @@ Deno.serve(async (req) => {
     if (mode === "daily") {
       const data = (await callRpc("dashboard_daily_digest")) as Record<string, unknown>;
       // HTML rendering body lives in the deployed copy — keep this stub honest.
-      const html = `<pre>${esc(JSON.stringify(data, null, 2))}</pre>`;
+      // WP2B.6: the ingest-health lines are rendered here so they survive
+      // whatever the deployed renderer does with unknown keys. Zero genuine
+      // sessions is a NOTIFICATION (quiet days are normal at current volume);
+      // the canary line is the only pipeline liveness signal.
+      const html = `${renderIngestHealth(data)}<pre>${esc(JSON.stringify(data, null, 2))}</pre>`;
       const result = await sendEmail({ from, to, subject: `DITA digest · ${new Date().toUTCString().slice(5, 16)}`, html });
       return new Response(JSON.stringify({ ok: true, mode, result }), {
         status: 200, headers: { "Content-Type": "application/json" },

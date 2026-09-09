@@ -15,7 +15,7 @@ import type {
     TrustStripData, FrictionEngineeringData, MasteryV2Data, ContextSplitData,
     ProgressionTopLearners, ProgressionLearnerData,
     AdaptiveDecisionsData, ObservationsData, ExportHeadline,
-    ObservabilityData, TransparencyReportData,
+    ObservabilityData, TransparencyReportData, GrowthData,
 } from './types';
 
 async function callRpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T> {
@@ -37,6 +37,11 @@ async function callRpc<T>(fn: string, args: Record<string, unknown> = {}): Promi
 }
 
 // New v2 RPCs ────────────────────────────────────────────────────────────
+// Growth (July 2026): signups, subscriptions and engagement in one payload.
+// Server-side gated on is_platform_admin() (42501 for everyone else).
+export const fetchGrowth = (days: number) =>
+    callRpc<GrowthData>('dashboard_growth', { in_days: days });
+
 export const fetchExecutive  = (days: number) =>
     callRpc<ExecutiveData>('dashboard_executive_summary', { in_days: days });
 
@@ -136,7 +141,7 @@ export const fetchToday      = () => callRpc<TodayData>('dashboard_today', {});
 export const fetchFunnel     = (days: number) => callRpc<FunnelData>('dashboard_funnel', { in_days: days });
 export const fetchTracker    = (days: number) => callRpc<TrackerData>('dashboard_tracker_health', { in_days: days });
 export const fetchTopModes   = (days: number) => callRpc<ModesData>('dashboard_top_modes', { in_days: days });
-export const fetchErrors     = (limit = 30) => callRpc<ErrorsData>('dashboard_errors', { in_limit: limit });
+export const fetchErrors     = (limit = 30) => callRpc<ErrorsData>('dashboard_errors', { row_limit: limit });
 export const fetchCohorts    = (weeks: number) => callRpc<CohortData>('dashboard_cohort_retention', { in_weeks: weeks });
 export const fetchMastery    = (days: number, minAttempts = 3) =>
     callRpc<MasteryData>('dashboard_mastery', { in_days: days, in_min_attempts: minAttempts });
@@ -145,4 +150,4 @@ export const fetchMilestones = (days = 60, minAttempts = 5, thresholdPct = 80) =
     callRpc<MilestonesData>('dashboard_mastery_milestones', {
         in_days: days, in_min_attempts: minAttempts, in_threshold_pct: thresholdPct,
     });
-export const fetchSessions   = (limit = 50) => callRpc<SessionsData>('dashboard_latest_sessions', { in_limit: limit });
+export const fetchSessions   = (limit = 50) => callRpc<SessionsData>('dashboard_latest_sessions', { row_limit: limit });

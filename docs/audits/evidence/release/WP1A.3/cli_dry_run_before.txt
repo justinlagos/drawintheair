@@ -1,0 +1,7 @@
+# supabase db push --dry-run BEFORE reconciliation
+# repo migrations = git HEAD (e5e63f9), history = production's 39 rows verbatim
+# target = throwaway local Postgres 16 built from the baseline (no CLI login needed)
+
+DRY RUN: migrations will *not* be pushed to the database.
+Connecting to remote database...
+{"_tag":"Error","error":{"code":"LegacyDbPushMissingLocalError","message":"Remote migration versions not found in local migrations directory.","suggestion":"\nMake sure your local git repo is up-to-date. If the error persists, try repairing the migration history table:\nsupabase migration repair --status reverted 20260613200346 20260613200347 20260613200348 20260615113208 20260615113209 20260615113210 20260625154825 20260625154854 20260625154917 20260625155315 20260625160025 20260626055435 20260626060611 20260626074159 20260626074253 20260626074513 20260626074546 20260626075729 20260626100551 20260626100723 20260626100832 20260629180319 20260629180322 20260629180329 20260629180351 20260629180357 20260629180400 20260629203559 20260701151623 20260702200020 20260702200123 20260703074707 20260709132926 20260709132946 20260710101104 20260710111421 20260716110907 20260716111014 20260908000000\n\nAnd update local migrations to match remote database:\nsupabase db pull\n"}}

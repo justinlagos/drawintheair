@@ -24,10 +24,15 @@
 
 import { initSentry, captureError, setObservabilityContext, clearObservabilityContext, isSentryActive } from './sentry';
 import { safeInvoke, safeInvokeAsync } from './safeInvoke';
-import { initPostHog, trackEvent, identifyPseudonymous, resetPostHog, isPostHogActive } from './posthog';
-import { hasAnalyticsConsent, onConsentChange } from '../analyticsConsent';
+import {
+    initPostHog, trackEvent, identifyPseudonymous, resetPostHog, isPostHogActive,
+    suspendPostHog, resumePostHog,
+} from './posthog';
+import { onConsentChange } from '../analyticsConsent';
+import { registerThirdPartyTool, thirdPartyAnalyticsAllowed } from '../thirdPartyAnalytics';
 import {
     initMetaPixel, trackMeta, trackMetaPageView, isMetaActive,
+    suspendMetaPixel, resumeMetaPixel,
     newEventId, rememberCheckoutEventId, readCheckoutEventId, clearCheckoutEventId,
 } from './meta';
 
@@ -81,11 +86,17 @@ export type { SafeInvokeOptions } from './safeInvoke';
 export function initObservability(): void {
     // Sentry is error monitoring (operational, no marketing profiling) so it
     // runs to keep the app debuggable. PostHog is non-essential product
-    // analytics and only starts once the visitor grants cookie consent.
+    // analytics and only starts once an adult grants cookie consent AND the
+    // current screen is not a child route (WP2B.1). The router keeps the
+    // child-route rule enforced on later navigations through these hooks.
     initSentry();
-    if (hasAnalyticsConsent()) {
+    registerThirdPartyTool({ name: 'posthog', suspend: suspendPostHog, resume: resumePostHog });
+    registerThirdPartyTool({ name: 'meta', suspend: suspendMetaPixel, resume: resumeMetaPixel });
+    if (thirdPartyAnalyticsAllowed()) {
         initPostHog();
     } else {
-        onConsentChange((choice) => { if (choice === 'granted') initPostHog(); });
+        onConsentChange((choice) => {
+            if (choice === 'granted' && thirdPartyAnalyticsAllowed()) initPostHog();
+        });
     }
 }

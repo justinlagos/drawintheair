@@ -22,6 +22,7 @@
  *   analytics.endSession('back_to_landing');
  */
 
+import { mapEventToAttempt } from './attemptMirror';
 import { dbInsert, callRpc } from './supabase';
 import {
     classifyEnvironment,
@@ -75,6 +76,7 @@ export type EventName =
     | 'tracker_init_started'        // handTracker.initialize() invoked
     | 'tracker_init_succeeded'      // meta: { delegate, init_duration_ms }
     | 'tracker_init_failed'         // meta: { code, message, tried_delegates }
+    | 'tracker_assets_resolved'     // meta: { wasm_source, model_source } ('self' or 'cdn', DIA-020)
 
     // ── Camera permission flow (A/B experiment camera_explainer_v1) ──
     | 'camera_explainer_shown'      // Pre-prompt rendered (treatment arm only)
@@ -83,6 +85,7 @@ export type EventName =
     | 'camera_recovery_shown'       // Error-state recovery screen rendered; meta.cause/browser/os
     | 'camera_recovery_retry'       // User tapped "Try again" on recovery screen
     | 'camera_recovery_dismissed'   // User tapped "Back to home" on recovery screen
+    | 'camera_lost'                 // Live video track ended or device vanished mid-session; meta.cause
     | 'wave_screen_view'
     | 'wave_first_hand_seen'        // First MediaPipe landmark detected
     | 'wave_completed'              // Wave gate cleared
@@ -1105,7 +1108,7 @@ function persistQueue(): void {
 // stored sessions began mid-flow (first row at client_seq 21).
 //
 // The fix moves idempotency server-side: SECURITY DEFINER RPCs
-// (migration 20260709000001) do the ON CONFLICT DO NOTHING with no
+// (migration 20260709132926) do the ON CONFLICT DO NOTHING with no
 // read access granted to the caller. If the RPC is missing (staging /
 // un-migrated DB) we fall back to a plain insert and treat a 23505
 // duplicate-key response as "already delivered".
@@ -1289,7 +1292,7 @@ function setupBeforeUnload(): void {
             // Use sendBeacon for reliable last-gasp delivery during page unload.
             // dbInsert won't work here because the page is being torn down.
             //
-            // Target the idempotent ingest RPC (20260709000001), NOT the
+            // Target the idempotent ingest RPC (20260709132926), NOT the
             // table endpoint: the RPC dedupes on event_uid server-side, so
             // a beacon racing an in-flight flush can't 409 the whole batch.
             // (The old `on_conflict=event_uid` query hint did nothing
@@ -1651,6 +1654,63 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
     }
 
     // ─────────────────────────────────────────────────────────────────
+    // CONTENT-EVENT MIRROR (WP2B.8, DIA-030). The deployed activities
+    // (playful tracing, bubble pop) never emit item_dropped, so the mirror
+    // above starved learning_attempts from 10 July 2026. The mapping
+    // table in attemptMirror.ts says which per-item content events are
+    // attempts and how to read them. Fires for EVERY session (school,
+    // anonymous, parent) and reuses the same queue and RPC. Meta is
+    // allow-listed scalars only, never free text.
+    // ─────────────────────────────────────────────────────────────────
+    let mirroredByTable = false;
+    if (opts.game_mode) {
+        try {
+            const mapped = mapEventToAttempt(name, opts);
+            if (mapped) {
+                mirroredByTable = true;
+                const ctx = getOrCreateSession();
+                learningQueue.push({
+                    occurred_at: row.occurred_at,
+                    session_id: ctx.sessionId,
+                    device_id: getOrCreateDeviceId(),
+                    game_mode: opts.game_mode,
+                    stage_id: mapped.stage_id,
+                    stage_index: mapped.stage_index,
+                    item_key: mapped.item_key,
+                    age_band: ctx.ageBand,
+                    was_correct: mapped.was_correct,
+                    attempt_number: nextAttemptNumber(mapped.item_key),
+                    ms_to_attempt: mapped.ms_to_attempt,
+                    expected_value: mapped.expected_value,
+                    actual_value: mapped.actual_value,
+                    meta: {
+                        ...mapped.meta,
+                        _mirror_source: name,
+                        _item_kind: mapped.item_kind,
+                        attempt_id: (row.meta as Record<string, unknown>).attempt_id ?? null,
+                    },
+                    event_uid: row.event_uid,
+                    client_seq: row.client_seq,
+                    client_ts: row.client_ts,
+                    context: row.context,
+                    child_profile_id: readSelectedChildId(),
+                    gq_path_accuracy_pct: null,
+                    gq_path_efficiency: null,
+                    gq_spatial_error_mean_px: null,
+                    gq_velocity_variance: null,
+                    gq_pause_count: null,
+                    gq_directional_changes: null,
+                    gq_time_to_first_movement_ms: null,
+                    gq_time_to_completion_ms: null,
+                    gq_corrections_in_stroke: null,
+                    gq_n_samples: null,
+                });
+                persistLearningQueue();
+            }
+        } catch { /* the mirror must never break logEvent */ }
+    }
+
+    // ─────────────────────────────────────────────────────────────────
     // EXTENDED MIRROR, many game modes don't fire `item_dropped`. To
     // keep the parent dashboard's child_activity_summary populated for
     // EVERY mode, also mirror well-defined "win" events into
@@ -1675,7 +1735,9 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
         'build_object_completed',
         'successful_snap',
     ]);
-    if (WIN_EVENTS.has(name) && opts.game_mode) {
+    // Skipped when the mapping table already wrote this event's row, so a
+    // child-bound session never gets two rows for one attempt.
+    if (WIN_EVENTS.has(name) && opts.game_mode && !mirroredByTable) {
         let childProfileId: string | null = null;
         try {
             const raw = sessionStorage.getItem('dita-selected-child');
@@ -1785,6 +1847,22 @@ export function logEvent(name: EventName, opts: EventOptions = {}): void {
             })();
         }
     }
+}
+
+/** Selected child profile id from the parent dashboard, or null for
+ *  school and anonymous play. Read from sessionStorage so the mirror
+ *  stays decoupled from React state. */
+function readSelectedChildId(): string | null {
+    try {
+        const raw = sessionStorage.getItem('dita-selected-child');
+        if (raw && /^[0-9a-f-]{36}$/i.test(raw)) return raw;
+    } catch { /* private mode etc. */ }
+    return null;
+}
+
+/** Test-only view of the pending learning_attempts rows. Returns a copy. */
+export function peekLearningQueueForTests(): ReadonlyArray<Record<string, unknown>> {
+    return learningQueue.map((r) => ({ ...r }));
 }
 
 const LEARNING_QUEUE_KEY = 'dita_learning_queue';

@@ -16,10 +16,10 @@ That single paragraph hits the four things she cares about: the product, the saf
 
 | If she asks... | You answer... |
 |---|---|
-| **"Where does the camera footage go?"** | "Nowhere. The camera frame is processed locally on the device by a Google library called MediaPipe. The platform never receives or stores video, photos, or biometrics. Only numerical coordinates of the hand position leave the device." |
-| **"What personal data do you collect about the child?"** | "A nickname (or just an emoji avatar) and an age band — 4-5, 6-7, 8-9. That's it. No full name, no date of birth, no school name attached to a child, no email, no photo." |
-| **"Who owns the data?"** | "The parent or the school. Parents can export or delete everything we hold from their account page. For school deployments we sign a data-processing agreement and we host inside the EU." |
-| **"Is the kid identifiable?"** | "No. Every learner is a randomly generated pseudonymous ID. We also suppress any analytics group under 5 learners so individuals can't be picked out — that's k-anonymity. It's the same standard the UK Office for National Statistics uses." |
+| **"Where does the camera footage go?"** | "Nowhere. The camera frame is processed locally on the device by a Google library called MediaPipe. The platform never receives or stores video, photos, or biometrics. Only small summary numbers about how a stroke went leave the device; hand positions themselves are never sent." |
+| **"What personal data do you collect about the child?"** | "At home: a first name or nickname, an emoji avatar and an age band (3-4, 5-6 or 7-8). In a classroom: a first name or nickname on the teacher's class list. No surname, no date of birth, no email, no photo." |
+| **"Who owns the data?"** | "The parent or the school. Parents can export or delete everything we hold from their account page. For school deployments we sign a data-processing agreement and we host in the UK (Supabase, London region)." |
+| **"Is the kid identifiable?"** | "In anonymous play, every learner is a randomly generated pseudonymous ID. Learners added by a parent or teacher carry a first name or nickname that only that adult can see. We also suppress any analytics group under 5 learners so individuals can't be picked out. That's k-anonymity. It's the same standard the UK Office for National Statistics uses." |
 | **"What about NDPA compliance?"** | "We're built privacy-first, which matches NDPA principles — lawful basis, data minimisation, consent, parental rights. For a school pilot we'd register as a data processor with the school as data controller and sign the standard processing agreement. We're aware the NDPC issued a compliance notice to the education sector in February 2026 — happy to align with whatever the school's DPCO requires." |
 
 That last one is your power move. **NDPC = Nigeria Data Protection Commission. NDPA = Nigeria Data Protection Act 2023 (the live law). GAID = the implementation directive issued March 2025. NDPR = the OLD law (don't quote it as current).** A CSO will instantly upgrade her opinion of you if you don't mix these up.
@@ -46,7 +46,7 @@ These are real, in-code controls. If she pushes hard, you can name them.
 - HTTPS enforced (HSTS — `Strict-Transport-Security`).
 - Security headers: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(self), microphone=(), geolocation=(), interest-cohort=()`. (Translation: only Draw in the Air can use the camera, mic and location are disabled, no ad-tech cohorts.)
 - Content Security Policy whitelists script and connection origins.
-- CORS allow-list — only `drawintheair.com` and `app.drawintheair.com` can call our edge functions.
+- CORS allow-list: only `drawintheair.com` can call our edge functions.
 - Data hosted in the EU (matters for cross-border under GDPR and aligns with NDPA Section 41 cross-border rules).
 - Stripe for any billing — no card data ever touches our servers.
 - Sentry + PostHog for error/usage telemetry, pseudonymous IDs only.

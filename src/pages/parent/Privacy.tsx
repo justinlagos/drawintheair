@@ -51,7 +51,7 @@ export default function ParentPrivacy() {
           <p style={{ margin: 0, fontSize: 'var(--text-md)', lineHeight: 1.6, color: 'var(--fg-1)' }}>
             Activities use your webcam to see where your child's hand is in the air.
             The actual video <strong>stays on your device</strong>. We never upload camera frames.
-            Only small numbers describing hand position leave the device.
+            Only small summary numbers describing how a stroke went (for example how closely it followed the path) leave the device. Hand positions are never sent.
           </p>
         </Card>
 

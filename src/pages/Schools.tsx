@@ -8,7 +8,7 @@
 
 import React, { useState } from 'react';
 import { LegalPageLayout } from '../components/landing/LegalPageLayout';
-import { submitFormData } from '../lib/formSubmission';
+import { submitFormData, SUBMISSION_FAILED_MESSAGE } from '../lib/formSubmission';
 
 const LAVENDER = '#8A66F0';
 const MINT = '#3FB87F';
@@ -20,7 +20,7 @@ const VALUE_PROPS: { title: string; desc: string; color: string; bg: string; ico
   { title: 'Whole-school deployment', desc: 'One license covers every classroom, no per-student counting.', color: LAVENDER, bg: '#F4EFFF', icon: '🏫' },
   { title: 'No IT setup', desc: 'Browser-based on any device with a camera. No installs.', color: SKY, bg: '#EEF6FF', icon: '⚡' },
   { title: 'EYFS & KS1 aligned', desc: 'Activities map to Physical Development, Literacy and Maths.', color: MINT, bg: '#ECFBF3', icon: '🎯' },
-  { title: 'Privacy by design', desc: 'No student accounts, no recordings, no tracking. Ever.', color: PEACH, bg: '#FFF1EB', icon: '🔒' },
+  { title: 'Privacy by design', desc: 'No student accounts, no recordings. Class lists hold a first name or nickname only.', color: PEACH, bg: '#FFF1EB', icon: '🔒' },
 ];
 
 export const Schools: React.FC = () => {
@@ -38,8 +38,12 @@ export const Schools: React.FC = () => {
     if (!name.trim() || !email.trim() || !school.trim()) { setError('Please fill name, email and school.'); return; }
     setError(''); setSending(true);
     submitFormData({ type: 'school_pack_request', name: name.trim(), email: email.trim(), school: school.trim(), role, schoolSize: size, message: notes.trim() })
-      .then(() => { setSent(true); setSending(false); })
-      .catch((err: { message?: string }) => { setError(err.message ?? 'Something went wrong.'); setSending(false); });
+      .then((result) => {
+        if (result.success) setSent(true);
+        else setError(result.error || SUBMISSION_FAILED_MESSAGE);
+        setSending(false);
+      })
+      .catch(() => { setError(SUBMISSION_FAILED_MESSAGE); setSending(false); });
   };
 
   return (
@@ -73,9 +77,9 @@ export const Schools: React.FC = () => {
           <p style={{ fontSize: '0.95rem', opacity: 0.8, margin: 0 }}>We'll be in touch within 24 hours with your pilot pack.</p>
         </div>
       ) : (
-        <div style={{ marginTop: 18 }}>
+        <form style={{ marginTop: 18 }} onSubmit={(e) => { e.preventDefault(); submit(); }} noValidate>
           {error && (
-            <div style={{ marginBottom: 14, padding: 12, borderRadius: 14, background: 'rgba(240,122,92,0.08)', border: '1px solid rgba(240,122,92,0.4)', color: '#D85E40', fontSize: '0.9rem' }}>{error}</div>
+            <div role="alert" style={{ marginBottom: 14, padding: 12, borderRadius: 14, background: 'rgba(240,122,92,0.08)', border: '1px solid rgba(240,122,92,0.4)', color: '#D85E40', fontSize: '0.9rem' }}>{error}</div>
           )}
           <div style={{ display: 'grid', gap: 14 }}>
             <Field label="Your name *" value={name} onChange={setName} placeholder="Jane Smith" />
@@ -88,11 +92,11 @@ export const Schools: React.FC = () => {
             <FieldArea label="Anything else?" value={notes} onChange={setNotes} placeholder="Tell us what you'd like to try..." />
           </div>
           <div style={{ marginTop: 22 }}>
-            <button type="button" className="btn btn-primary lg" onClick={submit} disabled={sending} style={sending ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}>
-              {sending ? 'Sending…' : 'Send Request'}
+            <button type="submit" className="btn btn-primary lg" disabled={sending} style={sending ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}>
+              {sending ? 'Sending...' : 'Send Request'}
             </button>
           </div>
-        </div>
+        </form>
       )}
     </LegalPageLayout>
   );

@@ -26,10 +26,17 @@ declare global {
 }
 
 let active = false;
+// Set while a child route is on screen (WP2B.1). Every track call no-ops.
+let suspended = false;
 
 export function isMetaActive(): boolean {
   return active;
 }
+
+export function suspendMetaPixel(): void { suspended = true; }
+export function resumeMetaPixel(): void { suspended = false; }
+/** Test helper. */
+export function isMetaSuspended(): boolean { return suspended; }
 
 /** Load fbevents.js + init the pixel. Idempotent; safe to call from the
  *  deferred post-interactive loader. No-op when the pixel id is unset. */
@@ -67,7 +74,7 @@ export interface MetaParams {
 
 /** Fire a Meta event (standard or custom). Best-effort; never throws. */
 export function trackMeta(event: string, params: MetaParams = {}, eventId?: string): void {
-  if (!active || typeof window === 'undefined' || !window.fbq) return;
+  if (!active || suspended || typeof window === 'undefined' || !window.fbq) return;
   try {
     const opts = eventId ? { eventID: eventId } : undefined;
     if (CUSTOM_EVENTS.has(event)) window.fbq('trackCustom', event, params, opts);
@@ -79,7 +86,7 @@ export function trackMeta(event: string, params: MetaParams = {}, eventId?: stri
 
 /** SPA route change — the base snippet only fires PageView once. */
 export function trackMetaPageView(): void {
-  if (!active || typeof window === 'undefined' || !window.fbq) return;
+  if (!active || suspended || typeof window === 'undefined' || !window.fbq) return;
   try { window.fbq('track', 'PageView'); } catch { /* no-op */ }
 }
 

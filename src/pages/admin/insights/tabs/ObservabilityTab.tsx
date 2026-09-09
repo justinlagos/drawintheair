@@ -13,14 +13,14 @@ import { fetchObservability } from '../rpc';
 import type { FilterState, ObservabilityData, SloBlock, SloStatus } from '../types';
 
 const SEV_TONES: Record<'info' | 'warn' | 'critical', string> = {
-    info:     '#55DDE0',
-    warn:     '#FFB14D',
-    critical: '#FF6B6B',
+    info:     '#5BCE9A',
+    warn:     '#FFC83D',
+    critical: '#F07A5E',
 };
 const SLO_TONES: Record<SloStatus, string> = {
-    green:   '#7ED957',
-    amber:   '#FFB14D',
-    red:     '#FF6B6B',
+    green:   '#5BCE9A',
+    amber:   '#FFC83D',
+    red:     '#F07A5E',
     no_data: '#9094B0',
 };
 
@@ -60,12 +60,12 @@ export const ObservabilityTab: React.FC<{ filter: FilterState }> = ({ filter }) 
             {/* Engineering banner */}
             <div className="iv-col-12">
                 <div style={{
-                    background: 'rgba(108, 63, 164, 0.04)',
-                    border: '1px solid rgba(108, 63, 164, 0.16)',
+                    background: 'rgba(138, 102, 240, 0.04)',
+                    border: '1px solid rgba(138, 102, 240, 0.16)',
                     borderRadius: 12, padding: '10px 14px', marginBottom: 12,
                     font: '12.5px/1.4 Nunito, system-ui, sans-serif', color: '#3F4052',
                 }}>
-                    <strong style={{ color: '#6C3FA4' }}>Observability + SLOs.</strong>{' '}
+                    <strong style={{ color: '#8A66F0' }}>Observability + SLOs.</strong>{' '}
                     Engineering surface for pipeline health, ingestion integrity,
                     latency budgets, and the rolling anomaly log. Anomaly detector
                     runs every 5 minutes inside the cron pipeline.
@@ -142,7 +142,7 @@ export const ObservabilityTab: React.FC<{ filter: FilterState }> = ({ filter }) 
                                              title={`${new Date(p.h).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}, ${fmtNum(p.n)} events`}
                                              style={{
                                                  flex: 1, height: `${h}px`,
-                                                 background: 'linear-gradient(180deg, #7E4FB8, #6C3FA4)',
+                                                 background: 'linear-gradient(180deg, #9D7DFF, #8A66F0)',
                                                  borderRadius: '3px 3px 0 0',
                                                  minHeight: 2,
                                              }} />
@@ -235,7 +235,7 @@ const SloTile: React.FC<{ sloKey: string; slo: SloBlock }> = ({ sloKey, slo }) =
                 color: 'var(--flat)', textTransform: 'uppercase', letterSpacing: 0.5,
             }}>{meta.label}</div>
             <div style={{
-                font: '700 20px Fredoka, system-ui, sans-serif',
+                font: '700 20px Outfit, system-ui, sans-serif',
                 color: 'var(--ink)',
             }}>{currentDisplay}</div>
             <div style={{ font: '11px Nunito, system-ui, sans-serif', color: 'var(--flat)' }}>

@@ -28,6 +28,9 @@ function readSelectedChildId(): string | null {
 
 export interface UsePlayControls {
   gate: PlayGateResult;
+  /** Raw inputs behind `gate`, exposed for the mode mount guard. */
+  controls: ParentControls | null;
+  todaySeconds: number;
   /** Active learner id, or null for anonymous play. */
   childId: string | null;
   /** Record active seconds played (from the game loop / on activity end). */
@@ -76,5 +79,5 @@ export function usePlayControls(): UsePlayControls {
     setTodaySeconds(addTodaySeconds(id, delta));
   }, []);
 
-  return { gate, childId, addActiveSeconds, refresh: load };
+  return { gate, controls, todaySeconds, childId, addActiveSeconds, refresh: load };
 }

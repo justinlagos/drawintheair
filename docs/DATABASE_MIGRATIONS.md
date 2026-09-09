@@ -3,18 +3,33 @@
 Supabase / PostgreSQL. Production project ref: **`fmrsfjxwswzhvicylaph`**.
 
 ## Where migrations live
-- Root app: `supabase/migrations/NNNN_*.sql` (e.g. `0027_join_pilot_hardening.sql`).
+- Root app: `supabase/migrations/`.
 - Platform app: `platform/supabase/migrations/YYYYMMDD_*.sql`.
 
-> **Known issue to tidy:** the root set has a numbering collision — two `0024_*` files
-> (`0024_billing_health_cron.sql`, `0024_subscription_event_ordering.sql`). Renumber one
-> of them in a `chore/` PR so ordering is unambiguous. Also commit any migrations that are
-> currently untracked before relying on them.
+> **Reconciled 2026-09-08 (WP1A.3 / DIA-004).** The root set now agrees with what production's
+> `supabase_migrations.schema_migrations` records. The numbering collision on `0022`/`0023`/`0024`
+> is gone (those six files carry timestamp versions taken from the commits that added them), 18
+> files were renamed to the version production actually recorded, 14 no-op placeholder files stand
+> in for production history rows whose original SQL is not recoverable, and
+> `20260908000000_baseline_prod_schema.sql` is the verified reconstruction of the 2026-09-08
+> production schema. Full account and the production procedure:
+> `docs/audits/evidence/release/WP1A.3/README.md` and `PRODUCTION_RUNBOOK.md`.
+>
+> **Building a fresh local database:** apply `20260908000000_baseline_prod_schema.sql` on its own.
+> The 44 files that predate it still execute on `supabase db reset` and several are not idempotent
+> against the baseline (logged as finding 43).
+>
+> **Do not run `supabase db push` against production** until the runbook's step 3 has been applied
+> there. Before that, the CLI reads 32 applied production migrations as unapplied.
 
 ## Naming
-- Root: zero-padded sequence + short description, e.g. `0028_add_session_idempotency.sql`.
+- Root: `YYYYMMDDHHMMSS_short_description.sql` for anything new. The remaining zero-padded
+  `0004`–`0021` names are historical and match production's recorded versions; do not renumber
+  them.
 - Platform: `YYYYMMDD_short_description.sql`.
 - One logical change per migration. Prefer **additive and reversible** changes.
+- The filename version and description must match the `version` and `name` the database records,
+  because the Supabase CLI matches on the version.
 
 ## Process
 1. **Write** the migration locally.

@@ -22,9 +22,11 @@ check + this doc.
 
 | Directive | Origin | What it's for |
 |---|---|---|
-| `connect-src` | `https://cdn.jsdelivr.net` | MediaPipe Tasks Vision WASM binary fetch |
-| `script-src` | `https://cdn.jsdelivr.net` | MediaPipe `vision_wasm_internal.js` loader script |
-| `connect-src` | `https://storage.googleapis.com` | MediaPipe `hand_landmarker.task` model download |
+| `script-src` | `'self'` | Self-hosted MediaPipe loader script at `/mediapipe/<version>/wasm/` (primary since DIA-020) |
+| `connect-src` | `'self'` | Self-hosted MediaPipe WASM binary and `hand_landmarker.task` model (primary since DIA-020) |
+| `connect-src` | `https://cdn.jsdelivr.net` | MediaPipe Tasks Vision WASM binary fetch (fallback) |
+| `script-src` | `https://cdn.jsdelivr.net` | MediaPipe `vision_wasm_internal.js` loader script (fallback) |
+| `connect-src` | `https://storage.googleapis.com` | MediaPipe `hand_landmarker.task` model download (fallback) |
 | `worker-src` | `blob:` | MediaPipe spawns Web Workers from blob URLs for WASM threading |
 | `connect-src` | `https://fmrsfjxwswzhvicylaph.supabase.co` | Supabase REST + auth API |
 | `connect-src` | `wss://fmrsfjxwswzhvicylaph.supabase.co` | Supabase realtime websocket |
