@@ -38,3 +38,6 @@ internal/
 # Vitest transient config timestamp files (never commit)
 vitest.config.ts.timestamp-*.mjs
 
+
+# SEO engine cycle output (run artifacts, never committed)
+.seo-engine/

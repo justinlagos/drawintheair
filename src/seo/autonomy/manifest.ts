@@ -27,6 +27,23 @@ export type MetadataPatch = Partial<PageMetadata>;
  * exact edit, and how success will be judged. Carries the ProposedChange shape
  * the classifier consumes so the executor can re-validate it (defence in depth).
  */
+/**
+ * What the drafting step is asked to write, and the fence around it. The
+ * planner emits a brief from evidence; the drafter (a later component) turns
+ * it into a metadataPatch that the executor then re-validates. A change with a
+ * brief and no patch is a planned-but-unwritten change and is always held.
+ */
+export interface ChangeBrief {
+  /** Current values of the fields in play, for diffing and rollback. */
+  current: MetadataPatch;
+  /** Search queries (with impressions) the new copy must stay faithful to. */
+  supportedQueries: { query: string; impressions: number; position: number }[];
+  /** Evidence-first rationale, one or two sentences. */
+  rationale: string;
+  /** Hard constraints the draft must satisfy (intent, claims, length, positioning). */
+  constraints: string[];
+}
+
 export interface SeoChange {
   id: string;
   url: string;                    // canonical path, e.g. '/letter-tracing'
@@ -35,6 +52,8 @@ export interface SeoChange {
   evidenceRef: string;            // pointer into the evidence store (GSC query id, etc.)
   /** The concrete edit, for metadata actions. Other actions carry their own payloads later. */
   metadataPatch?: MetadataPatch;
+  /** The drafting brief when the concrete edit has not been written yet. */
+  brief?: ChangeBrief;
   /** The metric that will decide success, and the window in days. */
   successMetric: string;
   evaluationWindowDays: number;

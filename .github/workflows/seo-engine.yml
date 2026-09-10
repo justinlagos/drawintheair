@@ -1,19 +1,20 @@
-# Autonomous SEO Engine — scheduled cycle runner.
+# Autonomous SEO Engine — cycle runner.
 #
-# SKELETON: manual-dispatch only and inert until credentials are configured.
-# scripts/seo-cycle.mjs exits 0 with no writes when secrets are absent, so this
-# workflow is safe to merge now and does nothing until we deliberately wire it up.
+# Manual-dispatch only while the policy mode in src/seo/autonomy/policy.ts is
+# `shadow`: each run reads Search Console + the analytics DB (read-only role),
+# discovers, scores, guard-rails and plans, then HOLDS every change and writes
+# the cycle record + summary as a run artifact and job summary. Nothing is
+# merged or deployed. `permissions: contents: read` makes that structural.
 #
-# When the engine's data + execution components land AND its autonomy mode in
-# src/seo/autonomy/policy.ts is moved past `shadow`, enable the weekly schedule
-# below and widen `permissions` (contents: write, pull-requests: write) so it can
-# open PRs. Until then it only reads.
+# To move past shadow: flip the policy mode in a reviewed PR, enable the
+# schedule below, and widen permissions (contents: write, pull-requests: write)
+# in the same PR so the engine can open its own PRs. Never widen here alone.
 name: SEO Engine
 
 on:
   workflow_dispatch: {}
   # schedule:
-  #   - cron: '0 6 * * 1'   # weekly, Monday 06:00 UTC — enable with credentials
+  #   - cron: '0 6 * * 1'   # weekly, Monday 06:00 UTC — enable with the mode change
 
 permissions:
   contents: read
@@ -35,9 +36,17 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - run: node scripts/seo-cycle.mjs
+      - run: npx tsx scripts/seo-engine/cycle.ts
         env:
           GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_READ_KEY: ${{ secrets.SUPABASE_SERVICE_READ_KEY }}
           SEO_ENGINE_GH_TOKEN: ${{ secrets.SEO_ENGINE_GH_TOKEN }}
+          SEO_ENGINE_OUT: .seo-engine/out
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: seo-engine-cycle
+          path: .seo-engine/out
+          if-no-files-found: ignore
+          retention-days: 90

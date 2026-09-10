@@ -80,17 +80,31 @@ Search Console → Analytics → Site/technical audit
    policy (RED always blocked, AMBER limits enforced, budget caps). When the
    executor lands, CI also runs the classifier over each cycle's change manifest
    so a policy violation fails the build.
-2. **Opportunity scorer** — ingest Search Console (queries, pages, CTR, position,
-   coverage) + analytics (the qualified-usage funnel) + a technical crawl; map raw
-   figures to the normalised 0–1 dimensions the classifier already accepts.
-3. **Risk evaluator** — compute the risk dimensions for a proposed change; returns
-   Green/Amber/Red via the classifier.
-4. **Change planner** — generate the exact, minimal modification for a permitted
-   opportunity (the diff), with its hypothesis and success metric attached.
-5. **Executor** — apply only permitted changes on a branch; never touches RED
+2. **Opportunity scorer** — SHIPPED (`evidence.ts`, `signals.ts`,
+   `discover.ts`). Search Console page×query rows and the entry-page funnel
+   are normalised to canonical paths and mapped to the 0–1 opportunity
+   dimensions. Discovery emits only what the metadata executor can act on:
+   `title_query_mismatch` (AMBER page_title), `ctr_gap` (GREEN
+   meta_description), `duplicate_metadata`, `missing_description`. Thresholds
+   live in `DEFAULT_THRESHOLDS` (200 impressions, position ≤ 20, CTR under half
+   the expected curve, a supporting query needs 100 impressions and 20% of the
+   page). The child play area, app, auth and admin paths are excluded by
+   `isEngineEligiblePath` before anything is scored.
+3. **Risk evaluator** — SHIPPED (`signals.ts` `riskSignalsFor`): a static risk
+   profile per action type, raised for homepage/positioning pages and when a
+   query splits across pages (cannibalisation detection in `discover.ts`).
+4. **Change planner** — SHIPPED (`planner.ts`). Scores, runs the opportunity ×
+   risk matrix (`decide`), classifies under the live policy AND under a
+   projected green-amber policy (so shadow runs show what the engine would do),
+   then fills the cycle within budget. It writes a **brief** (current values,
+   supporting queries, rationale, hard constraints) and no copy: the drafter is
+   the next component and the executor re-validates whatever it writes. The
+   two CI-backed preconditions stay false until the engine's PR has run the gate.
+5. **Executor** — metadata surface shipped (`executor.ts`); write-back to
+   `seo-config.ts` + PR opening is the next component. Never touches RED
    surfaces; enforces the per-cycle budget.
-6. **Verification layer** — post-deploy checks (canonicals, sitemap, structured
-   data, routes, 404s, performance) reusing the PR-1/PR-2 verification approach.
+6. **Verification layer** — page checks shipped (`verify.ts`); the post-deploy
+   runner (fetch live pages, compare to expectations) lands with write-back.
 7. **Measurement layer** — the data decides, not the AI. Fixed windows: 7d
    technical sanity, 14d early signal, 28d meaningful SEO, 56d for low-volume
    queries. Compares against the recorded baseline.
@@ -125,8 +139,33 @@ Captured before any engine change, from the first Search Console pull:
 measurement layer compares every intervention's window against this and against
 the pre-change state of the specific page.
 
+## Running a cycle
+
+`npx tsx scripts/seo-engine/cycle.ts` (the `SEO Engine` Action does exactly this
+on `workflow_dispatch`). One run:
+
+1. Reads Search Console for the last 28 final days and the 28 before them
+   (`scripts/seo-engine/gsc.ts`, service-account JWT in `google-auth.ts`, scope
+   `webmasters.readonly`).
+2. Reads the funnel by **entry page** through the `seo_engine_ro` role
+   (`scripts/seo-engine/funnel.ts`). The event → step mapping is
+   `FUNNEL_DEFINITION` in that file; changing it is a human PR, never the engine.
+   If the funnel read fails the cycle exits 1 and plans nothing: the primary
+   outcome is unmeasurable, so "rankings only" decisions are not allowed.
+3. Loads the metadata the engine owns (every `PAGE_META` entry, by canonical path).
+4. Discover → score → guardrails → decide → plan → execute (held in shadow).
+5. Writes `.seo-engine/out/cycle-<id>.json` (record + evidence) and `.md`
+   (summary), uploads them as the run artifact `seo-engine-cycle` (90 days), and
+   appends the summary to the job summary. The JSON records are the seed of the
+   learning memory.
+
+Optional env: `GSC_PROPERTY` (default `sc-domain:drawintheair.com`),
+`SEO_ENGINE_WINDOW_DAYS` (28), `SEO_ENGINE_OUT`.
+
 ## Current status
 
-- Component 1 shipped (this PR): policy, classifier, tests, and this plan.
-- Engine holds until post-recrawl Search Console data exists (PR #1/#2 just
-  shipped; recrawl requested). First real cycles run in `shadow` mode.
+- Components 1–4 shipped; 5 and 6 partially (metadata executor + page checks).
+- Every run is `shadow`: it reads, scores, plans and holds. Nothing merges.
+- Next: the drafter (turns a brief into a metadata patch under the brief's
+  constraints), write-back to `seo-config.ts` on a branch + PR via
+  `SEO_ENGINE_GH_TOKEN`, then measurement against the cycle records.
