@@ -121,7 +121,7 @@ export default function ForParentsPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
           {[
             { label: 'Homeschool Families', path: '/homeschool-movement-learning', icon: '🏠' },
-            { label: 'Classroom Teachers', path: '/for-teachers', icon: '👩‍🏫' },
+            { label: 'Classroom Teachers', path: '/teachers', icon: '👩‍🏫' },
             { label: 'Hand-Eye Coordination', path: '/hand-eye-coordination-activities', icon: '🎯' },
             { label: 'AI Learning for Kids', path: '/ai-learning-tools-for-kids', icon: '🤖' },
             { label: 'Free Resources', path: '/free-resources', icon: '📥' },

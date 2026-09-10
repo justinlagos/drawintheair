@@ -246,10 +246,10 @@ export default function SpecialActivityPage({ slug }: SpecialActivityPageProps) 
                     ))}
                 </div>
                 <div style={{ marginTop: 24, display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                    <button onClick={() => navigate('/for-teachers')} style={{ background: 'rgba(138,102,240,0.08)', border: '1px solid rgba(138,102,240,0.212)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#7A55E0', fontWeight: 600, fontSize: '0.82rem' }}>
+                    <button onClick={() => navigate('/teachers')} style={{ background: 'rgba(138,102,240,0.08)', border: '1px solid rgba(138,102,240,0.212)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#7A55E0', fontWeight: 600, fontSize: '0.82rem' }}>
                         👩‍🏫 For Teachers
                     </button>
-                    <button onClick={() => navigate('/for-parents')} style={{ background: 'rgba(138,102,240,0.08)', border: '1px solid rgba(138,102,240,0.212)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#7A55E0', fontWeight: 600, fontSize: '0.82rem' }}>
+                    <button onClick={() => navigate('/parents')} style={{ background: 'rgba(138,102,240,0.08)', border: '1px solid rgba(138,102,240,0.212)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#7A55E0', fontWeight: 600, fontSize: '0.82rem' }}>
                         👨‍👩‍👧 For Parents
                     </button>
                     <button onClick={() => navigate('/learn')} style={{ background: 'rgba(138,102,240,0.08)', border: '1px solid rgba(138,102,240,0.212)', borderRadius: 20, padding: '8px 16px', cursor: 'pointer', color: '#7A55E0', fontWeight: 600, fontSize: '0.82rem' }}>

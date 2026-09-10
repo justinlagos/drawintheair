@@ -110,6 +110,12 @@ export const PAGE_META = {
     keywords: ['edtech for primary schools', 'EYFS movement learning', 'KS1 classroom activities', 'whole-school licence learning app', 'chromebook classroom activities', 'school pilot early years'],
     canonical: '/schools',
   },
+  teachers: {
+    title: 'Draw in the Air for Teachers, EYFS Movement Learning for the Classroom',
+    description: 'Whole-class movement learning from one laptop and a webcam. EYFS-aligned letter, number and shape activities, no child accounts, no installs, works on Chromebooks and interactive whiteboards. Free classroom pilot.',
+    keywords: ['classroom learning app teachers', 'EYFS classroom activities', 'gesture learning tool teachers', 'chromebook classroom activities', 'interactive whiteboard learning game', 'movement learning classroom', 'no-login classroom app'],
+    canonical: '/teachers',
+  },
   parents: {
     title: 'Draw in the Air for Families, Movement Learning at Home | Draw in the Air',
     description: 'A movement-first learning space for children aged 3 to 7. Trace letters and numbers, paint and play in the air using just a webcam. No child accounts, no recordings. Free to start; Family plan with a 7-day trial.',

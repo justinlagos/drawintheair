@@ -76,7 +76,7 @@ describe('audience inference', () => {
     });
     it('maps each audience to a distinct next step', () => {
         expect(pathForAudience('home')?.href).toBe('/parent/signup');
-        expect(pathForAudience('school')?.href).toBe('/for-teachers');
+        expect(pathForAudience('school')?.href).toBe('/teachers');
         expect(pathForAudience('unknown')).toBeNull();
     });
 });

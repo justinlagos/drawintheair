@@ -50,8 +50,6 @@ import SchoolPilot from './pages/SchoolPilot';
 import EmbedPage from './pages/seo/EmbedPage';
 import PressPage from './pages/seo/PressPage';
 import FreeResourcesPage from './pages/seo/FreeResourcesPage';
-import ForTeachersPage from './pages/seo/ForTeachersPage';
-import ForParentsPage from './pages/seo/ForParentsPage';
 import EducationPage from './pages/seo/EducationPage';
 import LearnHubPage from './pages/seo/LearnHubPage';
 import LearnArticlePage from './pages/seo/LearnArticlePage';
@@ -109,8 +107,6 @@ const STATIC_PAGES: Record<StaticPath, StaticPage> = {
   '/embed': { src: `${P}/seo/EmbedPage.tsx`, element: () => <EmbedPage /> },
   '/press': { src: `${P}/seo/PressPage.tsx`, element: () => <PressPage /> },
   '/free-resources': { src: `${P}/seo/FreeResourcesPage.tsx`, element: () => <FreeResourcesPage /> },
-  '/for-teachers': { src: `${P}/seo/ForTeachersPage.tsx`, element: () => <ForTeachersPage /> },
-  '/for-parents': { src: `${P}/seo/ForParentsPage.tsx`, element: () => <ForParentsPage /> },
   '/learn': { src: `${P}/seo/LearnHubPage.tsx`, element: () => <LearnHubPage /> },
   '/letter-tracing': { src: `${P}/seo/LetterTracingHubPage.tsx`, element: () => <LetterTracingHubPage /> },
 };

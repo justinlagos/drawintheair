@@ -39,8 +39,7 @@ const CANONICAL_MARKETING = [
   '/schools',
   '/schools/training',
   '/parents',            // client-rendered, still a canonical indexable page
-  '/for-parents',
-  '/for-teachers',
+  '/teachers',           // canonical; /for-teachers 301s here
   '/free-paint',
   '/letter-tracing',     // the tracing hub (self-canonical)
   '/learn',

@@ -26,11 +26,12 @@ export const STATIC_PATHS = [
   '/embed',
   '/press',
   '/free-resources',
-  '/for-teachers',
-  '/for-parents',
   '/learn',
   '/letter-tracing',
 ] as const;
+// NOTE: '/for-teachers' and '/for-parents' were removed here when they became
+// 301 redirects to /teachers and /parents (see vercel.json). Their content was
+// migrated into those canonical pages.
 
 export type StaticPath = (typeof STATIC_PATHS)[number];
 

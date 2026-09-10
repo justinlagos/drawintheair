@@ -53,7 +53,7 @@ const MARK_START = '<!--dia-ssr-start-->';
 const MARK_END = '<!--dia-ssr-end-->';
 
 // Paths that are 301-redirected in vercel.json — do not prerender these.
-const REDIRECTED = new Set(['/stem-learning']);
+const REDIRECTED = new Set(['/stem-learning', '/for-parents', '/for-teachers']);
 
 function escAttr(s = '') {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

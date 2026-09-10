@@ -227,8 +227,8 @@ export default function FreeResourcesPage() {
                 { label: '✏️ Letter Tracing A–Z', path: '/letter-tracing' },
                 { label: '🔢 Number Tracing', path: '/trace-number-1' },
                 { label: '⭕ Shape Tracing', path: '/trace-circle' },
-                { label: '👩‍🏫 For Teachers', path: '/for-teachers' },
-                { label: '👨‍👩‍👧 For Parents', path: '/for-parents' },
+                { label: '👩‍🏫 For Teachers', path: '/teachers' },
+                { label: '👨‍👩‍👧 For Parents', path: '/parents' },
               ].map(link => (
                 <Link key={link.path} to={link.path} className="btn btn-ghost md">
                   {link.label}

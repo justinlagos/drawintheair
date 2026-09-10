@@ -103,8 +103,8 @@ export default function LearnHubPage() {
         <p style={{ color: '#4A4D6B', fontSize: '0.9rem', marginBottom: 20 }}>Jump to specific areas of the platform or explore related educational content.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
           {[
-            { label: '🧒 For Parents', path: '/for-parents' },
-            { label: '👩‍🏫 For Teachers', path: '/for-teachers' },
+            { label: '🧒 For Parents', path: '/parents' },
+            { label: '👩‍🏫 For Teachers', path: '/teachers' },
             { label: '🏠 For Homeschool', path: '/for-homeschool' },
             { label: '🤖 AI Learning Tools', path: '/ai-learning-tools-for-kids' },
             { label: '📥 Free Worksheets', path: '/free-resources' },

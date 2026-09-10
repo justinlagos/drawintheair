@@ -314,7 +314,7 @@ export function CalmFooter() {
             <ul>
               <li><Link to="/teachers">For teachers</Link></li>
               <li><Link to="/schools">Pilot programme</Link></li>
-              <li><Link to="/for-teachers#eyfs-mapping">EYFS mapping</Link></li>
+              <li><Link to="/teachers#eyfs-mapping">EYFS mapping</Link></li>
               <li><Link to="/teachers">Classroom guides</Link></li>
             </ul>
           </div>
@@ -631,7 +631,7 @@ export const Landing: React.FC = () => {
                 </div>
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                   <Link to="/teachers" className="btn btn-primary md">Start a pilot</Link>
-                  <Link to="/for-teachers#eyfs-mapping" className="btn btn-ghost md">
+                  <Link to="/teachers#eyfs-mapping" className="btn btn-ghost md">
                     Read the EYFS mapping <Icon name="arrow" size={16} />
                   </Link>
                 </div>

@@ -42,7 +42,7 @@ export function deriveAudience(s: AudienceSignals): Audience {
 /** Where each audience should be guided next. */
 export function pathForAudience(a: Audience): { label: string; href: string } | null {
     if (a === 'home') return { label: "Save your child's progress", href: '/parent/signup' };
-    if (a === 'school') return { label: 'Get free classroom resources', href: '/for-teachers' };
+    if (a === 'school') return { label: 'Get free classroom resources', href: '/teachers' };
     return null;
 }
 

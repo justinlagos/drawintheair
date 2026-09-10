@@ -49,8 +49,8 @@ const LINK_HUB_COLS = [
   {
     title: 'Learn',
     links: [
-      { label: 'For Parents',     path: '/for-parents' },
-      { label: 'For Teachers',    path: '/for-teachers' },
+      { label: 'For Parents',     path: '/parents' },
+      { label: 'For Teachers',    path: '/teachers' },
       { label: 'For Homeschool',  path: '/for-homeschool' },
       { label: 'AI for Kids',     path: '/learn/ai-for-kids' },
       { label: 'Learning Hub',    path: '/learn' },
