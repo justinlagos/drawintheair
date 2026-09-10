@@ -1,71 +1,85 @@
+// scripts/generate-sitemap.ts
+//
+// Generates public/sitemap.xml from a single source of truth so it cannot
+// silently drift from the routes the app actually serves.
+//
+// WHAT GOES IN THE SITEMAP: only indexable, self-canonical URLs. That means
+//   - the curated marketing / legal / learn pages (CANONICAL_MARKETING),
+//   - the programmatic tracing spokes + the /letter-tracing hub,
+//   - the seasonal, viral and use-case landing pages,
+// and deliberately EXCLUDES:
+//   - robots-blocked surfaces (/school, /parent/*, /admin, /demo, the app),
+//   - non-canonical duplicates (/activities/letter-tracing → the hub owns
+//     that topic; /stem-learning → 301),
+//   - thin/utility pages we don't want competing in search (/pricing, /about).
+// Changing what is indexed is a deliberate editorial act — edit the lists
+// below, never let a route dump decide it.
+//
+// Run: `npx tsx scripts/generate-sitemap.ts` (or ts-node). Not wired into the
+// production build; the committed public/sitemap.xml is the shipped artifact
+// and this script reproduces it exactly.
+
 import fs from 'fs';
 import path from 'path';
+import { LETTERS, NUMBERS, SHAPES } from '../src/seo/seo-config';
+import {
+  EDUCATION_SLUGS,
+  LEARN_SLUGS,
+  USECASE_SLUGS,
+  SPECIAL_ACTIVITY_SLUGS,
+  VIRAL_PATHS,
+} from '../src/seo/prerender-paths';
 
-// Define the URLs based on the routing (excluding dynamic and administrative ones)
-const routes = [
+// Curated, hand-picked canonical pages (marketing, legal, hubs). The curation
+// — e.g. keeping /pricing and /about out — is editorial, so it is explicit
+// here rather than derived from the prerender route list.
+const CANONICAL_MARKETING = [
   '/',
   '/faq',
   '/schools',
   '/schools/training',
-  '/parents',
+  '/parents',            // client-rendered, still a canonical indexable page
+  '/for-parents',
+  '/for-teachers',
+  '/free-paint',
+  '/letter-tracing',     // the tracing hub (self-canonical)
+  '/learn',
+  '/embed',
+  '/press',
+  '/free-resources',
   '/privacy',
   '/terms',
   '/cookies',
   '/safeguarding',
   '/accessibility',
-  '/free-paint',
-  '/letter-tracing',
-  '/for-parents',
-  '/for-teachers',
-  '/learn',
-  '/learn/hand-tracking-for-kids',
-  '/learn/gesture-learning',
-  '/learn/drawing-skills-for-children',
-  '/learn/early-childhood-motor-skills',
-  '/embed',
-  '/press',
-  '/free-resources',
-  // Education
-  '/for-homeschool',
-  '/for-preschool',
-  '/for-kindergarten',
-  // Seasonal
-  '/activities/christmas-drawing-for-kids',
-  '/activities/halloween-drawing-kids',
-  '/activities/back-to-school-activities',
-  '/activities/valentines-drawing-kids',
-  '/activities/easter-drawing-kids',
-  '/activities/summer-activities-kids',
-  '/activities/thanksgiving-kids-activities',
-  '/activities/mothers-day-drawing-kids',
-  // Viral
-  '/draw-number-in-air',
-  '/air-drawing-challenge',
-  '/draw-circle-in-air'
 ];
 
-// Add activities manually or from your config
-const activities = ['bubble-pop', 'sort-and-place'];
-activities.forEach(a => routes.push(`/activities/${a}`));
+// Standard (non-seasonal) activity pages worth indexing. '/activities/letter-tracing'
+// is intentionally omitted — the /letter-tracing hub owns that query.
+const ACTIVITY_PATHS = ['/activities/bubble-pop', '/activities/sort-and-place'];
 
-// Add letters
-const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-letters.forEach(l => routes.push(`/trace-${l.toLowerCase()}`));
+const routes: string[] = [
+  ...CANONICAL_MARKETING,
+  ...EDUCATION_SLUGS.map((s) => `/${s}`),
+  ...USECASE_SLUGS.map((s) => `/${s}`),
+  ...LEARN_SLUGS.map((s) => `/learn/${s}`),
+  ...SPECIAL_ACTIVITY_SLUGS.map((s) => `/activities/${s}`),
+  ...VIRAL_PATHS,
+  ...ACTIVITY_PATHS,
+  ...LETTERS.map((l) => `/trace-${l.toLowerCase()}`),
+  ...NUMBERS.map((n) => `/trace-number-${n}`),
+  ...SHAPES.map((s) => `/trace-${s}`),
+];
 
-// Add numbers
-const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
-numbers.forEach(n => routes.push(`/trace-number-${n}`));
-
-// Add shapes
-const shapes = ['circle', 'triangle', 'square', 'star', 'heart', 'rectangle', 'diamond', 'oval'];
-shapes.forEach(s => routes.push(`/trace-${s}`));
+// De-dupe defensively and sort for a stable, reviewable diff.
+const unique = [...new Set(routes)].sort();
 
 const date = new Date().toISOString().split('T')[0];
 let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 `;
 
-routes.forEach(route => {
+unique.forEach((route) => {
   xml += `  <url>
     <loc>https://drawintheair.com${route}</loc>
     <lastmod>${date}</lastmod>
@@ -78,4 +92,4 @@ xml += `</urlset>`;
 
 const outputPath = path.resolve(process.cwd(), 'public', 'sitemap.xml');
 fs.writeFileSync(outputPath, xml, 'utf8');
-console.log(`Successfully generated sitemap with ${routes.length} URLs at ${outputPath}`);
+console.log(`Successfully generated sitemap with ${unique.length} URLs at ${outputPath}`);

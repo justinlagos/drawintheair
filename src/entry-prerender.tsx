@@ -59,6 +59,7 @@ import UseCasePage from './pages/seo/UseCasePage';
 import ActivityPage from './pages/seo/ActivityPage';
 import SpecialActivityPage from './pages/seo/SpecialActivityPage';
 import TracePage from './pages/seo/TracePage';
+import LetterTracingHubPage from './pages/seo/LetterTracingHubPage';
 
 import { LETTERS, NUMBERS, SHAPES } from './seo/seo-config';
 import {
@@ -111,6 +112,7 @@ const STATIC_PAGES: Record<StaticPath, StaticPage> = {
   '/for-teachers': { src: `${P}/seo/ForTeachersPage.tsx`, element: () => <ForTeachersPage /> },
   '/for-parents': { src: `${P}/seo/ForParentsPage.tsx`, element: () => <ForParentsPage /> },
   '/learn': { src: `${P}/seo/LearnHubPage.tsx`, element: () => <LearnHubPage /> },
+  '/letter-tracing': { src: `${P}/seo/LetterTracingHubPage.tsx`, element: () => <LetterTracingHubPage /> },
 };
 
 const STATIC_ROUTES: PrerenderRoute[] = STATIC_PATHS.map((path) => ({ path, ...STATIC_PAGES[path] }));
@@ -155,9 +157,9 @@ export const ROUTES: PrerenderRoute[] = [
   })),
 
   // Programmatic trace pages: 26 letters + 10 numbers + 8 shapes.
-  // '/letter-tracing' is intentionally absent: TracePage canonicalises it
-  // to /trace-a, which would fight PAGE_META's '/letter-tracing' canonical.
-  // It keeps its head-only prerender until that conflict is resolved.
+  // '/letter-tracing' is the dedicated hub (LetterTracingHubPage, in
+  // STATIC_PAGES above) and self-canonicalises to /letter-tracing; the
+  // per-letter spokes below canonicalise to their own /trace-<x> URLs.
   ...LETTERS.map((l) => ({
     path: `/trace-${l.toLowerCase()}`,
     src: `${P}/seo/TracePage.tsx`,

@@ -111,9 +111,9 @@ describe('robots.txt matcher', () => {
 });
 
 describe('public/robots.txt against the prerendered routes', () => {
-  it('prerenders the 93 production routes', () => {
-    expect(PRERENDER_PATHS).toHaveLength(93);
-    expect(new Set(PRERENDER_PATHS).size).toBe(93);
+  it('prerenders the 94 production routes', () => {
+    expect(PRERENDER_PATHS).toHaveLength(94);
+    expect(new Set(PRERENDER_PATHS).size).toBe(94);
   });
 
   it('does not disallow any public prerendered route', () => {

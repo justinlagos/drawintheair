@@ -26,6 +26,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { HeaderNav } from '../components/landing/HeaderNav';
 import { BrandLogo } from '../components/BrandLogo';
 import { logEvent } from '../lib/analytics';
+import { SEOMeta } from '../seo/SEOMeta';
+import {
+  SITE, PAGE_META,
+  buildOrganizationSchema, buildSoftwareAppSchema, buildFAQSchema,
+} from '../seo/seo-config';
 import '../components/landing/landing-calm.css';
 
 /* =====================================================================
@@ -349,6 +354,18 @@ export const Landing: React.FC = () => {
 
   return (
     <div ref={rootRef} className="lp-shell">
+      <SEOMeta
+        title={PAGE_META.home.title}
+        description={PAGE_META.home.description}
+        keywords={PAGE_META.home.keywords}
+        canonical="/"
+        ogImage={SITE.ogImage}
+        structuredData={[
+          buildOrganizationSchema(),
+          buildSoftwareAppSchema(),
+          buildFAQSchema(HOME_FAQ),
+        ]}
+      />
       <GestureTrail />
       <HeaderNav />
       <div className="page" data-screen-label="Home">
