@@ -10,6 +10,16 @@
       "permanent": true
     },
     {
+      "source": "/for-parents",
+      "destination": "/parents",
+      "permanent": true
+    },
+    {
+      "source": "/for-teachers",
+      "destination": "/teachers",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [
         {

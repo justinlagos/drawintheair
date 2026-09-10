@@ -17,6 +17,11 @@ import {
   CalmFooter, FAQList, GestureTrail, SectionHead,
 } from './Landing';
 import { HeaderNav } from '../components/landing/HeaderNav';
+import { SEOMeta } from '../seo/SEOMeta';
+import {
+  PAGE_META,
+  buildOrganizationSchema, buildSoftwareAppSchema, buildFAQSchema, buildBreadcrumbSchema,
+} from '../seo/seo-config';
 import '../components/landing/landing-calm.css';
 
 function ArrowIcon({ size = 16 }: { size?: number }) {
@@ -78,16 +83,89 @@ const PILOT_STEPS = [
 
 const TEACHER_FAQ = [
   { q: 'Do children need accounts?',         a: 'No. Children never log in. You open the activity on the class device, pupils join the movement, not a system. Teacher accounts exist only for analytics and classroom mode.' },
+  { q: 'Does it work on school Chromebooks?', a: 'Yes. Draw in the Air is a browser-based web app and runs on Chrome on Chromebooks. It needs only camera access, which most school Chromebooks support. No installation or admin approval is needed on most school networks.' },
+  { q: 'Can I use it on an interactive whiteboard?', a: 'Absolutely. Display it on your IWB through any connected laptop. The teacher can demonstrate a gesture to the whole class while pupils follow along, or the class can play together in classroom mode.' },
+  { q: 'Is any student data collected?',     a: 'No faces, audio or video are ever collected, and the camera feed never leaves the device. A child joining a class session types a first name or nickname the teacher can see and delete. No child emails or contact details are collected. Usage analytics are pseudonymous, tied to a random browser id and never to a real child, aggregated for reporting, and auto-deleted after 365 days. The platform is designed around UK GDPR.' },
+  { q: 'Which curriculum frameworks does it support?', a: 'Activities are mapped to the Early Years Foundation Stage (EYFS) in the UK and fit general pre-school and kindergarten readiness goals elsewhere. See the EYFS mapping section above for the activity-by-activity breakdown.' },
   { q: 'What about our IT restrictions?',    a: 'It runs in the browser with no install. We provide a Chromebook setup guide and the exact domains to allow-list for your network team.' },
+  { q: 'Can I embed it on our school website?', a: 'Yes. Visit drawintheair.com/embed for the free embed code and paste it into any school website or blog, great for homework pages or classroom portals.' },
   { q: 'Is there a cost to pilot?',          a: 'The pilot is free, and every activity is available in Class Mode sessions during the pilot. School licences are agreed with the school after the pilot.' },
+];
+
+// Curriculum alignment, migrated from the former /for-teachers page so the
+// canonical /teachers page carries the EYFS content and the #eyfs-mapping
+// anchor that the footer links to.
+const FRAMEWORKS = [
+  {
+    framework: 'EYFS (UK)',
+    tone: 'mint',
+    areas: [
+      'Communication, Language and Literacy',
+      'Physical Development, Fine Motor Skills',
+      'Mathematics, Numbers and Shape',
+      'Understanding the World, Technology',
+    ],
+  },
+  {
+    framework: 'General Pre-K',
+    tone: 'peach',
+    areas: [
+      'Alphabet knowledge A–Z',
+      'Numeral formation 1–10',
+      'Basic shape recognition',
+      'Hand-eye coordination development',
+    ],
+  },
+] as const;
+
+const EYFS_ACTIVITY_MAP = [
+  { activity: 'Letter Tracing (A–Z)', area: 'Literacy · Physical Development', goal: 'Letter formation and pre-writing movement patterns' },
+  { activity: 'Number Tracing (1–10)', area: 'Mathematics', goal: 'Numeral formation and number recognition' },
+  { activity: 'Shape Tracing', area: 'Mathematics, Shape, Space and Measure', goal: 'Shape recognition and controlled mark-making' },
+  { activity: 'Bubble Pop', area: 'Physical Development, Gross Motor', goal: 'Hand-eye coordination, crossing the midline' },
+  { activity: 'Sort and Place', area: 'Understanding the World · Mathematics', goal: 'Categorising, matching and early reasoning' },
+  { activity: 'Free Paint', area: 'Expressive Arts and Design', goal: 'Creative expression through movement' },
+];
+
+const USE_CASES = [
+  { icon: '📺', title: 'Interactive whiteboard demo', desc: 'Project Draw in the Air on your IWB and demonstrate letter formation to the whole class before individual practice time.' },
+  { icon: '💻', title: 'Computer lab activity', desc: 'Set every computer to the Letter Tracing or Number Tracing page for a structured 10-minute finger-gym warm-up.' },
+  { icon: '🏃', title: 'Brain break activity', desc: 'Use Bubble Pop for 5-minute movement breaks, pupils get physical activity without leaving their seats.' },
+  { icon: '🏠', title: 'Homework extension', desc: 'Share the link with parents for at-home practice. No setup, just send the URL and the activity name.' },
+  { icon: '📐', title: 'Maths warm-up', desc: 'Use Number Tracing 1–10 and Shape Tracing as a daily maths warm-up to reinforce numeral formation and geometry.' },
+  { icon: '🌐', title: 'Remote / hybrid learning', desc: 'Share your screen in Zoom or Meet to demonstrate activities. Pupils follow along on their own devices from home.' },
+];
+
+const TEACHERS_STRUCTURED_DATA = [
+  buildOrganizationSchema(),
+  buildSoftwareAppSchema(),
+  buildFAQSchema(TEACHER_FAQ),
+  buildBreadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'For Teachers', path: '/teachers' }]),
 ];
 
 export const Teachers: React.FC = () => {
   const rootRef = useRef<HTMLDivElement | null>(null);
   useReveal(rootRef);
 
+  // Honour deep links like /teachers#eyfs-mapping (footer link).
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (!hash) return;
+    const t = window.setTimeout(() => {
+      document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, []);
+
   return (
     <div ref={rootRef} className="lp-shell">
+      <SEOMeta
+        title={PAGE_META.teachers.title}
+        description={PAGE_META.teachers.description}
+        keywords={PAGE_META.teachers.keywords}
+        canonical="/teachers"
+        structuredData={TEACHERS_STRUCTURED_DATA}
+      />
       <GestureTrail />
       <HeaderNav />
       <div className="page" data-screen-label="For Teachers">
@@ -227,6 +305,111 @@ export const Teachers: React.FC = () => {
                 </video>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* USE CASES */}
+        <section className="section" data-screen-label="Use cases">
+          <div className="wrap">
+            <SectionHead
+              eyebrow="In the classroom"
+              tone="mint"
+              title="How teachers already use it."
+              lead="Six ways Draw in the Air slots into the school day you already run."
+            />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16 }}>
+              {USE_CASES.map((u) => (
+                <div key={u.title} className="card hoverable" style={{ padding: '22px 20px' }}>
+                  <div style={{ fontSize: '1.7rem', marginBottom: 10 }} aria-hidden="true">{u.icon}</div>
+                  <h3 className="h3" style={{ fontSize: '1.05rem', marginBottom: 6 }}>{u.title}</h3>
+                  <p style={{ fontSize: '0.88rem', lineHeight: 1.6, margin: 0, opacity: 0.8 }}>{u.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* EYFS / CURRICULUM MAPPING, canonical target of the footer link */}
+        <section className="section section-tint" id="eyfs-mapping" data-screen-label="EYFS mapping">
+          <div className="wrap">
+            <SectionHead
+              eyebrow="Curriculum alignment"
+              tone="sky"
+              title="EYFS mapping and curriculum links."
+              lead="Every activity is designed to support early childhood curriculum objectives across multiple frameworks."
+            />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginBottom: 36 }}>
+              {FRAMEWORKS.map((fw) => (
+                <div key={fw.framework} className="card" style={{ padding: '24px 22px' }}>
+                  <div className={`eyebrow is-${fw.tone}`} style={{ marginBottom: 14 }}>{fw.framework}</div>
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                    {fw.areas.map((a) => (
+                      <li key={a} style={{ fontSize: '0.88rem', marginBottom: 8, display: 'flex', gap: 8, lineHeight: 1.5 }}>
+                        <span aria-hidden="true" style={{ color: 'var(--mint-600, #2E9D68)', fontWeight: 700 }}>{'✓'}</span>{a}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+
+            <div className="card" style={{ padding: '26px 24px', overflowX: 'auto' }}>
+              <h3 className="h3" style={{ fontSize: '1.1rem', marginBottom: 14 }}>Activity-by-activity EYFS map</h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem', minWidth: 560 }}>
+                <thead>
+                  <tr style={{ textAlign: 'left' }}>
+                    {['Activity', 'EYFS area', 'Learning goal'].map((h) => (
+                      <th key={h} style={{ padding: '10px 12px', borderBottom: '2px solid var(--border-2, rgba(31,27,46,0.12))', fontFamily: 'var(--font-display)' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {EYFS_ACTIVITY_MAP.map((row) => (
+                    <tr key={row.activity}>
+                      <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--border-1, rgba(31,27,46,0.08))', fontWeight: 700 }}>{row.activity}</td>
+                      <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--border-1, rgba(31,27,46,0.08))' }}>{row.area}</td>
+                      <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--border-1, rgba(31,27,46,0.08))', opacity: 0.8 }}>{row.goal}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p style={{ fontSize: '0.85rem', marginTop: 16, marginBottom: 0, opacity: 0.75 }}>
+                Want the full Development Matters mapping with a ready-to-run session plan?{' '}
+                <a href="/classroom-guides/08-eyfs-reception-activity-guide.pdf" download style={{ fontWeight: 700 }}>
+                  Download the EYFS &amp; Reception Activity Guide (PDF)
+                </a>{' '}
+                , free, print-ready, no email required.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* PRIVACY / SAFEGUARDING */}
+        <section className="section" data-screen-label="Privacy">
+          <div className="wrap">
+            <SectionHead
+              eyebrow="Safe by design"
+              tone="peach"
+              title="Privacy your safeguarding lead will sign off."
+              lead="Built for classrooms first, which means child safety is the foundation, not a feature."
+            />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+              {[
+                { icon: '🎥', title: 'Camera stays on-device', desc: 'Hand tracking runs in the browser. No video is ever recorded, transmitted, or stored.' },
+                { icon: '🪪', title: 'No child accounts', desc: 'Children never log in. They join with a short class code and a first name or nickname, which the teacher controls and can delete.' },
+                { icon: '🛡️', title: 'UK GDPR by design', desc: 'Event analytics are pseudonymous, aggregated for reporting, and auto-deleted after 365 days.' },
+                { icon: '🔍', title: 'Publicly auditable', desc: 'Our live transparency page shows exactly what we measure and what we do not claim.' },
+              ].map((p) => (
+                <div key={p.title} className="card" style={{ padding: '22px 20px' }}>
+                  <div style={{ fontSize: '1.6rem', marginBottom: 10 }} aria-hidden="true">{p.icon}</div>
+                  <h3 className="h3" style={{ fontSize: '1rem', marginBottom: 6 }}>{p.title}</h3>
+                  <p style={{ fontSize: '0.86rem', lineHeight: 1.6, margin: 0, opacity: 0.8 }}>{p.desc}</p>
+                </div>
+              ))}
+            </div>
+            <p style={{ textAlign: 'center', marginTop: 22 }}>
+              <Link to="/transparency" className="btn btn-ghost md">Read our transparency report <ArrowIcon size={15} /></Link>
+            </p>
           </div>
         </section>
 

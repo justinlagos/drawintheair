@@ -22,7 +22,10 @@ import {
 } from '../Landing';
 import { HeaderNav } from '../../components/landing/HeaderNav';
 import { SEOMeta } from '../../seo/SEOMeta';
-import { PAGE_META } from '../../seo/seo-config';
+import {
+  PAGE_META,
+  buildOrganizationSchema, buildSoftwareAppSchema, buildFAQSchema, buildBreadcrumbSchema,
+} from '../../seo/seo-config';
 import { trackMeta } from '../../lib/observability';
 import '../../components/landing/landing-calm.css';
 
@@ -72,10 +75,20 @@ const PARENT_VALUE = [
 ];
 
 const PARENT_FAQ = [
-  { q: 'Will it work on our family laptop?', a: 'Almost certainly. Any laptop from the last five years with a webcam and Chrome, Edge, or Safari 15+ works. No phone or tablet app to install.' },
+  { q: 'Is Draw in the Air safe for my child?', a: 'Yes. The webcam feed is processed locally in the browser using Google\'s MediaPipe AI. No video is ever recorded, stored, or transmitted to any server, and no accounts are required for your child. It is technically impossible for us to access your child\'s camera feed.' },
+  { q: 'What age is it for?',                 a: 'Draw in the Air is designed for children aged 3 to 7, spanning preschool letter and number tracing through early primary games. The pinch-to-draw gesture is simple enough for a 3-year-old and engaging enough for a 7-year-old.' },
+  { q: 'Will it work on our family laptop?', a: 'Almost certainly. Any laptop from the last five years with a webcam and Chrome, Edge, or Safari 15+ works. It runs best on a laptop or desktop; most tablets work through the front camera, though a computer gives the most room to move. No app to install.' },
   { q: 'How long should a session be?',      a: 'Most children play for five to ten minutes at a time. It is active and physical, so it is naturally self-limiting. The average session is around seven minutes.' },
-  { q: 'How much does it cost?',             a: 'Every account starts with a 7-day free trial, up to 2 learners. After that the Family plan is $4.99 a month or $54.99 a year, with the full activity library and cancel anytime.' },
+  { q: 'How much does it cost?',             a: 'Every account starts with a 7-day free trial, up to 2 learners. Core activities are always free to play; the Family plan unlocks the full library, progress reports and parental controls, and you can cancel anytime.' },
   { q: 'Do I need to sit with my child?',    a: 'For the first session, yes, to help with the camera and the wave-to-start. After that most children aged 5+ can open an activity and play independently.' },
+  { q: 'Can it replace pencil practice?',    a: 'It is designed to complement, not replace, pencil and paper. The kinesthetic movements are similar and build the motor pattern, but paper practice remains important for the specific grip and pressure of writing. Use both.' },
+];
+
+const PARENTS_STRUCTURED_DATA = [
+  buildOrganizationSchema(),
+  buildSoftwareAppSchema(),
+  buildFAQSchema(PARENT_FAQ),
+  buildBreadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'For Families', path: '/parents' }]),
 ];
 
 export default function ParentsLandingV2() {
@@ -93,6 +106,7 @@ export default function ParentsLandingV2() {
         description={PAGE_META.parents.description}
         keywords={PAGE_META.parents.keywords}
         canonical="/parents"
+        structuredData={PARENTS_STRUCTURED_DATA}
       />
       <GestureTrail />
       <HeaderNav />

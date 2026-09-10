@@ -81,7 +81,7 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
       { q: 'Is this suitable for SEN learners?', a: 'Gesture interaction uses gross motor skills (extending an arm, pointing a finger) that children develop earlier than fine motor precision. This makes it more accessible for children who struggle with mouse or touchscreen control.' },
     ],
     internalLinks: [
-      { label: 'For Teachers', path: '/for-teachers' },
+      { label: 'For Teachers', path: '/teachers' },
       { label: 'Chromebook Tools', path: '/chromebook-learning-tools' },
       { label: 'Gesture Learning', path: '/gesture-learning' },
       { label: 'Brain Break: Bubble Pop', path: '/activities/bubble-pop' },
@@ -146,7 +146,7 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
       { label: 'Classroom Movement Activities', path: '/classroom-movement-activities' },
       { label: 'AI Learning Tools for Kids', path: '/ai-learning-tools-for-kids' },
       { label: 'Hand-Eye Coordination Activities', path: '/hand-eye-coordination-activities' },
-      { label: 'For Teachers', path: '/for-teachers' },
+      { label: 'For Teachers', path: '/teachers' },
       { label: 'Letter Tracing A–Z', path: '/letter-tracing' },
       { label: 'Learning Hub', path: '/learn' },
     ],
@@ -206,7 +206,7 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
     ],
     internalLinks: [
       { label: 'Classroom Movement Activities', path: '/classroom-movement-activities' },
-      { label: 'For Teachers', path: '/for-teachers' },
+      { label: 'For Teachers', path: '/teachers' },
       { label: 'Embed on Your Website', path: '/embed' },
       { label: 'Bubble Pop, Quick Start', path: '/activities/bubble-pop' },
       { label: 'Letter Tracing', path: '/letter-tracing' },
@@ -267,7 +267,7 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
       { q: 'How does this help with handwriting readiness?', a: 'Air tracing activates the same motor pathways used in pencil writing, building the neural route before fine motor precision is required. Gross-to-fine motor progression is the standard occupational therapy approach to pre-writing readiness.' },
     ],
     internalLinks: [
-      { label: 'For Parents', path: '/for-parents' },
+      { label: 'For Parents', path: '/parents' },
       { label: 'For Homeschool', path: '/for-homeschool' },
       { label: 'Free Printable Resources', path: '/free-resources' },
       { label: 'Hand-Eye Coordination Activities', path: '/hand-eye-coordination-activities' },
@@ -339,7 +339,7 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
     ],
     relatedLinks: [
       { label: 'Gesture Learning Explained', path: '/gesture-learning' },
-      { label: 'For Parents', path: '/for-parents' },
+      { label: 'For Parents', path: '/parents' },
       { label: 'Homeschool Movement Learning', path: '/homeschool-movement-learning' },
     ],
   },
@@ -395,7 +395,7 @@ const DATA: Record<UseCaseSlug, UseCaseData> = {
     internalLinks: [
       { label: 'Gesture Learning Explained', path: '/gesture-learning' },
       { label: 'Learning Hub', path: '/learn' },
-      { label: 'For Teachers', path: '/for-teachers' },
+      { label: 'For Teachers', path: '/teachers' },
       { label: 'Classroom Movement Activities', path: '/classroom-movement-activities' },
       { label: 'Chromebook Tools', path: '/chromebook-learning-tools' },
       { label: 'Bubble Pop, AI Starter', path: '/activities/bubble-pop' },

@@ -61,7 +61,7 @@ const TransparencyPage: React.FC = () => {
                     <nav className="tx-nav">
                         <a href="/privacy">Privacy</a>
                         <a href="/safeguarding">Safeguarding</a>
-                        <a href="/for-teachers">For teachers</a>
+                        <a href="/teachers">For teachers</a>
                     </nav>
                 </div>
             </header>

@@ -79,7 +79,7 @@ const EYFS_ACTIVITY_MAP = [
 const RESOURCES = [
   { icon: '📥', label: 'Free printable worksheets', path: '/free-resources', desc: 'Letter and number tracing worksheets to complement air drawing practice.' },
   { icon: '🔗', label: 'Embed on your school website', path: '/embed', desc: 'Add a Draw in the Air widget to your classroom blog or school portal.' },
-  { icon: '🏠', label: 'Share with parents', path: '/for-parents', desc: 'A parent-friendly guide to setting up Draw in the Air at home.' },
+  { icon: '🏠', label: 'Share with parents', path: '/parents', desc: 'A parent-friendly guide to setting up Draw in the Air at home.' },
   { icon: '🤖', label: 'AI for kids guide', path: '/learn/ai-for-kids', desc: 'Explain hand tracking technology to students in simple terms.' },
   { icon: '🏃', label: 'Classroom movement activities', path: '/classroom-movement-activities', desc: 'Brain break and movement ideas that pair perfectly with Draw in the Air.' },
   { icon: '💻', label: 'Chromebook learning tools', path: '/chromebook-learning-tools', desc: 'How to use Draw in the Air on school Chromebook carts and labs.' },
