@@ -9,6 +9,11 @@
 import React, { useState } from 'react';
 import { LegalPageLayout } from '../components/landing/LegalPageLayout';
 import { submitFormData, SUBMISSION_FAILED_MESSAGE } from '../lib/formSubmission';
+import { SEOMeta } from '../seo/SEOMeta';
+import {
+  PAGE_META,
+  buildOrganizationSchema, buildSoftwareAppSchema, buildBreadcrumbSchema,
+} from '../seo/seo-config';
 
 const LAVENDER = '#8A66F0';
 const MINT = '#3FB87F';
@@ -48,6 +53,20 @@ export const Schools: React.FC = () => {
 
   return (
     <LegalPageLayout heroTitle="Built for schools." eyebrow="For Schools">
+      <SEOMeta
+        title={PAGE_META.schools.title}
+        description={PAGE_META.schools.description}
+        keywords={PAGE_META.schools.keywords}
+        canonical="/schools"
+        structuredData={[
+          buildOrganizationSchema(),
+          buildSoftwareAppSchema(),
+          buildBreadcrumbSchema([
+            { name: 'Home', path: '/' },
+            { name: 'For Schools', path: '/schools' },
+          ]),
+        ]}
+      />
       <p style={{ fontSize: '1.15rem', textAlign: 'center', maxWidth: 640, margin: '0 auto 36px' }}>
         Whole-school licenses, EYFS-aligned activities, and a free pilot pack for early years and KS1. No installs. No student accounts. Just play.
       </p>

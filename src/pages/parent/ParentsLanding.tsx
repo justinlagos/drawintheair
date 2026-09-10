@@ -21,6 +21,8 @@ import {
   ActivityGrid, CalmFooter, FAQList, GestureTrail, SectionHead,
 } from '../Landing';
 import { HeaderNav } from '../../components/landing/HeaderNav';
+import { SEOMeta } from '../../seo/SEOMeta';
+import { PAGE_META } from '../../seo/seo-config';
 import { trackMeta } from '../../lib/observability';
 import '../../components/landing/landing-calm.css';
 
@@ -86,6 +88,12 @@ export default function ParentsLandingV2() {
 
   return (
     <div ref={rootRef} className="lp-shell">
+      <SEOMeta
+        title={PAGE_META.parents.title}
+        description={PAGE_META.parents.description}
+        keywords={PAGE_META.parents.keywords}
+        canonical="/parents"
+      />
       <GestureTrail />
       <HeaderNav />
       <div className="page" data-screen-label="For Parents">

@@ -1,5 +1,5 @@
 // src/seo/prerender-paths.ts
-// The URL paths that the SSG build prerenders (93 routes in production).
+// The URL paths that the SSG build prerenders (94 routes in production).
 //
 // This module is pure data with no React or browser imports so that unit
 // tests can read the public route list without loading page components.
@@ -29,6 +29,7 @@ export const STATIC_PATHS = [
   '/for-teachers',
   '/for-parents',
   '/learn',
+  '/letter-tracing',
 ] as const;
 
 export type StaticPath = (typeof STATIC_PATHS)[number];
@@ -84,8 +85,9 @@ export const SPECIAL_ACTIVITY_SLUGS = [
 export const VIRAL_PATHS = ['/draw-number-in-air', '/air-drawing-challenge', '/draw-circle-in-air'] as const;
 
 // Programmatic trace pages: 26 letters + 10 numbers + 8 shapes.
-// '/letter-tracing' is intentionally absent: TracePage canonicalises it
-// to /trace-a, which would fight PAGE_META's '/letter-tracing' canonical.
+// '/letter-tracing' is NOT here — it is the dedicated hub in STATIC_PATHS
+// (LetterTracingHubPage), self-canonicalising to /letter-tracing. These are
+// its per-letter/number/shape spokes, each canonicalising to its own URL.
 export const TRACE_PATHS: string[] = [
   ...LETTERS.map((l) => `/trace-${l.toLowerCase()}`),
   ...NUMBERS.map((n) => `/trace-number-${n}`),

@@ -104,6 +104,18 @@ export const PAGE_META = {
     keywords: ['sorting game for kids online', 'gesture sorting game', 'preschool categorising game', 'kids hand tracking sorting', 'educational sorting game free'],
     canonical: '/activities/sort-and-place',
   },
+  schools: {
+    title: 'Draw in the Air for Schools, EYFS & KS1 Movement Learning | Free Pilot',
+    description: 'Whole-school licences and a free pilot pack for early years and KS1. Browser-based movement learning on any device with a webcam, no installs, no student accounts. EYFS and KS1 aligned.',
+    keywords: ['edtech for primary schools', 'EYFS movement learning', 'KS1 classroom activities', 'whole-school licence learning app', 'chromebook classroom activities', 'school pilot early years'],
+    canonical: '/schools',
+  },
+  parents: {
+    title: 'Draw in the Air for Families, Movement Learning at Home | Draw in the Air',
+    description: 'A movement-first learning space for children aged 3 to 7. Trace letters and numbers, paint and play in the air using just a webcam. No child accounts, no recordings. Free to start; Family plan with a 7-day trial.',
+    keywords: ['learning app for families', 'movement learning at home', 'screen-smart learning kids', 'preschool learning app parents', 'webcam learning children', 'active screen time kids'],
+    canonical: '/parents',
+  },
   forParents: {
     title: 'For Parents, Safe Screen-Smart Gesture Learning | Draw in the Air',
     description: 'Draw in the Air is a screen-smart alternative for curious kids. No ads, no accounts, no downloads. Develops motor skills, letter recognition, and hand-eye coordination through play. Ages 3–7.',
@@ -267,6 +279,18 @@ export function buildSoftwareAppSchema() {
     featureList: ['Free Paint Mode', 'Letter Tracing A–Z', 'Number Tracing 1–10', 'Shape Tracing', 'Bubble Pop Game', 'Sort and Place Game', 'Webcam hand tracking', 'No download required'],
     screenshot: SITE.ogImage,
     creator: { '@type': 'Organization', name: 'Draw in the Air', url: SITE.url },
+  };
+}
+
+export function buildOrganizationSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: SITE.name,
+    url: SITE.url,
+    logo: SITE.logo,
+    description: SITE.description,
+    sameAs: [`https://twitter.com/${SITE.twitter.replace(/^@/, '')}`],
   };
 }
 

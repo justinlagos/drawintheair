@@ -92,6 +92,7 @@ const PressPage = lazyWithRetry(() => import('./pages/seo/PressPage.tsx'));
 const FreeResourcesPage = lazyWithRetry(() => import('./pages/seo/FreeResourcesPage.tsx'));
 
 const TracePage = lazyWithRetry(() => import('./pages/seo/TracePage.tsx'));
+const LetterTracingHubPage = lazyWithRetry(() => import('./pages/seo/LetterTracingHubPage.tsx'));
 const LearnArticlePage = lazyWithRetry(() => import('./pages/seo/LearnArticlePage.tsx'));
 const LearnHubPage = lazyWithRetry(() => import('./pages/seo/LearnHubPage.tsx'));
 const EducationPage = lazyWithRetry(() => import('./pages/seo/EducationPage.tsx'));
@@ -260,8 +261,13 @@ function getRouteFromPath(path: string, hash: string): string {
   if (path.startsWith('/learn/')) return 'learn-article';
   if (path === '/learn') return 'learn-hub';
 
+  // Letter Tracing HUB (/letter-tracing) — a dedicated hub page, not a trace
+  // page. Must be checked before the '/trace-' block so it never falls into
+  // the per-letter TracePage (which used to canonicalise the hub to /trace-a).
+  if (path === '/letter-tracing') return 'letter-tracing-hub';
+
   // Tracing Pages
-  if (path.startsWith('/trace-') || path === '/letter-tracing') {
+  if (path.startsWith('/trace-')) {
     return 'trace';
   }
 
@@ -761,13 +767,21 @@ function Root() {
     );
   }
 
+  if (route === 'letter-tracing-hub') {
+    return (
+      <React.Suspense fallback={<DemoLoader />}>
+        <LetterTracingHubPage />
+      </React.Suspense>
+    );
+  }
+
   if (route === 'trace') {
     const path = window.location.pathname;
     let type: 'letter' | 'number' | 'shape' = 'letter';
     let value = 'a';
 
-    // Default fallback page
-    if (path === '/letter-tracing' || path === '/trace-') {
+    // Default fallback for a bare '/trace-' with no slug.
+    if (path === '/trace-') {
       type = 'letter';
       value = 'a';
     } else {
