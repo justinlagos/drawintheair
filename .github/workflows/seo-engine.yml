@@ -1,0 +1,43 @@
+# Autonomous SEO Engine — scheduled cycle runner.
+#
+# SKELETON: manual-dispatch only and inert until credentials are configured.
+# scripts/seo-cycle.mjs exits 0 with no writes when secrets are absent, so this
+# workflow is safe to merge now and does nothing until we deliberately wire it up.
+#
+# When the engine's data + execution components land AND its autonomy mode in
+# src/seo/autonomy/policy.ts is moved past `shadow`, enable the weekly schedule
+# below and widen `permissions` (contents: write, pull-requests: write) so it can
+# open PRs. Until then it only reads.
+name: SEO Engine
+
+on:
+  workflow_dispatch: {}
+  # schedule:
+  #   - cron: '0 6 * * 1'   # weekly, Monday 06:00 UTC — enable with credentials
+
+permissions:
+  contents: read
+
+concurrency:
+  group: seo-engine
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  cycle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: node scripts/seo-cycle.mjs
+        env:
+          GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_READ_KEY: ${{ secrets.SUPABASE_SERVICE_READ_KEY }}
+          SEO_ENGINE_GH_TOKEN: ${{ secrets.SEO_ENGINE_GH_TOKEN }}
