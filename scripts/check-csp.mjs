@@ -178,6 +178,39 @@ function checkSupabaseSplit(policies) {
     return problems;
 }
 
+// Vercel applies every matching header rule in array order and, for a
+// given header key, the LAST match wins. Both host-specific blocks and the
+// unconditioned fallback block match the apex host, so if the fallback
+// (which names staging) sits AFTER the production host block, it silently
+// overrides it and the live site at drawintheair.com ends up pointing at
+// the staging database. That shipped once (Gate 3) and broke every data
+// call on production; the preview-only acceptance never saw it because the
+// bug only manifests on the apex host. This guard makes the ordering a
+// build failure: no unconditioned CSP block may follow a host-conditioned
+// one.
+function checkHostOverrideOrder() {
+    const json = JSON.parse(fs.readFileSync(vercelJsonPath, 'utf8'));
+    const blocks = json.headers || [];
+    const problems = [];
+    let lastHostCspIndex = -1;
+    blocks.forEach((block, i) => {
+        const hasCsp = (block.headers || []).some(h => h.key === 'Content-Security-Policy');
+        if (!hasCsp) return;
+        const host = (block.has || []).find(c => c.type === 'host');
+        if (host) {
+            lastHostCspIndex = i;
+        } else if (lastHostCspIndex !== -1) {
+            problems.push(
+                `unconditioned CSP block at index ${i} follows a host-conditioned CSP ` +
+                `block at index ${lastHostCspIndex}; Vercel's last-match-wins means it ` +
+                `overrides the production host policy on the apex. Move the ` +
+                `unconditioned (preview/staging) block BEFORE every host block.`,
+            );
+        }
+    });
+    return problems;
+}
+
 function parseCsp(csp) {
     // Returns: { 'connect-src': Set<origin>, 'script-src': Set<origin>, ... }
     const map = {};
@@ -215,6 +248,27 @@ function main() {
     }
 
     const splitProblems = checkSupabaseSplit(policies);
+    const orderProblems = checkHostOverrideOrder();
+
+    if (orderProblems.length > 0) {
+        console.error('');
+        console.error('═══════════════════════════════════════════════════════════════');
+        console.error('  ❌ CSP HEADER BLOCK ORDER LETS THE FALLBACK OVERRIDE PRODUCTION');
+        console.error('═══════════════════════════════════════════════════════════════');
+        console.error('');
+        console.error('  Vercel applies matching header rules in order; the last match');
+        console.error('  wins. An unconditioned CSP block after a host-conditioned one');
+        console.error('  overrides it on the apex host, so drawintheair.com would serve');
+        console.error('  the staging (preview) policy and every production data call is');
+        console.error('  blocked. This exact bug shipped at Gate 3.');
+        console.error('');
+        for (const p of orderProblems) console.error(`    • ${p}`);
+        console.error('');
+        console.error('  Fix: in vercel.json, order the CSP blocks as');
+        console.error('  [ …asset/mediapipe blocks, unconditioned fallback, host blocks ]');
+        console.error('');
+        process.exit(1);
+    }
 
     if (missing.length === 0 && splitProblems.length === 0) {
         console.log(
