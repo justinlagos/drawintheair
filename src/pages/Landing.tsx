@@ -28,7 +28,7 @@ import {
   buildOrganizationSchema, buildSoftwareAppSchema, buildFAQSchema,
 } from '../seo/seo-config';
 import {
-  Lp6Nav, Lp6Footer, ArrowIcon, ShieldIcon, BoltIcon, LaptopIcon, hideOnError, Lp6Faq,
+  Lp6Nav, Lp6Footer, useLp6Reveal, ArrowIcon, ShieldIcon, BoltIcon, LaptopIcon, hideOnError, Lp6Faq,
 } from '../components/landing/Lp6Chrome';
 import '../components/landing/landing-calm.css';
 import './landing-redesign.css';
@@ -59,39 +59,6 @@ export function Icon({ name, size = 20, ...p }: { name: keyof typeof ICONS; size
       <path d={ICONS[name]} />
     </svg>
   );
-}
-
-function useReveal(rootRef: React.RefObject<HTMLElement | null>) {
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
-    let raf = 0, ticking = false;
-    const pass = () => {
-      ticking = false;
-      const h = window.innerHeight;
-      root.querySelectorAll('.reveal:not(.in)').forEach((el) => {
-        if (el.getBoundingClientRect().top < h - 40) el.classList.add('in');
-      });
-    };
-    const onScroll = () => { if (!ticking) { ticking = true; raf = requestAnimationFrame(pass); } };
-    pass();
-    const r1 = requestAnimationFrame(() => { root.classList.add('anim'); });
-    const t1 = window.setTimeout(pass, 140);
-    const t2 = window.setTimeout(pass, 450);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
-    const mo = new MutationObserver(onScroll);
-    mo.observe(root, { childList: true, subtree: true });
-    return () => {
-      cancelAnimationFrame(raf);
-      cancelAnimationFrame(r1);
-      clearTimeout(t1);
-      clearTimeout(t2);
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-      mo.disconnect();
-    };
-  }, [rootRef]);
 }
 
 export function GestureTrail() {
@@ -351,7 +318,7 @@ function Tile({ label, slug, onOpen }: { label: string; slug: string; onOpen: ()
 export const Landing: React.FC = () => {
   const navigate = useNavigate();
   const rootRef = useRef<HTMLDivElement | null>(null);
-  useReveal(rootRef);
+  useLp6Reveal(rootRef);
 
   useEffect(() => {
     logEvent('landing_view');

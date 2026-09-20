@@ -54,24 +54,34 @@ export function useLp6Reveal(rootRef: React.RefObject<HTMLElement | null>) {
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
-    let raf = 0, ticking = false;
-    const pass = () => {
-      ticking = false;
-      const h = window.innerHeight;
-      root.querySelectorAll('.reveal:not(.in)').forEach((el) => {
-        if (el.getBoundingClientRect().top < h - 40) el.classList.add('in');
+    const reduce = typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Auto-tag block-level content so every page animates in on scroll
+    // without hand-marking each element.
+    const BLOCKS = '.h2, .card, .privacy, .ctaband, .quoteband, .lede-split .photo, .feat .art, .feat .txt, .pilot .media, .anchor .h2';
+    root.querySelectorAll(BLOCKS).forEach((el) => el.classList.add('reveal'));
+    // Stagger the children of grids/lists for a cascading entrance.
+    root.querySelectorAll('.grid3, .grid4, .tiles, .steps, .plist, .statcards, .maptable, .plans, .trust, .gest, .pair').forEach((group) => {
+      Array.from(group.children).forEach((c, i) => {
+        c.classList.add('reveal');
+        (c as HTMLElement).style.transitionDelay = `${(i % 6) * 70}ms`;
       });
-    };
-    const onScroll = () => { if (!ticking) { ticking = true; raf = requestAnimationFrame(pass); } };
-    const r1 = requestAnimationFrame(() => { root.classList.add('anim'); pass(); });
-    const t1 = window.setTimeout(pass, 160);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
-    return () => {
-      cancelAnimationFrame(raf); cancelAnimationFrame(r1); clearTimeout(t1);
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-    };
+    });
+
+    root.classList.add('anim');
+    const els = Array.from(root.querySelectorAll<HTMLElement>('.reveal'));
+    if (reduce || typeof IntersectionObserver === 'undefined') {
+      els.forEach((el) => el.classList.add('in'));
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
   }, [rootRef]);
 }
 
