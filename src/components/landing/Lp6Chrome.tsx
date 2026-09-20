@@ -43,6 +43,7 @@ export function LaptopIcon() {
 }
 
 /* Hide a badge/logo image gracefully if the asset is missing. */
+// eslint-disable-next-line react-refresh/only-export-components -- shared helper, not a component
 export function hideOnError(e: React.SyntheticEvent<HTMLImageElement>) {
   const el = e.currentTarget;
   const wrap = el.closest('[data-optional]') as HTMLElement | null;
@@ -50,6 +51,7 @@ export function hideOnError(e: React.SyntheticEvent<HTMLImageElement>) {
 }
 
 /* ------------------------------------------------- scroll reveal + trail */
+// eslint-disable-next-line react-refresh/only-export-components -- hook, not a component
 export function useLp6Reveal(rootRef: React.RefObject<HTMLElement | null>) {
   useEffect(() => {
     const root = rootRef.current;
