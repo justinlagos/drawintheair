@@ -1,8 +1,9 @@
 /**
- * /about — lp6 redesign, Sept 2026. Mission, values and a clear next step.
+ * /about — original structure (hero, mission split, values, quote, CTA),
+ * reskinned in the Stanley `.lp6` style with the shared chrome.
  */
 
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SEOMeta } from '../seo/SEOMeta';
 import { buildOrganizationSchema, buildSoftwareAppSchema } from '../seo/seo-config';
@@ -45,37 +46,47 @@ const About: React.FC = () => {
 
       {/* HERO */}
       <section className="hero sub" data-screen-label="About hero">
-        <div className="wrap">
-          <span className="label" style={{ justifyContent: 'center' }}>Our story</span>
-          <h1 className="h1" style={{ marginTop: 16 }}>Learning was always meant to <span className="mark">move.</span></h1>
-          <p className="lead" style={{ margin: '18px auto 26px' }}>We trained a generation of children to sit still and tap glass. Draw in the Air is our answer: a webcam, a hand, and early learning that happens through movement.</p>
-          <div className="herocta">
-            <button type="button" className="btn" onClick={go('about_hero', '/play')}>Try it free <ArrowIcon /></button>
-            <button type="button" className="btn ghost" onClick={go('about_hero_schools', '/teachers')}>For schools</button>
+        <div className="wrap herogrid">
+          <div>
+            <span className="label">Our story</span>
+            <h1 className="h1" style={{ margin: '16px 0 18px' }}>Learning was always <span className="mark">meant to move.</span></h1>
+            <p className="lead" style={{ marginBottom: 24 }}>We built Draw in the Air because young children learn through their bodies, not their wrists. A webcam and a hand are all it takes to turn a screen into a space for real, physical, joyful learning.</p>
+            <div className="herocta">
+              <button type="button" className="btn" onClick={go('about_hero', '/parent/signup')}>Try it free <ArrowIcon /></button>
+              <button type="button" className="btn ghost" onClick={go('about_hero_schools', '/teachers')}>For schools</button>
+            </div>
+          </div>
+          <div className="heroshot reveal">
+            <div className="center">
+              <img className="ico" src="/landing-assets/icons/globe.png" alt="A globe with an orbiting ring" onError={hideOnError} style={{ animation: 'lp6float 8s ease-in-out infinite' }} />
+            </div>
           </div>
         </div>
       </section>
 
       {/* MISSION */}
       <section data-screen-label="Mission">
-        <div className="wrap lede-split">
-          <div className="photo reveal">
-            <img src="/landing-assets/child-at-laptop.jpg" alt="A child learning at a laptop using hand movements" onError={hideOnError} />
+        <div className="wrap feat">
+          <div className="art reveal">
+            <div className="shot">
+              <img src="/landing-assets/child-at-laptop.jpg" alt="A child learning at a laptop using hand movement" onError={hideOnError} />
+            </div>
           </div>
-          <div className="reveal d1">
-            <span className="label">Why we built it</span>
-            <h2 className="h2" style={{ margin: '14px 0 18px' }}>Screens took the movement out of early learning.</h2>
-            <p className="lead" style={{ marginBottom: 16 }}>Three to seven year-olds build fine-motor control, letter formation and confidence through big, whole-arm movement. A touchscreen only asks for a wrist. We wanted the whole child in the letter.</p>
-            <p className="lead">So we used the camera every laptop already has, and MediaPipe hand tracking that runs entirely on the device, to turn movement itself into the input. No new hardware. No footage leaving the room.</p>
+          <div className="txt reveal d1">
+            <span className="label">Why we exist</span>
+            <h2 className="h2" style={{ margin: '14px 0 16px' }}>Screen time that <span className="mark">earns its place.</span></h2>
+            <p className="lead" style={{ marginBottom: 14 }}>Parents and teachers should not have to choose between a screen and an active child. By making movement the entire input, every minute in front of the camera is a minute of whole-arm letter formation, counting, and creative play.</p>
+            <p className="lead">We keep the technology invisible. No accounts for children, no downloads, and no video leaving the device. Just a hand in the air and a canvas of light.</p>
           </div>
         </div>
       </section>
 
       {/* VALUES */}
-      <section data-screen-label="About values">
+      <section data-screen-label="Values">
         <div className="wrap">
-          <h2 className="h2" style={{ textAlign: 'center', maxWidth: '16ch', margin: '0 auto 40px' }}>Four principles, every screen.</h2>
-          <div className="grid4">
+          <span className="label" style={{ justifyContent: 'center', display: 'flex' }}>What we believe</span>
+          <h2 className="h2 sechead" style={{ marginTop: 12 }}>Four principles, every screen.</h2>
+          <div className="grid4" style={{ marginTop: 40 }}>
             {ABOUT_VALUES.map((v) => (
               <div className="vcard reveal" key={v.title}>
                 <img className="vico" src={v.img} alt="" onError={hideOnError} />
@@ -90,8 +101,9 @@ const About: React.FC = () => {
       {/* QUOTE */}
       <section data-screen-label="About quote">
         <div className="wrap quoteband reveal">
-          <h3 className="h3">"The best early-years tool is not the one that holds a child still. It is the one that gets them moving."</h3>
-          <p className="lead" style={{ margin: '16px auto 0' }}>A product of MotionPlay Labs, built with a UK primary school and a GESS Education Awards 2026 finalist.</p>
+          <img src="/landing-assets/icons/star-smile.png" alt="" onError={hideOnError} style={{ width: 64, margin: '0 auto 20px', display: 'block' }} />
+          <h3 className="h3">{'“'}The best early-years tool is not the one that holds a child still. It is the one that gets them moving.{'”'}</h3>
+          <p className="lead" style={{ margin: '16px auto 0' }}>Draw in the Air, founding principle. A product of MotionPlay Labs and a GESS Education Awards 2026 finalist.</p>
         </div>
       </section>
 
@@ -99,11 +111,11 @@ const About: React.FC = () => {
       <section data-screen-label="About CTA">
         <div className="wrap">
           <div className="ctaband reveal">
-            <h2 className="h2">See it for yourself in about a minute.</h2>
-            <p>Open it on a laptop, wave at the camera, and watch them start to move.</p>
-            <div className="herocta">
-              <button type="button" className="btn" onClick={go('about_final', '/play')}>Try it free now <ArrowIcon /></button>
-              <button type="button" className="btn ghost" onClick={go('about_final_teachers', '/teachers')}>Start a school pilot</button>
+            <h2 className="h2">Come and move with us.</h2>
+            <p>Families start with a 7-day free trial. Schools start a free pilot. Either way, you are a minute from the first stroke.</p>
+            <div className="herocta" style={{ justifyContent: 'center' }}>
+              <button type="button" className="btn" onClick={go('about_final', '/parent/signup')}>Try free now <ArrowIcon /></button>
+              <button type="button" className="btn ghost" onClick={go('about_final_teachers', '/teachers')}>Book a school demo</button>
             </div>
           </div>
         </div>

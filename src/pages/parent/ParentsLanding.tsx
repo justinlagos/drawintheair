@@ -1,9 +1,10 @@
 /**
- * /parents — public marketing page for families (lp6 redesign, Sept 2026).
+ * /parents — public marketing page for families.
  *
- * Conversion-first: one primary action (start the free trial) repeated, with a
- * zero-friction "try it free, no sign-up" secondary that routes to /play. The
- * authenticated parent area at /parent/* is untouched.
+ * Structure is the original marketing page (hero split, why-parents value
+ * cards, eight-activity band + real-session clip, privacy split, FAQ, CTA).
+ * Only the visual design is changed: Stanley `.lp6` style + shared chrome.
+ * The authenticated parent area at /parent/* is untouched.
  */
 
 import { useEffect, useRef } from 'react';
@@ -16,15 +17,25 @@ import {
 import { trackMeta } from '../../lib/observability';
 import { logEvent } from '../../lib/analytics';
 import {
-  Lp6Nav, Lp6Footer, Lp6GestureTrail, Lp6Faq, useLp6Reveal, ArrowIcon, ShieldIcon,
+  Lp6Nav, Lp6Footer, Lp6GestureTrail, Lp6Faq, useLp6Reveal, ArrowIcon, ShieldIcon, hideOnError,
 } from '../../components/landing/Lp6Chrome';
 import '../landing-redesign.css';
+
+const GAMES: { id: string; label: string; slug: string }[] = [
+  { id: 'trace',   label: 'Tracing',        slug: 'tracing' },
+  { id: 'paint',   label: 'Free Paint',     slug: 'free-paint' },
+  { id: 'bmath',   label: 'Balloon Math',   slug: 'balloon-math' },
+  { id: 'pop',     label: 'Balloon Pop',    slug: 'bubble-pop' },
+  { id: 'rainbow', label: 'Rainbow Bridge', slug: 'rainbow-bridge' },
+  { id: 'sort',    label: 'Sort and Place', slug: 'sort-place' },
+  { id: 'spell',   label: 'Spelling Stars', slug: 'spelling-stars' },
+  { id: 'word',    label: 'Word Search',    slug: 'word-search' },
+];
 
 const PARENT_VALUE = [
   { icon: '\u{1F9E0}', title: 'Real skill, real movement', text: 'Whole-arm letter formation and counting build the fine-motor control that touchscreens skip.' },
   { icon: '\u{1F512}', title: 'Private by design',         text: 'The camera frame never leaves the browser. Nothing is recorded, stored, or sent anywhere.' },
   { icon: '\u{26A1}',  title: 'Ready in a minute',         text: 'Open the page, allow the camera, wave to start. No app store, no setup.' },
-  { icon: '\u{1F9F8}', title: 'They ask to do it again',   text: 'It is play first. The learning rides along inside activities children choose for themselves.' },
 ];
 
 const PARENT_FAQ = [
@@ -43,6 +54,25 @@ const PARENTS_STRUCTURED_DATA = [
   buildFAQSchema(PARENT_FAQ),
   buildBreadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'For Families', path: '/parents' }]),
 ];
+
+function Tile({ label, slug, onOpen }: { label: string; slug: string; onOpen: () => void }) {
+  const vref = useRef<HTMLVideoElement | null>(null);
+  return (
+    <button
+      type="button"
+      className="tile"
+      onClick={onOpen}
+      onMouseEnter={() => { vref.current?.play().catch(() => {}); }}
+      onMouseLeave={() => { const v = vref.current; if (v) { v.pause(); v.currentTime = 0; } }}
+    >
+      <video ref={vref} muted loop playsInline preload="none" poster={`/landing-videos/${slug}.jpg`}>
+        <source src={`/landing-videos/${slug}.webm`} type="video/webm" />
+        <source src={`/landing-videos/${slug}.mp4`} type="video/mp4" />
+      </video>
+      <span>{label}</span>
+    </button>
+  );
+}
 
 export default function ParentsLandingV2() {
   const navigate = useNavigate();
@@ -73,32 +103,37 @@ export default function ParentsLandingV2() {
 
       {/* HERO */}
       <section className="hero sub" data-screen-label="Parents hero">
-        <div className="wrap">
-          <span className="label" style={{ justifyContent: 'center' }}>For families</span>
-          <h1 className="h1" style={{ marginTop: 16 }}>Screen time that <span className="mark">gives something back.</span></h1>
-          <p className="lead" style={{ margin: '18px auto 26px' }}>Your child moves, draws and counts in the air. It builds the real fine-motor skills that writing needs, and they think it is a game. Ages 3 to 7.</p>
-          <div className="herocta">
-            <button type="button" className="btn" onClick={go('parents_hero', '/parent/signup')}>Start your 7-day free trial <ArrowIcon /></button>
-            <button type="button" className="btn ghost" onClick={go('parents_hero_try', '/play')}>Try it free, no sign-up</button>
+        <div className="wrap herogrid">
+          <div>
+            <span className="label">For parents · 7-day free trial</span>
+            <h1 className="h1" style={{ margin: '16px 0 18px' }}>Learning they{'’'}ll <span className="mark">ask to do again.</span></h1>
+            <p className="lead" style={{ marginBottom: 24 }}>Draw in the Air is the screen time you do not have to feel guilty about. Your child stands up, moves, and practises letters, numbers and creativity, using nothing but their hands.</p>
+            <div className="herocta">
+              <button type="button" className="btn" onClick={go('parents_hero', '/parent/signup')}>Start free trial <ArrowIcon /></button>
+              <button type="button" className="btn ghost" onClick={go('parents_hero_pricing', '/pricing')}>See pricing</button>
+            </div>
+            <div className="trust" style={{ marginTop: 20 }}>
+              <span className="chip"><ShieldIcon /> Camera stays on device</span>
+              <span className="chip">7 days free</span>
+              <span className="chip">Ages 3 to 7</span>
+            </div>
           </div>
-          <div className="trust" style={{ marginTop: 20 }}>
-            <span className="chip"><ShieldIcon /> Webcam stays on your device</span>
-            <span className="chip">7 days free, cancel anytime</span>
-            <span className="chip">No child accounts</span>
-          </div>
-          <div className="statcards">
-            <div className="statcard"><b>3&ndash;7</b><span>Ages it is built for</span></div>
-            <div className="statcard"><b>5&ndash;10 min</b><span>A natural session</span></div>
-            <div className="statcard"><b>EYFS</b><span>Curriculum aligned</span></div>
+          <div className="heroshot reveal">
+            <div className="photo">
+              <img src="/landing-assets/parent-child-screen.jpg" alt="A parent and child playing Draw in the Air together" onError={hideOnError} />
+            </div>
+            <div className="floatcard f1"><span className="fi" aria-hidden="true">{'⭐'}</span><div><div className="ft">980 points today</div><div className="fm">letter A mastered</div></div></div>
+            <div className="floatcard f2"><span className="fi" aria-hidden="true">{'\u{1F525}'}</span><div><div className="ft">7-day streak</div><div className="fm">5 minutes a day</div></div></div>
           </div>
         </div>
       </section>
 
-      {/* VALUE */}
+      {/* VALUE CARDS */}
       <section data-screen-label="Why parents">
         <div className="wrap">
-          <h2 className="h2" style={{ textAlign: 'center', maxWidth: '16ch', margin: '0 auto 40px' }}>Why families keep it open.</h2>
-          <div className="grid4">
+          <span className="label" style={{ justifyContent: 'center', display: 'flex' }}>Why parents choose it</span>
+          <h2 className="h2 sechead" style={{ marginTop: 12 }}>Movement they feel. Skills they keep.</h2>
+          <div className="grid4" style={{ marginTop: 40 }}>
             {PARENT_VALUE.map((v) => (
               <div className="vcard reveal" key={v.title}>
                 <div className="vico" aria-hidden="true">{v.icon}</div>
@@ -106,29 +141,34 @@ export default function ParentsLandingV2() {
                 <p>{v.text}</p>
               </div>
             ))}
+            <div className="vcard reveal">
+              <div className="vico" aria-hidden="true">{'\u{1F3A8}'}</div>
+              <h3>Joyful, not loud</h3>
+              <p>Calm visuals, gentle rewards, two sparkles, never the slot-machine energy of typical kids{'’'} apps.</p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* SEE IT MOVE */}
-      <section data-screen-label="See it move">
-        <div className="wrap feat">
-          <div className="txt reveal">
-            <span className="label">See it move</span>
-            <h2 className="h2" style={{ margin: '14px 0 18px' }}>Real gameplay, <span className="mark">no edits.</span></h2>
-            <p className="lead" style={{ marginBottom: 20 }}>Every stroke is a hand in the air. Children paint, trace letters and pop numbers by moving, then watch it come alive on screen.</p>
-            <div className="bullets">
-              <div className="b">Whole-arm movement, the way early writing is really built</div>
-              <div className="b">Eight activities across literacy, maths and creativity</div>
-              <div className="b">Works on the laptop you already own</div>
-            </div>
-            <button type="button" className="btn" onClick={go('parents_seemove', '/play')}>Try it with your child <ArrowIcon /></button>
+      {/* ACTIVITIES + REAL-KID MOMENT */}
+      <section data-screen-label="Parent activities">
+        <div className="wrap">
+          <span className="label" style={{ justifyContent: 'center', display: 'flex' }}>Eight ways to play</span>
+          <h2 className="h2 sechead" style={{ marginTop: 12 }}>One gesture. <span className="mark">Eight adventures.</span></h2>
+          <p className="seclead">From bubble-popping warm-ups to spelling stars, your child learns the movement once, then explores it all.</p>
+          <div className="tiles">
+            {GAMES.map((g) => <Tile key={g.id} label={g.label} slug={g.slug} onOpen={go('parents_activities', '/play')} />)}
           </div>
-          <div className="art reveal d1">
-            <div className="shot">
-              <video autoPlay muted loop playsInline poster="/landing-videos/free-paint.jpg">
-                <source src="/landing-videos/free-paint.webm" type="video/webm" />
-                <source src="/landing-videos/free-paint.mp4" type="video/mp4" />
+          <div className="demostrip reveal">
+            <div>
+              <span className="label">A real session</span>
+              <h3 className="h3" style={{ margin: '12px 0 10px' }}>Five minutes, one big smile.</h3>
+              <p className="lead">A short clip from an actual living room. No script, no edit, just a kid playing.</p>
+            </div>
+            <div className="frame">
+              <video autoPlay muted loop playsInline poster="/landing-videos/real-kid-1.jpg">
+                <source src="/landing-videos/real-kid-1.webm" type="video/webm" />
+                <source src="/landing-videos/real-kid-1.mp4" type="video/mp4" />
               </video>
             </div>
           </div>
@@ -137,18 +177,21 @@ export default function ParentsLandingV2() {
 
       {/* PRIVACY */}
       <section data-screen-label="Privacy">
-        <div className="wrap">
-          <div className="privacy reveal">
-            <div>
-              <span className="label">Private by design</span>
-              <h2 className="h2">The camera never leaves your laptop.</h2>
-              <p>It is technically impossible for us to see your child. The webcam is read on your device to track a hand, then each frame is thrown away.</p>
+        <div className="wrap feat">
+          <div className="art reveal">
+            <div className="shot">
+              <img src="/landing-assets/privacy-camera.jpg" alt="A laptop webcam, used only for hand tracking" onError={hideOnError} />
             </div>
-            <div className="plist">
-              <div className="prow"><span className="tick">&#10003;</span><div><b>Frames never leave the browser</b><small>Hand tracking runs on your device with Google MediaPipe.</small></div></div>
-              <div className="prow"><span className="tick">&#10003;</span><div><b>No video or photos are stored</b><small>Nothing is recorded, uploaded or saved. There is no footage to keep.</small></div></div>
-              <div className="prow"><span className="tick">&#10003;</span><div><b>No account for your child</b><small>Core activities start with a wave. No name, no email, no login.</small></div></div>
-              <div className="prow"><span className="tick">&#10003;</span><div><b>Built around UK GDPR</b><small>Data minimised by default, with clear deletion pathways.</small></div></div>
+          </div>
+          <div className="txt reveal d1">
+            <span className="label">Safe by design</span>
+            <h2 className="h2" style={{ margin: '14px 0 16px' }}>The camera sees hand position. <span className="mark">Nothing else.</span></h2>
+            <p className="lead" style={{ marginBottom: 20 }}>No video, no audio, and no images are ever stored or sent anywhere. The frame is processed inside the browser tab and discarded, many times a second.</p>
+            <div className="bullets">
+              <div className="b">No images, video or biometrics stored</div>
+              <div className="b">Processed on-device, then discarded</div>
+              <div className="b">GDPR compliant, UK child-privacy ready</div>
+              <div className="b">Works with no server connection once loaded</div>
             </div>
           </div>
         </div>
@@ -158,18 +201,18 @@ export default function ParentsLandingV2() {
       <section data-screen-label="Parent FAQ">
         <div className="wrap">
           <span className="label">Frequently asked</span>
-          <h2 className="h2" style={{ margin: '14px 0 34px' }}>The questions parents ask first.</h2>
+          <h2 className="h2" style={{ margin: '14px 0 34px' }}>What parents want to know.</h2>
           <Lp6Faq items={PARENT_FAQ} />
         </div>
       </section>
 
       {/* CTA */}
-      <section data-screen-label="Parents CTA">
+      <section data-screen-label="Parent CTA">
         <div className="wrap">
           <div className="ctaband reveal">
-            <h2 className="h2">Give them movement, not another screen to swipe.</h2>
-            <p>Start your 7-day free trial. Up to 2 learners, the full library, cancel anytime.</p>
-            <div className="herocta">
+            <h2 className="h2">Give it five minutes today.</h2>
+            <p>Open it on your laptop, wave to start, and watch your child draw their first letter in the air.</p>
+            <div className="herocta" style={{ justifyContent: 'center' }}>
               <button type="button" className="btn" onClick={go('parents_final', '/parent/signup')}>Start free trial <ArrowIcon /></button>
               <button type="button" className="btn ghost" onClick={go('parents_final_try', '/play')}>Try it free first</button>
             </div>
