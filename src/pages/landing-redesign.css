@@ -322,3 +322,6 @@
 .lp6 .demostrip .frame video{border-radius:12px;width:100%;aspect-ratio:16/9;object-fit:cover;background:var(--sky);display:block}
 .lp6 .seclead{text-align:center;max-width:44ch;margin:0 auto 40px;color:var(--ink-soft);font-size:20px}
 .lp6 .sechead{text-align:center;margin:0 auto 8px;max-width:20ch}
+
+/* Gesture-trail canvas must never sit in normal flow (it is window-sized). */
+.lp6 .trail-canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:5}
