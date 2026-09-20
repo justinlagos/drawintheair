@@ -2,22 +2,20 @@
  * Landing.tsx — Draw in the Air.
  *
  * The `Landing` component is the Sept 2026 home-page redesign (bold "one idea
- * per section" direction, ported from approved mockup artifact 48caf124),
- * replacing the previous calm-direction home page.
+ * per section" direction, mockup artifact 48caf124). It renders inside `.lp6`
+ * and uses the shared chrome (Lp6Nav + Lp6Footer) from Lp6Chrome, which the
+ * Parents / Teachers / Pricing / About pages share too.
  *
- * IMPORTANT: this module is ALSO the shared marketing-primitives library. The
+ * IMPORTANT: this module is ALSO the shared calm-primitives library. The
  * exports GestureTrail, SectionHead, FAQList, ActivityGrid, ActivityTile,
- * ACTIVITIES and CalmFooter are imported by About, Teachers, Pricing,
- * ParentsLanding, Training and the SEO pages, so they are kept intact and
- * unchanged. Only the `Landing` component itself is the new design; it renders
- * its own scoped nav + footer + FAQ under `.lp6` (landing-redesign.css) and
- * does not use the shared calm primitives.
+ * ACTIVITIES, CalmFooter and Icon are imported by About/Teachers/Pricing/
+ * ParentsLanding/Training and the SEO pages and are kept unchanged.
  *
- * Data-driven emphases (from Admin Insights, 30d): camera permission is the
- * biggest pre-play leak (grant rate 82% -> 77%), so privacy/on-device trust is
- * elevated near both CTAs and given its own reassurance band; the wave step is
- * the biggest in-product cliff (85% reach it, 50% get a hand seen), so the
- * "How it works" card sets concrete setup expectations.
+ * Data-driven emphases (Admin Insights, 30d): camera permission is the biggest
+ * pre-play leak (grant rate 82% -> 77%), so on-device/privacy trust is elevated
+ * near both CTAs and given its own band; the wave step is the biggest
+ * in-product cliff (85% reach it, 50% get a hand seen), so "How it works" sets
+ * concrete setup expectations.
  */
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -29,11 +27,14 @@ import {
   SITE, PAGE_META,
   buildOrganizationSchema, buildSoftwareAppSchema, buildFAQSchema,
 } from '../seo/seo-config';
+import {
+  Lp6Nav, Lp6Footer, ArrowIcon, ShieldIcon, BoltIcon, LaptopIcon, hideOnError, Lp6Faq,
+} from '../components/landing/Lp6Chrome';
 import '../components/landing/landing-calm.css';
 import './landing-redesign.css';
 
 /* =====================================================================
-   SHARED MARKETING PRIMITIVES (used by other pages — do not change)
+   SHARED CALM PRIMITIVES (used by other pages — do not change)
    ===================================================================== */
 const ICONS: Record<string, string> = {
   play: 'M6 4l13 8-13 8V4z',
@@ -305,35 +306,6 @@ export function CalmFooter() {
 /* =====================================================================
    NEW HOME PAGE (scoped under .lp6)
    ===================================================================== */
-function ArrowIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M5 12h14M13 6l6 6-6 6" />
-    </svg>
-  );
-}
-function ShieldIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" /><path d="M9 12l2 2 4-4" />
-    </svg>
-  );
-}
-function BoltIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" />
-    </svg>
-  );
-}
-function LaptopIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="5" width="18" height="12" rx="2" /><path d="M2 20h20" />
-    </svg>
-  );
-}
-
 const GAMES: { id: string; label: string; slug: string }[] = [
   { id: 'trace',   label: 'Tracing',        slug: 'tracing' },
   { id: 'paint',   label: 'Free Paint',     slug: 'free-paint' },
@@ -376,45 +348,9 @@ function Tile({ label, slug, onOpen }: { label: string; slug: string; onOpen: ()
   );
 }
 
-/* Hide a badge/logo image gracefully until the asset is added to /public. */
-function hideOnError(e: React.SyntheticEvent<HTMLImageElement>) {
-  const el = e.currentTarget;
-  const wrap = el.closest('[data-optional]') as HTMLElement | null;
-  if (wrap) wrap.style.display = 'none'; else el.style.display = 'none';
-}
-
-function Lp6Faq({ items }: { items: { q: string; a: string }[] }) {
-  const [open, setOpen] = useState(0);
-  return (
-    <div style={{ maxWidth: 820, margin: '0 auto' }}>
-      {items.map((f, i) => (
-        <div key={i} style={{ borderBottom: '1px solid var(--line)' }}>
-          <button
-            type="button"
-            onClick={() => setOpen(open === i ? -1 : i)}
-            aria-expanded={open === i}
-            style={{
-              width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              gap: 16, background: 'none', border: 0, cursor: 'pointer', padding: '22px 4px',
-              fontFamily: 'var(--display)', fontWeight: 700, fontSize: 19, textAlign: 'left', color: 'var(--ink)',
-            }}
-          >
-            <span>{f.q}</span>
-            <span style={{ color: 'var(--plum)', fontSize: 24, flex: 'none' }}>{open === i ? '−' : '+'}</span>
-          </button>
-          {open === i && (
-            <p style={{ margin: '0 4px 22px', color: 'var(--ink-soft)', fontSize: 17, maxWidth: '60ch' }}>{f.a}</p>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export const Landing: React.FC = () => {
   const navigate = useNavigate();
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const [mobileOpen, setMobileOpen] = useState(false);
   useReveal(rootRef);
 
   useEffect(() => {
@@ -433,11 +369,6 @@ export const Landing: React.FC = () => {
     logEvent('cta_click', { meta: { source, dest } });
     navigate(dest);
   };
-  const navGo = (label: string, dest: string) => {
-    logEvent('nav_click', { meta: { label, dest } });
-    setMobileOpen(false);
-    navigate(dest);
-  };
 
   return (
     <div ref={rootRef} className="lp6">
@@ -454,38 +385,7 @@ export const Landing: React.FC = () => {
         ]}
       />
       <GestureTrail />
-
-      {/* NAV */}
-      <nav data-screen-label="Nav">
-        <div className="wrap">
-          <a className="logo" href="/" onClick={(e) => { e.preventDefault(); navGo('home', '/'); }}>
-            <img src="/logo.svg" alt="Draw in the Air" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logo.png'; }} />
-          </a>
-          <div className="menu">
-            <a className="on" href="/" onClick={(e) => { e.preventDefault(); navGo('home', '/'); }}>Home</a>
-            <a href="/parents" onClick={(e) => { e.preventDefault(); navGo('parents', '/parents'); }}>For Parents</a>
-            <a href="/teachers" onClick={(e) => { e.preventDefault(); navGo('teachers', '/teachers'); }}>For Teachers</a>
-            <a href="/pricing" onClick={(e) => { e.preventDefault(); navGo('pricing', '/pricing'); }}>Pricing</a>
-            <a href="/about" onClick={(e) => { e.preventDefault(); navGo('about', '/about'); }}>About</a>
-          </div>
-          <div className="navr">
-            <a href="/parent/login" onClick={(e) => { e.preventDefault(); navGo('login', '/parent/login'); }}>Log in</a>
-            <button type="button" className="btn" onClick={() => cta('nav', '/play')}>Try it now</button>
-            <button type="button" className="burger" aria-label="Menu" aria-expanded={mobileOpen} onClick={() => setMobileOpen((o) => !o)}>
-              <span /><span /><span />
-            </button>
-          </div>
-        </div>
-        <div className={`mobile-menu ${mobileOpen ? 'open' : ''}`}>
-          <a href="/" onClick={(e) => { e.preventDefault(); navGo('home', '/'); }}>Home</a>
-          <a href="/parents" onClick={(e) => { e.preventDefault(); navGo('parents', '/parents'); }}>For Parents</a>
-          <a href="/teachers" onClick={(e) => { e.preventDefault(); navGo('teachers', '/teachers'); }}>For Teachers</a>
-          <a href="/pricing" onClick={(e) => { e.preventDefault(); navGo('pricing', '/pricing'); }}>Pricing</a>
-          <a href="/about" onClick={(e) => { e.preventDefault(); navGo('about', '/about'); }}>About</a>
-          <a href="/parent/login" onClick={(e) => { e.preventDefault(); navGo('login', '/parent/login'); }}>Log in</a>
-          <button type="button" className="btn" onClick={() => { setMobileOpen(false); cta('mobile_menu', '/play'); }}>Try it now</button>
-        </div>
-      </nav>
+      <Lp6Nav active="home" />
 
       {/* HERO */}
       <section className="hero" data-screen-label="01 Hero">
@@ -697,45 +597,7 @@ export const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer data-screen-label="Footer">
-        <div className="wrap">
-          <span className="word">Draw in the Air</span>
-
-          <div className="fnav">
-            <Link to="/parents">For Parents</Link>
-            <Link to="/teachers">For Teachers</Link>
-            <Link to="/pricing">Pricing</Link>
-            <Link to="/about">About</Link>
-            <Link to="/free-resources">Free resources</Link>
-            <Link to="/transparency">Transparency</Link>
-          </div>
-
-          <div className="fbadges">
-            <span data-optional>
-              <img src="/landing-assets/gess-finalist-2026.png" alt="GESS Education Awards 2026 Finalist" onError={hideOnError} />
-            </span>
-          </div>
-
-          <div className="fmpl" style={{ justifyContent: 'center', marginTop: 22 }}>
-            <span data-optional style={{ display: 'inline-flex' }}>
-              <img src="/landing-assets/motionplay-labs.png" alt="MotionPlay Labs" onError={hideOnError} />
-            </span>
-            <span>Draw in the Air is a product of MotionPlay Labs Ltd (Company Number 17304660).</span>
-          </div>
-
-          <div className="fl2">
-            <span>{'©'} 2026 MotionPlay Labs Ltd. EYFS aligned. Made in the UK.</span>
-            <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-              <Link to="/parent/login">Family login</Link>
-              <Link to="/teacher/login">Teacher login</Link>
-              <Link to="/privacy">Privacy</Link>
-              <Link to="/terms">Terms</Link>
-              <a href="mailto:hello@drawintheair.com">hello@drawintheair.com</a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Lp6Footer />
     </div>
   );
 };
