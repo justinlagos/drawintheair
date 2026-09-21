@@ -1,29 +1,25 @@
 /**
- * Landing.tsx, Calm-direction home page.
+ * Landing.tsx — Draw in the Air.
  *
- * Full rewrite ported from the offline approved prototype (template.html +
- * src2 / src3.jsx). Sections, in order:
- *   1. Sticky nav (HeaderNav)
- *   2. Hero with floating photo + activity card + hero-loop video
- *   3. Pull-quote band ("Movement is the curriculum.")
- *   4. Live demo strip (free-paint gameplay video)
- *   5. Proof band (4 stats)
- *   6. How it works (4 numbered steps)
- *   7. Activities grid (8 tiles, 1 with video preview)
- *   8. For home split (parent-child-screen.jpg + bullets)
- *   9. For schools split (classroom.jpg + bullets)
- *  10. Early-usage stats
- *  11. FAQ accordion
- *  12. CTA banner
- *  13. Calm-direction Footer (inlined)
+ * The `Landing` component is the Sept 2026 home-page redesign (bold "one idea
+ * per section" direction, mockup artifact 48caf124). It renders inside `.lp6`
+ * and uses the shared chrome (Lp6Nav + Lp6Footer) from Lp6Chrome, which the
+ * Parents / Teachers / Pricing / About pages share too.
  *
- * Routing: react-router-dom (paths, not hash).
- * Gesture trail: on by default for marketing pages.
+ * IMPORTANT: this module is ALSO the shared calm-primitives library. The
+ * exports GestureTrail, SectionHead, FAQList, ActivityGrid, ActivityTile,
+ * ACTIVITIES, CalmFooter and Icon are imported by About/Teachers/Pricing/
+ * ParentsLanding/Training and the SEO pages and are kept unchanged.
+ *
+ * Data-driven emphases (Admin Insights, 30d): camera permission is the biggest
+ * pre-play leak (grant rate 82% -> 77%), so on-device/privacy trust is elevated
+ * near both CTAs and given its own band; the wave step is the biggest
+ * in-product cliff (85% reach it, 50% get a hand seen), so "How it works" sets
+ * concrete setup expectations.
  */
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { HeaderNav } from '../components/landing/HeaderNav';
 import { BrandLogo } from '../components/BrandLogo';
 import { logEvent } from '../lib/analytics';
 import { SEOMeta } from '../seo/SEOMeta';
@@ -31,17 +27,21 @@ import {
   SITE, PAGE_META,
   buildOrganizationSchema, buildSoftwareAppSchema, buildFAQSchema,
 } from '../seo/seo-config';
+import {
+  Lp6Nav, Lp6Footer, useLp6Reveal, ArrowIcon, ShieldIcon, BoltIcon, LaptopIcon, hideOnError, Lp6Faq,
+} from '../components/landing/Lp6Chrome';
 import '../components/landing/landing-calm.css';
+import './landing-redesign.css';
 
 /* =====================================================================
-   Icons (Lucide-style inline SVGs, stroke 1.85)
+   SHARED CALM PRIMITIVES (used by other pages — do not change)
    ===================================================================== */
 const ICONS: Record<string, string> = {
   play: 'M6 4l13 8-13 8V4z',
   arrow: 'M5 12h14M13 6l6 6-6 6',
   chevron: 'M6 9l6 6 6-6',
 };
-function Icon({ name, size = 20, ...p }: { name: keyof typeof ICONS; size?: number } & React.SVGProps<SVGSVGElement>) {
+export function Icon({ name, size = 20, ...p }: { name: keyof typeof ICONS; size?: number } & React.SVGProps<SVGSVGElement>) {
   const filled = name === 'play';
   return (
     <svg
@@ -59,45 +59,6 @@ function Icon({ name, size = 20, ...p }: { name: keyof typeof ICONS; size?: numb
       <path d={ICONS[name]} />
     </svg>
   );
-}
-
-/* =====================================================================
-   Scroll reveal + gesture trail (visible-first; animation is enhancement)
-   ===================================================================== */
-function useReveal(rootRef: React.RefObject<HTMLElement | null>) {
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
-    let raf = 0, ticking = false;
-    const pass = () => {
-      ticking = false;
-      const h = window.innerHeight;
-      root.querySelectorAll('.reveal:not(.in)').forEach((el) => {
-        if (el.getBoundingClientRect().top < h - 40) el.classList.add('in');
-      });
-    };
-    const onScroll = () => { if (!ticking) { ticking = true; raf = requestAnimationFrame(pass); } };
-    pass();
-    const r1 = requestAnimationFrame(() => { root.classList.add('anim'); });
-    const t1 = window.setTimeout(pass, 140);
-    const t2 = window.setTimeout(pass, 450);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
-    // Reveal content that mounts AFTER initial load (conditional sections,
-    // tab panels). Freshly-mounted .reveal elements must never depend on a
-    // scroll event to become visible.
-    const mo = new MutationObserver(onScroll);
-    mo.observe(root, { childList: true, subtree: true });
-    return () => {
-      cancelAnimationFrame(raf);
-      cancelAnimationFrame(r1);
-      clearTimeout(t1);
-      clearTimeout(t2);
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-      mo.disconnect();
-    };
-  }, [rootRef]);
 }
 
 export function GestureTrail() {
@@ -162,9 +123,6 @@ export function GestureTrail() {
   return <canvas ref={ref} className="trail-canvas" aria-hidden="true" />;
 }
 
-/* =====================================================================
-   Section head, FAQ, ActivityGrid (shared marketing primitives)
-   ===================================================================== */
 export function SectionHead({
   eyebrow, tone, title, lead,
 }: { eyebrow?: string; tone?: 'mint' | 'sky' | 'sun' | 'peach'; title: string; lead?: string }) {
@@ -256,36 +214,6 @@ export function ActivityGrid({ limit }: { limit?: number }) {
   );
 }
 
-/* =====================================================================
-   Page-specific data (Calm direction copy only)
-   ===================================================================== */
-const HOW_STEPS = [
-  { num: '01', img: '/landing-assets/icons/globe.png',      title: 'Open the page',     text: 'Any browser, any laptop. Camera permission is the only setup.' },
-  { num: '02', img: '/landing-assets/icons/hand.png',       title: 'Wave to start',     text: 'Five small waves wake the canvas and calibrate the tracker.' },
-  { num: '03', img: '/landing-assets/icons/shapes.png',     title: 'Pick an activity',  text: 'Point and hold for 1.5 seconds. No tap, no click, no controller.' },
-  { num: '04', img: '/landing-assets/icons/star-smile.png', title: 'Move to learn',     text: 'Draw, trace, pop and sort. The hand is the input, always.' },
-];
-
-const HOME_FAQ = [
-  { q: "How is my child's privacy protected?", a: 'No video, no audio, and no images are ever stored or sent anywhere. The camera frame is processed entirely inside the browser tab and discarded each frame. An internet connection is needed while playing so progress and class sessions can sync.' },
-  { q: 'What ages is it designed for?',         a: 'The interaction is built for children aged 3 to 7. Bubble Pop, Free Paint and Tracing are open from age 3. Spelling Stars and Word Search are pitched at 5 to 7, and Balloon Math at 4 to 7. Adult supervision is recommended for the first session.' },
-  { q: 'Does it really not need special hardware?', a: 'Just a modern browser (Chrome, Edge, Safari 15+) and a webcam. Most laptops from the last five years work. No phone, no tablet, no controller, no glove.' },
-  { q: 'How is this different from a touchscreen?', a: 'A touchscreen needs only a wrist movement. Draw in the Air rewards whole-arm movement, how 3 to 7 year-olds naturally develop fine motor control. It works best on a laptop or Chromebook with a webcam; tablets can work too, but a laptop gives the most room to move.' },
-  { q: 'Is it free for parents?', a: 'You can start for free — core activities are always free to play. A Family plan (with a 7-day free trial) unlocks the full activity library, progress reports, and parental controls. Schools join a free pilot programme; we set the first classroom session up with you personally.' },
-];
-
-// Honest, verifiable product facts — NOT usage counts. We are a pilot-stage
-// product, so we do not claim aggregate usage numbers we cannot substantiate.
-const PROOF_STATS = [
-  { n: 'EYFS',    l: 'Curriculum aligned' },
-  { n: '100%',    l: 'Frames stay on-device' },
-  { n: 'No',      l: 'Child accounts or logins' },
-  { n: 'Webcam',  l: 'Is all you need' },
-];
-
-/* =====================================================================
-   Calm Footer (inlined for visual consistency)
-   ===================================================================== */
 export function CalmFooter() {
   return (
     <footer className="footer" data-screen-label="Footer">
@@ -343,17 +271,74 @@ export function CalmFooter() {
 }
 
 /* =====================================================================
-   Landing page component
+   NEW HOME PAGE (scoped under .lp6)
    ===================================================================== */
+const GAMES: { id: string; label: string; slug: string }[] = [
+  { id: 'trace',   label: 'Tracing',        slug: 'tracing' },
+  { id: 'paint',   label: 'Free Paint',     slug: 'free-paint' },
+  { id: 'bmath',   label: 'Balloon Math',   slug: 'balloon-math' },
+  { id: 'pop',     label: 'Balloon Pop',    slug: 'bubble-pop' },
+  { id: 'rainbow', label: 'Rainbow Bridge', slug: 'rainbow-bridge' },
+  { id: 'sort',    label: 'Sort and Place', slug: 'sort-place' },
+  { id: 'spell',   label: 'Spelling Stars', slug: 'spelling-stars' },
+  { id: 'word',    label: 'Word Search',    slug: 'word-search' },
+];
+
+const HOME_FAQ = [
+  { q: "How is my child's privacy protected?", a: 'No video, no audio, and no images are ever stored or sent anywhere. The camera frame is processed entirely inside the browser tab and discarded each frame. An internet connection is needed while playing so progress and class sessions can sync.' },
+  { q: 'What ages is it designed for?',         a: 'The interaction is built for children aged 3 to 7. Bubble Pop, Free Paint and Tracing are open from age 3. Spelling Stars and Word Search are pitched at 5 to 7, and Balloon Math at 4 to 7. Adult supervision is recommended for the first session.' },
+  { q: 'What do we need to set it up?', a: 'A laptop or Chromebook with a webcam, and a modern browser (Chrome, Edge, Safari 15+). Sit the child about an arm and a half from the screen, in a well-lit room, and give the camera a clear view of one hand. No phone, tablet, controller or glove needed.' },
+  { q: 'How is this different from a touchscreen?', a: 'A touchscreen needs only a wrist movement. Draw in the Air rewards whole-arm movement, which is how 3 to 7 year-olds naturally develop fine motor control. It works best on a laptop or Chromebook with a webcam.' },
+  { q: 'Is it free?', a: 'Core activities are always free to play, with no sign-up. A Family plan (7-day free trial) unlocks the full activity library, progress reports and parental controls. Schools join a free pilot programme; we set the first classroom session up with you.' },
+];
+
+function Tile({ label, slug, onOpen }: { label: string; slug: string; onOpen: () => void }) {
+  const vref = useRef<HTMLVideoElement | null>(null);
+  return (
+    <button
+      type="button"
+      className="tile"
+      onClick={onOpen}
+      onMouseEnter={() => { vref.current?.play().catch(() => {}); }}
+      onMouseLeave={() => { const v = vref.current; if (v) { v.pause(); v.currentTime = 0; } }}
+    >
+      <video
+        ref={vref}
+        muted loop playsInline preload="none"
+        poster={`/landing-videos/${slug}.jpg`}
+      >
+        <source src={`/landing-videos/${slug}.webm`} type="video/webm" />
+        <source src={`/landing-videos/${slug}.mp4`} type="video/mp4" />
+      </video>
+      <span>{label}</span>
+    </button>
+  );
+}
+
 export const Landing: React.FC = () => {
   const navigate = useNavigate();
   const rootRef = useRef<HTMLDivElement | null>(null);
-  useReveal(rootRef);
+  useLp6Reveal(rootRef);
 
-  const go = (path: string) => navigate(path);
+  useEffect(() => {
+    logEvent('landing_view');
+    let engaged = false;
+    const onEngage = () => {
+      if (engaged) return;
+      if (window.scrollY > 200) { engaged = true; logEvent('landing_engaged', { meta: { via: 'scroll' } }); cleanup(); }
+    };
+    const cleanup = () => window.removeEventListener('scroll', onEngage);
+    window.addEventListener('scroll', onEngage, { passive: true });
+    return cleanup;
+  }, []);
+
+  const cta = (source: string, dest: string) => {
+    logEvent('cta_click', { meta: { source, dest } });
+    navigate(dest);
+  };
 
   return (
-    <div ref={rootRef} className="lp-shell">
+    <div ref={rootRef} className="lp6">
       <SEOMeta
         title={PAGE_META.home.title}
         description={PAGE_META.home.description}
@@ -367,307 +352,219 @@ export const Landing: React.FC = () => {
         ]}
       />
       <GestureTrail />
-      <HeaderNav />
-      <div className="page" data-screen-label="Home">
+      <Lp6Nav active="home" />
 
-        {/* HERO */}
-        <section className="hero" data-screen-label="01 Hero">
-          <div className="hero-orb" />
-          <img
-            className="hero-deco trail float"
-            src="/landing-assets/icons/trail-star.png"
-            alt=""
-            aria-hidden="true"
-          />
-          <div className="wrap">
-            <div className="hero-grid">
-              <div>
-                <div className="eyebrow reveal">
-                  <span className="dot" />EYFS aligned · for ages 3–7
-                </div>
-                <h1 className="h1 reveal d1">
-                  Screen time that <span className="grad">makes you smile.</span>
-                </h1>
-                <p className="lead reveal d2">
-                  Watch your child practise letters, numbers, and creativity using just their hands. No touchscreen. No controller. Just natural movement and imagination.
-                </p>
-                <div className="hero-actions reveal d3">
-                  {/* Primary CTA goes straight to anonymous /play — the
-                      product contract is "no account before the first value
-                      moment" (SaveProgressNudge handles conversion AFTER the
-                      child's first success). Signup remains the explicit
-                      trial CTA in the banner below. */}
-                  <button
-                    type="button"
-                    className="btn btn-primary hero-cta lg"
-                    onClick={() => {
-                      logEvent('cta_click', { meta: { source: 'hero', dest: '/play' } });
-                      go('/play');
-                    }}
-                  >
-                    <Icon name="play" size={18} />Try it now — no sign-up
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary lg"
-                    onClick={() => go('/teachers')}
-                  >
-                    For schools
-                  </button>
-                </div>
-                <div className="hero-trust reveal d4">
-                  <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{1F512}'}</span> Webcam stays on your device</span>
-                  <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{2728}'}</span> 7 days free</span>
-                  <span className="trust-chip"><span className="ic" aria-hidden="true">{'\u{26A1}'}</span> Works instantly</span>
-                </div>
-              </div>
+      {/* HERO */}
+      <section className="hero" data-screen-label="01 Hero">
+        <div className="wrap">
+          <h1 className="h1">They draw <span className="mark">in the air.</span><br />They learn.</h1>
+          <p className="lead">A webcam, a hand and a laptop. Children aged 3 to 7 trace letters, numbers and shapes by moving. No download. No account.</p>
+          <button type="button" className="btn" onClick={() => cta('hero', '/play')}>Try it now, no sign-up <ArrowIcon /></button>
+          <div className="trust">
+            <span className="chip"><ShieldIcon /> Webcam stays on your device</span>
+            <span className="chip"><BoltIcon /> Works instantly</span>
+            <span className="chip"><LaptopIcon /> Any laptop or Chromebook</span>
+          </div>
 
-              {/* Hero visual: child-drawing-light photo + 3 floating cards.
-                  fl-2 is a small autoplaying hero-loop gameplay clip so
-                  visitors see real motion within a second. */}
-              <div className="hero-visual reveal d2">
-                <div className="photo hero-photo float">
-                  <img src="/landing-assets/child-drawing-light.jpg" alt="A child tracing a letter in the air with their finger" />
-                </div>
-                <div className="hero-floater fl-1 float s2">
-                  <span className="emoji" aria-hidden="true">{'\u{270F}\u{FE0F}'}</span>
-                  <div>
-                    <div className="ftitle">Tracing the letter A</div>
-                    <div className="meta">+2 stars earned</div>
-                  </div>
-                </div>
-                <div className="hero-floater fl-2 video-floater float s3" aria-hidden="true">
-                  <video
-                    poster="/landing-videos/hero-loop.jpg"
-                    autoPlay muted loop playsInline preload="metadata"
-                  >
-                    <source src="/landing-videos/hero-loop.webm" type="video/webm" />
-                    <source src="/landing-videos/hero-loop.mp4" type="video/mp4" />
-                  </video>
-                </div>
-                <div className="hero-floater fl-3 float">
-                  <span className="emoji" aria-hidden="true">{'\u{1F3A8}'}</span>
-                  <div>
-                    <div className="ftitle">Free paint</div>
-                    <div className="meta">3 colours, M brush</div>
-                  </div>
-                </div>
+          <div className="stage">
+            <img className="ico hand" src="/landing-assets/icons/hand.png" alt="" aria-hidden="true" onError={hideOnError} />
+            <img className="ico star" src="/landing-assets/icons/star-smile.png" alt="" aria-hidden="true" onError={hideOnError} />
+
+            <div className="kidvid">
+              <video autoPlay muted loop playsInline poster="/landing-videos/real-kid-1.jpg">
+                <source src="/landing-videos/real-kid-1.webm" type="video/webm" />
+                <source src="/landing-videos/real-kid-1.mp4" type="video/mp4" />
+              </video>
+            </div>
+
+            <div className="frag hud card-lbl">
+              <img src="/landing-assets/icons/shapes.png" alt="" onError={hideOnError} />
+              <div><b>Tracing</b><small>Shape 4 of 31</small></div>
+            </div>
+
+            <div className="frag pop card-lbl">
+              <img src="/landing-assets/icons/star-smile.png" alt="" onError={hideOnError} />
+              <div><b>+2 stars</b><small>Great pop!</small></div>
+            </div>
+
+            <div className="frag balloons">
+              <video autoPlay muted loop playsInline poster="/landing-videos/balloon-math.jpg">
+                <source src="/landing-videos/balloon-math.webm" type="video/webm" />
+                <source src="/landing-videos/balloon-math.mp4" type="video/mp4" />
+              </video>
+            </div>
+
+            <div className="laptop">
+              <div className="screen">
+                <video autoPlay muted loop playsInline poster="/landing-videos/free-paint.jpg">
+                  <source src="/landing-videos/free-paint.webm" type="video/webm" />
+                  <source src="/landing-videos/free-paint.mp4" type="video/mp4" />
+                </video>
               </div>
+              <div className="base" />
+            </div>
+
+            <div className="frag pinch"><span className="dot" /> Pinch to draw, start at the green dot</div>
+          </div>
+        </div>
+      </section>
+
+      {/* ACTIVITIES */}
+      <section className="acts" data-screen-label="Activities">
+        <div className="wrap">
+          <h2 className="h2">One webcam, <span className="mark">eight</span> ways to play.</h2>
+          <p className="lead">Every activity is played by moving. Pinch to draw, pop, sort, spell and find. Hover to watch.</p>
+          <div className="tiles">
+            {GAMES.map((g) => (
+              <Tile key={g.id} label={g.label} slug={g.slug} onOpen={() => cta('activities', '/play')} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section data-screen-label="How it works">
+        <div className="wrap">
+          <div className="card reveal">
+            <div>
+              <span className="label">How it works</span>
+              <h2 className="h2">Wave to start. Pinch to draw.</h2>
+              <p className="lead">Wave at the camera and the session begins. Pinch to draw, trace, sort or pop. Open your hand to pause. That is the whole control scheme.</p>
+              <div className="tip"><b>Best first go:</b> a well-lit room, the child about an arm and a half from the screen, one hand in clear view. That is all the tracker needs to see the first wave.</div>
+            </div>
+            <div className="gest">
+              <div className="g"><img src="/landing-assets/icons/hand.png" alt="" onError={hideOnError} /><div><b>Wave</b><small>to begin</small></div></div>
+              <div className="g"><img src="/landing-assets/icons/shapes.png" alt="" onError={hideOnError} /><div><b>Pinch</b><small>to draw, trace or pick</small></div></div>
+              <div className="g"><img src="/landing-assets/icons/star-smile.png" alt="" onError={hideOnError} /><div><b>Open hand</b><small>to pause</small></div></div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* PULL QUOTE BAND */}
-        <section className="section section-stage" data-screen-label="Pull quote">
-          <div className="wrap-content center reveal">
-            <p className="quote" style={{ fontSize: 'clamp(26px,3.4vw,40px)', lineHeight: 1.3, color: 'var(--ink-900)' }}>
-              {'“'}Movement is the curriculum. The screen is just the canvas.{'”'}
-            </p>
-            <div className="pill-note" style={{ marginTop: 22, justifyContent: 'center' }}>
-              The Draw in the Air principle
+      {/* PILOT */}
+      <section className="pilot" data-screen-label="Pilot">
+        <div className="wrap">
+          <span className="label">In classrooms</span>
+          <h2 className="h2">Built with a UK primary school.</h2>
+          <p className="lead">Piloting with Archbishop Courtenay CE Primary in Kent. Ten to fifteen minute sessions, two or three times a week, on the laptops the school already owns.</p>
+          <div className="media reveal">
+            <div><img src="/landing-assets/classroom.jpg" alt="Children around a laptop in a classroom" /></div>
+            <div>
+              <video autoPlay muted loop playsInline poster="/landing-videos/real-kid-2.jpg">
+                <source src="/landing-videos/real-kid-2.webm" type="video/webm" />
+                <source src="/landing-videos/real-kid-2.mp4" type="video/mp4" />
+              </video>
             </div>
           </div>
-        </section>
+          <div className="quote"><b>Quote slot.</b> An approved quote from the school goes here. Nothing ships in this box until it is approved in writing.</div>
+        </div>
+      </section>
 
-        {/* LIVE DEMO STRIP (single embedded gameplay clip) */}
-        <section className="section section-ink" data-screen-label="Live demo strip">
-          <div className="wrap">
-            <div className="demo-strip">
-              <div className="reveal">
-                <div className="eyebrow is-sky" style={{ color: 'var(--sky-300)' }}>
-                  <span className="dot" style={{ background: 'var(--sky-400)' }} />See it move
-                </div>
-                <h2 className="h2" style={{ color: '#fff', marginTop: 16 }}>
-                  Real gameplay, <br />no edits.
-                </h2>
-                <p className="lead" style={{ color: 'rgba(255,255,255,0.74)', marginTop: 16 }}>
-                  A clip from Balloon Math, captured live. Every pop is a finger in the air, every count is a confident jab. This is what a session actually looks like.
-                </p>
-                <div className="hero-actions">
-                  <button
-                    type="button"
-                    className="btn btn-reward lg"
-                    onClick={() => go('/parent/signup')}
-                  >
-                    Try it with your child
-                  </button>
-                </div>
+      {/* FOR PARENTS */}
+      <section id="parents" data-screen-label="For parents">
+        <div className="wrap feat">
+          <div className="txt reveal">
+            <span className="label">For parents</span>
+            <h2 className="h2"><span className="mark">Movement,</span> not swiping.</h2>
+            <p className="lead">The hand does the work the finger used to do. Letters form through whole-arm movement, which is how early writing readiness is built.</p>
+            <Link className="link" to="/parents" onClick={() => logEvent('nav_click', { meta: { label: 'for_parents_link', dest: '/parents' } })}>For parents &rarr;</Link>
+          </div>
+          <div className="art reveal d1">
+            <div className="shot">
+              <video autoPlay muted loop playsInline poster="/landing-videos/tracing.jpg">
+                <source src="/landing-videos/tracing.webm" type="video/webm" />
+                <source src="/landing-videos/tracing.mp4" type="video/mp4" />
+              </video>
+            </div>
+            <div className="fl pill" style={{ right: -16, bottom: -22 }}>
+              <img src="/landing-assets/icons/star-smile.png" alt="" onError={hideOnError} /> Keep going!
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FOR TEACHERS */}
+      <section id="teachers" data-screen-label="For teachers">
+        <div className="wrap feat flip">
+          <div className="txt reveal">
+            <span className="label">For teachers</span>
+            <h2 className="h2">Whole class, <span className="mark aqua">one join code.</span></h2>
+            <p className="lead">Start a class, share the code, and every child joins from their own laptop. You choose the activity, pause the room and move everyone on together. Aligned to EYFS Physical Development and Literacy.</p>
+            <Link className="link" to="/teachers" onClick={() => logEvent('nav_click', { meta: { label: 'for_teachers_link', dest: '/teachers' } })}>For teachers &rarr;</Link>
+          </div>
+          <div className="art reveal d1">
+            <div className="console">
+              <div className="hd">
+                <div><span className="label">Class code</span><div className="code">4821</div></div>
+                <span className="live">Live</span>
               </div>
-              <div className="reveal d2">
-                <div className="demo-frame">
-                  <video
-                    poster="/landing-videos/balloon-math.jpg"
-                    autoPlay muted loop playsInline preload="metadata"
-                  >
-                    <source src="/landing-videos/balloon-math.webm" type="video/webm" />
-                    <source src="/landing-videos/balloon-math.mp4" type="video/mp4" />
-                  </video>
-                </div>
-              </div>
+              <div className="kid"><i style={{ background: 'var(--sun)' }} />Fox<span className="st">Sort and Place</span></div>
+              <div className="kid"><i style={{ background: 'var(--aqua)' }} />Owl<span className="st">Sort and Place</span></div>
+              <div className="kid"><i style={{ background: 'var(--coral)' }} />Bear<span className="st wait">Joining</span></div>
+              <div className="cbtns"><span>Assign activity</span><span className="ghost">Pause all</span></div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* PROOF BAND */}
-        <section className="section section-tint" data-screen-label="Proof band">
-          <div className="wrap">
-            <div className="stats">
-              {PROOF_STATS.map((s, i) => (
-                <div key={s.l} className={`stat reveal d${i + 1}`}>
-                  <div className="stat-num">{s.n}</div>
-                  <div className="stat-lbl">{s.l}</div>
-                </div>
-              ))}
+      {/* PRIVACY / ON-DEVICE (data-driven: camera trust is the top pre-play leak) */}
+      <section data-screen-label="Privacy">
+        <div className="wrap">
+          <div className="privacy reveal">
+            <div>
+              <span className="label">Private by design</span>
+              <h2 className="h2">The camera never leaves the laptop.</h2>
+              <p>Draw in the Air asks for the webcam so it can see a hand move. That is all it is for, and the picture goes nowhere else.</p>
+            </div>
+            <div className="plist">
+              <div className="prow"><span className="tick">&#10003;</span><div><b>Frames never leave the browser</b><small>Hand tracking runs on the device. Each frame is read and thrown away.</small></div></div>
+              <div className="prow"><span className="tick">&#10003;</span><div><b>No video or photos are stored</b><small>Nothing is recorded, uploaded or saved. There is no footage to keep.</small></div></div>
+              <div className="prow"><span className="tick">&#10003;</span><div><b>No child accounts to play</b><small>Free activities start with a wave. No name, no email, no login.</small></div></div>
+              <div className="prow"><span className="tick">&#10003;</span><div><b>You can turn the camera off any time</b><small>Close the tab and the camera light goes out. You are always in control.</small></div></div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* HOW IT WORKS */}
-        <section className="section" data-screen-label="How it works">
-          <div className="wrap">
-            <SectionHead
-              eyebrow="How it works"
-              title="Four steps. No download."
-              lead="From URL to first stroke in under a minute. The whole interaction lives in the browser tab."
-            />
-            <div className="steps">
-              {HOW_STEPS.map((s, i) => (
-                <div key={s.num} className={`step reveal d${i + 1}`}>
-                  <div className="step-num">{s.num}</div>
-                  <img className="step-img" src={s.img} alt="" />
-                  <div className="step-title">{s.title}</div>
-                  <p className="step-text">{s.text}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+      {/* ANCHOR BAND */}
+      <section className="anchor" data-screen-label="Anchor">
+        <div className="wrap">
+          <h2 className="h2">We trained children to sit still and tap glass.</h2>
+          <p>Draw in the Air gets them moving again.</p>
+          <svg viewBox="0 0 560 60" fill="none" aria-hidden="true"><path className="draw" d="M10 40c80-30 140 20 220-10s160-30 320 10" stroke="#55DDE0" strokeWidth="10" strokeLinecap="round" /></svg>
+        </div>
+      </section>
 
-        {/* ACTIVITIES */}
-        <section className="section section-tint" data-screen-label="Activities">
-          <div className="wrap">
-            <SectionHead
-              eyebrow="Eight ways to play"
-              tone="mint"
-              title="Eight activities. <span class='grad'>One gesture.</span>"
-              lead="Every activity uses the same pinch-to-draw, point-to-select interaction. Children learn the language once, then explore freely."
-            />
-            <ActivityGrid />
-            <div className="center mt-cta reveal">
-              <button
-                type="button"
-                className="btn btn-primary md"
-                onClick={() => go('/parent/signup')}
-              >
-                Start playing free <Icon name="arrow" size={17} />
-              </button>
-            </div>
-          </div>
-        </section>
+      {/* TAPPING vs DRAWING */}
+      <section data-screen-label="Tapping vs drawing">
+        <div className="wrap pair">
+          <div className="pc off"><span className="label">Tapping</span><h3 className="h3">A finger on glass.</h3><p>Eyes down. Body still. The letter appears, but nothing in the arm learned it.</p></div>
+          <div className="pc on"><img src="/landing-assets/icons/hand.png" alt="" onError={hideOnError} /><span className="label">Drawing in the air</span><h3 className="h3">Whole body in the letter.</h3><p>Arm, shoulder, eyes up. The movement is the practice.</p></div>
+        </div>
+      </section>
 
-        {/* FOR HOME */}
-        <section className="section" data-screen-label="For home">
-          <div className="wrap">
-            <div className="split">
-              <div className="split-media reveal">
-                <div className="photo">
-                  <img src="/landing-assets/parent-child-screen.jpg" alt="A parent and child playing together at a laptop" />
-                </div>
-              </div>
-              <div className="reveal d1">
-                <div className="eyebrow is-peach"><span className="dot" />For home</div>
-                <h2 className="h2" style={{ marginTop: 16 }}>Screen time that actually means something.</h2>
-                <p className="lead" style={{ marginTop: 16 }}>
-                  Draw in the Air turns any webcam session into an active, physical learning moment. Children get up, move, and practise real skills, you get peace of mind.
-                </p>
-                <div className="bullets">
-                  {[
-                    'EYFS and early-literacy aligned',
-                    'No registration for free activities',
-                    'Works on any laptop or tablet with a camera',
-                    'No video stored, no child accounts',
-                  ].map((b) => (
-                    <div className="bullet" key={b}>
-                      <span className="check">{'✓'}</span>
-                      <span className="txt">{b}</span>
-                    </div>
-                  ))}
-                </div>
-                <Link to="/parents" className="btn btn-primary md">
-                  Explore for parents <Icon name="arrow" size={17} />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
+      {/* FAQ */}
+      <section data-screen-label="FAQ">
+        <div className="wrap">
+          <span className="label">Frequently asked</span>
+          <h2 className="h2" style={{ margin: '14px 0 34px' }}>The questions parents ask first.</h2>
+          <Lp6Faq items={HOME_FAQ} />
+        </div>
+      </section>
 
-        {/* FOR SCHOOLS */}
-        <section className="section section-stage" data-screen-label="For schools">
-          <div className="wrap">
-            <div className="split flip">
-              <div className="split-media reveal">
-                <div className="photo">
-                  <img src="/landing-assets/classroom.jpg" alt="Children using Draw in the Air together in a classroom" />
-                </div>
-              </div>
-              <div className="reveal d1">
-                <div className="eyebrow is-sky"><span className="dot" />For schools</div>
-                <h2 className="h2" style={{ marginTop: 16 }}>Whole-class movement, EYFS aligned.</h2>
-                <p className="lead" style={{ marginTop: 16 }}>
-                  A free, browser-based tool that fits your existing classroom setup. One laptop, one webcam, one projector, the whole class moves together.
-                </p>
-                <div className="bullets">
-                  {[
-                    'EYFS-mapped activities across communication, maths and expressive arts',
-                    'No installs and no accounts for children',
-                    'A quiet teacher dashboard: usage, sessions, engagement',
-                    'Pilot programme, we set up your first session with you',
-                  ].map((b) => (
-                    <div className="bullet" key={b}>
-                      <span className="check">{'✓'}</span>
-                      <span className="txt">{b}</span>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                  <Link to="/teachers" className="btn btn-primary md">Start a pilot</Link>
-                  <Link to="/teachers#eyfs-mapping" className="btn btn-ghost md">
-                    Read the EYFS mapping <Icon name="arrow" size={16} />
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+      {/* FINAL CTA */}
+      <section className="final" data-screen-label="Final CTA">
+        <div className="wrap">
+          <img className="trophy" src="/landing-icons/trophy.png" alt="" onError={hideOnError} />
+          <h2 className="h2">You set it up once. <span className="mark">They</span> do the rest.</h2>
+          <p className="lead">Open it on a laptop, let them wave at the camera, and step back.</p>
+          <button type="button" className="btn" onClick={() => cta('final_banner', '/play')}>Try it now, no sign-up <ArrowIcon /></button>
+          <div><Link className="alt link" to="/teachers" onClick={() => logEvent('nav_click', { meta: { label: 'create_teacher_account', dest: '/teachers' } })}>Create a teacher account</Link></div>
+          <p className="reassure">No sign-up to try. The webcam stays on your device.</p>
+        </div>
+      </section>
 
-        {/* FAQ */}
-        <section className="section section-tint" data-screen-label="FAQ">
-          <div className="wrap">
-            <SectionHead eyebrow="Frequently asked" title="The questions parents ask first." />
-            <FAQList items={HOME_FAQ} />
-          </div>
-        </section>
-
-        {/* CTA BANNER */}
-        <section className="section" data-screen-label="CTA">
-          <div className="wrap">
-            <div className="cta-banner reveal">
-              <h2 className="h2">Ready to see them light up?</h2>
-              <p className="lead">
-                Start your 7-day free trial. Up to 2 learners, the full activity library, and cancel anytime. Works on any laptop with a webcam.
-              </p>
-              <div className="cta-actions">
-                <Link to="/parent/signup" className="btn btn-secondary lg">Start free trial</Link>
-                <Link to="/teachers" className="btn btn-ghost lg" style={{ color: 'inherit' }}>
-                  Book a school demo <Icon name="arrow" size={17} />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
-
-      </div>
-      <CalmFooter />
+      <Lp6Footer />
     </div>
   );
 };
