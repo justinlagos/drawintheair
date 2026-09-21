@@ -160,7 +160,7 @@ export function Lp6Faq({ items }: { items: { q: string; a: string }[] }) {
             <span style={{ color: 'var(--plum)', fontSize: 24, flex: 'none' }}>{open === i ? '−' : '+'}</span>
           </button>
           {open === i && (
-            <p style={{ margin: '0 4px 22px', color: 'var(--ink-soft)', fontSize: 17, maxWidth: '60ch' }}>{f.a}</p>
+            <p style={{ margin: '6px 4px 26px', color: 'var(--ink-soft)', fontSize: 17, maxWidth: '60ch' }}>{f.a}</p>
           )}
         </div>
       ))}

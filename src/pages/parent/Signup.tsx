@@ -126,8 +126,7 @@ export default function ParentSignup() {
               <Link to="/" aria-label="Draw in the Air home">
                 <BrandLogo variant="hero" decorative />
               </Link>
-              <span className="eyebrow pill"><I.Sparkle size={14} /> Start free</span>
-            </div>
+              </div>
             <h1>Create your <span className="grad-name">parent account</span></h1>
             <p className="ah-lede">
               7 days free. No card needed today. We'll only ask when your trial ends.
