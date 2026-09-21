@@ -337,3 +337,8 @@
 .tdash-letter b { font-family: var(--t-font-display); font-weight: 800; font-size: 18px; color: var(--t-lav-600); }
 .tdash-letter span { font-size: 14px; }
 @media (max-width: 1080px) { .tdash-catalog { grid-template-columns: 1fr !important; } }
+
+/* Kill the global toy-button chrome (index.css `button{...}`) on the dashboard. */
+.tdash button { box-shadow: none; overflow: visible; }
+.tdash button::before { content: none; }
+.tdash button:hover, .tdash button:active { transform: none; box-shadow: none; }
