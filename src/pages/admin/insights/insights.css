@@ -1107,3 +1107,8 @@
 @media (prefers-reduced-motion: reduce) {
     .iv-live-dot { animation: none; }
 }
+
+/* Kill the global toy-button chrome (index.css `button{...}`) in Insights. */
+.iv-shell button { box-shadow: none; overflow: visible; }
+.iv-shell button::before { content: none; }
+.iv-shell button:hover, .iv-shell button:active { transform: none; box-shadow: none; }
