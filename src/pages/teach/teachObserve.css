@@ -291,3 +291,8 @@
     .to-btn       { min-height: 44px; }
     .to-tag-pill  { min-height: 42px; padding: 9px 16px; }
 }
+
+/* Kill the global toy-button chrome (index.css `button{...}`) in observe view. */
+.to-shell button { box-shadow: none; overflow: visible; }
+.to-shell button::before { content: none; }
+.to-shell button:hover, .to-shell button:active { transform: none; box-shadow: none; }
